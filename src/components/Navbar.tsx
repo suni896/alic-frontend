@@ -28,20 +28,26 @@ const LogoContainer = styled.div`
 const Logo = styled.img`
   width: 60px;
   height: 66px;
-  margin-right: ;
+  margin-right: 20px;
 `;
 
 const Title = styled.h1`
   color: white;
   font-size: 28px;
   font-family: "Roboto", sans-serif;
-  font-weight: 500; /* Medium weight */
+  font-weight: 500;
   margin: 0;
+
+  @media (max-width: 740px) {
+    font-size: 24px;
+  }
 `;
 
 const RightContainer = styled.div`
   display: flex;
   align-items: center;
+  position: relative;
+  margin-right: 20px;
 `;
 
 const GlobeIcon = styled(FaGlobe)`
@@ -56,16 +62,34 @@ const GlobeIcon = styled(FaGlobe)`
 
 const LanguageDropdown = styled.div<LanguageDropdownProps>`
   position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  left: -120px;
+
+  width: 100px;
   background-color: white;
-  border: 1px solid black;
-  overflow: hidden;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   display: ${(props) => (props.show ? "block" : "none")};
+  z-index: 1001;
+
+  @media (max-width: 740px) {
+    top: 160%;
+    left: -160%;
+    transform: none;
+  }
 `;
 
 const DropdownOption = styled.div`
   font-size: 16px;
+  text-align: center;
   color: black;
   cursor: pointer;
+  border-bottom: 1px solid black;
+
+  &:last-child {
+    border-bottom: none;
+  }
 
   &:hover {
     background-color: #e0e0e0;
@@ -90,11 +114,11 @@ const Navbar = () => {
         <Title>Student Collaboration Learning System</Title>
       </LogoContainer>
       <RightContainer>
-        <GlobeIcon onClick={toggleDropdown} />
         <LanguageDropdown show={dropdownOpen}>
           <DropdownOption onClick={closeDropdown}>简体中文</DropdownOption>
           <DropdownOption onClick={closeDropdown}>English</DropdownOption>
         </LanguageDropdown>
+        <GlobeIcon onClick={toggleDropdown} />
       </RightContainer>
     </Container>
   );
