@@ -16,10 +16,20 @@ const Wrapper = styled.div`
   overflow: hidden;
 `;
 
+const LeftSection = styled.div`
+  flex: 1;
+  background-image: url("https://via.placeholder.com/600x400");
+  background-size: cover;
+  background-position: center;
+  display: flex;
+`;
+
 const Signin = () => {
   return (
     <Container>
-      <Wrapper></Wrapper>
+      <Wrapper>
+        <LeftSection></LeftSection>
+      </Wrapper>
     </Container>
   );
 };

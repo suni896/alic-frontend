@@ -16,8 +16,8 @@ const Layout = ({ children }: Props) => {
     <>
       <StyledAppBar color="default" position="fixed">
         <Navbar />
+        <main>{children}</main>
       </StyledAppBar>
-      <main>{children}</main>
     </>
   );
 };
