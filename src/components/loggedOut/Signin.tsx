@@ -7,6 +7,7 @@ import image1 from "../../assets/collaborativeLearning-1.png";
 import image2 from "../../assets/collaborativeLearning-2.png";
 import image3 from "../../assets/collaborativeLearning-3.png";
 import LeftSection from "./LeftSection"; // Adjust the path as necessary
+import { useNavigate } from "react-router-dom";
 
 const Container = styled.div`
   display: flex;
@@ -152,6 +153,12 @@ const Signin = () => {
     },
   });
 
+  const navigate = useNavigate();
+
+  const handleRegister = () => {
+    navigate("/register");
+  };
+
   return (
     <Container>
       <Wrapper>
@@ -195,7 +202,9 @@ const Signin = () => {
             )}
             <SigninButton type="submit">Sign In</SigninButton>
             <ForgotPassword>Forgot password?</ForgotPassword>
-            <RegisterButton type="button">CREATE AN ACCOUNT</RegisterButton>
+            <RegisterButton type="button" onClick={handleRegister}>
+              CREATE AN ACCOUNT
+            </RegisterButton>
           </SigninForm>
         </RightSection>
       </Wrapper>
