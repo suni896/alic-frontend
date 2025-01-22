@@ -33,13 +33,14 @@ const Logo = styled.img`
 
 const Title = styled.h1`
   color: white;
-  font-size: 28px;
+  font-size: 26px;
   font-family: "Roboto", sans-serif;
   font-weight: 500;
   margin: 0;
 
   @media (max-width: 740px) {
-    font-size: 24px;
+    font-size: 20px;
+    margin-right: 2rem;
   }
 `;
 
@@ -111,7 +112,9 @@ const Navbar = () => {
     <Container>
       <LogoContainer>
         <Logo src={logo} alt="EduHK Logo" />
-        <Title>Student Collaboration Learning System</Title>
+        <Title>
+          Artificial Intelligence and Learning Analytics in Collaboration
+        </Title>
       </LogoContainer>
       <RightContainer>
         <LanguageDropdown show={dropdownOpen}>

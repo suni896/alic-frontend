@@ -25,6 +25,10 @@ const LeftSectionContainer = styled.div<{ currentImage: string }>`
     opacity: 0.75;
     z-index: 1;
   }
+
+  @media (max-width: 740px) {
+    display: none;
+  }
 `;
 
 const LeftTitle = styled.h1`
@@ -40,6 +44,10 @@ const LeftTitle = styled.h1`
   font-weight: 500;
   font-style: italic;
   z-index: 2;
+
+  @media (max-width: 740px) {
+    font-size: 1.2rem;
+  }
 `;
 
 const DotsContainer = styled.div`
@@ -57,6 +65,11 @@ const Dot = styled.div<{ active: boolean }>`
   border-radius: 50%;
   background-color: ${(props) => (props.active ? "#016532" : "white")};
   margin: 0 5px;
+
+  @media (max-width: 740px) {
+    width: 8px;
+    height: 8px;
+  }
 `;
 
 const LeftSection: React.FC<LeftSectionProps> = ({

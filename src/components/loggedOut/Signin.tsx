@@ -1,12 +1,11 @@
 import { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-
 import styled from "styled-components";
 import image1 from "../../assets/collaborativeLearning-1.png";
 import image2 from "../../assets/collaborativeLearning-2.png";
 import image3 from "../../assets/collaborativeLearning-3.png";
-import LeftSection from "./LeftSection"; // Adjust the path as necessary
+import LeftSection from "./LeftSection";
 import { useNavigate } from "react-router-dom";
 
 const Container = styled.div`
@@ -28,7 +27,7 @@ const Wrapper = styled.div`
   background: white;
   overflow: hidden;
   border: 1px solid #016532;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1); /* Drop shadow */
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 `;
 
 const images = [image1, image2, image3];
@@ -52,6 +51,7 @@ const SigninForm = styled.form`
 const Title = styled.h1`
   text-align: center;
   font-size: 2rem;
+  text-decoration: underline;
   margin-bottom: 1rem;
 `;
 
@@ -99,19 +99,27 @@ const SigninButton = styled.button`
   font-size: 1rem;
   cursor: pointer;
   margin: 1rem auto 1.5rem auto;
-  border-radius: 0;
+  border-radius: 5px;
 `;
 
 const RegisterButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 60%;
   height: 55px;
   padding: 0.75rem;
   font-size: 1rem;
   cursor: pointer;
   margin: 3rem auto 0 auto;
-  border-radius: 0;
+  border-radius: 5px;
   background-color: #016532;
   color: white;
+
+  @media (max-width: 740px) {
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+  }
 `;
 
 const ForgotPassword = styled.a`
