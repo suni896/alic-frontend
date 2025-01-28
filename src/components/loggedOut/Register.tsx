@@ -14,14 +14,16 @@ const SigninForm = styled.form`
 const Title = styled.h1`
   text-align: center;
   font-size: 2rem;
+  font-family: "Roboto", serif;
+  font-weight: 700;
   text-decoration: underline;
   margin-bottom: 0.5rem;
 `;
 
 const Label = styled.label`
-  font-size: 1rem;
-  font-family: "Roboto Condensed", sans-serif;
-  font-weight: 500;
+  font-size: 0.9rem;
+  font-family: "Roboto", -serif;
+  font-weight: 400;
   margin-bottom: 0.3rem;
 `;
 

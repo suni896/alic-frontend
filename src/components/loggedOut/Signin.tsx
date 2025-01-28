@@ -14,14 +14,16 @@ const SigninForm = styled.form`
 const Title = styled.h1`
   text-align: center;
   font-size: 2rem;
+  font-family: "Roboto", serif;
+  font-weight: 700;
   text-decoration: underline;
   margin-bottom: 1rem;
 `;
 
 const Label = styled.label`
-  font-size: 1.2rem;
-  font-family: "Roboto Condensed", sans-serif;
-  font-weight: 500;
+  font-size: 1rem;
+  font-family: "Roboto", serif;
+  font-weight: 400;
   margin-bottom: 0.5rem;
 `;
 
@@ -43,14 +45,14 @@ const Input = styled.input`
 `;
 
 const ErrorText = styled.p`
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #fc5600;
   margin-top: -0.8rem;
   margin-bottom: 1rem;
 `;
 
 const HelperText = styled.p`
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   color: #666;
   margin-top: -0.8rem;
   margin-bottom: 1rem;

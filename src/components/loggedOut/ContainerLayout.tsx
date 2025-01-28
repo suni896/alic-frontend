@@ -9,31 +9,6 @@ import { useState } from "react";
 
 const images = [image1, image2, image3];
 
-const ContainerLayout = ({ children }: { children: React.ReactNode }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
-    }, 2000);
-
-    return () => clearInterval(intervalId);
-  }, []);
-
-  return (
-    <Container>
-      <Wrapper>
-        <LeftSection
-          currentImage={images[currentIndex]}
-          currentIndex={currentIndex}
-          images={images || []}
-        />
-        <RightSection>{children}</RightSection>
-      </Wrapper>
-    </Container>
-  );
-};
-
 const Container = styled.div`
   display: flex;
   justify-content: center;
@@ -61,8 +36,34 @@ const RightSection = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  width: 100%;
   height: 100%;
   padding: 0.5rem 2rem;
 `;
+
+const ContainerLayout = ({ children }: { children: React.ReactNode }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 2000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
+  return (
+    <Container>
+      <Wrapper>
+        <LeftSection
+          currentImage={images[currentIndex]}
+          currentIndex={currentIndex}
+          images={images || []}
+        />
+        <RightSection>{children}</RightSection>
+      </Wrapper>
+    </Container>
+  );
+};
 
 export default ContainerLayout;
