@@ -2,44 +2,8 @@ import { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import styled from "styled-components";
-import image1 from "../../assets/collaborativeLearning-1.png";
-import image2 from "../../assets/collaborativeLearning-2.png";
-import image3 from "../../assets/collaborativeLearning-3.png";
-import LeftSection from "./LeftSection";
 import { useNavigate } from "react-router-dom";
-
-const images = [image1, image2, image3];
-
-const Container = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  background: white;
-  margin-top: 30px;
-`;
-
-const Wrapper = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: stretch;
-  width: 90%;
-  height: 70%;
-  max-width: 1300px;
-  background: white;
-  overflow: hidden;
-  border: 1px solid #016532;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-`;
-
-const RightSection = styled.div`
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100%;
-  padding: 0.5rem 2rem;
-`;
+import ContainerLayout from "./ContainerLayout";
 
 const SigninForm = styled.form`
   display: flex;
@@ -79,6 +43,13 @@ const Input = styled.input`
   }
 `;
 
+const ErrorMessage = styled.div`
+  color: #fc5600;
+  font-size: 0.7rem;
+  margin-top: -1.1rem;
+  margin-bottom: 0.2rem;
+`;
+
 const RegisterButton = styled.button`
   width: 40%;
   padding: 0.75rem;
@@ -86,6 +57,11 @@ const RegisterButton = styled.button`
   cursor: pointer;
   margin: 1rem auto 1.5rem auto;
   border-radius: 5px;
+
+  @media (max-width: 740px) {
+    margin-top: 0.5rem;
+    margin-bottom: 0.5rem;
+  }
 `;
 
 const BackButton = styled.button`
@@ -110,6 +86,16 @@ const validationSchema = Yup.object({
   password: Yup.string()
     .min(8, "Password must be at least 8 characters")
     .required("Password is required"),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref("password")], "Passwords must match")
+    .required("Confirm Password is required"),
+  username: Yup.string()
+    .matches(
+      /^[a-zA-Z0-9]*$/,
+      "Username can only contain English letters and numbers"
+    )
+    .max(20, "Username must be at most 20 characters")
+    .required("Username is required"),
 });
 
 const Register = () => {
@@ -117,8 +103,9 @@ const Register = () => {
 
   useEffect(() => {
     const intervalId = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % 3); // Since there are 3 images
     }, 2000);
+
     return () => clearInterval(intervalId);
   }, []);
 
@@ -142,63 +129,66 @@ const Register = () => {
   };
 
   return (
-    <Container>
-      <Wrapper>
-        <LeftSection
-          currentImage={images[currentIndex]}
-          currentIndex={currentIndex}
-          images={images}
+    <ContainerLayout currentIndex={currentIndex}>
+      <SigninForm onSubmit={formik.handleSubmit}>
+        <Title>Register</Title>
+        <Label htmlFor="email">Email</Label>
+        <Input
+          type="email"
+          name="email"
+          placeholder="Enter your email"
+          value={formik.values.email}
+          onChange={formik.handleChange}
+          onBlur={formik.handleBlur}
         />
-        <RightSection>
-          <SigninForm onSubmit={formik.handleSubmit}>
-            <Title>Register</Title>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              type="email"
-              name="email"
-              placeholder="Enter your email"
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-            />
-            <Label htmlFor="username">Username</Label>
-            <Input
-              type="string"
-              id="username"
-              name="username"
-              placeholder="Enter your username"
-              value={formik.values.username}
-              onChange={formik.handleChange}
-              onBlur={formik.handleChange}
-            />
-            <Label htmlFor="password">Password</Label>
-            <Input
-              type="password"
-              id="password"
-              name="password"
-              placeholder="Enter your password"
-              value={formik.values.password}
-              onChange={formik.handleChange}
-              onBlur={formik.handleChange}
-            />
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              placeholder="Enter your password again"
-              value={formik.values.confirmPassword}
-              onChange={formik.handleChange}
-              onBlur={formik.handleChange}
-            />
-            <RegisterButton type="submit">Register</RegisterButton>
-            <BackButton type="button" onClick={handleBack}>
-              Back to Sign-In
-            </BackButton>
-          </SigninForm>
-        </RightSection>
-      </Wrapper>
-    </Container>
+        {formik.touched.email && formik.errors.email && (
+          <ErrorMessage>{formik.errors.email}</ErrorMessage>
+        )}
+        <Label htmlFor="username">Username</Label>
+        <Input
+          type="string"
+          id="username"
+          name="username"
+          placeholder="Enter your username"
+          value={formik.values.username}
+          onChange={formik.handleChange}
+          onBlur={formik.handleChange}
+        />
+        {formik.touched.username && formik.errors.username && (
+          <ErrorMessage>{formik.errors.username}</ErrorMessage>
+        )}
+        <Label htmlFor="password">Password</Label>
+        <Input
+          type="password"
+          id="password"
+          name="password"
+          placeholder="Enter your password"
+          value={formik.values.password}
+          onChange={formik.handleChange}
+          onBlur={formik.handleChange}
+        />
+        {formik.touched.password && formik.errors.password && (
+          <ErrorMessage>{formik.errors.password}</ErrorMessage>
+        )}
+        <Label htmlFor="confirmPassword">Confirm Password</Label>
+        <Input
+          type="password"
+          id="confirmPassword"
+          name="confirmPassword"
+          placeholder="Enter your password again"
+          value={formik.values.confirmPassword}
+          onChange={formik.handleChange}
+          onBlur={formik.handleChange}
+        />
+        {formik.touched.confirmPassword && formik.errors.confirmPassword && (
+          <ErrorMessage>{formik.errors.confirmPassword}</ErrorMessage>
+        )}
+        <RegisterButton type="submit">Register</RegisterButton>
+        <BackButton type="button" onClick={handleBack}>
+          Back to Sign-In
+        </BackButton>
+      </SigninForm>
+    </ContainerLayout>
   );
 };
 
