@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import styled from "styled-components";
@@ -99,16 +98,6 @@ const validationSchema = Yup.object({
 });
 
 const Register = () => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % 3); // Since there are 3 images
-    }, 2000);
-
-    return () => clearInterval(intervalId);
-  }, []);
-
   const formik = useFormik({
     initialValues: {
       email: "",
@@ -129,7 +118,7 @@ const Register = () => {
   };
 
   return (
-    <ContainerLayout currentIndex={currentIndex}>
+    <ContainerLayout>
       <SigninForm onSubmit={formik.handleSubmit}>
         <Title>Register</Title>
         <Label htmlFor="email">Email</Label>

@@ -4,18 +4,22 @@ import LeftSection from "./LeftSection";
 import image1 from "../../assets/collaborativeLearning-1.png";
 import image2 from "../../assets/collaborativeLearning-2.png";
 import image3 from "../../assets/collaborativeLearning-3.png";
+import { useEffect } from "react";
+import { useState } from "react";
 
 const images = [image1, image2, image3];
 
-interface LayoutProps {
-  children: React.ReactNode;
-  currentIndex?: number;
-}
+const ContainerLayout = ({ children }: { children: React.ReactNode }) => {
+  const [currentIndex, setCurrentIndex] = useState(0);
 
-const ContainerLayout: React.FC<LayoutProps> = ({
-  children,
-  currentIndex = 0,
-}) => {
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 2000);
+
+    return () => clearInterval(intervalId);
+  }, []);
+
   return (
     <Container>
       <Wrapper>
