@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import ContainerLayout from "./ContainerLayout";
 import { useFormik } from "formik";
 import * as Yup from "yup";
@@ -83,68 +83,31 @@ const BackButton = styled.button`
   color: white;
 `;
 
-const ConfirmationContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-  height: 100%;
-`;
-
-const ConfirmationText = styled.p<{ small?: boolean }>`
-  font-size: ${({ small }) => (small ? "1.3rem" : "1.8rem")};
-  margin: ${({ small }) => (small ? "0.3rem 0 0 0" : "1rem 0 0.5rem 0 ")};
-  font-family: "Roboto", serif;
-  text-align: center;
-  font-weight: 700;
-`;
-
-const EmailHighlight = styled.span`
-  color: #016532;
-  font-weight: bold;
-`;
-
-const CodeInputContainer = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  margin: 4rem 0 1rem 0;
-`;
-
-const CodeInput = styled.input`
-  width: 3.5rem;
-  height: 3.5rem;
-  text-align: center;
-  font-size: 1.5rem;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background: #d9d9d9;
-  color: #000;
-
-  &:focus {
-    outline: none;
-    border: 2px solid #fc5600;
-  }
-`;
-
 const validationSchema = Yup.object({
   email: Yup.string()
     .email("Invalid email address")
     .required("Email is required"),
+  password: Yup.string()
+    .min(8, "Password must be at least 8 characters")
+    .required("Password is required"),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref("password")], "Passwords must match")
+    .required("Confirm Password is required"),
 });
 
 const ResetPassword: React.FC = () => {
   const [isConfirmationView, setIsConfirmationView] = useState(false);
-  const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const formik = useFormik({
     initialValues: {
       email: "",
+      password: "",
+      confirmPassword: "",
     },
     validationSchema,
     onSubmit: (values) => {
       alert(JSON.stringify(values, null, 2));
-      setIsConfirmationView(true);
+      handleVerifyOTP();
     },
   });
 
@@ -153,24 +116,15 @@ const ResetPassword: React.FC = () => {
     navigate("/");
   };
 
-  const handleOtpChange = (value: string, index: number) => {
-    if (/^[0-9]$/.test(value) || value === "") {
-      const newOtp = [...otp];
-      newOtp[index] = value;
-      setOtp(newOtp);
-
-      if (value && index < inputRefs.current.length - 1) {
-        inputRefs.current[index + 1]?.focus();
-      }
-    }
+  const handleVerifyOTP = () => {
+    navigate("/verify?type=reset");
   };
 
-  const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    index: number
-  ) => {
-    if (e.key === "Backspace" && !otp[index] && index > 0) {
-      inputRefs.current[index - 1]?.focus();
+  const handleViewTransition = () => {
+    if (formik.values.email && !formik.errors.email) {
+      setIsConfirmationView(true);
+    } else {
+      formik.setTouched({ email: true });
     }
   };
 
@@ -194,7 +148,7 @@ const ResetPassword: React.FC = () => {
           ) : (
             <HelperText>We'll never share your email.</HelperText>
           )}
-          <ResetPasswordButton type="submit">
+          <ResetPasswordButton type="button" onClick={handleViewTransition}>
             Reset Password
           </ResetPasswordButton>
           <BackButton type="button" onClick={handleSignin}>
@@ -202,32 +156,39 @@ const ResetPassword: React.FC = () => {
           </BackButton>
         </ResetPasswordForm>
       ) : (
-        <ConfirmationContainer>
+        <ResetPasswordForm onSubmit={formik.handleSubmit}>
           <Title>Reset Password</Title>
-          <ConfirmationText>Confirm your email address</ConfirmationText>
-          <ConfirmationText small>
-            We've sent a confirmation code to{" "}
-            <EmailHighlight>xxx@xxx.xx</EmailHighlight>.
-          </ConfirmationText>
-          <ConfirmationText small>
-            Check your inbox and enter the code here.
-          </ConfirmationText>
-          <CodeInputContainer>
-            {otp.map((value, index) => (
-              <CodeInput
-                key={index}
-                value={value}
-                maxLength={1}
-                onChange={(e) => handleOtpChange(e.target.value, index)}
-                onKeyDown={(e) => handleKeyDown(e, index)}
-                ref={(el) => (inputRefs.current[index] = el)}
-              />
-            ))}
-          </CodeInputContainer>
+          <Label htmlFor="password">Password</Label>
+          <Input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter your password"
+            value={formik.values.password}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+          />
+          {formik.touched.password && formik.errors.password && (
+            <ErrorText>{formik.errors.password}</ErrorText>
+          )}
+          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <Input
+            type="password"
+            id="confirmPassword"
+            name="confirmPassword"
+            placeholder="Enter your password again"
+            value={formik.values.confirmPassword}
+            onChange={formik.handleChange}
+            onBlur={formik.handleBlur}
+          />
+          {formik.touched.confirmPassword && formik.errors.confirmPassword && (
+            <ErrorText>{formik.errors.confirmPassword}</ErrorText>
+          )}
+          <ResetPasswordButton type="submit">Submit</ResetPasswordButton>
           <BackButton type="button" onClick={handleSignin}>
             Back to Sign-In
           </BackButton>
-        </ConfirmationContainer>
+        </ResetPasswordForm>
       )}
     </ContainerLayout>
   );

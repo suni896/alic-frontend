@@ -44,7 +44,7 @@ const Input = styled.input`
   }
 `;
 
-const ErrorMessage = styled.div`
+const ErrorText = styled.div`
   color: #fc5600;
   font-size: 0.7rem;
   margin-top: -1.1rem;
@@ -110,6 +110,7 @@ const Register = () => {
     validationSchema,
     onSubmit: (values) => {
       alert(JSON.stringify(values, null, 2));
+      handleVerifyOTP();
     },
   });
 
@@ -117,6 +118,10 @@ const Register = () => {
 
   const handleBack = () => {
     navigate("/");
+  };
+
+  const handleVerifyOTP = () => {
+    navigate("/verify?type=register");
   };
 
   return (
@@ -133,7 +138,7 @@ const Register = () => {
           onBlur={formik.handleBlur}
         />
         {formik.touched.email && formik.errors.email && (
-          <ErrorMessage>{formik.errors.email}</ErrorMessage>
+          <ErrorText>{formik.errors.email}</ErrorText>
         )}
         <Label htmlFor="username">Username</Label>
         <Input
@@ -146,7 +151,7 @@ const Register = () => {
           onBlur={formik.handleChange}
         />
         {formik.touched.username && formik.errors.username && (
-          <ErrorMessage>{formik.errors.username}</ErrorMessage>
+          <ErrorText>{formik.errors.username}</ErrorText>
         )}
         <Label htmlFor="password">Password</Label>
         <Input
@@ -159,7 +164,7 @@ const Register = () => {
           onBlur={formik.handleChange}
         />
         {formik.touched.password && formik.errors.password && (
-          <ErrorMessage>{formik.errors.password}</ErrorMessage>
+          <ErrorText>{formik.errors.password}</ErrorText>
         )}
         <Label htmlFor="confirmPassword">Confirm Password</Label>
         <Input
@@ -172,7 +177,7 @@ const Register = () => {
           onBlur={formik.handleChange}
         />
         {formik.touched.confirmPassword && formik.errors.confirmPassword && (
-          <ErrorMessage>{formik.errors.confirmPassword}</ErrorMessage>
+          <ErrorText>{formik.errors.confirmPassword}</ErrorText>
         )}
         <RegisterButton type="submit">Register</RegisterButton>
         <BackButton type="button" onClick={handleBack}>
