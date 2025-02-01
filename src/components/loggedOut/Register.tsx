@@ -1,8 +1,12 @@
+import React from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import ContainerLayout from "./ContainerLayout";
+
+axios.defaults.baseURL = "https://112.74.92.135:443";
 
 const SigninForm = styled.form`
   display: flex;
@@ -22,7 +26,7 @@ const Title = styled.h1`
 
 const Label = styled.label`
   font-size: 0.9rem;
-  font-family: "Roboto", -serif;
+  font-family: "Roboto", serif;
   font-weight: 400;
   margin-bottom: 0.3rem;
 `;
@@ -80,6 +84,13 @@ const BackButton = styled.button`
   color: white;
 `;
 
+interface RegisterFormValues {
+  email: string;
+  username: string;
+  password: string;
+  confirmPassword: string;
+}
+
 const validationSchema = Yup.object({
   email: Yup.string()
     .email("Invalid email address")
@@ -99,8 +110,10 @@ const validationSchema = Yup.object({
     .required("Username is required"),
 });
 
-const Register = () => {
-  const formik = useFormik({
+const Register: React.FC = () => {
+  const navigate = useNavigate();
+
+  const formik = useFormik<RegisterFormValues>({
     initialValues: {
       email: "",
       username: "",
@@ -108,20 +121,44 @@ const Register = () => {
       confirmPassword: "",
     },
     validationSchema,
-    onSubmit: (values) => {
-      alert(JSON.stringify(values, null, 2));
-      handleVerifyOTP();
+    onSubmit: async (values) => {
+      try {
+        // Send the registration data to the backend
+        const response = await axios.post("/auth/sendmail", {
+          userEmail: values.email, // Email is required
+          userName: values.username, // Username is optional for REGISTER
+          password: values.password, // Password is optional for REGISTER
+          type: "REGISTERED", // Proper type as per the backend spec
+        });
+
+        // Check if the request was successful
+        if (response.data.code === 0) {
+          alert("Verification email sent successfully!");
+          // Redirect to the verification page
+          navigate(`/verify?type=register&email=${values.email}`);
+        } else {
+          alert(response.data.message || "Failed to send verification email.");
+        }
+      } catch (error: unknown) {
+        // Narrow the error type
+        if (axios.isAxiosError(error)) {
+          // Axios-specific error handling
+          console.error("Axios error:", error.response?.data || error.message);
+          alert(
+            error.response?.data?.message ||
+              "Failed to send verification email. Please try again."
+          );
+        } else {
+          // Generic error handling
+          console.error("Unexpected error:", error);
+          alert("An unexpected error occurred. Please try again.");
+        }
+      }
     },
   });
 
-  const navigate = useNavigate();
-
   const handleBack = () => {
     navigate("/");
-  };
-
-  const handleVerifyOTP = () => {
-    navigate("/verify?type=register");
   };
 
   return (
@@ -142,13 +179,13 @@ const Register = () => {
         )}
         <Label htmlFor="username">Username</Label>
         <Input
-          type="string"
+          type="text"
           id="username"
           name="username"
           placeholder="Enter your username"
           value={formik.values.username}
           onChange={formik.handleChange}
-          onBlur={formik.handleChange}
+          onBlur={formik.handleBlur}
         />
         {formik.touched.username && formik.errors.username && (
           <ErrorText>{formik.errors.username}</ErrorText>
@@ -161,7 +198,7 @@ const Register = () => {
           placeholder="Enter your password"
           value={formik.values.password}
           onChange={formik.handleChange}
-          onBlur={formik.handleChange}
+          onBlur={formik.handleBlur}
         />
         {formik.touched.password && formik.errors.password && (
           <ErrorText>{formik.errors.password}</ErrorText>
@@ -174,7 +211,7 @@ const Register = () => {
           placeholder="Enter your password again"
           value={formik.values.confirmPassword}
           onChange={formik.handleChange}
-          onBlur={formik.handleChange}
+          onBlur={formik.handleBlur}
         />
         {formik.touched.confirmPassword && formik.errors.confirmPassword && (
           <ErrorText>{formik.errors.confirmPassword}</ErrorText>

@@ -2,6 +2,9 @@ import styled from "styled-components";
 import ContainerLayout from "./ContainerLayout";
 import { useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import axios from "axios";
+
+axios.defaults.baseURL = "https://112.74.92.135:443";
 
 const ConfirmationContainer = styled.div`
   display: flex;
@@ -55,7 +58,7 @@ const CodeInput = styled.input`
   }
 `;
 
-const BackButton = styled.button`
+const SubmitButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
@@ -70,16 +73,28 @@ const BackButton = styled.button`
   color: white;
 `;
 
-const VerifyOTP = () => {
-  const [searchParams] = useSearchParams();
-  const type = searchParams.get("type"); // Get the 'type' query parameter value
-  const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
-  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+const BackButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 60%;
+  height: 55px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  cursor: pointer;
+  margin: 1rem auto 0 auto;
+  border-radius: 5px;
+  background-color: #fc5600;
+  color: white;
+`;
 
+const VerifyOTP: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const type = searchParams.get("type");
+  const [otp, setOtp] = useState<string[]>(new Array(6).fill(""));
+  const [email, setEmail] = useState<string>("example@email.com"); //
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const navigate = useNavigate();
-  const handleSignin = () => {
-    navigate("/");
-  };
 
   const handleOtpChange = (value: string, index: number) => {
     if (/^[0-9]$/.test(value) || value === "") {
@@ -102,7 +117,33 @@ const VerifyOTP = () => {
     }
   };
 
-  // Determine the title based on the 'type' query parameter
+  const handleVerifyOTP = async () => {
+    try {
+      const verifiCode = otp.join("");
+      const response = await axios.post("/auth/verify_code", {
+        email,
+        verifiCode,
+        type: type === "register" ? 1 : 3, // 1: Register, 3: Reset Password
+      });
+
+      if (response.data.token) {
+        alert("Verification successful!");
+        if (type === "reset") {
+          navigate(`/reset-password?token=${response.data.token}`);
+        } else {
+          navigate("/");
+        }
+      }
+    } catch (error) {
+      console.error("Error verifying OTP:", error);
+      alert("Failed to verify OTP. Please try again.");
+    }
+  };
+
+  const handleSignin = () => {
+    navigate("/");
+  };
+
   const title =
     type === "register"
       ? "Register"
@@ -117,7 +158,7 @@ const VerifyOTP = () => {
         <ConfirmationText>Confirm your email address</ConfirmationText>
         <ConfirmationText small>
           We've sent a confirmation code to{" "}
-          <EmailHighlight>xxx@xxx.xx</EmailHighlight>.
+          <EmailHighlight>{email}</EmailHighlight>.
         </ConfirmationText>
         <ConfirmationText small>
           Check your inbox and enter the code here.
@@ -134,6 +175,9 @@ const VerifyOTP = () => {
             />
           ))}
         </CodeInputContainer>
+        <SubmitButton type="button" onClick={handleVerifyOTP}>
+          Verify Code
+        </SubmitButton>
         <BackButton type="button" onClick={handleSignin}>
           Back to Sign-In
         </BackButton>

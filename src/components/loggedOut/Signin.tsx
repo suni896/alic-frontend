@@ -2,7 +2,10 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 import ContainerLayout from "./ContainerLayout";
+
+axios.defaults.baseURL = "https://112.74.92.135:443";
 
 const SigninForm = styled.form`
   display: flex;
@@ -106,18 +109,40 @@ const validationSchema = Yup.object({
 });
 
 const Signin = () => {
+  const navigate = useNavigate();
+
   const formik = useFormik({
     initialValues: {
       email: "",
       password: "",
     },
     validationSchema,
-    onSubmit: (values) => {
-      alert(JSON.stringify(values, null, 2));
+    onSubmit: async (values) => {
+      try {
+        // Send login request to the backend
+        const response = await axios.post("/auth/login", {
+          userEmail: values.email,
+          password: values.password,
+        });
+
+        // Handle successful response
+        if (response.data.code === 0) {
+          const token = response.data.data["Bearer Token"]; // Extract the token
+          alert("Login successful!");
+          localStorage.setItem("authToken", token); // Store the token in local storage
+        } else {
+          alert(
+            response.data.message ||
+              "Login failed. Please check your credentials."
+          );
+        }
+      } catch (error) {
+        // Handle errors
+        console.error("Login error:", error);
+        alert("Login failed. Please check your credentials and try again.");
+      }
     },
   });
-
-  const navigate = useNavigate();
 
   const handleRegister = () => {
     navigate("/register");
@@ -154,7 +179,7 @@ const Signin = () => {
           placeholder="Enter your password"
           value={formik.values.password}
           onChange={formik.handleChange}
-          onBlur={formik.handleChange}
+          onBlur={formik.handleBlur}
         />
         {formik.touched.password && formik.errors.password ? (
           <ErrorText>{formik.errors.password}</ErrorText>
