@@ -140,9 +140,13 @@ const RoomContainer = styled.div`
 const Star = styled(IoIosStarOutline)`
   color: black;
   font-size: 1.3rem;
-  margin-top: 0.2rem;
-  margin-left: 1rem;
-  margin-right: 1rem;
+  margin: 0.2rem 1rem 0 1rem;
+`;
+
+const Tag = styled(FiTag)`
+  color: black;
+  font-size: 1.3rem;
+  margin: 0.2rem 1rem 0 1rem;
 `;
 
 const RoomDescContainer = styled.div`
@@ -178,6 +182,14 @@ const Sidebar: React.FC = () => {
   };
 
   const rooms = [
+    { title: "1", desc: "Description for Room 1." },
+    { title: "2", desc: "Description for Room 2." },
+    { title: "3", desc: "Description for Room 3." },
+    { title: "4", desc: "Description for Room 4." },
+    { title: "5", desc: "Description for Room 5." },
+  ];
+
+  const classes = [
     { title: "1", desc: "Description for Room 1." },
     { title: "2", desc: "Description for Room 2." },
     { title: "3", desc: "Description for Room 3." },
@@ -230,12 +242,12 @@ const Sidebar: React.FC = () => {
       </SectionTitleContainer>
       <SectionLineSeparator />
       <RoomList>
-        {rooms.map((room, index) => (
+        {classes.map((tag, index) => (
           <RoomContainer key={index}>
-            <Star />
+            <Tag />
             <RoomDescContainer>
-              <RoomTitle>ROOM {room.title}</RoomTitle>
-              <RoomDesc>{room.desc}</RoomDesc>
+              <RoomTitle>CLASS {tag.title}</RoomTitle>
+              <RoomDesc>{tag.desc}</RoomDesc>
             </RoomDescContainer>
           </RoomContainer>
         ))}
