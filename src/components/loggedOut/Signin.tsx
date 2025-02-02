@@ -119,17 +119,15 @@ const Signin = () => {
     validationSchema,
     onSubmit: async (values) => {
       try {
-        // Send login request to the backend
         const response = await axios.post("/auth/login", {
           userEmail: values.email,
           password: values.password,
         });
 
-        // Handle successful response
         if (response.data.code === 0) {
-          const token = response.data.data["Bearer Token"]; // Extract the token
+          const token = response.data.data["Bearer Token"];
           alert("Login successful!");
-          localStorage.setItem("authToken", token); // Store the token in local storage
+          localStorage.setItem("authToken", token);
         } else {
           alert(
             response.data.message ||
@@ -137,7 +135,6 @@ const Signin = () => {
           );
         }
       } catch (error) {
-        // Handle errors
         console.error("Login error:", error);
         alert("Login failed. Please check your credentials and try again.");
       }

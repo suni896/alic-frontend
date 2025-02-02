@@ -128,28 +128,23 @@ const Register: React.FC = () => {
           userEmail: values.email, // Email is required
           userName: values.username, // Username is optional for REGISTER
           password: values.password, // Password is optional for REGISTER
-          type: "REGISTERED", // Proper type as per the backend spec
+          type: "REGISTERED",
         });
 
-        // Check if the request was successful
         if (response.data.code === 0) {
           alert("Verification email sent successfully!");
-          // Redirect to the verification page
           navigate(`/verify?type=register&email=${values.email}`);
         } else {
           alert(response.data.message || "Failed to send verification email.");
         }
       } catch (error: unknown) {
-        // Narrow the error type
         if (axios.isAxiosError(error)) {
-          // Axios-specific error handling
           console.error("Axios error:", error.response?.data || error.message);
           alert(
             error.response?.data?.message ||
               "Failed to send verification email. Please try again."
           );
         } else {
-          // Generic error handling
           console.error("Unexpected error:", error);
           alert("An unexpected error occurred. Please try again.");
         }
