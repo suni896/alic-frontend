@@ -1,16 +1,21 @@
-import React from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
-import { AiOutlinePlus, AiOutlineCaretDown } from "react-icons/ai";
+import { AiOutlinePlus } from "react-icons/ai";
 import { IoIosArrowDown, IoIosArrowUp, IoIosStarOutline } from "react-icons/io";
 import { FiTag } from "react-icons/fi";
-import { BsChevronDoubleLeft } from "react-icons/bs";
+import { CiSearch } from "react-icons/ci";
+import CreateClassJoinButton from "./CreateClassJoinButton";
+import CreateRoomJoinButton from "./CreateRoomJoinButton";
 
 const SidebarContainer = styled.div`
-  width: 250px;
-  background-color: #ffffff; /* White background for the sidebar */
-  padding: 2rem 0.1rem 1.5rem 1.5rem;
+  width: 22%;
+  height: 100vh;
+  background-color: #ffffff;
+  padding: 2rem 0rem 1.5rem 1.5rem;
   display: flex;
   flex-direction: column;
+  border-right: 1px solid #016532;
+  margin-top: 72px;
 `;
 
 const ProfileSection = styled.div`
@@ -22,7 +27,6 @@ const ProfileSection = styled.div`
 const LineSeparator = styled.hr`
   width: 80%;
   margin-left: 0;
-  margin-bottom: 35px;
 `;
 
 const Avatar = styled.div`
@@ -62,31 +66,27 @@ const UserEmail = styled.span`
 
 const SearchContainer = styled.div`
   display: flex;
+  position: relative;
+  gap: 10px;
   align-items: center;
+  margin-top: 1.5rem;
+`;
+
+const SearchIcon = styled(CiSearch)`
+  position: absolute;
+  font-size: 1.5rem;
+  left: 0.5rem;
 `;
 
 const SearchInput = styled.input`
-  width: 70%;
-  padding: 8px 12px;
-  font-size: 14px;
+  width: 60%;
+  padding: 8px 33px;
+  font-size: 0.8rem;
   border: 1px solid #b7b7b7;
   color: #757575;
   background: white;
   border-radius: 6px;
   cursor: pointer;
-`;
-
-const SearchSquare = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-left: 0.7rem;
-  width: 2rem;
-  height: 2rem;
-  background: #d9d9d9;
-  border-radius: 0;
-  cursor: pointer;
-  padding: 0;
 `;
 
 const StyledPlus = styled(AiOutlinePlus)`
@@ -95,10 +95,17 @@ const StyledPlus = styled(AiOutlinePlus)`
   cursor: pointer;
 `;
 
+const StyledArrowUp = styled(IoIosArrowUp)`
+  color: #016532;
+  font-size: 20px;
+  cursor: pointer;
+`;
+
 const SectionTitleContainer = styled.div`
   display: flex;
+  gap: 1rem;
   align-items: center;
-  margin-top: 45px;
+  margin-top: 2rem;
 `;
 
 const SectionLineSeparator = styled.hr`
@@ -107,13 +114,6 @@ const SectionLineSeparator = styled.hr`
   border: none;
   border-top: 2px solid #d9d9d9;
   margin-bottom: 1rem;
-`;
-
-const StyledArrowUp = styled(IoIosArrowUp)`
-  color: black;
-  font-size: 1.1rem;
-  cursor: pointer;
-  margin-right: 1rem;
 `;
 
 const SectionTitle = styled.div`
@@ -126,7 +126,7 @@ const SectionTitle = styled.div`
 const RoomList = styled.ul`
   list-style: none;
   padding: 0;
-  margin: 0;
+  margin-top: 0;
   max-height: 18vh;
   overflow-y: auto;
 `;
@@ -169,17 +169,12 @@ const RoomDesc = styled.p`
   margin: 0;
 `;
 
-const StyledArrowLeft = styled(BsChevronDoubleLeft)`
-  color: #016532;
-  margin: 6vh auto 0 auto;
-  font-size: 1.5rem;
-  cursor: pointer;
-`;
-
 const Sidebar: React.FC = () => {
-  const handleClick = () => {
-    alert("Plus icon clicked!");
-  };
+  const [roomSearch, setRoomSearch] = useState("");
+  const [tagSearch, setTagSearch] = useState("");
+
+  const [isRoomOverlayVisible, setIsRoomOverlayVisible] = useState(false);
+  const [isTagOverlayVisible, setIsTagOverlayVisible] = useState(false);
 
   const rooms = [
     { title: "1", desc: "Description for Room 1." },
@@ -190,12 +185,20 @@ const Sidebar: React.FC = () => {
   ];
 
   const classes = [
-    { title: "1", desc: "Description for Room 1." },
-    { title: "2", desc: "Description for Room 2." },
-    { title: "3", desc: "Description for Room 3." },
-    { title: "4", desc: "Description for Room 4." },
-    { title: "5", desc: "Description for Room 5." },
+    { title: "1", desc: "Description for Class 1." },
+    { title: "2", desc: "Description for Class 2." },
+    { title: "3", desc: "Description for Class 3." },
+    { title: "4", desc: "Description for Class 4." },
+    { title: "5", desc: "Description for Class 5." },
   ];
+
+  const filteredRooms = rooms.filter((room) =>
+    room.title.toLowerCase().includes(roomSearch.toLowerCase())
+  );
+
+  const filteredTags = classes.filter((tag) =>
+    tag.title.toLowerCase().includes(tagSearch.toLowerCase())
+  );
 
   return (
     <SidebarContainer>
@@ -212,20 +215,27 @@ const Sidebar: React.FC = () => {
       <LineSeparator />
 
       <SearchContainer>
-        <SearchInput placeholder="Search in MY ROOMS" />
-        <SearchSquare onClick={handleClick}>
-          <StyledPlus />
-        </SearchSquare>
+        <SearchIcon />
+        <SearchInput
+          placeholder="Search in MY ROOMS"
+          value={roomSearch}
+          onChange={(e) => setRoomSearch(e.target.value)}
+        />
       </SearchContainer>
 
       <SectionTitleContainer>
-        <StyledArrowUp />
+        {isRoomOverlayVisible ? (
+          <StyledArrowUp onClick={() => setIsRoomOverlayVisible(false)} />
+        ) : (
+          <StyledPlus onClick={() => setIsRoomOverlayVisible(true)} />
+        )}
         <SectionTitle>MY ROOMS</SectionTitle>
       </SectionTitleContainer>
+      {isRoomOverlayVisible && <CreateRoomJoinButton />}
       <SectionLineSeparator />
 
       <RoomList>
-        {rooms.map((room, index) => (
+        {filteredRooms.map((room, index) => (
           <RoomContainer key={index}>
             <Star />
             <RoomDescContainer>
@@ -236,13 +246,28 @@ const Sidebar: React.FC = () => {
         ))}
       </RoomList>
 
+      <SearchContainer>
+        <SearchIcon />
+        <SearchInput
+          placeholder="Search in MY TAGS"
+          value={tagSearch}
+          onChange={(e) => setTagSearch(e.target.value)}
+        />
+      </SearchContainer>
+
       <SectionTitleContainer>
-        <StyledArrowUp />
+        {isTagOverlayVisible ? (
+          <StyledArrowUp onClick={() => setIsTagOverlayVisible(false)} />
+        ) : (
+          <StyledPlus onClick={() => setIsTagOverlayVisible(true)} />
+        )}
         <SectionTitle>MY TAGS</SectionTitle>
       </SectionTitleContainer>
+      {isTagOverlayVisible && <CreateClassJoinButton />}
       <SectionLineSeparator />
+
       <RoomList>
-        {classes.map((tag, index) => (
+        {filteredTags.map((tag, index) => (
           <RoomContainer key={index}>
             <Tag />
             <RoomDescContainer>
@@ -252,7 +277,6 @@ const Sidebar: React.FC = () => {
           </RoomContainer>
         ))}
       </RoomList>
-      <StyledArrowLeft />
     </SidebarContainer>
   );
 };

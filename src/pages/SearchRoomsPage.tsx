@@ -1,13 +1,19 @@
-import UserLayout from "../components/loggedIn/UserLayout";
 import SearchRooms from "../components/loggedIn/SearchRooms";
+import Layout from "../components/loggedOut/Layout";
+import Sidebar from "../components/loggedIn/Sidebar";
+import { styled } from "styled-components";
 
+const Container = styled.div`
+  display: flex;
+`;
 const SearchRoomsPage = () => {
   return (
-    <>
-      <UserLayout>
+    <Layout>
+      <Container>
+        <Sidebar />
         <SearchRooms />
-      </UserLayout>
-    </>
+      </Container>
+    </Layout>
   );
 };
 
