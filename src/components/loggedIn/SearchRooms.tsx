@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from "react";
 import { CiSearch } from "react-icons/ci";
 import styled from "styled-components";
+import CreateRoomComponent from "./CreateRoomComponent"; // Modal Component
 
+// Styled Components
 const Container = styled.div`
   background: white;
   width: 100%;
@@ -124,41 +126,38 @@ const PageButton = styled.button<{ active?: boolean }>`
   }
 `;
 
-const SearchRooms = () => {
+// Main Component
+const SearchRooms: React.FC = () => {
   const rooms = Array.from({ length: 68 }, (_, i) => ({
     title: `${i + 1}`,
     admin: "Jane Smith",
-    desc: `Description for Room ${i + 1}.`, // Shorter description to test dynamic height
+    desc: `Description for Room ${i + 1}.`,
   }));
 
   const [currentPage, setCurrentPage] = useState(1);
   const [roomsPerPage, setRoomsPerPage] = useState(8);
+  const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
 
   const roomRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const calculateRoomsPerPage = () => {
       if (roomRef.current) {
-        const roomHeight = roomRef.current.offsetHeight; // Dynamically measure height of RoomContainer
-        const containerHeight = window.innerHeight * 0.65; // 65vh in pixels
-        const verticalGap = 32; // Gap between rows (2rem in CSS)
+        const roomHeight = roomRef.current.offsetHeight;
+        const containerHeight = window.innerHeight * 0.65;
+        const verticalGap = 32;
 
-        // Total height of one row (room height + vertical gap)
         const rowHeight = roomHeight + verticalGap;
-
-        // Calculate rows that fit into the container
         const rowsPerPage = Math.floor(containerHeight / rowHeight);
 
-        // Multiply by number of columns (2 columns)
         const calculatedRoomsPerPage = rowsPerPage * 2;
 
-        setRoomsPerPage(calculatedRoomsPerPage || 8); // Fallback to 8 if calculation fails
+        setRoomsPerPage(calculatedRoomsPerPage || 8);
       }
     };
 
     calculateRoomsPerPage();
 
-    // Recalculate on window resize
     window.addEventListener("resize", calculateRoomsPerPage);
     return () => {
       window.removeEventListener("resize", calculateRoomsPerPage);
@@ -173,97 +172,59 @@ const SearchRooms = () => {
     }
   };
 
-  const getPaginationButtons = () => {
-    const buttons = [];
-    const maxVisibleButtons = 3;
-
-    buttons.push(
-      <PageButton
-        key={1}
-        active={currentPage === 1}
-        onClick={() => handlePageChange(1)}
-      >
-        1
-      </PageButton>
-    );
-
-    if (currentPage > maxVisibleButtons) {
-      buttons.push(<span key="start-ellipsis">...</span>);
-    }
-
-    const start = Math.max(2, currentPage - 1);
-    const end = Math.min(totalPages - 1, currentPage + 1);
-
-    for (let i = start; i <= end; i++) {
-      buttons.push(
-        <PageButton
-          key={i}
-          active={currentPage === i}
-          onClick={() => handlePageChange(i)}
-        >
-          {i}
-        </PageButton>
-      );
-    }
-
-    if (currentPage < totalPages - maxVisibleButtons) {
-      buttons.push(<span key="end-ellipsis">...</span>);
-    }
-
-    if (totalPages > 1) {
-      buttons.push(
-        <PageButton
-          key={totalPages}
-          active={currentPage === totalPages}
-          onClick={() => handlePageChange(totalPages)}
-        >
-          {totalPages}
-        </PageButton>
-      );
-    }
-
-    return buttons;
-  };
-
   const currentRooms = rooms.slice(
     (currentPage - 1) * roomsPerPage,
     currentPage * roomsPerPage
   );
 
   return (
-    <Container>
-      <TopContainer>
-        <Title>Public Chat Rooms</Title>
-        <SearchContainer>
-          <SearchInput placeholder="Search Public Rooms" />
-          <SearchIcon />
-        </SearchContainer>
-      </TopContainer>
-      <SearchRoomsContainer>
-        {currentRooms.map((room, index) => (
-          <RoomContainer key={index} ref={index === 0 ? roomRef : null}>
-            <RoomTitle>Room {room.title}</RoomTitle>
-            <RoomAdmin>Admin: {room.admin}</RoomAdmin>
-            <RoomDescription>{room.desc}</RoomDescription>
-          </RoomContainer>
-        ))}
-      </SearchRoomsContainer>
-      <Footer>
-        <PageButton
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-        >
-          Previous
-        </PageButton>
-        {getPaginationButtons()}
-        <PageButton
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-        >
-          Next
-        </PageButton>
-      </Footer>
-    </Container>
+    <>
+      {isCreateRoomOpen && (
+        <CreateRoomComponent onClose={() => setIsCreateRoomOpen(false)} />
+      )}
+      <Container style={{ filter: isCreateRoomOpen ? "blur(5px)" : "none" }}>
+        <TopContainer>
+          <Title>Public Chat Rooms</Title>
+          <SearchContainer>
+            <SearchInput placeholder="Search Public Rooms" />
+            <SearchIcon />
+          </SearchContainer>
+        </TopContainer>
+        <SearchRoomsContainer>
+          {currentRooms.map((room, index) => (
+            <RoomContainer key={index} ref={index === 0 ? roomRef : null}>
+              <RoomTitle>Room {room.title}</RoomTitle>
+              <RoomAdmin>Admin: {room.admin}</RoomAdmin>
+              <RoomDescription>{room.desc}</RoomDescription>
+            </RoomContainer>
+          ))}
+        </SearchRoomsContainer>
+        <Footer>
+          <PageButton
+            onClick={() => handlePageChange(currentPage - 1)}
+            disabled={currentPage === 1}
+          >
+            Previous
+          </PageButton>
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+            <PageButton
+              key={page}
+              active={currentPage === page}
+              onClick={() => handlePageChange(page)}
+            >
+              {page}
+            </PageButton>
+          ))}
+          <PageButton
+            onClick={() => handlePageChange(currentPage + 1)}
+            disabled={currentPage === totalPages}
+          >
+            Next
+          </PageButton>
+        </Footer>
+      </Container>
+    </>
   );
 };
+
 export default SearchRooms;

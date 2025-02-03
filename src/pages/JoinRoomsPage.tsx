@@ -1,21 +1,21 @@
-import SearchRooms from "../components/loggedIn/SearchRooms";
 import Layout from "../components/loggedOut/Layout";
 import Sidebar from "../components/loggedIn/Sidebar";
+import JoinRooms from "../components/loggedIn/JoinRooms";
 import { styled } from "styled-components";
 
 const Container = styled.div`
   display: flex;
 `;
 
-const SearchRoomsPage = () => {
+const JoinRoomsPage = () => {
   return (
     <Layout>
       <Container>
         <Sidebar />
-        <SearchRooms />
+        <JoinRooms />
       </Container>
     </Layout>
   );
 };
 
-export default SearchRoomsPage;
+export default JoinRoomsPage;

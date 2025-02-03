@@ -1,6 +1,7 @@
 import styled from "styled-components";
 import { IoMdPersonAdd } from "react-icons/io";
 import { MdPeopleAlt } from "react-icons/md";
+import { FiTag } from "react-icons/fi";
 
 const CreateClassJoinButtonContainer = styled.div`
   background: white;
@@ -19,17 +20,6 @@ const NewContainer = styled.button`
   background: #016532;
 `;
 
-const StyledIoMdPersonAdd = styled(IoMdPersonAdd)`
-  width: 20px;
-  height: 20px;
-`;
-
-const StyledMdPeopleAlt = styled(MdPeopleAlt)`
-  width: 20px;
-  height: 20px;
-  margin-left: 2px;x
-`;
-
 const StyledText = styled.span`
   font-family: Roboto;
   font-weight: 700;
@@ -40,7 +30,7 @@ const CreateClassJoinButton = () => {
   return (
     <CreateClassJoinButtonContainer>
       <NewContainer>
-        <StyledIoMdPersonAdd />
+        <FiTag />
         <StyledText>CREATE NEW TAG</StyledText>
       </NewContainer>
     </CreateClassJoinButtonContainer>

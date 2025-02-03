@@ -57,6 +57,14 @@ const StyledArrowDown = styled(IoIosArrowDown)`
   color: black;
   margin-left: 0.5rem;
   font-size: 1.1rem;
+  cursor: pointer;
+`;
+
+const StyledArrowUp = styled(IoIosArrowUp)`
+  color: black;
+  margin-left: 0.5rem;
+  font-size: 1.1rem;
+  cursor: pointer;
 `;
 
 const UserEmail = styled.span`
@@ -90,12 +98,6 @@ const SearchInput = styled.input`
 `;
 
 const StyledPlus = styled(AiOutlinePlus)`
-  color: #016532;
-  font-size: 20px;
-  cursor: pointer;
-`;
-
-const StyledArrowUp = styled(IoIosArrowUp)`
   color: #016532;
   font-size: 20px;
   cursor: pointer;
@@ -175,6 +177,7 @@ const Sidebar: React.FC = () => {
 
   const [isRoomOverlayVisible, setIsRoomOverlayVisible] = useState(false);
   const [isTagOverlayVisible, setIsTagOverlayVisible] = useState(false);
+  const [isRoomListVisible, setIsRoomListVisible] = useState(true); // Default to true to show rooms initially
 
   const rooms = [
     { title: "1", desc: "Description for Room 1." },
@@ -224,27 +227,36 @@ const Sidebar: React.FC = () => {
       </SearchContainer>
 
       <SectionTitleContainer>
+        {/* Toggle Arrow Icons */}
+        {isRoomListVisible ? (
+          <StyledArrowUp onClick={() => setIsRoomListVisible(false)} />
+        ) : (
+          <StyledArrowDown onClick={() => setIsRoomListVisible(true)} />
+        )}
+        <SectionTitle>MY ROOMS</SectionTitle>
         {isRoomOverlayVisible ? (
           <StyledArrowUp onClick={() => setIsRoomOverlayVisible(false)} />
         ) : (
           <StyledPlus onClick={() => setIsRoomOverlayVisible(true)} />
         )}
-        <SectionTitle>MY ROOMS</SectionTitle>
       </SectionTitleContainer>
       {isRoomOverlayVisible && <CreateRoomJoinButton />}
       <SectionLineSeparator />
 
-      <RoomList>
-        {filteredRooms.map((room, index) => (
-          <RoomContainer key={index}>
-            <Star />
-            <RoomDescContainer>
-              <RoomTitle>ROOM {room.title}</RoomTitle>
-              <RoomDesc>{room.desc}</RoomDesc>
-            </RoomDescContainer>
-          </RoomContainer>
-        ))}
-      </RoomList>
+      {/* Conditionally Render Room List */}
+      {isRoomListVisible && (
+        <RoomList>
+          {filteredRooms.map((room, index) => (
+            <RoomContainer key={index}>
+              <Star />
+              <RoomDescContainer>
+                <RoomTitle>ROOM {room.title}</RoomTitle>
+                <RoomDesc>{room.desc}</RoomDesc>
+              </RoomDescContainer>
+            </RoomContainer>
+          ))}
+        </RoomList>
+      )}
 
       <SearchContainer>
         <SearchIcon />
