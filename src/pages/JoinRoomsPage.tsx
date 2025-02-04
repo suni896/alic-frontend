@@ -12,7 +12,11 @@ const JoinRoomsPage = () => {
     <Layout>
       <Container>
         <Sidebar />
-        <JoinRooms />
+        <JoinRooms
+          onClose={function (): void {
+            throw new Error("Function not implemented.");
+          }}
+        />
       </Container>
     </Layout>
   );

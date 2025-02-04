@@ -3,7 +3,6 @@ import { CiSearch } from "react-icons/ci";
 import styled from "styled-components";
 import CreateRoomComponent from "./CreateRoomComponent"; // Modal Component
 
-// Styled Components
 const Container = styled.div`
   background: white;
   width: 100%;
@@ -126,7 +125,6 @@ const PageButton = styled.button<{ active?: boolean }>`
   }
 `;
 
-// Main Component
 const SearchRooms: React.FC = () => {
   const rooms = Array.from({ length: 68 }, (_, i) => ({
     title: `${i + 1}`,

@@ -4,7 +4,7 @@ import RegisterPage from "./pages/RegisterPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import VerifyOTPPage from "./pages/VerifyOTPPage";
 import SearchRoomsPage from "./pages/SearchRoomsPage";
-import JoinRoomsPage from "./pages/JoinRoomsPage";
+import MyClassPage from "./pages/MyClassPage";
 
 function App() {
   return (
@@ -15,7 +15,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
         <Route path="/verify" element={<VerifyOTPPage />} />
         <Route path="/search-rooms" element={<SearchRoomsPage />} />
-        <Route path="/join-rooms" element={<JoinRoomsPage />} />
+        <Route path="/my-class-1" element={<MyClassPage />} />
       </Routes>
     </BrowserRouter>
   );

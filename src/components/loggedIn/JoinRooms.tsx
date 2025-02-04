@@ -1,20 +1,44 @@
 import React, { useState, useEffect } from "react";
+import { CiSearch } from "react-icons/ci";
+import { RxCross2 } from "react-icons/rx";
 import styled, { css } from "styled-components";
 
-// Styled Components
 const Container = styled.div`
   background: white;
   width: 100%;
-  margin-top: 72px;
 `;
 
-const SearchBar = styled.input`
+const StyledCross = styled(RxCross2)`
+  color: #016532;
+`;
+
+const SearchContainer = styled.div`
+  display: flex;
+  position: relative;
+  gap: 2rem;
+  align-items: center;
+  margin: 2.2% 4%;
+`;
+
+const SearchIcon = styled(CiSearch)`
+  position: absolute;
+  font-size: 2.2rem;
+  color: #b3b3b3;
+  left: 0.5rem;
+`;
+
+const SearchInput = styled.input`
   width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  height: 5vh;
-  border: 1px solid #ccc;
-  border-radius: 5px;
+  height: 4vh;
+  padding: 0.65rem 3.5rem;
+  font-size: 1.2rem;
+  font-family: Roboto;
+  font-weight: 400;
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  color: #b3b3b3;
+  background: white;
+  cursor: pointer;
 `;
 
 const RoomList = styled.div<{ blur: boolean }>`
@@ -22,39 +46,37 @@ const RoomList = styled.div<{ blur: boolean }>`
   flex-direction: column;
   gap: 10px;
   max-height: 80vh;
-  overflow-y: auto; /* Enable vertical scrolling */
-  border: 1px solid #e0e0e0;
-  padding: 10px;
+  overflow-y: auto;
+  padding: 0 4%;
+
   ${({ blur }) =>
     blur &&
     css`
-      filter: blur(5px); /* Apply blur when modals are open */
+      filter: blur(5px);
       pointer-events: none;
     `}
 `;
 
 const RoomCard = styled.div`
-  border: 2px solid #4caf50;
-  border-radius: 5px;
-  padding: 15px;
+  border: 1px solid #016532;
+  border-radius: 8px;
+  padding: 0.7rem 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 1.5vh;
 `;
 
-const RoomHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-weight: bold;
+const RoomHeader = styled.span`
+  font-family: Roboto;
+  font-weight: 600;
 `;
 
 const JoinButton = styled.button`
-  padding: 5px 10px;
-  background-color: #4caf50;
-  color: white;
-  border: none;
-  border-radius: 3px;
+  padding: 0.5rem 1.5rem;
+  background-color: #eaeaea;
+  color: #016532;
+  border: 1px solid #016532;
+  border-radius: 6px;
   cursor: pointer;
 
   &:hover {
@@ -63,8 +85,10 @@ const JoinButton = styled.button`
 `;
 
 const RoomInfo = styled.div`
-  font-size: 14px;
-  color: #555;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-family: Roboto;
 `;
 
 const Overlay = styled.div`
@@ -73,7 +97,7 @@ const Overlay = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5); /* Semi-transparent background */
+  background: rgba(0, 0, 0, 0.5);
   display: flex;
   justify-content: center;
   align-items: center;
@@ -82,47 +106,80 @@ const Overlay = styled.div`
 
 const Modal = styled.div`
   background: white;
-  border: 1px solid #4caf50;
-  border-radius: 5px;
-  padding: 20px;
-  width: 300px;
-  text-align: center;
+  border: 1px solid #016532;
+  border-radius: 8px;
+  padding: 1rem 1.5rem;
+  width: 20%;
+  position: relative;
+`;
+
+const ModalCloseButton = styled.button`
+  position: absolute;
+  top: 0.5vh;
+  right: 1%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+
+  &:hover {
+    opacity: 0.7;
+  }
+`;
+
+const PasswordTitle = styled.label`
+  font-family: Roboto;
+  font-weight: 400;
 `;
 
 const PasswordInput = styled.input`
+  margin-top: 1vh;
+  margin-bottom: 3vh;
+  width: 70%;
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #016532;
+  border-radius: 8px;
+  color: #b3b3b3;
+  background-color: white;
+`;
+
+const ButtonContainer = styled.div`
   width: 100%;
-  padding: 10px;
-  font-size: 14px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  margin-bottom: 10px;
+  display: flex;
+  justify-content: center;
 `;
 
 const SubmitButton = styled.button`
-  padding: 10px;
+  padding: 0.5rem;
   background-color: black;
   color: white;
   border: none;
-  border-radius: 3px;
+  border-radius: 8px;
   cursor: pointer;
 
   &:hover {
-    background-color: #333;
+    background-color: #016532;
   }
 `;
 
 const ErrorMessage = styled.div`
-  font-size: 16px;
-  color: #333;
-  margin-bottom: 10px;
+  font-size: 1rem;
+  color: black;
+  font-weight: 600;
+  margin-bottom: 2.5vh;
 `;
 
-const CloseButton = styled.button`
+const ErrorModalButton = styled.button`
   padding: 5px 10px;
   background-color: black;
+  margin-left: 44%;
   color: white;
   border: none;
-  border-radius: 3px;
+  border-radius: 6px;
   cursor: pointer;
 
   &:hover {
@@ -130,7 +187,6 @@ const CloseButton = styled.button`
   }
 `;
 
-// Mock Database
 type Room = {
   id: number;
   title: string;
@@ -141,30 +197,33 @@ type Room = {
 const mockRoomsNotJoined: Room[] = [
   {
     id: 1,
-    title: "Room 1",
+    title: "ROOM 1",
     members: 3,
     description: "For Computer Science students",
   },
-  { id: 2, title: "Room 2", members: 5, description: "For Math enthusiasts" },
+  { id: 2, title: "ROOM 2", members: 5, description: "For Math enthusiasts" },
   {
     id: 3,
-    title: "Room 3",
+    title: "ROOM 3",
     members: 10,
     description: "For Physics discussions",
   },
-  { id: 4, title: "Room 4", members: 8, description: "For Literature lovers" },
+  { id: 4, title: "ROOM 4", members: 8, description: "For Literature lovers" },
   {
     id: 5,
-    title: "Room 5",
+    title: "ROOM 5",
     members: 4,
     description: "For History discussions",
   },
-  { id: 6, title: "Room 6", members: 7, description: "For Art enthusiasts" },
-  { id: 7, title: "Room 7", members: 6, description: "For Music discussions" },
+  { id: 6, title: "ROOM 6", members: 7, description: "For Art enthusiasts" },
+  { id: 7, title: "ROOM 7", members: 6, description: "For Music discussions" },
 ];
 
-// React Component
-const RoomPlatform: React.FC = () => {
+interface CreateRoomComponentProps {
+  onClose: () => void;
+}
+
+const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [filteredRooms, setFilteredRooms] = useState<Room[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
@@ -172,9 +231,7 @@ const RoomPlatform: React.FC = () => {
   const [showErrorModal, setShowErrorModal] = useState<boolean>(false);
 
   useEffect(() => {
-    // Simulate fetching data from database
     setRooms(mockRoomsNotJoined);
-    setFilteredRooms(mockRoomsNotJoined);
   }, []);
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -196,43 +253,54 @@ const RoomPlatform: React.FC = () => {
 
   return (
     <Container>
-      <SearchBar
-        placeholder="Search in Platform"
-        value={searchQuery}
-        onChange={handleSearch}
-      />
+      <ModalCloseButton onClick={onClose}>
+        <StyledCross size={24} />
+      </ModalCloseButton>
+      <SearchContainer>
+        <SearchIcon />
+        <SearchInput
+          placeholder="Search in Platform"
+          value={searchQuery}
+          onChange={handleSearch}
+        />
+      </SearchContainer>
 
-      <RoomList blur={showPasswordModal || showErrorModal}>
-        {filteredRooms.map((room) => (
-          <RoomCard key={room.id}>
-            <RoomHeader>
-              <span>{room.title}</span>
-              <JoinButton onClick={handleJoinClick}>JOIN</JoinButton>
-            </RoomHeader>
-            <RoomInfo>
-              • {room.members} members • {room.description}
-            </RoomInfo>
-          </RoomCard>
-        ))}
-      </RoomList>
+      {searchQuery && (
+        <RoomList blur={showPasswordModal || showErrorModal}>
+          {filteredRooms.map((room) => (
+            <RoomCard key={room.id}>
+              <RoomHeader>{room.title}</RoomHeader>
+              <RoomInfo>
+                <JoinButton onClick={handleJoinClick}>JOIN</JoinButton>•{" "}
+                {room.members} members • {room.description}
+              </RoomInfo>
+            </RoomCard>
+          ))}
+        </RoomList>
+      )}
 
       {(showPasswordModal || showErrorModal) && (
         <Overlay>
           {showPasswordModal && (
             <Modal>
-              <div>
-                <label>PASSWORD</label>
-                <PasswordInput type="password" placeholder="Enter password" />
-              </div>
-              <SubmitButton onClick={handlePasswordSubmit}>Submit</SubmitButton>
+              <ModalCloseButton onClick={() => setShowPasswordModal(false)}>
+                <StyledCross size={24} />
+              </ModalCloseButton>
+              <PasswordTitle>PASSWORD</PasswordTitle>
+              <PasswordInput type="password" placeholder="Enter password" />
+              <ButtonContainer>
+                <SubmitButton onClick={handlePasswordSubmit}>
+                  Submit
+                </SubmitButton>
+              </ButtonContainer>
             </Modal>
           )}
           {showErrorModal && (
             <Modal>
               <ErrorMessage>Chat Room Password Error</ErrorMessage>
-              <CloseButton onClick={() => setShowErrorModal(false)}>
+              <ErrorModalButton onClick={() => setShowErrorModal(false)}>
                 OK
-              </CloseButton>
+              </ErrorModalButton>
             </Modal>
           )}
         </Overlay>
@@ -241,4 +309,4 @@ const RoomPlatform: React.FC = () => {
   );
 };
 
-export default RoomPlatform;
+export default JoinRooms;

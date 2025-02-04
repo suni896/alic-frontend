@@ -1,11 +1,9 @@
+import React from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import ContainerLayout from "./ContainerLayout";
-
-axios.defaults.baseURL = "https://112.74.92.135:443";
 
 const SigninForm = styled.form`
   display: flex;
@@ -93,6 +91,7 @@ const RegisterButton = styled.button`
 const ForgotPassword = styled.a`
   color: #fc5600;
   text-decoration: underline;
+  cursor: pointer;
 
   &:hover {
     color: #016532;
@@ -108,35 +107,23 @@ const validationSchema = Yup.object({
     .required("Password is required"),
 });
 
-const Signin = () => {
+interface FormValues {
+  email: string;
+  password: string;
+}
+
+const Signin: React.FC = () => {
   const navigate = useNavigate();
 
-  const formik = useFormik({
+  const formik = useFormik<FormValues>({
     initialValues: {
       email: "",
       password: "",
     },
     validationSchema,
     onSubmit: async (values) => {
-      try {
-        const response = await axios.post("/auth/login", {
-          userEmail: values.email,
-          password: values.password,
-        });
-
-        if (response.data.code === 0) {
-          const token = response.data.data["Bearer Token"];
-          alert("Login successful!");
-          localStorage.setItem("authToken", token);
-        } else {
-          alert(
-            response.data.message ||
-              "Login failed. Please check your credentials."
-          );
-        }
-      } catch (error) {
-        console.error("Login error:", error);
-        alert("Login failed. Please check your credentials and try again.");
+      if (!formik.errors.email && !formik.errors.password) {
+        navigate("/search-rooms");
       }
     },
   });
