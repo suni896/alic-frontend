@@ -181,13 +181,6 @@ const RoomDesc = styled.p`
   margin: 0;
 `;
 
-const StyledMinus = styled(AiOutlineMinus)`
-  color: black;
-  margin-left: 1rem;
-  font-size: 1.1rem;
-  cursor: pointer;
-`;
-
 const UserEmail = styled.span`
   font-size: 1rem;
   color: #666;

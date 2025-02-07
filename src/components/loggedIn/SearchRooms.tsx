@@ -107,7 +107,11 @@ const Footer = styled.div`
   margin-top: 4rem;
 `;
 
-const PageButton = styled.button<{ active?: boolean }>`
+const Ellipsis = styled.span`
+  padding: 0 0.5rem;
+`;
+
+const PageButton = styled.button<PageButtonProps>`
   background: ${(props) => (props.active ? "black" : "white")};
   color: ${(props) => (props.active ? "white" : "black")};
   border: ${(props) => (props.active ? "1px solid #d9d9d9" : "none")};
@@ -124,6 +128,36 @@ const PageButton = styled.button<{ active?: boolean }>`
     cursor: not-allowed;
   }
 `;
+
+interface PageButtonProps {
+  active?: boolean;
+}
+
+const getPageNumbers = (currentPage: number, totalPages: number) => {
+  if (totalPages <= 6) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  let pages = [];
+
+  pages.push(1);
+
+  if (currentPage <= 3) {
+    pages.push(2, 3, 4);
+    pages.push("...");
+    pages.push(totalPages);
+  } else if (currentPage >= totalPages - 2) {
+    pages.push("...");
+    pages.push(totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+  } else {
+    pages.push("...");
+    pages.push(currentPage - 1, currentPage, currentPage + 1);
+    pages.push("...");
+    pages.push(totalPages);
+  }
+
+  return pages;
+};
 
 const SearchRooms: React.FC = () => {
   const rooms = Array.from({ length: 68 }, (_, i) => ({
@@ -204,15 +238,19 @@ const SearchRooms: React.FC = () => {
           >
             Previous
           </PageButton>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-            <PageButton
-              key={page}
-              active={currentPage === page}
-              onClick={() => handlePageChange(page)}
-            >
-              {page}
-            </PageButton>
-          ))}
+          {getPageNumbers(currentPage, totalPages).map((page, index) =>
+            page === "..." ? (
+              <Ellipsis key={`ellipsis-${index}`}>...</Ellipsis>
+            ) : (
+              <PageButton
+                key={`page-${page}`}
+                active={currentPage === page}
+                onClick={() => handlePageChange(page as number)}
+              >
+                {page}
+              </PageButton>
+            )
+          )}
           <PageButton
             onClick={() => handlePageChange(currentPage + 1)}
             disabled={currentPage === totalPages}
