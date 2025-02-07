@@ -16,6 +16,7 @@ import { MdPeopleAlt } from "react-icons/md";
 import CreateRoomComponent from "./CreateRoomComponent";
 import { FaTag } from "react-icons/fa";
 import JoinRooms from "./JoinRooms";
+import CreateNewTag from "./CreateNewTag";
 
 const SidebarContainer = styled.div`
   width: 22%;
@@ -351,6 +352,8 @@ const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose }) => {
     useState(false);
   const [isJoinRoomsOverlayVisible, setIsJoinRoomsOverlayVisible] =
     useState(false);
+  const [isCreateTagOverlayVisible, setIsCreateTagOverlayVisible] =
+    useState(false);
 
   return (
     <PlusButtonOverlayContainer>
@@ -369,7 +372,9 @@ const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose }) => {
         <StyledMdPeopleAlt />
         <StyledPlusButtonOptionText>JOIN A ROOM</StyledPlusButtonOptionText>
       </PlusButtonOptionContainer>
-      <PlusButtonOptionContainer>
+      <PlusButtonOptionContainer
+        onClick={() => setIsCreateTagOverlayVisible(true)}
+      >
         <StyledFiTag />
         <StyledPlusButtonOptionText>CREATE NEW TAG</StyledPlusButtonOptionText>
       </PlusButtonOptionContainer>
@@ -381,6 +386,9 @@ const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose }) => {
       )}
       {isJoinRoomsOverlayVisible && (
         <JoinRooms onClose={() => setIsJoinRoomsOverlayVisible(false)} />
+      )}
+      {isCreateTagOverlayVisible && (
+        <CreateNewTag onClose={() => setIsCreateTagOverlayVisible(false)} />
       )}
     </PlusButtonOverlayContainer>
   );
