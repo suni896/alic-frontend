@@ -3,9 +3,29 @@ import { CiSearch } from "react-icons/ci";
 import { RxCross2 } from "react-icons/rx";
 import styled, { css } from "styled-components";
 
+const OverlayContainer = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 3000;
+`;
+
 const Container = styled.div`
   background: white;
-  width: 100%;
+  width: 90%;
+  max-width: 800px;
+  height: 80vh;
+  border-radius: 8px;
+  position: relative;
+  padding: 1rem;
+  overflow-y: auto;
+  border: 1px solid #016532;
 `;
 
 const StyledCross = styled(RxCross2)`
@@ -138,7 +158,7 @@ const PasswordTitle = styled.label`
 const PasswordInput = styled.input`
   margin-top: 1vh;
   margin-bottom: 3vh;
-  width: 70%;
+  width: 85%;
   padding: 0.8rem 1rem;
   font-size: 1rem;
   border: 1px solid #016532;
@@ -252,60 +272,62 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
   };
 
   return (
-    <Container>
-      <ModalCloseButton onClick={onClose}>
-        <StyledCross size={24} />
-      </ModalCloseButton>
-      <SearchContainer>
-        <SearchIcon />
-        <SearchInput
-          placeholder="Search in Platform"
-          value={searchQuery}
-          onChange={handleSearch}
-        />
-      </SearchContainer>
+    <OverlayContainer>
+      <Container>
+        <ModalCloseButton onClick={onClose}>
+          <StyledCross size={24} />
+        </ModalCloseButton>
+        <SearchContainer>
+          <SearchIcon />
+          <SearchInput
+            placeholder="Search in Platform"
+            value={searchQuery}
+            onChange={handleSearch}
+          />
+        </SearchContainer>
 
-      {searchQuery && (
-        <RoomList blur={showPasswordModal || showErrorModal}>
-          {filteredRooms.map((room) => (
-            <RoomCard key={room.id}>
-              <RoomHeader>{room.title}</RoomHeader>
-              <RoomInfo>
-                <JoinButton onClick={handleJoinClick}>JOIN</JoinButton>•{" "}
-                {room.members} members • {room.description}
-              </RoomInfo>
-            </RoomCard>
-          ))}
-        </RoomList>
-      )}
+        {searchQuery && (
+          <RoomList blur={showPasswordModal || showErrorModal}>
+            {filteredRooms.map((room) => (
+              <RoomCard key={room.id}>
+                <RoomHeader>{room.title}</RoomHeader>
+                <RoomInfo>
+                  <JoinButton onClick={handleJoinClick}>JOIN</JoinButton>•{" "}
+                  {room.members} members • {room.description}
+                </RoomInfo>
+              </RoomCard>
+            ))}
+          </RoomList>
+        )}
 
-      {(showPasswordModal || showErrorModal) && (
-        <Overlay>
-          {showPasswordModal && (
-            <Modal>
-              <ModalCloseButton onClick={() => setShowPasswordModal(false)}>
-                <StyledCross size={24} />
-              </ModalCloseButton>
-              <PasswordTitle>PASSWORD</PasswordTitle>
-              <PasswordInput type="password" placeholder="Enter password" />
-              <ButtonContainer>
-                <SubmitButton onClick={handlePasswordSubmit}>
-                  Submit
-                </SubmitButton>
-              </ButtonContainer>
-            </Modal>
-          )}
-          {showErrorModal && (
-            <Modal>
-              <ErrorMessage>Chat Room Password Error</ErrorMessage>
-              <ErrorModalButton onClick={() => setShowErrorModal(false)}>
-                OK
-              </ErrorModalButton>
-            </Modal>
-          )}
-        </Overlay>
-      )}
-    </Container>
+        {(showPasswordModal || showErrorModal) && (
+          <Overlay>
+            {showPasswordModal && (
+              <Modal>
+                <ModalCloseButton onClick={() => setShowPasswordModal(false)}>
+                  <StyledCross size={24} />
+                </ModalCloseButton>
+                <PasswordTitle>PASSWORD</PasswordTitle>
+                <PasswordInput type="password" placeholder="Enter password" />
+                <ButtonContainer>
+                  <SubmitButton onClick={handlePasswordSubmit}>
+                    Submit
+                  </SubmitButton>
+                </ButtonContainer>
+              </Modal>
+            )}
+            {showErrorModal && (
+              <Modal>
+                <ErrorMessage>Chat Room Password Error</ErrorMessage>
+                <ErrorModalButton onClick={() => setShowErrorModal(false)}>
+                  OK
+                </ErrorModalButton>
+              </Modal>
+            )}
+          </Overlay>
+        )}
+      </Container>
+    </OverlayContainer>
   );
 };
 

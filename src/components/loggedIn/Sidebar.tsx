@@ -1,11 +1,21 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { AiOutlinePlus, AiOutlineMinus } from "react-icons/ai";
-import { IoIosArrowDown, IoIosArrowUp, IoIosStarOutline } from "react-icons/io";
+import { AiOutlineMinus } from "react-icons/ai";
+import {
+  IoIosArrowDown,
+  IoIosStarOutline,
+  IoMdPersonAdd,
+} from "react-icons/io";
 import { FiTag } from "react-icons/fi";
 import { CiSearch } from "react-icons/ci";
 import { useNavigate } from "react-router-dom";
-import CreateRoomJoinButton from "./CreateRoomJoinButton";
+import { TiPlus } from "react-icons/ti";
+import { PiSignOutBold } from "react-icons/pi";
+import { RxCross2 } from "react-icons/rx";
+import { MdPeopleAlt } from "react-icons/md";
+import CreateRoomComponent from "./CreateRoomComponent";
+import { FaTag } from "react-icons/fa";
+import JoinRooms from "./JoinRooms";
 
 const SidebarContainer = styled.div`
   width: 22%;
@@ -25,7 +35,7 @@ const ProfileSection = styled.div`
 `;
 
 const LineSeparator = styled.hr`
-  width: 80%;
+  width: 90%;
   margin-left: 0;
 `;
 
@@ -60,17 +70,10 @@ const StyledArrowDown = styled(IoIosArrowDown)`
   cursor: pointer;
 `;
 
-const StyledArrowUp = styled(IoIosArrowUp)`
-  color: black;
-  margin-left: 0.5rem;
-  font-size: 1.1rem;
-  cursor: pointer;
-`;
-
 const SearchContainer = styled.div`
   display: flex;
   position: relative;
-  gap: 10px;
+  gap: 0.5rem;
   align-items: center;
   margin-top: 1.5rem;
 `;
@@ -79,25 +82,68 @@ const SearchInput = styled.input`
   width: 55%;
   padding: 0.6rem 0.5rem 0.6rem 2rem;
   font-size: 0.7rem;
-  border: 1px solid #b7b7b7;
-  color: #757575;
+  border: 1px solid #9f9e9e;
+  color: black;
   background: white;
   border-radius: 6px;
   cursor: pointer;
 `;
 
-const SectionTitleContainer = styled.div`
+const StyledPlusContainer = styled.div`
+  background-color: #d9d9d9;
+  width: 14%;
+  height: 88%;
   display: flex;
-  gap: 1rem;
   align-items: center;
-  margin-top: 2rem;
+  justify-content: center;
+`;
+
+const StyledPlus = styled(TiPlus)`
+  color: #016532;
+  font-size: 1.8rem;
+  cursor: pointer;
+`;
+
+const ToggleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  padding: 0.4rem;
+  margin-top: 1vh;
+  gap: 0.3rem;
+  width: 84%;
+  background-color: #d9d9d9;
+`;
+
+interface ToggleButtonProps {
+  isActive: boolean;
+}
+
+const ToggleButton = styled.button<ToggleButtonProps>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  width: 70%;
+  height: 100%;
+  border: none;
+  border-radius: 0;
+  font-family: Roboto, sans-serif;
+  font-weight: 700;
+  font-size: 0.8rem;
+  background-color: ${({ isActive }) => (isActive ? "white" : "transparent")};
+  color: ${({ isActive }) => (isActive ? "#016532" : "black")};
+  cursor: pointer;
+  transition: background-color 0.3s, color 0.3s;
+
+  &:hover {
+    background-color: ${({ isActive }) => (isActive ? "white" : "#e0e0e0")};
+  }
 `;
 
 const RoomList = styled.ul`
   list-style: none;
   padding: 0;
-  margin-top: 0;
-  max-height: 18vh;
+  max-height: 45vh;
   overflow-y: auto;
 `;
 
@@ -152,42 +198,202 @@ const SearchIcon = styled(CiSearch)`
   left: 0.5rem;
 `;
 
-const StyledPlus = styled(AiOutlinePlus)`
-  color: #016532;
-  margin-left: 1rem;
-  font-size: 20px;
-  cursor: pointer;
-`;
-
-const SectionLineSeparator = styled.hr`
-  width: 70%;
-  margin-left: 0;
-  border: none;
-  border-top: 2px solid #d9d9d9;
-  margin-bottom: 1rem;
-`;
-
-const SectionTitle = styled.div`
-  font-size: 0.9rem;
-  font-family: Roboto;
-  font-weight: 700;
-  color: #016532;
-`;
-
 const Star = styled(IoIosStarOutline)`
   color: black;
   font-size: 1.3rem;
   margin: 0.2rem 1rem 0 1rem;
 `;
 
+const ProfilePopUpContainer = styled.div`
+  position: absolute;
+  top: 13vh;
+  left: 5%;
+  width: 12%;
+  height: 8vh;
+  border: 1px solid #016532;
+  border-radius: 8px;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 1vh 1%;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+`;
+
+const ModalCloseButton = styled.button`
+  position: absolute;
+  top: 0;
+  right: -3%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    opacity: 0.7;
+  }
+`;
+
+const StyledProfilePopUpCross = styled(RxCross2)`
+  color: #016532;
+`;
+
+const StyledMe = styled.p`
+  margin: 0;
+  padding-left: 1%;
+  font-style: italic;
+  font-family: Roboto;
+`;
+
+const HorizontalLine = styled.hr`
+  border: none;
+  border-top: 1px solid #d9d9d9;
+  width: 100%;
+  margin: 0 auto;
+`;
+
+const StyledSignOutContainer = styled.div`
+  margin: 0;
+  width: 100%;
+  height: 50%;
+  padding-left: 1%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const StyledSignOutText = styled.p`
+  font-family: Roboto;
+`;
+
+const StyledSignOutIcon = styled(PiSignOutBold)`
+  width: 1.5rem;
+  height: 1.5rem;
+  cursor: pointer;
+`;
+
+const PlusButtonOverlayContainer = styled.div`
+  position: absolute;
+  top: 24vh;
+  left: 14.8%;
+  width: 13%;
+  height: 12vh;
+  border: 1px solid #016532;
+  border-radius: 8px;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 0.8vh 1%;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+`;
+
+const PlusButtonOptionContainer = styled.div`
+  margin: 0;
+  width: 100%;
+  height: 33.5%;
+  display: flex;
+  align-items: center;
+  gap: 3%;
+`;
+
+const StyledIoMdPersonAdd = styled(IoMdPersonAdd)`
+  width: 20px;
+  height: 20px;
+  color: #016532;
+`;
+
+const StyledMdPeopleAlt = styled(MdPeopleAlt)`
+  width: 20px;
+  height: 20px;
+  margin-left: 2px;
+  color: #016532;
+`;
+
+const StyledFiTag = styled(FaTag)`
+  width: 20px;
+  height: 20px;
+  color: #016532;
+`;
+
+const StyledPlusButtonOptionText = styled.span`
+  font-family: Roboto;
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: black;
+`;
+interface OverlayProps {
+  onClose: () => void;
+}
+
+const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
+  return (
+    <ProfilePopUpContainer>
+      <ModalCloseButton onClick={onClose}>
+        <StyledProfilePopUpCross />
+      </ModalCloseButton>
+      <StyledMe>ME</StyledMe>
+      <HorizontalLine />
+      <StyledSignOutContainer>
+        <StyledSignOutText>Sign Out</StyledSignOutText>
+        <StyledSignOutIcon />
+      </StyledSignOutContainer>
+    </ProfilePopUpContainer>
+  );
+};
+
+const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose }) => {
+  const [isCreateRoomOverlayVisible, setIsCreateRoomOverlayVisible] =
+    useState(false);
+  const [isJoinRoomsOverlayVisible, setIsJoinRoomsOverlayVisible] =
+    useState(false);
+
+  return (
+    <PlusButtonOverlayContainer>
+      <ModalCloseButton onClick={onClose}>
+        <StyledProfilePopUpCross />
+      </ModalCloseButton>
+      <PlusButtonOptionContainer
+        onClick={() => setIsCreateRoomOverlayVisible(true)}
+      >
+        <StyledIoMdPersonAdd />
+        <StyledPlusButtonOptionText>CREATE NEW ROOM</StyledPlusButtonOptionText>
+      </PlusButtonOptionContainer>
+      <PlusButtonOptionContainer
+        onClick={() => setIsJoinRoomsOverlayVisible(true)}
+      >
+        <StyledMdPeopleAlt />
+        <StyledPlusButtonOptionText>JOIN A ROOM</StyledPlusButtonOptionText>
+      </PlusButtonOptionContainer>
+      <PlusButtonOptionContainer>
+        <StyledFiTag />
+        <StyledPlusButtonOptionText>CREATE NEW TAG</StyledPlusButtonOptionText>
+      </PlusButtonOptionContainer>
+
+      {isCreateRoomOverlayVisible && (
+        <CreateRoomComponent
+          onClose={() => setIsCreateRoomOverlayVisible(false)}
+        />
+      )}
+      {isJoinRoomsOverlayVisible && (
+        <JoinRooms onClose={() => setIsJoinRoomsOverlayVisible(false)} />
+      )}
+    </PlusButtonOverlayContainer>
+  );
+};
+
 const Sidebar: React.FC = () => {
   const [roomSearch, setRoomSearch] = useState("");
   const [tagSearch, setTagSearch] = useState("");
+  const [isProfileClicked, setIsProfileClicked] = useState(false);
+  const [activeTab, setActiveTab] = useState<"myRooms" | "myTags">("myRooms");
 
-  const [isRoomOverlayVisible, setIsRoomOverlayVisible] = useState(false);
-  const [isClassOverlayVisible, setIsClassOverlayVisible] = useState(false);
-  const [isRoomListVisible, setIsRoomListVisible] = useState(true);
-  const [isClassListVisible, setIsClassListVisible] = useState(true);
+  const [isPlusButtonOverlayVisible, setIsPlusButtonOverlayVisible] =
+    useState(false);
 
   const rooms = [
     { title: "1", desc: "Description for Room 1." },
@@ -195,6 +401,11 @@ const Sidebar: React.FC = () => {
     { title: "3", desc: "Description for Room 3." },
     { title: "4", desc: "Description for Room 4." },
     { title: "5", desc: "Description for Room 5." },
+    { title: "6", desc: "Description for Room 6." },
+    { title: "7", desc: "Description for Room 7." },
+    { title: "8", desc: "Description for Room 8." },
+    { title: "9", desc: "Description for Room 9." },
+    { title: "10", desc: "Description for Room 10." },
   ];
 
   const classes = [
@@ -203,6 +414,11 @@ const Sidebar: React.FC = () => {
     { title: "3", desc: "Description for Class 3." },
     { title: "4", desc: "Description for Class 4." },
     { title: "5", desc: "Description for Class 5." },
+    { title: "6", desc: "Description for Class 6." },
+    { title: "7", desc: "Description for Class 7." },
+    { title: "8", desc: "Description for Class 8." },
+    { title: "9", desc: "Description for Class 9." },
+    { title: "10", desc: "Description for Class 10." },
   ];
 
   const filteredRooms = rooms.filter((room) =>
@@ -222,7 +438,12 @@ const Sidebar: React.FC = () => {
         <UserInfo>
           <UserNameContainer>
             <UserName>ME</UserName>
-            <StyledArrowDown />
+            <StyledArrowDown
+              onClick={() => setIsProfileClicked(!isProfileClicked)}
+            />
+            {isProfileClicked && (
+              <ProfilePopUp onClose={() => setIsProfileClicked(false)} />
+            )}
           </UserNameContainer>
           <UserEmail>xxx@xxx.com</UserEmail>
         </UserInfo>
@@ -232,30 +453,43 @@ const Sidebar: React.FC = () => {
       <SearchContainer>
         <SearchIcon />
         <SearchInput
-          placeholder="Search in MY ROOMS"
-          value={roomSearch}
-          onChange={(e) => setRoomSearch(e.target.value)}
+          placeholder={
+            activeTab === "myRooms" ? "Search in MY ROOMS" : "Search in MY TAGS"
+          }
+          value={activeTab === "myRooms" ? roomSearch : tagSearch}
+          onChange={
+            activeTab === "myRooms"
+              ? (e) => setRoomSearch(e.target.value)
+              : (e) => setTagSearch(e.target.value)
+          }
         />
-        {isRoomOverlayVisible ? (
-          <StyledMinus onClick={() => setIsRoomOverlayVisible(false)} />
-        ) : (
-          <StyledPlus onClick={() => setIsRoomOverlayVisible(true)} />
-        )}
+
+        <StyledPlusContainer>
+          <StyledPlus onClick={() => setIsPlusButtonOverlayVisible(true)} />
+        </StyledPlusContainer>
       </SearchContainer>
-      {isRoomOverlayVisible && <CreateRoomJoinButton />}
+      {isPlusButtonOverlayVisible && (
+        <PlusButtonOverlay
+          onClose={() => setIsPlusButtonOverlayVisible(false)}
+        />
+      )}
 
-      <SectionTitleContainer>
-        {isRoomListVisible ? (
-          <StyledArrowUp onClick={() => setIsRoomListVisible(false)} />
-        ) : (
-          <StyledArrowDown onClick={() => setIsRoomListVisible(true)} />
-        )}
-        <SectionTitle>MY ROOMS</SectionTitle>
-      </SectionTitleContainer>
+      <ToggleContainer>
+        <ToggleButton
+          isActive={activeTab === "myRooms"}
+          onClick={() => setActiveTab("myRooms")}
+        >
+          MY ROOMS
+        </ToggleButton>
+        <ToggleButton
+          isActive={activeTab === "myTags"}
+          onClick={() => setActiveTab("myTags")}
+        >
+          MY TAGS
+        </ToggleButton>
+      </ToggleContainer>
 
-      <SectionLineSeparator />
-
-      {isRoomListVisible && (
+      {activeTab === "myRooms" && (
         <RoomList>
           {filteredRooms.map((room, index) => (
             <RoomContainer key={index}>
@@ -269,17 +503,7 @@ const Sidebar: React.FC = () => {
         </RoomList>
       )}
 
-      <SectionTitleContainer>
-        {isClassListVisible ? (
-          <StyledArrowUp onClick={() => setIsClassListVisible(false)} />
-        ) : (
-          <StyledArrowDown onClick={() => setIsClassListVisible(true)} />
-        )}
-        <SectionTitle>MY TAGS</SectionTitle>
-      </SectionTitleContainer>
-
-      <SectionLineSeparator />
-      {isClassListVisible && (
+      {activeTab === "myTags" && (
         <RoomList>
           {filteredTags.map((tag, index) => (
             <RoomContainer key={index}>
