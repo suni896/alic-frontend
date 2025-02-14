@@ -1,13 +1,8 @@
 import React, { useState } from "react";
 import { FiTag } from "react-icons/fi";
-import {
-  AiOutlinePlus,
-  AiOutlineClose,
-  AiOutlineMinusCircle,
-} from "react-icons/ai";
+import { AiOutlinePlus, AiOutlineMinusCircle } from "react-icons/ai";
 import styled from "styled-components";
 import { CiSearch } from "react-icons/ci";
-import { IoIosStarOutline } from "react-icons/io";
 import { RxCross2 } from "react-icons/rx";
 
 interface RoomContainerProps {
@@ -119,12 +114,6 @@ const RoomDescription = styled.span`
   font-family: Roboto;
   font-weight: 400;
   margin: 0;
-`;
-
-const DeleteButton = styled(AiOutlineClose)`
-  color: red;
-  font-size: 1.5rem;
-  cursor: pointer;
 `;
 
 const EditButton = styled.button<EditButtonProps>`
@@ -410,10 +399,7 @@ const getPageNumbers = (currentPage: number, totalPages: number) => {
   return pages;
 };
 
-const MyClass: React.FC<MyClassProps> = ({
-  title = "Default Title",
-  desc = "Default Description",
-}) => {
+const MyClass: React.FC<MyClassProps> = ({ title = "Default Title" }) => {
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isAddRoomVisible, setIsAddRoomVisible] = useState(false);
 

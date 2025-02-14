@@ -4,6 +4,9 @@ import * as Yup from "yup";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import ContainerLayout from "./ContainerLayout";
+import axios from "axios";
+
+axios.defaults.baseURL = "https://112.74.92.135:443";
 
 const SigninForm = styled.form`
   display: flex;
@@ -103,7 +106,12 @@ const validationSchema = Yup.object({
     .email("Invalid email address")
     .required("Email is required"),
   password: Yup.string()
-    .min(8, "Password must be at least 8 characters")
+    .min(6, "Password must be between 6 and 20 characters")
+    .max(20, "Password must be between 6 and 20 characters")
+    .matches(
+      /^[a-zA-Z0-9!@#$%^&*()_+=[\]{}|;:'",.<>?/`~\\-]*$/,
+      "Password can only include letters, numbers, and special characters"
+    )
     .required("Password is required"),
 });
 
@@ -122,8 +130,28 @@ const Signin: React.FC = () => {
     },
     validationSchema,
     onSubmit: async (values) => {
-      if (!formik.errors.email && !formik.errors.password) {
-        navigate("/search-rooms");
+      try {
+        const response = await axios.post("/auth/login", {
+          password: values.password,
+          userEmail: values.email,
+        });
+
+        if (response.data.code === 200) {
+          navigate("/search-rooms");
+        } else {
+          alert(response.data.message || "Failed to log in.");
+        }
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error)) {
+          console.error("Axios error:", error.response?.data || error.message);
+          alert(
+            error.response?.data?.message ||
+              "Failed to send verification email. Please try again."
+          );
+        } else {
+          console.error("Unexpected error:", error);
+          alert("An unexpected error occurred. Please try again.");
+        }
       }
     },
   });
@@ -168,7 +196,7 @@ const Signin: React.FC = () => {
         {formik.touched.password && formik.errors.password ? (
           <ErrorText>{formik.errors.password}</ErrorText>
         ) : (
-          <HelperText>Minimum 8 characters.</HelperText>
+          <HelperText>Password must be between 6 and 20 characters.</HelperText>
         )}
         <SigninButton type="submit">Sign In</SigninButton>
         <ForgotPassword onClick={handleResetPassword}>

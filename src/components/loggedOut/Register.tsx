@@ -96,7 +96,12 @@ const validationSchema = Yup.object({
     .email("Invalid email address")
     .required("Email is required"),
   password: Yup.string()
-    .min(8, "Password must be at least 8 characters")
+    .min(6, "Password must be between 6 and 20 characters")
+    .max(20, "Password must be between 6 and 20 characters")
+    .matches(
+      /^[a-zA-Z0-9!@#$%^&*()_+=[\]{}|;:'",.<>?/`~\\-]*$/,
+      "Password can only include letters, numbers, and special characters"
+    )
     .required("Password is required"),
   confirmPassword: Yup.string()
     .oneOf([Yup.ref("password")], "Passwords must match")
@@ -123,17 +128,22 @@ const Register: React.FC = () => {
     validationSchema,
     onSubmit: async (values) => {
       try {
-        // Send the registration data to the backend
         const response = await axios.post("/auth/sendmail", {
-          userEmail: values.email, // Email is required
-          userName: values.username, // Username is optional for REGISTER
-          password: values.password, // Password is optional for REGISTER
-          type: "REGISTERED",
+          userEmail: values.email,
+          userName: values.username,
+          password: values.password,
+          type: "1",
         });
 
-        if (response.data.code === 0) {
+        if (response.data.code === 200) {
           alert("Verification email sent successfully!");
-          navigate(`/verify?type=register&email=${values.email}`);
+          navigate(
+            `/verify?type=register&email=${encodeURIComponent(
+              values.email
+            )}&username=${encodeURIComponent(
+              values.username
+            )}&password=${encodeURIComponent(values.password)}`
+          );
         } else {
           alert(response.data.message || "Failed to send verification email.");
         }

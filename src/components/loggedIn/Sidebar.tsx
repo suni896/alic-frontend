@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import styled from "styled-components";
-import { AiOutlineMinus } from "react-icons/ai";
 import {
   IoIosArrowDown,
   IoIosStarOutline,
