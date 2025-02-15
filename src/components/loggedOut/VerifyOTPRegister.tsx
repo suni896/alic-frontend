@@ -117,26 +117,24 @@ const validationSchema = Yup.object().shape({
 
 interface FormValues {
   email: string;
-  otp: string; // Store the complete OTP
+  otp: string;
 }
 
-interface VerifyOTPProps {
+interface VerifyOTPRegisterProps {
   onVerifySuccess: (token: string) => void;
-  type: string; // "register" or "reset"
-  email: string; // Directly pass the email
+  email: string;
 }
 
-const VerifyOTP: React.FC<VerifyOTPProps> = ({
+const VerifyOTPRegister: React.FC<VerifyOTPRegisterProps> = ({
   onVerifySuccess,
-  type,
-  email, // Use the email prop directly
+  email,
 }) => {
   const navigate = useNavigate();
   const [showError, setShowError] = useState(false);
 
   const formik = useFormik<FormValues>({
     initialValues: {
-      email: email, // Use the passed email directly
+      email: email,
       otp: "",
     },
     validationSchema,
@@ -150,18 +148,17 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
       const response = await axios.post("/auth/verify_code", {
         email: values.email,
         verifiCode: values.otp,
-        type: type === "register" ? "1" : "3", // 1: Register, 3: Reset Password
+        type: "1", // Register
       });
 
       console.log("API Response:", response.data); // Log the entire API response
 
       if (response.data.code === 200) {
         alert("Verification successful!");
-        formik.resetForm(); // Reset form fields
-        setShowError(false); // Hide error message on success
         onVerifySuccess(response.data.data.token); // Pass token to parent
+        handleSignin();
       } else {
-        console.log(values.email, values.otp, type);
+        console.log(values.email, values.otp);
         console.log("Verification failed:", response.data.message); // Log the failure message
         setShowError(true); // Show error message
         formik.setErrors({
@@ -192,22 +189,15 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
 
   const handleRequestNewCode = async () => {
     try {
-      const requestBody =
-        type === "register"
-          ? {
-              userEmail: email,
-              type: "1",
-            }
-          : {
-              type: "3", // Assuming type 3 is for reset password
-              userEmail: email,
-            };
+      const requestBody = {
+        userEmail: email,
+        type: "1",
+      };
 
       const response = await axios.post("/auth/sendmail", requestBody);
 
       if (response.data.code === 200) {
         alert("A new verification code has been sent to your email.");
-
         // Clear OTP inputs and reset cursor
         formik.setFieldValue("otp", "");
         document.getElementById("code-input-0")?.focus(); // Focus on the first input
@@ -304,4 +294,4 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
   );
 };
 
-export default VerifyOTP;
+export default VerifyOTPRegister;

@@ -1,13 +1,17 @@
+// ResetPasswordPage.tsx
+import React from "react";
 import Layout from "../components/loggedOut/Layout";
 import ResetPassword from "../components/loggedOut/ResetPassword";
 
-const ResetPasswordPage = () => {
+interface ResetPasswordPageProps {
+  setEmail: React.Dispatch<React.SetStateAction<string>>;
+}
+
+const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ setEmail }) => {
   return (
-    <>
-      <Layout>
-        <ResetPassword />
-      </Layout>
-    </>
+    <Layout>
+      <ResetPassword setEmail={setEmail} />
+    </Layout>
   );
 };
 

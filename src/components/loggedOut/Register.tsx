@@ -115,7 +115,9 @@ const validationSchema = Yup.object({
     .required("Username is required"),
 });
 
-const Register: React.FC = () => {
+const Register: React.FC<{ setEmail: (email: string) => void }> = ({
+  setEmail,
+}) => {
   const navigate = useNavigate();
 
   const formik = useFormik<RegisterFormValues>({
@@ -137,13 +139,8 @@ const Register: React.FC = () => {
 
         if (response.data.code === 200) {
           alert("Verification email sent successfully!");
-          navigate(
-            `/verify?type=register&email=${encodeURIComponent(
-              values.email
-            )}&username=${encodeURIComponent(
-              values.username
-            )}&password=${encodeURIComponent(values.password)}`
-          );
+          setEmail(values.email);
+          navigate("/verify-register");
         } else {
           alert(response.data.message || "Failed to send verification email.");
         }

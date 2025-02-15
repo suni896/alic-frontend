@@ -117,26 +117,24 @@ const validationSchema = Yup.object().shape({
 
 interface FormValues {
   email: string;
-  otp: string; // Store the complete OTP
+  otp: string;
 }
 
-interface VerifyOTPProps {
+interface VerifyOTPResetProps {
   onVerifySuccess: (token: string) => void;
-  type: string; // "register" or "reset"
-  email: string; // Directly pass the email
+  email: string;
 }
 
-const VerifyOTP: React.FC<VerifyOTPProps> = ({
+const VerifyOTPReset: React.FC<VerifyOTPResetProps> = ({
   onVerifySuccess,
-  type,
-  email, // Use the email prop directly
+  email,
 }) => {
   const navigate = useNavigate();
   const [showError, setShowError] = useState(false);
 
   const formik = useFormik<FormValues>({
     initialValues: {
-      email: email, // Use the passed email directly
+      email: email,
       otp: "",
     },
     validationSchema,
@@ -150,7 +148,7 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
       const response = await axios.post("/auth/verify_code", {
         email: values.email,
         verifiCode: values.otp,
-        type: type === "register" ? "1" : "3", // 1: Register, 3: Reset Password
+        type: "3", // Reset Password
       });
 
       console.log("API Response:", response.data); // Log the entire API response
@@ -161,7 +159,7 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
         setShowError(false); // Hide error message on success
         onVerifySuccess(response.data.data.token); // Pass token to parent
       } else {
-        console.log(values.email, values.otp, type);
+        console.log(values.email, values.otp);
         console.log("Verification failed:", response.data.message); // Log the failure message
         setShowError(true); // Show error message
         formik.setErrors({
@@ -192,16 +190,10 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
 
   const handleRequestNewCode = async () => {
     try {
-      const requestBody =
-        type === "register"
-          ? {
-              userEmail: email,
-              type: "1",
-            }
-          : {
-              type: "3", // Assuming type 3 is for reset password
-              userEmail: email,
-            };
+      const requestBody = {
+        type: "3", // Assuming type 3 is for reset password
+        userEmail: email,
+      };
 
       const response = await axios.post("/auth/sendmail", requestBody);
 
@@ -304,4 +296,4 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
   );
 };
 
-export default VerifyOTP;
+export default VerifyOTPReset;

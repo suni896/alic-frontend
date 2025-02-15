@@ -1,10 +1,15 @@
+import React from "react";
 import Layout from "../components/loggedOut/Layout";
 import Register from "../components/loggedOut/Register";
 
-const RegisterPage = () => {
+interface RegisterPageProps {
+  setEmail: React.Dispatch<React.SetStateAction<string>>;
+}
+
+const RegisterPage: React.FC<RegisterPageProps> = ({ setEmail }) => {
   return (
     <Layout>
-      <Register />
+      <Register setEmail={setEmail} />
     </Layout>
   );
 };
