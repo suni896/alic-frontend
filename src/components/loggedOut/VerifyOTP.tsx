@@ -23,7 +23,12 @@ const Title = styled.h1`
   font-family: "Roboto", serif;
   font-weight: 700;
   text-decoration: underline;
-  margin-bottom: 1rem;
+  margin: 2.5% auto;
+
+  @media (max-width: 740px) {
+    font-size: 1.8rem;
+    margin: 5% auto;
+  }
 `;
 
 const ConfirmationText = styled.p<{ small?: boolean }>`
@@ -32,6 +37,17 @@ const ConfirmationText = styled.p<{ small?: boolean }>`
   font-family: "Roboto", serif;
   text-align: center;
   font-weight: 700;
+
+  @media (max-width: 740px) {
+    font-size: ${({ small }) => (small ? "1rem" : "1.5rem")};
+    line-height: 180%;
+  }
+
+  @media (max-height: 720px) {
+    line-height: 110%;
+    font-weight: 600;
+    font-size: ${({ small }) => (small ? "0.9rem" : "1.2rem")};
+  }
 `;
 
 const Form = styled.form``;
@@ -44,6 +60,7 @@ const EmailHighlight = styled.span`
 const CodeInputContainer = styled.div`
   display: flex;
   gap: 0.5rem;
+  justify-content: center;
   margin: 2rem 0 1rem 0;
 `;
 
@@ -61,6 +78,16 @@ const CodeInput = styled.input`
     outline: none;
     border-color: #016532;
   }
+
+  @media (max-width: 740px) {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  @media (max-height: 720px) {
+    width: 2.2rem;
+    height: 2.2rem;
+  }
 `;
 
 const SubmitButton = styled.button`
@@ -68,11 +95,11 @@ const SubmitButton = styled.button`
   align-items: center;
   justify-content: center;
   width: 60%;
-  height: 55px;
+  height: 6vh;
   padding: 0.75rem;
   font-size: 1rem;
   cursor: pointer;
-  margin: 2rem auto 0 auto;
+  margin: 1rem auto 0 auto;
   border-radius: 5px;
   background-color: #016532;
   color: white;
@@ -83,7 +110,7 @@ const BackButton = styled.button`
   align-items: center;
   justify-content: center;
   width: 60%;
-  height: 55px;
+  height: 6vh;
   padding: 0.75rem;
   font-size: 1rem;
   cursor: pointer;
@@ -93,9 +120,13 @@ const BackButton = styled.button`
   color: white;
 `;
 
-const ErrorMessage = styled.p`
+const ErrorMessage = styled.p<{ show: boolean }>`
   color: #fc5600;
+  visibility: ${({ show }) => (show ? "visible" : "hidden")};
+  opacity: ${({ show }) => (show ? 1 : 0)};
+  text-align: center;
   margin: 0;
+  font-size: 1rem;
 `;
 
 const RequestNewCode = styled.span`
@@ -283,16 +314,16 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
               ))}
             </CodeInputContainer>
             {formik.touched.otp && formik.errors.otp && (
-              <ErrorMessage>{formik.errors.otp}</ErrorMessage>
+              <ErrorMessage show={showError}>{formik.errors.otp}</ErrorMessage>
             )}
-            {showError && (
-              <ErrorMessage>
-                The code is incorrect or expired.{" "}
-                <RequestNewCode onClick={handleRequestNewCode}>
-                  Request a new code
-                </RequestNewCode>
-              </ErrorMessage>
-            )}
+
+            <ErrorMessage show={showError}>
+              The code is incorrect or expired.
+              <RequestNewCode onClick={handleRequestNewCode}>
+                Request a new code
+              </RequestNewCode>
+            </ErrorMessage>
+
             <SubmitButton type="submit">Verify Code</SubmitButton>
             <BackButton type="button" onClick={handleSignin}>
               Back to Sign-In

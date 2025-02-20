@@ -12,7 +12,7 @@ const Container = styled.div`
   top: 0;
   left: 0;
   width: 100%;
-  height: 72px;
+  height: 8vh;
   background-color: #016532;
   display: flex;
   align-items: center;
@@ -33,13 +33,13 @@ const Logo = styled.img`
 
 const Title = styled.h1`
   color: white;
-  font-size: 26px;
+  font-size: 1.5rem;
   font-family: "Roboto", sans-serif;
   font-weight: 500;
   margin: 0;
 
   @media (max-width: 740px) {
-    font-size: 20px;
+    font-size: 0.9rem;
     margin-right: 2rem;
   }
 `;

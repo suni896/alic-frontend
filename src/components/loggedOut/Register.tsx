@@ -21,14 +21,33 @@ const Title = styled.h1`
   font-family: "Roboto", serif;
   font-weight: 700;
   text-decoration: underline;
-  margin-bottom: 0.5rem;
+  margin: 1.5% auto;
+
+  @media (max-width: 740px) {
+    font-size: 1.7rem;
+    margin: 2.5% auto;
+  }
+
+  @media (max-height: 720px) {
+    margin: 0 auto;
+  }
 `;
 
 const Label = styled.label`
   font-size: 0.9rem;
   font-family: "Roboto", serif;
   font-weight: 400;
-  margin-bottom: 0.3rem;
+  margin-bottom: 0.8vh;
+
+  @media (max-width: 740px) {
+    font-size: 0.8rem;
+    margin-bottom: 0.1vh;
+  }
+
+  @media (max-height: 720px) {
+    margin-bottom: 0;
+    font-size: 0.8rem;
+  }
 `;
 
 const Input = styled.input`
@@ -46,16 +65,35 @@ const Input = styled.input`
     outline: none;
     border-color: #016532;
   }
+
+  @media (max-width: 740px) {
+    margin-bottom: 3%;
+  }
+
+  @media (max-height: 720px) {
+    height: 8%;
+  }
 `;
 
 const ErrorText = styled.div`
   color: #fc5600;
   font-size: 0.7rem;
-  margin-top: -1.1rem;
-  margin-bottom: 0.2rem;
+  margin-top: -3%;
+  margin-bottom: 0.5%;
+
+  @media (max-width: 740px) {
+    margin-bottom: 0.5%;
+  }
+
+  @media (max-height: 720px) {
+    margin-top: -4%;
+  }
 `;
 
-const RegisterButton = styled.button`
+const RegisterButton = styled.button<{ hasError: boolean }>`
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 40%;
   padding: 0.75rem;
   font-size: 1rem;
@@ -64,8 +102,17 @@ const RegisterButton = styled.button`
   border-radius: 5px;
 
   @media (max-width: 740px) {
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
+    width: 60%;
+    height: 5vh;
+    margin-bottom: ${({ hasError }) => (hasError ? "2%" : "1.5rem")};
+  }
+
+  @media (max-width: 740px) and (min-height: 720px) {
+    margin: 10% auto;
+  }
+  @media (max-height: 720px) {
+    height: 8%;
+    margin: 2% auto;
   }
 `;
 
@@ -82,6 +129,16 @@ const BackButton = styled.button`
   border-radius: 5px;
   background-color: #016532;
   color: white;
+
+  @media (max-width: 740px) {
+    width: 80%;
+    height: 5vh;
+  }
+
+  @media (max-height: 720px) {
+    height: 8%;
+    margin: 1% auto;
+  }
 `;
 
 interface RegisterFormValues {
@@ -163,6 +220,12 @@ const Register: React.FC<{ setEmail: (email: string) => void }> = ({
     navigate("/");
   };
 
+  const hasErrors =
+    (formik.touched.email && formik.errors.email) ||
+    (formik.touched.username && formik.errors.username) ||
+    (formik.touched.password && formik.errors.password) ||
+    (formik.touched.confirmPassword && formik.errors.confirmPassword);
+
   return (
     <ContainerLayout>
       <SigninForm onSubmit={formik.handleSubmit}>
@@ -218,7 +281,9 @@ const Register: React.FC<{ setEmail: (email: string) => void }> = ({
         {formik.touched.confirmPassword && formik.errors.confirmPassword && (
           <ErrorText>{formik.errors.confirmPassword}</ErrorText>
         )}
-        <RegisterButton type="submit">Register</RegisterButton>
+        <RegisterButton type="submit" hasError={!!hasErrors}>
+          Register
+        </RegisterButton>
         <BackButton type="button" onClick={handleBack}>
           Back to Sign-In
         </BackButton>

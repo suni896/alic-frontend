@@ -22,14 +22,28 @@ const Title = styled.h1`
   font-family: "Roboto", serif;
   font-weight: 700;
   text-decoration: underline;
-  margin-bottom: 1rem;
+  margin: 2.5% auto;
+
+  @media (max-width: 740px) {
+    font-size: 1.7rem;
+    margin-bottom: 7%;
+  }
+
+  @media (max-width: 740px) and (min-height: 80px) {
+    margin-top: 5%;
+    margin-bottom: 10%;
+  }
 `;
 
 const Label = styled.label`
   font-size: 1rem;
   font-family: "Roboto", serif;
   font-weight: 400;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.8vh;
+
+  @media (max-width: 740px) {
+    font-size: 0.8rem;
+  }
 `;
 
 const Input = styled.input`
@@ -39,7 +53,6 @@ const Input = styled.input`
   border: 1px solid #ccc;
   border-radius: 6px;
   background-color: white;
-  margin-bottom: 1rem;
   width: 100%;
   box-sizing: border-box;
 
@@ -47,21 +60,55 @@ const Input = styled.input`
     outline: none;
     border-color: #016532;
   }
+
+  @media (max-width: 740px) {
+    height: 5vh;
+  }
 `;
 
 const ErrorText = styled.p`
   font-size: 0.8rem;
   color: #fc5600;
-  margin-top: -0.8rem;
-  margin-bottom: 1rem;
+  margin-top: 0;
+  margin-bottom: 3%;
+
+  @media (max-width: 740px) {
+    font-size: 0.7rem;
+  }
+
+  @media (max-height: 720px) {
+    margin: 0;
+  }
 `;
 
 const SubmitButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 40%;
   padding: 0.75rem;
   font-size: 1rem;
+  height: 6vh;
   cursor: pointer;
-  margin: 1rem auto 1.5rem auto;
+  margin: 5% auto;
+  border-radius: 5px;
+  background-color: black;
+
+  @media (max-width: 740px) {
+    width: 60%;
+    margin-top: 15%;
+    margin-bottom: 6%;
+  }
+
+  @media (max-height: 720px) and (min-height: 740px) {
+    margin-bottom: 0;
+    margin-top: 0;
+  }
+
+  @media (max-width: 740px) and (min-height: 820px) {
+    height: 5vh;
+    margin-bottom: 8%;
+  }
 `;
 
 const BackButton = styled.button`
@@ -69,14 +116,19 @@ const BackButton = styled.button`
   align-items: center;
   justify-content: center;
   width: 60%;
-  height: 55px;
+  height: 7vh;
   padding: 0.75rem;
   font-size: 1rem;
   cursor: pointer;
-  margin: 3rem auto 0 auto;
+  margin: 10% auto 0 auto;
   border-radius: 5px;
   background-color: #016532;
   color: white;
+
+  @media (max-width: 740px) {
+    width: 80%;
+    margin-top: 15%;
+  }
 `;
 
 interface ResetPasswordFormValues {

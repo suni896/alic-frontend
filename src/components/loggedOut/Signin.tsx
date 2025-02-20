@@ -13,6 +13,7 @@ const SigninForm = styled.form`
   flex-direction: column;
   width: 100%;
   height: 100%;
+  align-content: center;
 `;
 
 const Title = styled.h1`
@@ -21,24 +22,38 @@ const Title = styled.h1`
   font-family: "Roboto", serif;
   font-weight: 700;
   text-decoration: underline;
-  margin-bottom: 1rem;
+  margin: 2.5% auto;
+
+  @media (max-width: 740px) {
+    font-size: 1.8rem;
+    margin-bottom: 7%;
+  }
+
+  @media (max-width: 740px) and (min-height: 820px) {
+    margin-top: 5%;
+    margin-bottom: 10%;
+  }
 `;
 
 const Label = styled.label`
   font-size: 1rem;
   font-family: "Roboto", serif;
   font-weight: 400;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.8vh;
+
+  @media (max-width: 740px) {
+    font-size: 0.8rem;
+  }
 `;
 
 const Input = styled.input`
   padding: 0.75rem;
   font-size: 1rem;
   color: black;
+  height: 6vh;
   border: 1px solid #ccc;
   border-radius: 6px;
   background-color: white;
-  margin-bottom: 1rem;
   width: 100%;
   box-sizing: border-box;
 
@@ -46,29 +61,65 @@ const Input = styled.input`
     outline: none;
     border-color: #016532;
   }
+
+  @media (max-width: 740px) {
+    height: 5vh;
+  }
 `;
 
 const ErrorText = styled.p`
   font-size: 0.8rem;
   color: #fc5600;
-  margin-top: -0.8rem;
-  margin-bottom: 1rem;
+  margin-top: 0;
+  margin-bottom: 3%;
+
+  @media (max-width: 740px) {
+    font-size: 0.7rem;
+  }
+
+  @media (max-height: 720px) {
+    margin: 0;
+  }
 `;
 
 const HelperText = styled.p`
   font-size: 0.8rem;
   color: #666;
-  margin-top: -0.8rem;
-  margin-bottom: 1rem;
+  margin-top: 0;
+
+  @media (max-width: 740px) {
+    font-size: 0.7rem;
+  }
 `;
 
 const SigninButton = styled.button`
+  display: flex;
+  justify-content: center;
+  align-items: center;
   width: 40%;
   padding: 0.75rem;
   font-size: 1rem;
   cursor: pointer;
-  margin: 1rem auto 1.5rem auto;
+  height: 6vh;
+  margin: 4% auto 4% auto;
   border-radius: 5px;
+  background-color: black;
+
+  @media (max-width: 740px) {
+    width: 60%;
+    margin-top: 10%;
+    margin-bottom: 6%;
+  }
+
+  @media (max-height: 720px) {
+    margin-bottom: 0;
+    margin-top: 0;
+  }
+
+  @media (max-width: 740px) and (min-height: 820px) {
+    height: 5vh;
+    margin-bottom: 8%;
+  }
 `;
 
 const RegisterButton = styled.button`
@@ -76,18 +127,27 @@ const RegisterButton = styled.button`
   align-items: center;
   justify-content: center;
   width: 60%;
-  height: 55px;
+  height: 7vh;
   padding: 0.75rem;
   font-size: 1rem;
   cursor: pointer;
-  margin: 3rem auto 0 auto;
+  margin: 10% auto 0 auto;
   border-radius: 5px;
   background-color: #016532;
   color: white;
 
   @media (max-width: 740px) {
-    margin-top: 2rem;
-    margin-bottom: 1rem;
+    width: 80%;
+    font-size: 0.9rem;
+    margin-top: 15%;
+  }
+
+  @media (max-height: 720px) {
+    margin-top: 8%;
+  }
+  @media (max-width: 740px) and (min-height: 820px) {
+    height: 6vh;
+    margin-top: 18%;
   }
 `;
 
@@ -95,9 +155,15 @@ const ForgotPassword = styled.a`
   color: #fc5600;
   text-decoration: underline;
   cursor: pointer;
+  font-size: 1rem;
+  margin: 1%;
 
   &:hover {
     color: #016532;
+  }
+
+  @media (max-width: 740px) {
+    font-size: 0.9rem;
   }
 `;
 

@@ -11,24 +11,27 @@ const images = [image1, image2, image3];
 
 const Container = styled.div`
   display: flex;
+  height: 92vh;
+  box-sizing: border-box;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  margin-top: 8vh;
   background: white;
-  margin-top: 30px;
 `;
 
 const Wrapper = styled.div`
   display: flex;
-  justify-content: space-between;
-  align-items: stretch;
-  width: 90%;
-  height: 70%;
+  box-sizing: border-box;
+  width: 90vw;
+  height: 70vh;
   max-width: 1300px;
   background: white;
-  overflow: hidden;
   border: 1px solid #016532;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 740px) and (min-height: 720px) {
+    height: 63vh;
+  }
 `;
 
 const RightSection = styled.div`
@@ -36,6 +39,7 @@ const RightSection = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
   padding: 0.5rem 2rem;
