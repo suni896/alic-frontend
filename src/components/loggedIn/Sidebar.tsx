@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import {
   IoIosArrowDown,
@@ -16,6 +16,10 @@ import CreateRoomComponent from "./CreateRoomComponent";
 import { FaTag } from "react-icons/fa";
 import JoinRooms from "./JoinRooms";
 import CreateNewTag from "./CreateNewTag";
+import axios from "axios";
+import apiClient from "../loggedOut/apiClient";
+
+axios.defaults.baseURL = "https://112.74.92.135:443";
 
 const SidebarContainer = styled.div`
   width: 22%;
@@ -39,7 +43,7 @@ const LineSeparator = styled.hr`
   margin-left: 0;
 `;
 
-const Avatar = styled.div`
+const Avatar = styled.img`
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -324,6 +328,20 @@ interface OverlayProps {
 }
 
 const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
+  const handleLogout = async () => {
+    try {
+      const response = await apiClient.post("/user/logout");
+      if (response.data.code === 200) {
+        alert("Successfully logged out!");
+      } else {
+        alert(response.data.message || "Failed to log out");
+      }
+    } catch (error) {
+      console.error("Error logging out", error);
+      alert("Failed to log out.");
+    }
+  };
+
   return (
     <ProfilePopUpContainer>
       <ModalCloseButton onClick={onClose}>
@@ -331,7 +349,7 @@ const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
       </ModalCloseButton>
       <StyledMe>ME</StyledMe>
       <HorizontalLine />
-      <StyledSignOutContainer>
+      <StyledSignOutContainer onClick={handleLogout}>
         <StyledSignOutText>Sign Out</StyledSignOutText>
         <StyledSignOutIcon />
       </StyledSignOutContainer>
@@ -386,7 +404,15 @@ const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose }) => {
   );
 };
 
+interface UserInformation {
+  userId: number;
+  userEmail: string;
+  userName: string;
+  userPortrait: string;
+}
+
 const Sidebar: React.FC = () => {
+  const [user, setUser] = useState<UserInformation | null>(null);
   const [roomSearch, setRoomSearch] = useState("");
   const [tagSearch, setTagSearch] = useState("");
   const [isProfileClicked, setIsProfileClicked] = useState(false);
@@ -394,6 +420,21 @@ const Sidebar: React.FC = () => {
 
   const [isPlusButtonOverlayVisible, setIsPlusButtonOverlayVisible] =
     useState(false);
+
+  useEffect(() => {
+    const fetchUserInformation = async () => {
+      try {
+        // Authenticated request to fetch user info
+        const response = await apiClient.get("/user/get_user_info");
+        if (response.data.code === 200) {
+          setUser(response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching user info: ", error);
+      }
+    };
+    fetchUserInformation();
+  }, []);
 
   const rooms = [
     { title: "1", desc: "Description for Room 1." },
@@ -434,19 +475,27 @@ const Sidebar: React.FC = () => {
   return (
     <SidebarContainer>
       <ProfileSection>
-        <Avatar />
-        <UserInfo>
-          <UserNameContainer>
-            <UserName>ME</UserName>
-            <StyledArrowDown
-              onClick={() => setIsProfileClicked(!isProfileClicked)}
+        {user && (
+          <>
+            <Avatar
+              src={`data:image/png;base64,${user.userPortrait}`}
+              alt="User Avatar"
             />
-            {isProfileClicked && (
-              <ProfilePopUp onClose={() => setIsProfileClicked(false)} />
-            )}
-          </UserNameContainer>
-          <UserEmail>xxx@xxx.com</UserEmail>
-        </UserInfo>
+            <UserInfo>
+              <UserNameContainer>
+                <UserName>{user.userName}</UserName>
+                <StyledArrowDown
+                  onClick={() => setIsProfileClicked(!isProfileClicked)}
+                />
+                {isProfileClicked && (
+                  <ProfilePopUp onClose={() => setIsProfileClicked(false)} />
+                )}
+              </UserNameContainer>
+              <UserEmail>{user.userEmail}</UserEmail>
+            </UserInfo>
+          </>
+        )}
+        <Avatar />
       </ProfileSection>
       <LineSeparator />
 

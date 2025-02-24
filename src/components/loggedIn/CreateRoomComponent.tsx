@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useFormik, FieldArray, FormikProvider } from "formik";
+import { useFormik, FieldArray, FormikProvider, FormikValues } from "formik";
 import * as Yup from "yup";
 import styled from "styled-components";
 import {
@@ -7,6 +7,8 @@ import {
   IoIosRemoveCircleOutline,
 } from "react-icons/io";
 import { RxCross2 } from "react-icons/rx";
+import axios from "axios";
+axios.defaults.baseURL = "https://112.74.92.135:443";
 
 const Overlay = styled.div`
   position: fixed;
@@ -218,11 +220,19 @@ const StyledSpan = styled.span`
   margin-bottom: 0.25rem;
 `;
 
-const SmallInput = styled(Input)`
+interface SmallInputProps {
+  hasError?: boolean;
+}
+
+const SmallInput = styled(Input)<SmallInputProps>`
   font-size: 0.9rem;
   padding: 0.5rem;
   margin: auto 0;
   width: 90%;
+  border: 1px solid ${({ hasError }) => (hasError ? "red" : "#ccc")};
+  &:focus {
+    border-color: ${({ hasError }) => (hasError ? "red" : "#007BFF")};
+  }
 `;
 
 const RightAlignedSmallInput = styled(SmallInput)`
@@ -242,20 +252,79 @@ const CreateButton = styled.button`
   align-self: center;
 `;
 
-const validationSchema = Yup.object().shape({
-  roomName: Yup.string().required("Room Name is required"),
-  bots: Yup.array()
-    .of(
-      Yup.object().shape({
-        name: Yup.string().required("Assistant Name is required"),
-        context: Yup.number()
-          .required("Context is required")
-          .min(1, "Minimum value is 1"),
-        adminOnly: Yup.boolean(),
-      })
-    )
-    .min(1, "Add at least one assistant"),
-});
+const validationSchema = (showAssistants: boolean) =>
+  Yup.object().shape({
+    roomName: Yup.string()
+      .required("Room Name is required")
+      .matches(
+        /^[A-Za-z0-9 ]{1,20}$/,
+        "Room Name must be 1-20 characters long"
+      ),
+    roomDescription: Yup.string()
+      .required("Room Description is required")
+      .max(200, "Room Description cannot exceed 200 characters"),
+    roomType: Yup.number()
+      .oneOf([1, 2], "Invalid group type")
+      .required("Room Type is required"),
+
+    password: Yup.string().when("roomType", {
+      is: (value: number) => value === 0, // Ensure the condition is valid
+      then: (schema) =>
+        schema
+          .required("Password is required for roomType 0")
+          .matches(
+            /^[A-Za-z0-9!@#$%^&*()_+\-={}$.]{6,20}$/,
+            "Password must be 6-20 characters long and contain valid characters"
+          ), // Add conditionally required validation
+      otherwise: (schema) => schema.notRequired(), // Optional otherwise validation
+    }),
+    bots: showAssistants
+      ? Yup.array()
+          .of(
+            Yup.object().shape({
+              name: Yup.string(),
+              prompt: Yup.string().max(
+                400,
+                "Prompt cannot exceed 400 characters"
+              ),
+              context: Yup.number()
+                .min(1, "Minimum value is 1")
+                .max(20, "Maximum value is 20"),
+              adminOnly: Yup.boolean(),
+            })
+          )
+          .min(1, "Add at least one assistant")
+          .required("Bot info is required")
+      : Yup.array().notRequired(), // If `showAssistants` is false, make `bots` optional
+  });
+
+const handleAddGroup = async (values: FormikValues, onClose: () => void) => {
+  const { roomName, roomDescription, roomType, password, bots } = values;
+  const apiRoomType = roomType === 2 ? 0 : roomType;
+
+  const chatBotVOList = bots.map((bot: any) => ({
+    accessType: bot.adminOnly ? 0 : 1,
+    botContext: bot.context,
+    botName: bot.name,
+    botPrompt: bot.prompt,
+  }));
+  console.log(roomType);
+  try {
+    const response = await axios.post("/v1/group/create_new_group", {
+      groupName: roomName,
+      groupDescription: roomDescription,
+      groupType: apiRoomType, // Now it is 0 or 1
+      password: roomType === 0 ? password : undefined,
+      chatBotVOList,
+    });
+    const groupId: number = response.data.groupId;
+    alert("Room successfully created!");
+    console.log("Room created with ID: ", groupId);
+    onClose;
+  } catch (error) {
+    console.error("Error creating group: ", error);
+  }
+};
 
 interface CreateRoomComponentProps {
   onClose: () => void;
@@ -265,12 +334,22 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   onClose,
 }) => {
   const [showAssistants, setShowAssistants] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
+  const [showErrorModal, setShowErrorModal] = useState<boolean>(false);
+
+  // const private radiooption checked => setShowPasswordModal(true)
+
+  const handlePasswordSubmit = () => {
+    setShowPasswordModal(false);
+    setShowErrorModal(true);
+  };
 
   const formik = useFormik({
     initialValues: {
       roomName: "",
       roomDescription: "",
-      roomType: "public",
+      roomType: 1,
+      password: "",
       bots: [
         {
           name: "",
@@ -280,10 +359,11 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
         },
       ],
     },
-    validationSchema,
+    validationSchema: validationSchema(showAssistants),
     onSubmit: async (values) => {
       console.log("Form Submitted", values);
-      alert("Room Created Successfully!");
+
+      handleAddGroup(values, onClose);
     },
   });
 
@@ -326,6 +406,19 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
             />
+            {formik.touched.roomDescription &&
+              formik.errors.roomDescription && (
+                <div
+                  style={{
+                    color: "red",
+                    fontSize: "0.8rem",
+                    marginTop: "-3vh",
+                    marginBottom: "1vh",
+                  }}
+                >
+                  {formik.errors.roomDescription}
+                </div>
+              )}
 
             <Label>Room Type</Label>
             <RadioGroup>
@@ -334,8 +427,8 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   <input
                     type="radio"
                     name="roomType"
-                    value="public"
-                    checked={formik.values.roomType === "public"}
+                    value={1} // Public is 1
+                    checked={formik.values.roomType === 1}
                     onChange={formik.handleChange}
                   />
                   Public
@@ -348,8 +441,8 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   <input
                     type="radio"
                     name="roomType"
-                    value="private"
-                    checked={formik.values.roomType === "private"}
+                    value={2} // Private is 0, 2 mapped to 0
+                    checked={formik.values.roomType === 2}
                     onChange={formik.handleChange}
                   />
                   Private

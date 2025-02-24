@@ -5,6 +5,7 @@ import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import ContainerLayout from "./ContainerLayout";
 import axios from "axios";
+import apiClient from "./apiClient";
 
 axios.defaults.baseURL = "https://112.74.92.135:443";
 
@@ -197,12 +198,13 @@ const Signin: React.FC = () => {
     validationSchema,
     onSubmit: async (values) => {
       try {
-        const response = await axios.post("/auth/login", {
+        const response = await apiClient.post("/auth/login", {
           password: values.password,
           userEmail: values.email,
         });
 
         if (response.data.code === 200) {
+          // On successful login, the server sets the JWT_Token cookie
           navigate("/search-rooms");
         } else {
           alert(response.data.message || "Failed to log in.");
@@ -212,7 +214,7 @@ const Signin: React.FC = () => {
           console.error("Axios error:", error.response?.data || error.message);
           alert(
             error.response?.data?.message ||
-              "Failed to send verification email. Please try again."
+              "Failed to log in. Please try again."
           );
         } else {
           console.error("Unexpected error:", error);
