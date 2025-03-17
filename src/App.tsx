@@ -1,5 +1,4 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom";
-import SigninPage from "./pages/SigninPage";
 import RegisterPage from "./pages/RegisterPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SearchRoomsPage from "./pages/SearchRoomsPage";
@@ -7,6 +6,7 @@ import MyClassPage from "./pages/MyClassPage";
 import VerifyOTPRegister from "./components/loggedOut/VerifyOTPRegister";
 import VerifyOTPReset from "./components/loggedOut/VerifyOTPReset";
 import { useState } from "react";
+import SigninPage from "./pages/SigninPage";
 
 function App() {
   const [email, setEmail] = useState<string>("");

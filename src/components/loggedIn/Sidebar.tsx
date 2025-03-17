@@ -19,8 +19,6 @@ import CreateNewTag from "./CreateNewTag";
 import axios from "axios";
 import apiClient from "../loggedOut/apiClient";
 
-axios.defaults.baseURL = "https://112.74.92.135:443";
-
 const SidebarContainer = styled.div`
   width: 22%;
   height: 100vh;
@@ -185,8 +183,12 @@ const RoomDesc = styled.p`
 `;
 
 const UserEmail = styled.span`
-  font-size: 1rem;
+  font-size: 0.8rem;
   color: #666;
+  max-width: 85%;
+  display: inline-block;
+  overflow-wrap: break-word; /* Allow breaking words to fit */
+  white-space: pre-wrap; /* Preserve whitespace and allow wrapping */
 `;
 
 const SearchIcon = styled(CiSearch)`
@@ -328,11 +330,14 @@ interface OverlayProps {
 }
 
 const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
+  const navigate = useNavigate(); // Call useNavigate directly
+
   const handleLogout = async () => {
     try {
-      const response = await apiClient.post("/user/logout");
+      const response = await apiClient.post("/v1/user/logout");
       if (response.data.code === 200) {
         alert("Successfully logged out!");
+        navigate("/"); // Use the navigate function to go to the home page
       } else {
         alert(response.data.message || "Failed to log out");
       }
@@ -425,12 +430,21 @@ const Sidebar: React.FC = () => {
     const fetchUserInformation = async () => {
       try {
         // Authenticated request to fetch user info
-        const response = await apiClient.get("/user/get_user_info");
+        const response = await apiClient.get("/v1/user/get_user_info");
         if (response.data.code === 200) {
           setUser(response.data.data);
         }
-      } catch (error) {
-        console.error("Error fetching user info: ", error);
+      } catch (error: unknown) {
+        if (axios.isAxiosError(error)) {
+          console.error("Axios error:", error.response?.data || error.message);
+          alert(
+            error.response?.data?.message ||
+              "Failed to fetch user info. Please try again."
+          );
+        } else {
+          console.error("Unexpected error:", error);
+          alert("An unexpected error occurred. Please try again.");
+        }
       }
     };
     fetchUserInformation();
@@ -495,7 +509,6 @@ const Sidebar: React.FC = () => {
             </UserInfo>
           </>
         )}
-        <Avatar />
       </ProfileSection>
       <LineSeparator />
 

@@ -206,8 +206,7 @@ const Signin: React.FC = () => {
         if (response.data.code === 200) {
           // On successful login, the server sets the JWT_Token cookie
           navigate("/search-rooms");
-        } else {
-          alert(response.data.message || "Failed to log in.");
+          console.log(response.data.code);
         }
       } catch (error: unknown) {
         if (axios.isAxiosError(error)) {
