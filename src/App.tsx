@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import RegisterPage from "./pages/RegisterPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SearchRoomsPage from "./pages/SearchRoomsPage";
@@ -7,6 +7,14 @@ import VerifyOTPRegister from "./components/loggedOut/VerifyOTPRegister";
 import VerifyOTPReset from "./components/loggedOut/VerifyOTPReset";
 import { useState } from "react";
 import SigninPage from "./pages/SigninPage";
+import MyRoomPage from "./pages/MyRoomPage";
+import { UserProvider } from "./components/loggedIn/UserContext";
+
+const Debugger: React.FC = () => {
+  const location = useLocation();
+  console.log("Current location:", location.pathname);
+  return null;
+};
 
 function App() {
   const [email, setEmail] = useState<string>("");
@@ -17,37 +25,41 @@ function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<SigninPage />} />
-        <Route
-          path="/register"
-          element={<RegisterPage setEmail={setEmail} />}
-        />
-        <Route
-          path="/reset-password"
-          element={<ResetPasswordPage setEmail={setEmail} />}
-        />
-        <Route
-          path="/verify-register"
-          element={
-            <VerifyOTPRegister
-              onVerifySuccess={handleVerifySuccess}
-              email={email}
-            />
-          }
-        />
-        <Route
-          path="/verify-reset"
-          element={
-            <VerifyOTPReset
-              onVerifySuccess={handleVerifySuccess}
-              email={email}
-            />
-          }
-        />
-        <Route path="/search-rooms" element={<SearchRoomsPage />} />
-        <Route path="/my-class-1" element={<MyClassPage />} />
-      </Routes>
+      <UserProvider>
+        <Debugger />
+        <Routes>
+          <Route path="/" element={<SigninPage />} />
+          <Route
+            path="/register"
+            element={<RegisterPage setEmail={setEmail} />}
+          />
+          <Route
+            path="/reset-password"
+            element={<ResetPasswordPage setEmail={setEmail} />}
+          />
+          <Route
+            path="/verify-register"
+            element={
+              <VerifyOTPRegister
+                onVerifySuccess={handleVerifySuccess}
+                email={email}
+              />
+            }
+          />
+          <Route
+            path="/verify-reset"
+            element={
+              <VerifyOTPReset
+                onVerifySuccess={handleVerifySuccess}
+                email={email}
+              />
+            }
+          />
+          <Route path="/search-rooms" element={<SearchRoomsPage />} />
+          <Route path="/my-class/:tagId" element={<MyClassPage />} />
+          <Route path="/my-room/:groupId" element={<MyRoomPage />} />
+        </Routes>
+      </UserProvider>
     </BrowserRouter>
   );
 }

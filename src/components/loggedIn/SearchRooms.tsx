@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { CiSearch } from "react-icons/ci";
 import styled from "styled-components";
 import CreateRoomComponent from "./CreateRoomComponent"; // Modal Component
+import apiClient from "../loggedOut/apiClient";
 
 const Container = styled.div`
   background: white;
@@ -13,23 +14,37 @@ const TopContainer = styled.div`
   display: flex;
   width: 100%;
   height: 12vh;
+  align-items: center;
+  justify-content: center;
 `;
 
 const Title = styled.h1`
   font-family: Roboto;
   font-weight: 800;
   font-size: 2.5rem;
-  margin-left: 32%;
+
+  @media (max-width: 800px) {
+    font-size: 2rem;
+    font-weight: 700;
+  }
+
+  @media (max-width: 500px) {
+    font-size: 1.7rem;
+  }
 `;
 
 const SearchContainer = styled.div`
   position: fixed;
   display: flex;
   align-items: center;
-  right: 2rem;
-  top: 6.8rem;
+  right: 5rem;
+  top: 9.5rem;
   width: auto;
   z-index: 1000;
+
+  @media (max-width: 1000px) {
+    right: 1.5rem;
+  }
 `;
 
 const SearchIcon = styled(CiSearch)`
@@ -39,7 +54,7 @@ const SearchIcon = styled(CiSearch)`
 `;
 
 const SearchInput = styled.input`
-  padding: 8px 12px;
+  padding: 5% 1%;
   font-size: 1rem;
   border: 1px solid #b7b7b7;
   color: #757575;
@@ -51,6 +66,8 @@ const SearchInput = styled.input`
   &:focus {
     border-color: #333;
   }
+
+  font-size: 80%;
 `;
 
 const SearchRoomsContainer = styled.div`
@@ -59,10 +76,21 @@ const SearchRoomsContainer = styled.div`
   gap: 2rem 4rem;
   padding: 2rem;
   box-sizing: border-box;
+  margin-left: auto;
+  margin-right: auto;
+  justify-content: center;
+
+  @media (max-width: 1000px) {
+    gap: 2rem;
+  }
+  @media (max-width: 600px) {
+    gap: 2rem 0.8rem;
+    padding: 2rem 1rem;
+  }
 `;
 
 const RoomContainer = styled.div`
-  width: 45%; /* Two columns */
+  width: 45%;
   border-radius: 6px;
   border: solid #d9d9d9;
   padding: 1rem;
@@ -73,6 +101,10 @@ const RoomContainer = styled.div`
   justify-content: flex-start;
   align-items: flex-start;
   gap: 0.3rem;
+
+  @media (max-width: 600px) {
+    padding: 1rem 0.5rem;
+  }
 `;
 
 const RoomTitle = styled.h2`
@@ -81,6 +113,13 @@ const RoomTitle = styled.h2`
   font-family: Roboto;
   font-weight: 700;
   margin: 0;
+
+  @media (max-width: 600px) {
+    font-size: 0.8rem;
+  }
+  @media (max-width: 400px) {
+    font-size: 0.75rem;
+  }
 `;
 
 const RoomAdmin = styled.p`
@@ -89,6 +128,9 @@ const RoomAdmin = styled.p`
   font-weight: 400;
   color: #757575;
   margin: 0;
+  @media (max-width: 600px) {
+    font-size: 0.7rem;
+  }
 `;
 
 const RoomDescription = styled.span`
@@ -97,14 +139,20 @@ const RoomDescription = styled.span`
   font-family: Roboto;
   font-weight: 400;
   margin: 0;
+  @media (max-width: 600px) {
+    font-size: 0.7rem;
+  }
 `;
 
 const Footer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 4rem;
+  gap: 0.3rem;
+  position: fixed;
+  bottom: 4vh;
+  width: 80%;
+  background-color: white;
 `;
 
 const Ellipsis = styled.span`
@@ -116,7 +164,7 @@ const PageButton = styled.button<PageButtonProps>`
   color: ${(props) => (props.active ? "white" : "black")};
   border: ${(props) => (props.active ? "1px solid #d9d9d9" : "none")};
   border-radius: 4px;
-  padding: 0.5rem 1rem;
+  padding: 0.3rem 1rem;
   cursor: pointer;
 
   &:hover {
@@ -127,10 +175,37 @@ const PageButton = styled.button<PageButtonProps>`
     color: #d9d9d9;
     cursor: not-allowed;
   }
+  @media (max-width: 800px) {
+    font-size: 0.8rem;
+    padding: 0.3rem 0.5rem;
+  }
+
+  @media (max-width: 500px) {
+    font-size: 0.6rem;
+    padding: 0.3rem;
+  }
 `;
 
 interface PageButtonProps {
   active?: boolean;
+}
+
+interface Room {
+  groupId: number;
+  groupName: string;
+  groupDescription: string;
+  groupType: number;
+  adminId: number;
+  adminName: string;
+  memberCount: number;
+}
+
+interface PaginationResponse {
+  pageSize: number;
+  pageNum: number;
+  pages: number;
+  total: number;
+  data: Room[];
 }
 
 const getPageNumbers = (currentPage: number, totalPages: number) => {
@@ -159,16 +234,16 @@ const getPageNumbers = (currentPage: number, totalPages: number) => {
   return pages;
 };
 
-const SearchRooms: React.FC = () => {
-  const rooms = Array.from({ length: 68 }, (_, i) => ({
-    title: `${i + 1}`,
-    admin: "Jane Smith",
-    desc: `Description for Room ${i + 1}.`,
-  }));
+const roomsCache = new Map<string, Map<number, Room[]>>();
 
+const SearchRooms: React.FC = () => {
+  const [rooms, setRooms] = useState<Room[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [roomsPerPage, setRoomsPerPage] = useState(8);
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [searchKeyword, setSearchKeyword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const roomRef = useRef<HTMLDivElement>(null);
 
@@ -196,7 +271,51 @@ const SearchRooms: React.FC = () => {
     };
   }, []);
 
-  const totalPages = Math.ceil(rooms.length / roomsPerPage);
+  useEffect(() => {
+    fetchRooms();
+  }, [currentPage, roomsPerPage, searchKeyword]);
+
+  const fetchRooms = async () => {
+    if (roomsCache.has(searchKeyword)) {
+      const keywordCache = roomsCache.get(searchKeyword)!;
+      if (keywordCache.has(currentPage)) {
+        setRooms(keywordCache.get(currentPage)!);
+        setLoading(false);
+        return;
+      }
+    }
+    try {
+      setLoading(true);
+      const response = await apiClient.post("/v1/group/get_group_list", {
+        keyword: searchKeyword,
+        groupDemonTypeEnum: "PUBLICROOM",
+        pageRequestVO: {
+          pageSize: roomsPerPage,
+          pageNum: currentPage,
+        },
+      });
+
+      if (response.data.code === 200) {
+        const paginationData: PaginationResponse = response.data.data;
+        const fetchedRooms = paginationData.data;
+
+        setRooms(fetchedRooms);
+        setTotalPages(paginationData.pages);
+
+        // Cache the fetched data
+        if (!roomsCache.has(searchKeyword)) {
+          roomsCache.set(searchKeyword, new Map());
+        }
+        roomsCache.get(searchKeyword)!.set(currentPage, fetchedRooms);
+      } else {
+        console.error("Failed to fetch rooms:", response.data.message);
+      }
+    } catch (error) {
+      console.error("Error fetching rooms:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handlePageChange = (page: number) => {
     if (page > 0 && page <= totalPages) {
@@ -204,10 +323,13 @@ const SearchRooms: React.FC = () => {
     }
   };
 
-  const currentRooms = rooms.slice(
-    (currentPage - 1) * roomsPerPage,
-    currentPage * roomsPerPage
-  );
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value.length <= 100) {
+      setSearchKeyword(value);
+      setCurrentPage(1); // Reset to first page when search changes
+    }
+  };
 
   return (
     <>
@@ -218,18 +340,31 @@ const SearchRooms: React.FC = () => {
         <TopContainer>
           <Title>Public Chat Rooms</Title>
           <SearchContainer>
-            <SearchInput placeholder="Search Public Rooms" />
+            <SearchInput
+              placeholder="Search Public Rooms"
+              value={searchKeyword}
+              onChange={handleSearchChange}
+            />
             <SearchIcon />
           </SearchContainer>
         </TopContainer>
         <SearchRoomsContainer>
-          {currentRooms.map((room, index) => (
-            <RoomContainer key={index} ref={index === 0 ? roomRef : null}>
-              <RoomTitle>Room {room.title}</RoomTitle>
-              <RoomAdmin>Admin: {room.admin}</RoomAdmin>
-              <RoomDescription>{room.desc}</RoomDescription>
-            </RoomContainer>
-          ))}
+          {loading ? (
+            <div>Loading...</div>
+          ) : rooms.length === 0 ? (
+            <div>No rooms found</div>
+          ) : (
+            rooms.map((room, index) => (
+              <RoomContainer
+                key={room.groupId}
+                ref={index === 0 ? roomRef : null}
+              >
+                <RoomTitle>{room.groupName}</RoomTitle>
+                <RoomAdmin>Admin: {room.adminName}</RoomAdmin>
+                <RoomDescription>{room.groupDescription}</RoomDescription>
+              </RoomContainer>
+            ))
+          )}
         </SearchRoomsContainer>
         <Footer>
           <PageButton

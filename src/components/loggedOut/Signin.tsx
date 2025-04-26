@@ -105,6 +105,7 @@ const SigninButton = styled.button`
   margin: 4% auto 4% auto;
   border-radius: 5px;
   background-color: black;
+  color: white;
 
   @media (max-width: 740px) {
     width: 60%;

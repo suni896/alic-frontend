@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useFormik, FieldArray, FormikProvider, FormikValues } from "formik";
 import * as Yup from "yup";
 import styled from "styled-components";
@@ -9,6 +9,7 @@ import {
 import { RxCross2 } from "react-icons/rx";
 import axios from "axios";
 import apiClient from "../loggedOut/apiClient";
+import { useParams } from "react-router-dom";
 axios.defaults.baseURL = "https://112.74.92.135:443";
 
 const Overlay = styled.div`
@@ -25,7 +26,7 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
-  position: relative; // Add this
+  position: relative;
   width: 75%;
   margin-top: 8vh;
   max-width: 50rem;
@@ -35,6 +36,14 @@ const Modal = styled.div`
   padding: 2rem;
   height: auto;
   max-height: 80vh;
+  overflow-x: visible;
+  @media (max-width: 700px) {
+    width: 85%;
+    padding-left: 0.6rem;
+  }
+
+  @media (max-width: 400px) {
+  width: 80%;}
 `;
 
 const CloseButton = styled.button`
@@ -86,12 +95,20 @@ const Input = styled.input`
     border-color: #4ade80;
     box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.5);
   }
+
+  @media (max-width: 700px) {
+    width: 96%;
+  }
 `;
 
 const RadioGroup = styled.div`
   display: flex;
   gap: 20%;
   margin: 1vh 0;
+
+  @media (max-width: 500px) {
+    gap: 10%;
+  }
 `;
 
 const RadioTextContainer = styled.div`
@@ -123,6 +140,10 @@ const RadioOption = styled.label`
 const RadioOptionDesc = styled.span`
   font-size: 0.875rem;
   color: #6b7280;
+
+  @media (max-width: 500px) {
+    font-size: 0.7rem;
+  }
 `;
 
 const CheckboxLabel = styled.div`
@@ -147,15 +168,25 @@ const CheckboxLabel = styled.div`
 const FieldArrayContainer = styled.div`
   max-height: 25vh;
   overflow-y: auto;
+  overflow-x: visible;
   padding: 0.75rem;
+  @media (max-width: 700px) {
+    padding: 0.3rem;
+  }
 `;
 
 const AddAssistantRow = styled.div`
   display: grid;
-  grid-template-columns: 2rem minmax(0, 1fr) minmax(0, 1fr) 6rem 4rem;
+  grid-template-columns: 2rem minmax(0, 1.5fr) minmax(0, 1.5fr) 6rem 4rem;
   align-items: center;
-  gap: 1rem;
+
   margin-bottom: 1vh;
+  @media (max-width: 700px) {
+    width: 100%;
+  }
+  @media (max-width: 400px) {grid-template-columns: 2rem minmax(0, 3fr) minmax(0, 3fr) 2.5rem 3rem;
+
+  }
 `;
 
 const ToggleSwitchContainer = styled.div`
@@ -166,6 +197,13 @@ const ToggleSwitchContainer = styled.div`
   min-width: 6rem;
   gap: 0;
   position: relative;
+  left: -5vw;
+
+  @media (max-width: 400px) {
+  width: 40%;
+  min-width: none;
+  left: 1vw;
+  }
 `;
 
 const ToggleSwitch = styled.label`
@@ -176,6 +214,7 @@ const ToggleSwitch = styled.label`
   input {
     display: none;
   }
+
 
   span {
     width: 2rem;
@@ -205,20 +244,73 @@ const ToggleSwitch = styled.label`
       transform: translateX(1rem);
     }
   }
+
+  @media (max-width: 400px){
+  width: 1.5rem;
+  height: 0.8rem;}
+`;
+
+const RemoveIcon = styled(IoIosRemoveCircleOutline)`
+  font-size: 1.5rem;
+  color: #ef4444;
+  cursor: pointer;
+  margin-right: -20rem;
+
+  @media (max-width: 400px) {
+    font-size: 1.1rem;
+  }
+`;
+
+const AddIcon = styled(IoIosAddCircleOutline)`
+  font-size: 1.5rem;
+  color: #10b981;
+  cursor: pointer;
+  margin-top: 0.5rem;
+  @media (max-width: 400px) {
+    font-size: 1.1rem;
+  }
 `;
 
 const SmallInputContainer = styled.div`
   display: flex;
-  width: 100%;
   flex-direction: column;
+  width: 100%;
 `;
 
-const StyledSpan = styled.span`
+interface StyledSpanProps {
+  isadminlabel?: string;
+}
+
+const StyledSpan = styled.span<StyledSpanProps>`
   display: block;
   font-size: 0.8rem;
   font-weight: 600;
   color: #374151;
   margin-bottom: 0.25rem;
+  
+  ${props => props.isadminlabel && `
+    position: relative;
+    top: -1.2vh;
+  `}
+
+  @media (max-width: 700px) {
+    font-size: 0.5rem;
+    ${props => props.isadminlabel && `
+      position: relative;
+      top: -0.8vh;
+      left: 3vw;
+    `}
+  }
+  
+  @media (max-width: 400px) {
+    font-size: 0.4rem;
+    
+    ${props => props.isadminlabel && `
+      position: relative;
+      
+      left: -4vw;
+    `}
+  }
 `;
 
 interface SmallInputProps {
@@ -229,10 +321,19 @@ const SmallInput = styled(Input)<SmallInputProps>`
   font-size: 0.9rem;
   padding: 0.5rem;
   margin: auto 0;
-  width: 90%;
+  width: 60%;
   border: 1px solid ${({ hasError }) => (hasError ? "red" : "#ccc")};
   &:focus {
     border-color: ${({ hasError }) => (hasError ? "red" : "#007BFF")};
+  }
+
+  @media (max-width: 800px) {
+    width: 75%;
+    font-size: 0.7rem;
+  }
+  @media (max-width: 600px) {
+    width: 75%;
+    font-size: 0.55rem;
   }
 `;
 
@@ -251,6 +352,11 @@ const CreateButton = styled.button`
   cursor: pointer;
   font-weight: 600;
   align-self: center;
+
+  @media (max-width: 600px) {
+    width: 35%;
+    font-size: 0.9rem;
+  }
 `;
 
 const ErrorMessage = styled.div`
@@ -328,115 +434,36 @@ interface CreateGroupPayload {
   groupDescription: string;
   groupType: number;
   password?: string;
-  chatBotVOList: ChatBotVO[]; // Changed to be required, not optional
+  chatBotVOList: ChatBotVO[];
 }
 
-const handleAddGroup = async (values: FormikValues, onClose: () => void) => {
-  const roomTypeValue = values.roomType as string; // roomType is a string
-  const groupTypeValue = parseInt(roomTypeValue, 10); // Convert to integer for groupType
-  const { roomName, roomDescription, roomType, password, bots } = values;
+const handleAddGroup = async (
+  values: FormikValues,
+  onClose: () => void,
+  showAssistantsEnabled: boolean
+) => {
+  const groupTypeValue = parseInt(values.roomType, 10);
 
-  // Debug - Log all the input values with their types
-  console.log("--- DEBUG: FORM VALUES ---");
-  console.log(`roomName: "${roomName}" (${typeof roomName})`);
-  console.log(
-    `roomDescription: "${roomDescription}" (${typeof roomDescription})`
-  );
-  console.log(`roomType (raw): "${roomType}" (${typeof roomType})`);
-  console.log(
-    `groupTypeValue (parsed): ${groupTypeValue} (${typeof groupTypeValue})`
-  );
-  console.log(`password: "${password}" (${typeof password})`);
-  console.log(`bots:`, bots);
-  console.log("-----------------------");
-
-  // Transform bots into ChatBotVO array if they exist, otherwise empty array
-  let chatBotVOList: ChatBotVO[] = [];
-  if (Array.isArray(bots) && bots.length > 0) {
-    chatBotVOList = bots.map((bot: FormBot, index: number) => {
-      // Ensure context is a number
-      const botContext =
-        typeof bot.context === "number"
-          ? bot.context
-          : parseInt(String(bot.context), 10);
-      // Ensure accessType is correct format
-      const accessType = bot.adminOnly ? 0 : 1;
-
-      const botData: ChatBotVO = {
-        accessType: accessType,
-        botContext: botContext,
+  // Transform bots into ChatBotVO array
+  const chatBotVOList: ChatBotVO[] = showAssistantsEnabled
+    ? values.bots.map((bot: FormBot) => ({
+        accessType: bot.adminOnly ? 0 : 1,
+        botContext:
+          typeof bot.context === "number"
+            ? bot.context
+            : parseInt(String(bot.context), 10),
         botName: bot.name || "",
         botPrompt: bot.prompt || "",
-      };
+      }))
+    : [];
 
-      // Debug each bot configuration
-      console.log(`--- DEBUG: BOT ${index} ---`);
-      console.log(`botName: "${botData.botName}" (${typeof botData.botName})`);
-      console.log(
-        `botPrompt: "${botData.botPrompt}" (${typeof botData.botPrompt})`
-      );
-      console.log(
-        `botContext: ${botData.botContext} (${typeof botData.botContext})`
-      );
-      console.log(
-        `accessType: ${botData.accessType} (${typeof botData.accessType})`
-      );
-      console.log("-----------------------");
-
-      return botData;
-    });
-  }
-
-  // Create the request payload with proper typing
-  // Always include chatBotVOList as an array (empty if no bots)
   const requestPayload: CreateGroupPayload = {
-    groupName: roomName as string,
-    groupDescription: roomDescription as string,
+    groupName: values.roomName,
+    groupDescription: values.roomDescription,
     groupType: groupTypeValue,
-    // Only include password when type is private (0)
-    ...(groupTypeValue === 0 ? { password: password as string } : {}),
-    // Always include chatBotVOList, even if empty
-    chatBotVOList: chatBotVOList,
+    ...(groupTypeValue === 0 ? { password: values.password } : {}),
+    chatBotVOList,
   };
-
-  // Deep debug of the final request payload
-  console.log("--- DEBUG: FINAL REQUEST PAYLOAD ---");
-  console.log("Full payload:", JSON.stringify(requestPayload, null, 2));
-  console.log("Payload structure:");
-  for (const [key, value] of Object.entries(requestPayload)) {
-    const valueType = Array.isArray(value) ? "array" : typeof value;
-    console.log(`${key}: ${valueType}`);
-    if (valueType === "array") {
-      console.log(`  ${key} length: ${(value as any[]).length}`);
-    }
-  }
-  console.log("-----------------------");
-
-  // Add request interceptor to log all request headers
-  const interceptorReq = axios.interceptors.request.use((request) => {
-    console.log("Request Headers:", request.headers);
-    console.log("Request Method:", request.method);
-    console.log("Request URL:", request.url);
-    return request;
-  });
-
-  // Add response interceptor to log all response headers
-  const interceptorRes = axios.interceptors.response.use(
-    (response) => {
-      console.log("--- DEBUG: RESPONSE ---");
-      console.log("Response Status:", response.status);
-      console.log("Response Data:", JSON.stringify(response.data, null, 2));
-      console.log("Response Code:", response.data.code);
-      return response;
-    },
-    (error) => {
-      console.log("--- DEBUG: ERROR ---");
-      console.log("Error Status:", error.response?.status);
-      console.log("Error Data:", JSON.stringify(error.response?.data, null, 2));
-      console.log("Error Message:", error.message);
-      return Promise.reject(error);
-    }
-  );
 
   try {
     const response = await apiClient.post(
@@ -444,51 +471,84 @@ const handleAddGroup = async (values: FormikValues, onClose: () => void) => {
       requestPayload
     );
 
-    // Define an interface for the response structure
-    interface ApiResponse {
-      code: number;
-      message: string;
-      data?: {
-        groupId: number;
-      };
+    if (response.data.code === 200 && response.data.data?.groupId) {
+      alert("Room successfully created!");
+      onClose();
+    } else {
+      throw new Error(response.data.message || "Failed to create room");
     }
-
-    const responseData = response.data as ApiResponse;
-
-    if (responseData.code !== 200) {
-      console.error(
-        `API Error: Code ${responseData.code}`,
-        responseData.message
-      );
-      alert(
-        `Error ${responseData.code}: ${responseData.message || "Unknown error"}`
-      );
-      return;
-    }
-
-    // Correctly access the groupId from the nested data structure
-    const groupId: number | undefined = responseData.data?.groupId;
-    alert("Room successfully created!");
-    console.log("Room created with ID:", groupId);
-    onClose();
   } catch (error: any) {
     console.error("Error creating group:", error);
     alert(`Error: ${error.response?.data?.message || error.message}`);
-  } finally {
-    // Remove interceptors to avoid memory leaks
-    axios.interceptors.request.eject(interceptorReq);
-    axios.interceptors.response.eject(interceptorRes);
   }
 };
-
 interface CreateRoomComponentProps {
   onClose: () => void;
+  isModify?: boolean;
+  groupId?: number;
+  fromSidebar?: boolean; // New prop
+}
+
+// Define the RoomInfoResponse interface at the appropriate scope
+interface RoomInfoResponse {
+  code: number;
+  message: string;
+  data?: {
+    groupId: number;
+    groupName: string;
+    groupDescription: string;
+    groupType: number;
+    password?: string;
+    // Include both possible field names for the bot list
+    chatBotVOList?: Array<{
+      botId: number;
+      botName: string;
+      botPrompt: string;
+      botContext: number;
+      accessType: number;
+    }>;
+    chatBots?: Array<{
+      botId: number;
+      botName: string;
+      botPrompt: string;
+      botContext: number;
+      accessType: number;
+    }>;
+  };
+}
+
+// Extend the FormBot interface to include status and botId
+interface FormBotWithStatus extends FormBot {
+  botId?: number; // Only present for existing bots
+  status: "new" | "modified" | "unchanged"; // Track status for edit operations
 }
 
 const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   onClose,
+  isModify = false,
+  groupId: propGroupId,
+  fromSidebar = false,
 }) => {
   const [showAssistants, setShowAssistants] = useState(false);
+  const [apiRequestMade, setApiRequestMade] = useState(false);
+  const [originalBots, setOriginalBots] = useState<
+    Array<{
+      botId: number;
+      botName: string;
+      botPrompt: string;
+      botContext: number;
+      accessType: number;
+    }>
+  >([]);
+  const { groupId: urlGroupId } = useParams<{ groupId: string }>();
+  const effectiveIsModify = fromSidebar ? false : isModify;
+  const shouldCheckRole = effectiveIsModify && !fromSidebar;
+  const [userRole, setUserRole] = useState<string | null>(
+    fromSidebar ? "ADMIN" : null
+  );
+  // Determine the groupId to use - from props or URL params
+  const currentGroupId =
+    propGroupId || (urlGroupId ? parseInt(urlGroupId, 10) : undefined);
 
   const formik = useFormik({
     initialValues: {
@@ -502,23 +562,211 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
           prompt: "",
           context: 1,
           adminOnly: false,
+          botId: undefined,
+          status: "new",
         },
-      ],
+      ] as FormBotWithStatus[],
     },
     validationSchema: validationSchema(showAssistants),
     onSubmit: async (values) => {
       console.log("Form Submitted", values);
       console.log("roomType value:", values.roomType);
+      console.log("Bot status summary:", values.bots.map(bot => ({
+        botId: bot.botId,
+        name: bot.name,
+        status: bot.status
+      })));
 
-      // If assistants are not checked, make sure bots array is empty
-      const submittedValues = {
-        ...values,
-        bots: showAssistants ? values.bots : [],
-      };
-
-      handleAddGroup(submittedValues, onClose);
+      if (effectiveIsModify && userRole === "ADMIN") {
+        // Handle edit group logic
+        await handleEditGroup(values);
+      } else if (!effectiveIsModify) {
+        // Handle create group logic
+        const submittedValues = {
+          ...values,
+          bots: showAssistants ? values.bots : [], // Empty array if assistants not enabled
+        };
+        await handleAddGroup(submittedValues, onClose, showAssistants);
+      } else {
+        alert("You don't have permission to modify this room");
+      }
     },
   });
+
+  useEffect(() => {
+    const fetchRoomInfo = async () => {
+      // Only fetch room info when modifying and not from sidebar
+      if (
+        effectiveIsModify &&
+        !fromSidebar &&
+        !apiRequestMade &&
+        currentGroupId
+      ) {
+        try {
+          setApiRequestMade(true);
+
+          // Only fetch user role when modifying
+          if (shouldCheckRole) {
+            const roleResponse = await fetchUserRole(currentGroupId);
+            setUserRole(roleResponse);
+          }
+
+          // ... rest of the fetch logic ...
+        } catch (error: any) {
+          console.error("Error message:", error.message);
+          setApiRequestMade(false);
+        }
+      }
+    };
+
+    fetchRoomInfo();
+  }, [effectiveIsModify, currentGroupId, apiRequestMade, fromSidebar]);
+
+  // Reset state and enforce isModify=false when coming from sidebar
+  useEffect(() => {
+    if (fromSidebar) {
+      setApiRequestMade(false);
+      setShowAssistants(false);
+      setOriginalBots([]);
+      setUserRole(null);
+      formik.resetForm();
+    }
+  }, [fromSidebar]);
+
+  // Cleanup effect
+  useEffect(() => {
+    return () => {
+      setShowAssistants(false);
+      setApiRequestMade(false);
+      setOriginalBots([]);
+      setUserRole(null);
+      formik.resetForm();
+    };
+  }, []);
+
+  // Reset state when effectiveIsModify or groupId changes
+  useEffect(() => {
+    setApiRequestMade(false);
+    setShowAssistants(false);
+    setOriginalBots([]);
+    setUserRole(null);
+    formik.resetForm();
+  }, [effectiveIsModify, propGroupId]);
+
+  const fetchUserRole = async (groupId: number) => {
+    try {
+      const response = await apiClient.get(
+        `/v1/group/get_role_in_group?groupId=${groupId}`
+      );
+      if (response.data.code === 200) {
+        return response.data.data; // "ADMIN" or "MEMBER"
+      }
+      return null;
+    } catch (error) {
+      console.error("Error fetching user role:", error);
+      return null;
+    }
+  };
+
+  // MODIFIED: function to handle edit group submission
+  const handleEditGroup = async (values: any) => {
+    if (!currentGroupId) {
+      console.error("Cannot edit group: groupId is undefined");
+      return;
+    }
+
+    try {
+      // Debug log the form values
+      console.log("Edit form values:", values);
+      
+      // Separate bots based on their status
+      const addedBots = values.bots
+        .filter((bot: FormBotWithStatus) => bot.status === "new")
+        .map((bot: FormBotWithStatus) => ({
+          accessType: bot.adminOnly ? 0 : 1,
+          botContext:
+            typeof bot.context === "number"
+              ? bot.context
+              : parseInt(String(bot.context), 10),
+          botName: bot.name,
+          botPrompt: bot.prompt,
+        }));
+
+      // Find deleted bots by comparing original bots with current bots
+      const currentBotIds = values.bots
+        .filter((bot: FormBotWithStatus) => bot.botId)
+        .map((bot: FormBotWithStatus) => bot.botId);
+
+      // Calculate which bots were deleted (for debugging)
+      const deletedBotIds = originalBots
+        .filter((bot) => !currentBotIds.includes(bot.botId))
+        .map((bot) => bot.botId);
+      
+      console.log("Deleted bot IDs:", deletedBotIds);
+      
+      // For API, we need ALL existing bots that haven't been deleted in modifyChatBotVOS
+      // This includes both modified and unchanged bots
+      const existingBots = values.bots
+        .filter(
+          (bot: FormBotWithStatus) =>
+            bot.botId && (bot.status === "modified" || bot.status === "unchanged")
+        )
+        .map((bot: FormBotWithStatus) => ({
+          botId: bot.botId,
+          accessType: bot.adminOnly ? 0 : 1,
+          botContext:
+            typeof bot.context === "number"
+              ? bot.context
+              : parseInt(String(bot.context), 10),
+          botName: bot.name,
+          botPrompt: bot.prompt,
+        }));
+
+      // Per API documentation
+      const requestPayload = {
+        groupId: Number(currentGroupId), // Ensure groupId is a number
+        groupName: values.roomName,
+        groupDescription: values.roomDescription,
+        // Include password only for private rooms or if it was previously set
+        ...(values.roomType === "0" ? { password: values.password } : {}),
+        // Include bots only if assistants are enabled
+        ...(showAssistants ? {
+          addChatBotVOList: addedBots,
+          modifyChatBotVOS: existingBots, // All existing bots that haven't been deleted
+        } : {
+          addChatBotVOList: [],
+          modifyChatBotVOS: []
+        })
+      };
+
+      console.log("Edit request payload:", requestPayload);
+
+      const response = await apiClient.post(
+        "/v1/group/edit_group_info",
+        requestPayload
+      );
+
+      console.log("Edit response:", response.data);
+
+      if (response.data.code === 200) {
+        // Verify the update by fetching the updated data
+        try {
+          const verifyResponse = await apiClient.get(`/v1/group/get_group_info?groupId=${currentGroupId}`);
+          console.log("Verification response:", verifyResponse.data);
+        } catch (verifyError) {
+          console.error("Failed to verify update:", verifyError);
+        }
+        
+        alert("Room successfully updated!");
+        onClose();
+      } else {
+        throw new Error(response.data.message || "Failed to update room");
+      }
+    } catch (error: any) {
+      console.error("Error updating group:", error);
+      alert(`Error: ${error.response?.data?.message || error.message}`);
+    }
+  };
 
   // Helper function to check if any bot fields are empty
   const hasBotErrors = () => {
@@ -557,6 +805,117 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
     }
   };
 
+  useEffect(() => {
+    const fetchRoomInfo = async () => {
+      if (isModify && !apiRequestMade && currentGroupId) {
+        try {
+          setApiRequestMade(true);
+
+          // First fetch user role
+          const roleResponse = await fetchUserRole(currentGroupId);
+          setUserRole(roleResponse); // Store the role
+          const isAdmin = roleResponse === "ADMIN";
+
+          const groupIdParam =
+            typeof currentGroupId === "string"
+              ? parseInt(currentGroupId, 10)
+              : currentGroupId;
+
+          const url = `/v1/group/get_group_info?groupId=${groupIdParam}`;
+
+          try {
+            const response = await apiClient.get<RoomInfoResponse>(url);
+
+            if (
+              response.status === 200 &&
+              response.data.code === 200 &&
+              response.data.data
+            ) {
+              const roomData = response.data.data;
+              const botList = roomData.chatBotVOList || roomData.chatBots || [];
+              setOriginalBots([...botList]);
+
+              const hasBots = botList.length > 0;
+              let formattedBots: FormBotWithStatus[];
+
+              if (hasBots) {
+                formattedBots = botList.map((bot) => ({
+                  name: bot.botName,
+                  prompt: bot.botPrompt,
+                  context: bot.botContext,
+                  adminOnly: bot.accessType === 0,
+                  botId: bot.botId,
+                  status: "unchanged",
+                }));
+
+                // Only show assistants section if user is admin
+                setShowAssistants(isAdmin && hasBots);
+              } else {
+                formattedBots = [
+                  {
+                    name: "",
+                    prompt: "",
+                    context: 1,
+                    adminOnly: false,
+                    status: "new",
+                  },
+                ];
+              }
+
+              // Pre-fill form values regardless of user role
+              formik.setValues({
+                roomName: roomData.groupName,
+                roomDescription: roomData.groupDescription || "",
+                roomType: roomData.groupType.toString(),
+                password: roomData.password || "",
+                bots: isAdmin ? formattedBots : [], // Only include bots if admin
+              });
+            } else {
+              console.error(
+                "API returned successfully but with unexpected format or error code"
+              );
+            }
+          } catch (apiError) {
+            console.error("API request failed:", apiError);
+            setApiRequestMade(false);
+          }
+        } catch (error: any) {
+          console.error("Error message:", error.message);
+          setApiRequestMade(false);
+        }
+      }
+    };
+
+    fetchRoomInfo();
+  }, [isModify, currentGroupId, apiRequestMade, formik]);
+
+  // MODIFIED: Track changes in bot fields to update their status
+  const handleBotFieldChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+    index: number
+  ) => {
+    const { name, value, type, checked } = e.target;
+    
+    // Call the standard formik handler to update the value
+    formik.handleChange(e);
+    
+    // Get the current bot
+    const bot = formik.values.bots[index];
+    
+    // If this is an existing bot (has botId), mark it as modified
+    if (bot && bot.botId && bot.status === "unchanged") {
+      console.log(`Marking bot at index ${index} as modified: ${name} changed to ${type === 'checkbox' ? checked : value}`);
+      
+      const updatedBots = [...formik.values.bots];
+      updatedBots[index] = {
+        ...updatedBots[index],
+        status: "modified",
+      };
+
+      formik.setFieldValue("bots", updatedBots);
+    }
+  };
+
   return (
     <Overlay>
       <Modal>
@@ -574,6 +933,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
               value={formik.values.roomName}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
+              disabled={shouldCheckRole && userRole !== "ADMIN"}
             />
             {formik.touched.roomName && formik.errors.roomName && (
               <div
@@ -596,6 +956,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
               value={formik.values.roomDescription}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
+              disabled={shouldCheckRole && userRole !== "ADMIN"}
             />
             {formik.touched.roomDescription &&
               formik.errors.roomDescription && (
@@ -623,6 +984,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                     onChange={(e) => {
                       formik.handleChange(e);
                     }}
+                    disabled={effectiveIsModify} // Disable only when actually modifying
                   />
                   Public
                 </RadioOption>
@@ -640,6 +1002,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                       formik.handleChange(e);
                       console.log("Radio changed to:", e.target.value);
                     }}
+                    disabled={effectiveIsModify} // Disable only when actually modifying
                   />
                   Private
                 </RadioOption>
@@ -662,14 +1025,16 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                 )}
               </>
             )}
-            <CheckboxLabel>
-              <input
-                type="checkbox"
-                checked={showAssistants}
-                onChange={handleAssistantToggle}
-              />
-              Add AI Assistant(s)
-            </CheckboxLabel>
+            {(!effectiveIsModify || userRole === "ADMIN") && (
+              <CheckboxLabel>
+                <input
+                  type="checkbox"
+                  checked={showAssistants}
+                  onChange={handleAssistantToggle}
+                />
+                Add AI Assistant(s)
+              </CheckboxLabel>
+            )}
 
             {showAssistants && (
               <>
@@ -679,25 +1044,23 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                     <FieldArrayContainer>
                       {formik.values.bots.map((bot, index) => (
                         <AddAssistantRow key={index}>
-                          <IoIosRemoveCircleOutline
-                            size={24}
-                            color="#ef4444"
-                            onClick={() =>
-                              formik.values.bots.length > 1
-                                ? arrayHelpers.remove(index)
-                                : null
-                            }
-                            style={{ cursor: "pointer" }}
+                          <RemoveIcon
+                            onClick={() => {
+                              if (formik.values.bots.length > 1) {
+                                // Remove from form
+                                arrayHelpers.remove(index);
+                              }
+                            }}
                           />
                           <SmallInputContainer>
                             {index === 0 && (
                               <StyledSpan>Assistant Name*</StyledSpan>
                             )}
-                            <SmallInput
+                            <SmallInput 
                               name={`bots[${index}].name`}
                               placeholder="Assistant Name"
                               value={bot.name}
-                              onChange={formik.handleChange}
+                              onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
                             />
                           </SmallInputContainer>
@@ -707,27 +1070,43 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               name={`bots[${index}].prompt`}
                               placeholder="Prompt"
                               value={bot.prompt}
-                              onChange={formik.handleChange}
+                              onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
                             />
                           </SmallInputContainer>
                           <ToggleSwitchContainer>
                             {index === 0 && (
                               <StyledSpan
-                                style={{
-                                  position: "relative",
-                                  top: "-1.1vh",
-                                }}
+                                isadminlabel="true"                    
                               >
                                 Only for Admin
                               </StyledSpan>
                             )}
+                            {/* MODIFIED: special handling for checkbox */}
                             <ToggleSwitch>
                               <input
                                 type="checkbox"
                                 name={`bots[${index}].adminOnly`}
                                 checked={bot.adminOnly}
-                                onChange={formik.handleChange}
+                                onChange={(e) => {
+                                  // Special handling for checkbox
+                                  const isChecked = e.target.checked;
+                                  
+                                  // First update the value
+                                  formik.setFieldValue(`bots[${index}].adminOnly`, isChecked);
+                                  
+                                  // Then mark as modified if it's an existing bot
+                                  if (bot.botId && bot.status === "unchanged") {
+                                    const updatedBots = [...formik.values.bots];
+                                    updatedBots[index] = {
+                                      ...updatedBots[index],
+                                      adminOnly: isChecked,
+                                      status: "modified",
+                                    };
+                                    formik.setFieldValue("bots", updatedBots);
+                                    console.log(`Bot at index ${index} marked as modified (adminOnly: ${isChecked})`);
+                                  }
+                                }}
                               />
                               <span></span>
                             </ToggleSwitch>
@@ -739,7 +1118,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               name={`bots[${index}].context`}
                               placeholder="Context"
                               value={bot.context}
-                              onChange={formik.handleChange}
+                              onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
                               min={1}
                               max={20}
@@ -747,18 +1126,16 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                           </SmallInputContainer>
                         </AddAssistantRow>
                       ))}
-                      <IoIosAddCircleOutline
-                        size={24}
-                        color="#10b981"
+                      <AddIcon
                         onClick={() =>
                           arrayHelpers.push({
                             name: "",
                             prompt: "",
                             context: 1,
                             adminOnly: false,
+                            status: "new",
                           })
                         }
-                        style={{ cursor: "pointer", marginTop: "0.5rem" }}
                       />
                     </FieldArrayContainer>
                   )}
@@ -783,7 +1160,9 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                 )}
               </>
             )}
-            <CreateButton type="submit">Create</CreateButton>
+            <CreateButton type="submit">
+              {effectiveIsModify ? "Update" : "Create"}
+            </CreateButton>
           </Form>
         </FormikProvider>
       </Modal>

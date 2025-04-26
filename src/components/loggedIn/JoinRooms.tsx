@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { CiSearch } from "react-icons/ci";
 import { RxCross2 } from "react-icons/rx";
 import styled, { css } from "styled-components";
+import axios, { AxiosResponse } from "axios";
+import apiClient from "../loggedOut/apiClient";
+import { useUser } from "./UserContext";
 
 const OverlayContainer = styled.div`
   position: fixed;
@@ -26,6 +29,13 @@ const Container = styled.div`
   padding: 1rem;
   overflow-y: auto;
   border: 1px solid #016532;
+
+  @media (max-width: 700px) {
+    width: 85%;
+  }
+  @media (max-width: 500px) {
+    width: 75%;
+  }
 `;
 
 const StyledCross = styled(RxCross2)`
@@ -37,7 +47,7 @@ const SearchContainer = styled.div`
   position: relative;
   gap: 2rem;
   align-items: center;
-  margin: 2.2% 4%;
+  margin: 3% 4%;
 `;
 
 const SearchIcon = styled(CiSearch)`
@@ -45,6 +55,10 @@ const SearchIcon = styled(CiSearch)`
   font-size: 2.2rem;
   color: #b3b3b3;
   left: 0.5rem;
+
+  @media (max-width: 500px) {
+    font-size: 1.6rem;
+  }
 `;
 
 const SearchInput = styled.input`
@@ -59,6 +73,12 @@ const SearchInput = styled.input`
   color: #b3b3b3;
   background: white;
   cursor: pointer;
+
+  @media (max-width: 400px) {
+    font-size: 0.9rem;
+    padding-left: 2.5rem;
+  }
+
 `;
 
 const RoomList = styled.div<{ blur: boolean }>`
@@ -102,6 +122,10 @@ const JoinButton = styled.button`
   &:hover {
     background-color: #43a047;
   }
+
+  @media (max-width: 500px) {
+    padding: 0.5rem 1rem;
+  }
 `;
 
 const RoomInfo = styled.div`
@@ -109,6 +133,11 @@ const RoomInfo = styled.div`
   align-items: center;
   gap: 1rem;
   font-family: Roboto;
+
+  @media (max-width: 500px) {
+    font-size: 0.8rem;
+    gap: 0.5rem;
+  }
 `;
 
 const Overlay = styled.div`
@@ -131,6 +160,19 @@ const Modal = styled.div`
   padding: 1rem 1.5rem;
   width: 20%;
   position: relative;
+
+  @media (max-width: 1000px) {
+    width: 30%;
+  }
+  @media (max-width: 700px) {
+    width: 40%;
+  }
+  @media (max-width: 600px) {
+    width: 50%;
+  }
+  @media (max-width: 400px) {
+    width: 60%;
+  }
 `;
 
 const ModalCloseButton = styled.button`
@@ -147,6 +189,11 @@ const ModalCloseButton = styled.button`
 
   &:hover {
     opacity: 0.7;
+  }
+
+  @media (max-width: 500px) {
+    right: -1%;
+    font-size: 0.6rem;
   }
 `;
 
@@ -191,6 +238,14 @@ const ErrorMessage = styled.div`
   color: black;
   font-weight: 600;
   margin-bottom: 2.5vh;
+
+  @media (max-width: 700px) {
+    font-size: 0.9rem;
+  }
+
+  @media (max-width: 500px) {
+    font-size: 0.8rem;
+  }
 `;
 
 const ErrorModalButton = styled.button`
@@ -207,69 +262,230 @@ const ErrorModalButton = styled.button`
   }
 `;
 
-type Room = {
-  id: number;
-  title: string;
-  members: number;
-  description: string;
-};
+const LoadingSpinner = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100px;
 
-const mockRoomsNotJoined: Room[] = [
-  {
-    id: 1,
-    title: "ROOM 1",
-    members: 3,
-    description: "For Computer Science students",
-  },
-  { id: 2, title: "ROOM 2", members: 5, description: "For Math enthusiasts" },
-  {
-    id: 3,
-    title: "ROOM 3",
-    members: 10,
-    description: "For Physics discussions",
-  },
-  { id: 4, title: "ROOM 4", members: 8, description: "For Literature lovers" },
-  {
-    id: 5,
-    title: "ROOM 5",
-    members: 4,
-    description: "For History discussions",
-  },
-  { id: 6, title: "ROOM 6", members: 7, description: "For Art enthusiasts" },
-  { id: 7, title: "ROOM 7", members: 6, description: "For Music discussions" },
-];
+  &:after {
+    content: " ";
+    display: block;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 6px solid #016532;
+    border-color: #016532 transparent #016532 transparent;
+    animation: spin 1.2s linear infinite;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
+const ErrorContainer = styled.div`
+  color: red;
+  text-align: center;
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid red;
+  border-radius: 8px;
+`;
+
+interface JoinGroupResponse {
+  code: number;
+  message: string;
+}
+
+// Define interface for API response
+interface GroupListResponse {
+  code: number;
+  message: string;
+  data: {
+    pageNum: number;
+    pageSize: number;
+    total: number;
+    pages: number;
+    data: RoomGroup[];
+  };
+}
+
+interface RoomGroup {
+  groupId: number;
+  groupName: string;
+  groupDescription: string;
+  groupType: number;
+  adminId: number;
+  adminName: string;
+  memberCount: number;
+}
 
 interface CreateRoomComponentProps {
   onClose: () => void;
 }
 
+const roomsCache = new Map<string, RoomGroup[]>();
+
 const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [filteredRooms, setFilteredRooms] = useState<Room[]>([]);
-  const [searchQuery, setSearchQuery] = useState<string>("");
+  const { userInfo } = useUser();
+  const [rooms, setRooms] = useState<RoomGroup[]>([]);
+  const [roomSearch, setRoomSearch] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
   const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
   const [showErrorModal, setShowErrorModal] = useState<boolean>(false);
+  const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
+  const [password, setPassword] = useState<string>("");
+  const [joinSuccess, setJoinSuccess] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("Chat Room Password Error");
 
-  useEffect(() => {
-    setRooms(mockRoomsNotJoined);
-  }, []);
+  const handleJoinClick = async (roomId: number, groupType: number) => {
+    setSelectedRoomId(roomId);
+
+    if (groupType === 1) {
+      try {
+        await joinGroup(roomId);
+      } catch (error) {
+        setErrorMessage("Failed to join group");
+        setShowErrorModal(true);
+      }
+    } else {
+      setShowPasswordModal(true);
+    }
+  };
+
+  const joinGroup = async (
+    groupId: number,
+    password?: string
+  ): Promise<void> => {
+    try {
+      const requestData = {
+        groupId: groupId,
+        joinMemberID: userInfo?.userId,
+        password: password || undefined,
+      };
+
+      const response: AxiosResponse<JoinGroupResponse> = await apiClient.post(
+        "/v1/group/add_group_member",
+        requestData
+      );
+
+      if (response.data.code === 200) {
+        setJoinSuccess(true);
+        setErrorMessage("Successfully joined group");
+        setShowErrorModal(true);
+        fetchAllRooms(); // Refetch all rooms after successful join
+      } else {
+        setJoinSuccess(false);
+        setErrorMessage(response.data.message || "Failed to join group");
+        setShowErrorModal(true);
+      }
+    } catch (error) {
+      setJoinSuccess(false);
+      if (axios.isAxiosError(error)) {
+        setErrorMessage(
+          error.response?.data?.message || "Failed to join group"
+        );
+      } else {
+        setErrorMessage("An unexpected error occurred");
+      }
+      setShowErrorModal(true);
+    }
+  };
+
+  const handlePasswordSubmit = async (): Promise<void> => {
+    if (!selectedRoomId) return;
+    setShowPasswordModal(false);
+
+    try {
+      await joinGroup(selectedRoomId, password);
+    } catch (error) {
+      setErrorMessage("Failed to join group");
+      setShowErrorModal(true);
+    }
+
+    setPassword("");
+  };
+
+  const fetchAllRooms = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    if (roomsCache.has(roomSearch)) {
+      setRooms(roomsCache.get(roomSearch)!); // Use cached data
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const allRooms: RoomGroup[] = [];
+      let currentPage = 1;
+      let totalPages = 1;
+
+      // Fetch all pages of rooms
+      while (currentPage <= totalPages) {
+        const requestData = {
+          keyword: roomSearch || undefined,
+          groupDemonTypeEnum: "ALLROOM",
+          pageRequestVO: {
+            pageSize: 10, // Keep the page size fixed
+            pageNum: currentPage,
+          },
+        };
+
+        const response = await apiClient.post<GroupListResponse>(
+          "/v1/group/get_group_list",
+          requestData
+        );
+
+        if (response.data.code === 200) {
+          const { data } = response.data.data;
+
+          if (data && data.length > 0) {
+            allRooms.push(...data);
+          }
+
+          totalPages = response.data.data.pages; // Update total pages
+          currentPage++; // Move to the next page
+        } else {
+          throw new Error(
+            `API error: ${response.data.message || "Unknown error"}`
+          );
+        }
+      }
+
+      setRooms(allRooms); // Set all fetched rooms to state
+      roomsCache.set(roomSearch, allRooms);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        setError(
+          error.response?.data?.message ||
+            "Failed to fetch rooms. Please try again."
+        );
+      } else {
+        setError(
+          "An unexpected error occurred while fetching rooms. Please try again."
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value.toLowerCase();
-    setSearchQuery(query);
-    setFilteredRooms(
-      rooms.filter((room) => room.title.toLowerCase().includes(query))
-    );
+    const query = e.target.value;
+    setRoomSearch(query);
   };
 
-  const handleJoinClick = () => {
-    setShowPasswordModal(true);
-  };
-
-  const handlePasswordSubmit = () => {
-    setShowPasswordModal(false);
-    setShowErrorModal(true);
-  };
+  useEffect(() => {
+    fetchAllRooms();
+  }, [roomSearch]);
 
   return (
     <OverlayContainer>
@@ -281,22 +497,39 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
           <SearchIcon />
           <SearchInput
             placeholder="Search in Platform"
-            value={searchQuery}
+            value={roomSearch}
             onChange={handleSearch}
           />
         </SearchContainer>
 
-        {searchQuery && (
+        {error && <ErrorContainer>{error}</ErrorContainer>}
+
+        {isLoading ? (
+          <LoadingSpinner />
+        ) : (
           <RoomList blur={showPasswordModal || showErrorModal}>
-            {filteredRooms.map((room) => (
-              <RoomCard key={room.id}>
-                <RoomHeader>{room.title}</RoomHeader>
-                <RoomInfo>
-                  <JoinButton onClick={handleJoinClick}>JOIN</JoinButton>•{" "}
-                  {room.members} members • {room.description}
-                </RoomInfo>
-              </RoomCard>
-            ))}
+            {rooms.length > 0 ? (
+              rooms.map((room) => (
+                <RoomCard key={room.groupId}>
+                  <RoomHeader>{room.groupName}</RoomHeader>
+                  <RoomInfo>
+                    <JoinButton
+                      onClick={() =>
+                        handleJoinClick(room.groupId, room.groupType)
+                      }
+                    >
+                      JOIN
+                    </JoinButton>
+                    • {room.memberCount} members • {room.groupDescription}
+                    {room.groupType == 0 && " • Requires Password"}
+                  </RoomInfo>
+                </RoomCard>
+              ))
+            ) : (
+              <div style={{ textAlign: "center", padding: "2rem" }}>
+                No rooms found.
+              </div>
+            )}
           </RoomList>
         )}
 
@@ -308,7 +541,17 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
                   <StyledCross size={24} />
                 </ModalCloseButton>
                 <PasswordTitle>PASSWORD</PasswordTitle>
-                <PasswordInput type="password" placeholder="Enter password" />
+                <PasswordInput
+                  type="password"
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handlePasswordSubmit();
+                    }
+                  }}
+                />
                 <ButtonContainer>
                   <SubmitButton onClick={handlePasswordSubmit}>
                     Submit
@@ -318,8 +561,20 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
             )}
             {showErrorModal && (
               <Modal>
-                <ErrorMessage>Chat Room Password Error</ErrorMessage>
-                <ErrorModalButton onClick={() => setShowErrorModal(false)}>
+                <ErrorMessage style={{ color: joinSuccess ? "green" : "red" }}>
+                  {errorMessage}
+                </ErrorMessage>
+                <ErrorModalButton
+                  onClick={() => {
+                    setShowErrorModal(false);
+                    if (joinSuccess) {
+                      onClose();
+                    }
+                  }}
+                  style={{
+                    backgroundColor: joinSuccess ? "#4CAF50" : "#ff4444",
+                  }}
+                >
                   OK
                 </ErrorModalButton>
               </Modal>

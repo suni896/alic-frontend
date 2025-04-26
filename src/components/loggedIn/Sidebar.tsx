@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import styled from "styled-components";
+import styled, { keyframes } from "styled-components";
 import {
   IoIosArrowDown,
   IoIosStarOutline,
@@ -18,16 +18,72 @@ import JoinRooms from "./JoinRooms";
 import CreateNewTag from "./CreateNewTag";
 import axios from "axios";
 import apiClient from "../loggedOut/apiClient";
+import { UserInformation } from "./types";
+import { useUser } from "./UserContext";
 
 const SidebarContainer = styled.div`
-  width: 22%;
+  width: 23%;
   height: 100vh;
   background-color: #ffffff;
-  padding: 2rem 0rem 1.5rem 1.5rem;
+  padding: 2rem 0rem 1.5rem 1rem;
   display: flex;
   flex-direction: column;
   border-right: 1px solid #016532;
   margin-top: 72px;
+`;
+
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+const SpinnerWrapper = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+`;
+
+const Spinner = styled.div`
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e2e8f0;
+  border-top: 2px solid #3b82f6;
+  border-radius: 50%;
+  animation: ${spin} 1s linear infinite;
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+`;
+
+const ErrorContainer = styled.div`
+  padding: 1rem;
+  color: #dc2626;
+  text-align: center;
+`;
+
+const ErrorMessage = styled.p`
+  margin: 0;
+  font-size: 0.875rem;
+
+  @media (max-width: 600px) {
+    font-size: 0.6rem;
+  }
+`;
+
+const EmptyStateContainer = styled.div`
+  padding: 1rem;
+  text-align: center;
+`;
+
+const EmptyStateMessage = styled.p`
+  margin: 0;
+  color: #6b7280;
+  font-size: 0.875rem;
 `;
 
 const ProfileSection = styled.div`
@@ -47,11 +103,26 @@ const Avatar = styled.img`
   border-radius: 50%;
   background-color: #ccc;
   margin-right: 12px;
+
+  @media (max-width: 900px) {
+    width: 30px;
+    height: 30px;
+    margin-right: 5px;
+  }
+
+  @media (max-width: 500px) {
+    width: 22px;
+    height: 22px;
+    margin-left: -5px;
+  }
 `;
 
 const UserInfo = styled.div`
   display: flex;
   flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  gap: 2px;
 `;
 
 const UserNameContainer = styled.div`
@@ -59,25 +130,71 @@ const UserNameContainer = styled.div`
   align-items: center;
 `;
 
-const UserName = styled.span`
-  font-size: 1rem;
+const UserName = styled.span<{ $textLength?: number }>`
   font-weight: bold;
   color: #333;
+  width: 80%;
+  word-wrap: break-word;
+  word-break: break-word;
+  line-height: 1.2;
+  font-size: ${(props) => {
+    const length = props.$textLength || 0;
+    if (length <= 10) return "1rem";
+    if (length <= 15) return "0.9rem";
+    if (length <= 20) return "0.8rem";
+    if (length <= 25) return "0.75rem";
+    return "0.7rem";
+  }};
+
+  @media (max-width: 600px) {
+    font-size: 0.6rem;
+    width: 80%;
+  }
 `;
 
+const UserEmail = styled.span<{ $textLength?: number }>`
+  color: #666;
+  width: 100%;
+  word-wrap: break-word;
+  word-break: break-word;
+  line-height: 1.2;
+  font-size: ${(props) => {
+    const length = props.$textLength || 0;
+    if (length <= 20) return "0.8rem";
+    if (length <= 30) return "0.75rem";
+    if (length <= 40) return "0.7rem";
+    if (length <= 50) return "0.65rem";
+    return "0.6rem";
+  }};
+
+  @media (max-width: 600px) {
+    font-size: ${(props) => {
+      const length = props.$textLength || 0;
+      if (length <= 20) return "0.5rem";
+      if (length <= 30) return "0.45rem";
+      if (length <= 40) return "0.4rem";
+      if (length <= 50) return "0.35rem";
+      return "0.6rem";
+    }};
+  }
+`;
 const StyledArrowDown = styled(IoIosArrowDown)`
   color: black;
-  margin-left: 0.5rem;
-  font-size: 1.1rem;
+  margin-left: 0.1rem;
+  font-size: 1rem;
   cursor: pointer;
+
+  @media (max-width: 500px) {
+    font-size: 0.7rem;
+  }
 `;
 
 const SearchContainer = styled.div`
   display: flex;
   position: relative;
-  gap: 0.5rem;
   align-items: center;
   margin-top: 1.5rem;
+  z-index: 0;
 `;
 
 const SearchInput = styled.input`
@@ -89,6 +206,19 @@ const SearchInput = styled.input`
   background: white;
   border-radius: 6px;
   cursor: pointer;
+  margin-right: 4%;
+
+  @media (max-width: 1000px) {
+    width: 60%;
+    font-size: 0.55rem;
+    padding: 0.6rem 0rem 0.6rem 1.5rem;
+    word-break: break-word;
+    word-wrap: break-word;
+  }
+  @media (max-width: 700px) {
+    font-size: 0.4rem;
+    padding: 0.6rem 0rem 0.6rem 0.7rem;
+  }
 `;
 
 const StyledPlusContainer = styled.div`
@@ -98,6 +228,10 @@ const StyledPlusContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
+
+  @media (max-width: 1000px) {
+    width: 12%;
+  }
 `;
 
 const StyledPlus = styled(TiPlus)`
@@ -114,24 +248,27 @@ const ToggleContainer = styled.div`
   gap: 0.3rem;
   width: 84%;
   background-color: #d9d9d9;
-`;
 
-interface ToggleButtonProps {
-  isActive: boolean;
-}
+  @media (max-width: 600px) {
+    gap: 0rem;
+    padding: 0.2rem;
+  }
+`;
 
 const ToggleButton = styled.button<ToggleButtonProps>`
   display: flex;
   align-items: center;
   justify-content: center;
   flex: 1;
-  width: 70%;
+  padding: 0.5rem;
   height: 100%;
   border: none;
   border-radius: 0;
   font-family: Roboto, sans-serif;
   font-weight: 700;
   font-size: 0.8rem;
+  word-wrap: break-word;
+  word-break: break-word;
   background-color: ${({ isActive }) => (isActive ? "white" : "transparent")};
   color: ${({ isActive }) => (isActive ? "#016532" : "black")};
   cursor: pointer;
@@ -140,7 +277,25 @@ const ToggleButton = styled.button<ToggleButtonProps>`
   &:hover {
     background-color: ${({ isActive }) => (isActive ? "white" : "#e0e0e0")};
   }
+  @media (max-width: 900px) {
+    font-size: 0.65rem;
+    padding: 0.5rem 0rem;
+  }
+  @media (max-width: 800px) {
+    font-size: 0.6rem;
+  }
+  @media (max-width: 600px) {
+    font-size: 0.5rem;
+    height: 90%;
+  }
+  @media (max-width: 500px) {
+    font-size: 0.45rem;
+  }
 `;
+
+interface ToggleButtonProps {
+  isActive: boolean;
+}
 
 const RoomList = styled.ul`
   list-style: none;
@@ -158,13 +313,23 @@ const RoomContainer = styled.div`
 const Tag = styled(FiTag)`
   color: black;
   font-size: 1.3rem;
-  margin: 0.2rem 1rem 0 1rem;
+  margin: 0rem 1rem 0 1rem;
+
+  @media (max-width: 700px) {
+    margin: 0rem 0.3rem 0 0.2rem;
+    font-size: 1rem;
+  }
+  @media (max-width: 400px) {
+    margin: 0rem 0.2rem 0 0.1rem;
+  }
 `;
 
 const RoomDescContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  width: 100%; /* or set a specific width like width: 200px; */
+  min-width: 0; /* Important for text truncation/wrapping */
 `;
 
 const RoomTitle = styled.p`
@@ -173,6 +338,14 @@ const RoomTitle = styled.p`
   color: black;
   margin: 0;
   cursor: pointer;
+  width: 100%;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
+
+  @media (max-width: 500px) {
+    font-size: 0.6rem;
+  }
 `;
 
 const RoomDesc = styled.p`
@@ -180,27 +353,39 @@ const RoomDesc = styled.p`
   font-size: 0.8rem;
   color: #757575;
   margin: 0;
-`;
 
-const UserEmail = styled.span`
-  font-size: 0.8rem;
-  color: #666;
-  max-width: 85%;
-  display: inline-block;
-  overflow-wrap: break-word; /* Allow breaking words to fit */
-  white-space: pre-wrap; /* Preserve whitespace and allow wrapping */
+  @media (max-width: 500px) {
+    font-size: 0.5rem;
+  }
 `;
 
 const SearchIcon = styled(CiSearch)`
   position: absolute;
   font-size: 1.5rem;
   left: 0.5rem;
+
+  @media (max-width: 1000px) {
+    font-size: 1.2rem;
+    left: 0.3rem;
+  }
+  @media (max-width: 700px) {
+    font-size: 0.7rem;
+    left: 0.1rem;
+  }
 `;
 
 const Star = styled(IoIosStarOutline)`
   color: black;
   font-size: 1.3rem;
   margin: 0.2rem 1rem 0 1rem;
+
+  @media (max-width: 700px) {
+    margin: 0.2rem 0.3rem 0 0.2rem;
+    font-size: 1rem;
+  }
+  @media (max-width: 400px) {
+    margin: 0.2rem 0.2rem 0 0.1rem;
+  }
 `;
 
 const ProfilePopUpContainer = styled.div`
@@ -218,12 +403,22 @@ const ProfilePopUpContainer = styled.div`
   justify-content: space-between;
   padding: 1vh 1%;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 3000;
+
+  @media (max-width: 1000px) {
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 500px) {
+    height: 5.5vh;
+    font-size: 0.5rem;
+  }
 `;
 
 const ModalCloseButton = styled.button`
   position: absolute;
-  top: 0;
-  right: -3%;
+  top: -3%;
+  right: -5%;
   background: none;
   border: none;
   cursor: pointer;
@@ -233,6 +428,20 @@ const ModalCloseButton = styled.button`
 
   &:hover {
     opacity: 0.7;
+  }
+
+  @media (max-width: 1000px) {
+    right: -10%;
+  }
+  @media (max-width: 600px) {
+    top: -5%;
+    right: -12%;
+    font-size: 0.8rem;
+  }
+  @media (max-width: 500px) {
+    top: -5%;
+    right: -15%;
+    font-size: 0.8rem;
   }
 `;
 
@@ -266,12 +475,29 @@ const StyledSignOutContainer = styled.div`
 
 const StyledSignOutText = styled.p`
   font-family: Roboto;
+
+  @media (max-width: 700px) {
+    width: 130%;
+    margin-right: -1rem;
+  }
+
+  @media (max-width: 350px) {
+  font-size: 0.45rem; }
 `;
 
 const StyledSignOutIcon = styled(PiSignOutBold)`
   width: 1.5rem;
   height: 1.5rem;
   cursor: pointer;
+
+  @media (max-width: 600px) {
+    width: 1.2rem;
+    height: 1.2rem;
+  }
+
+  @media (max-width: 350px){
+  width: 0.8rem;
+  height: 0.8rem;}
 `;
 
 const PlusButtonOverlayContainer = styled.div`
@@ -289,6 +515,16 @@ const PlusButtonOverlayContainer = styled.div`
   justify-content: space-between;
   padding: 0.8vh 1%;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+
+  @media (max-width: 650px) {
+    left: -10%;
+    width: 305;
+  }
+
+  @media (max-width: 800px) {
+    left: 9%;
+    width: 18%;
+  }
 `;
 
 const PlusButtonOptionContainer = styled.div`
@@ -304,6 +540,11 @@ const StyledIoMdPersonAdd = styled(IoMdPersonAdd)`
   width: 20px;
   height: 20px;
   color: #016532;
+
+  @media (max-width: 500px) {
+    width: 16px;
+    height: 16px;
+  }
 `;
 
 const StyledMdPeopleAlt = styled(MdPeopleAlt)`
@@ -311,22 +552,56 @@ const StyledMdPeopleAlt = styled(MdPeopleAlt)`
   height: 20px;
   margin-left: 2px;
   color: #016532;
+  @media (max-width: 500px) {
+    width: 16px;
+    height: 16px;
+  }
 `;
 
 const StyledFiTag = styled(FaTag)`
   width: 20px;
   height: 20px;
   color: #016532;
+  @media (max-width: 500px) {
+    width: 16px;
+    height: 16px;
+  }
 `;
 
 const StyledPlusButtonOptionText = styled.span`
   font-family: Roboto;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.9rem;
   color: black;
+
+  @media (max-width: 1200px) {
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 1090px) {
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 800px) {
+    font-size: 0.65rem;
+  }
+  @media (max-width: 700px) {
+    font-size: 0.55rem;
+  }
+  @media (max-width: 500px) {
+    font-size: 0.45rem;
+  }
 `;
+
+const LoadingSpinner = () => (
+  <SpinnerWrapper>
+    <Spinner />
+  </SpinnerWrapper>
+);
+
 interface OverlayProps {
   onClose: () => void;
+  userInfo?: UserInformation | null;
 }
 
 const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
@@ -362,7 +637,7 @@ const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
   );
 };
 
-const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose }) => {
+const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose, userInfo }) => {
   const [isCreateRoomOverlayVisible, setIsCreateRoomOverlayVisible] =
     useState(false);
   const [isJoinRoomsOverlayVisible, setIsJoinRoomsOverlayVisible] =
@@ -397,9 +672,10 @@ const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose }) => {
       {isCreateRoomOverlayVisible && (
         <CreateRoomComponent
           onClose={() => setIsCreateRoomOverlayVisible(false)}
+          fromSidebar={true}
         />
       )}
-      {isJoinRoomsOverlayVisible && (
+      {isJoinRoomsOverlayVisible && userInfo && (
         <JoinRooms onClose={() => setIsJoinRoomsOverlayVisible(false)} />
       )}
       {isCreateTagOverlayVisible && (
@@ -409,105 +685,258 @@ const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose }) => {
   );
 };
 
-interface UserInformation {
-  userId: number;
-  userEmail: string;
-  userName: string;
-  userPortrait: string;
+interface RoomGroup {
+  groupId: number;
+  groupName: string;
+  groupDescription: string;
+  groupType: number;
+  adminId: number;
+  adminName: string;
+  memberCount: number;
 }
 
+interface GroupListResponse {
+  code: number;
+  message: string;
+  data: {
+    pageSize: number;
+    pageNum: number;
+    pages: number;
+    total: number;
+    data: RoomGroup[];
+  };
+}
+
+interface Tag {
+  tagId: number;
+  tagName: string;
+}
+
+interface TagListResponse {
+  code: number;
+  message: string;
+  data: {
+    pageSize: number;
+    pageNum: number;
+    pages: number;
+    total: number;
+    data: Tag[];
+  };
+}
+
+const roomsCache = new Map<string, RoomGroup[]>(); // Cache keyed by search query
+const tagsCache = new Map<string, Tag[]>(); // Cache keyed by search query
+
 const Sidebar: React.FC = () => {
-  const [user, setUser] = useState<UserInformation | null>(null);
+  const { userInfo, isUserInfoLoading, userInfoError } = useUser();
   const [roomSearch, setRoomSearch] = useState("");
   const [tagSearch, setTagSearch] = useState("");
   const [isProfileClicked, setIsProfileClicked] = useState(false);
   const [activeTab, setActiveTab] = useState<"myRooms" | "myTags">("myRooms");
+  const [rooms, setRooms] = useState<RoomGroup[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pagination, setPagination] = useState({
+    pageSize: 10,
+    pageNum: 1,
+    total: 0,
+    pages: 0,
+  });
 
   const [isPlusButtonOverlayVisible, setIsPlusButtonOverlayVisible] =
     useState(false);
 
   useEffect(() => {
-    const fetchUserInformation = async () => {
-      try {
-        // Authenticated request to fetch user info
-        const response = await apiClient.get("/v1/user/get_user_info");
-        if (response.data.code === 200) {
-          setUser(response.data.data);
-        }
-      } catch (error: unknown) {
-        if (axios.isAxiosError(error)) {
-          console.error("Axios error:", error.response?.data || error.message);
-          alert(
-            error.response?.data?.message ||
-              "Failed to fetch user info. Please try again."
-          );
-        } else {
-          console.error("Unexpected error:", error);
-          alert("An unexpected error occurred. Please try again.");
-        }
+    if (activeTab === "myRooms") {
+      fetchRooms();
+    } else {
+      fetchTags();
+    }
+  }, [pagination.pageNum, roomSearch, tagSearch, activeTab]);
+
+  const fetchRooms = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    // Generate cache key based on search query and pagination
+    const cacheKey = `${roomSearch}-${pagination.pageNum}`;
+
+    // Check if data is cached
+    if (roomsCache.has(cacheKey)) {
+      setRooms(roomsCache.get(cacheKey)!);
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const requestData = {
+        keyword: roomSearch || undefined,
+        groupDemonTypeEnum: "JOINEDROOM",
+        pageRequestVO: {
+          pageSize: pagination.pageSize,
+          pageNum: pagination.pageNum,
+        },
+      };
+
+      console.log("Fetching rooms with params:", requestData);
+
+      const response = await apiClient.post<GroupListResponse>(
+        "/v1/group/get_group_list",
+        requestData
+      );
+
+      console.log("Room API response:", response.data);
+
+      if (response.data.code === 200) {
+        const fetchedRooms = response.data.data.data;
+        setRooms(fetchedRooms);
+        setPagination({
+          pageSize: response.data.data.pageSize,
+          pageNum: response.data.data.pageNum,
+          total: response.data.data.total,
+          pages: response.data.data.pages,
+        });
+        // Cache the fetched data
+        roomsCache.set(cacheKey, fetchedRooms);
+      } else {
+        setError(
+          `API returned error code: ${response.data.code}, message: ${response.data.message}`
+        );
       }
-    };
-    fetchUserInformation();
-  }, []);
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        console.error(
+          "Axios error in fetchRooms:",
+          error.response?.data || error.message
+        );
+        setError(
+          error.response?.data?.message ||
+            "Failed to fetch rooms. Please try again."
+        );
+      } else {
+        console.error("Unexpected error in fetchRooms:", error);
+        setError(
+          "An unexpected error occurred while fetching rooms. Please try again."
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-  const rooms = [
-    { title: "1", desc: "Description for Room 1." },
-    { title: "2", desc: "Description for Room 2." },
-    { title: "3", desc: "Description for Room 3." },
-    { title: "4", desc: "Description for Room 4." },
-    { title: "5", desc: "Description for Room 5." },
-    { title: "6", desc: "Description for Room 6." },
-    { title: "7", desc: "Description for Room 7." },
-    { title: "8", desc: "Description for Room 8." },
-    { title: "9", desc: "Description for Room 9." },
-    { title: "10", desc: "Description for Room 10." },
-  ];
+  const fetchTags = async () => {
+    setIsLoading(true);
+    setError(null);
 
-  const classes = [
-    { title: "1", desc: "Description for Class 1." },
-    { title: "2", desc: "Description for Class 2." },
-    { title: "3", desc: "Description for Class 3." },
-    { title: "4", desc: "Description for Class 4." },
-    { title: "5", desc: "Description for Class 5." },
-    { title: "6", desc: "Description for Class 6." },
-    { title: "7", desc: "Description for Class 7." },
-    { title: "8", desc: "Description for Class 8." },
-    { title: "9", desc: "Description for Class 9." },
-    { title: "10", desc: "Description for Class 10." },
-  ];
+    // Generate cache key based on search query and pagination
+    const cacheKey = `${tagSearch}-${pagination.pageNum}`;
 
-  const filteredRooms = rooms.filter((room) =>
-    room.title.toLowerCase().includes(roomSearch.toLowerCase())
-  );
+    // Check if data is cached
+    if (tagsCache.has(cacheKey)) {
+      setTags(tagsCache.get(cacheKey)!);
+      setIsLoading(false);
+      return;
+    }
 
-  const filteredTags = classes.filter((tag) =>
-    tag.title.toLowerCase().includes(tagSearch.toLowerCase())
-  );
+    try {
+      const requestData = {
+        keyword: tagSearch || undefined,
+        pageRequestVO: {
+          pageSize: pagination.pageSize,
+          pageNum: pagination.pageNum,
+        },
+      };
+
+      console.log("Fetching tags with params:", requestData);
+
+      const response = await apiClient.post<TagListResponse>(
+        "/v1/tag/get_tag_list",
+        requestData
+      );
+
+      console.log("Tag API response:", response.data);
+
+      if (response.data.code === 200) {
+        const fetchedTags = response.data.data.data;
+        setTags(fetchedTags);
+        setPagination({
+          pageSize: response.data.data.pageSize,
+          pageNum: response.data.data.pageNum,
+          total: response.data.data.total,
+          pages: response.data.data.pages,
+        });
+        // Cache the fetched data
+        tagsCache.set(cacheKey, fetchedTags);
+      } else {
+        setError(
+          `API returned error code: ${response.data.code}, message: ${response.data.message}`
+        );
+      }
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        console.error(
+          "Axios error in fetchTags:",
+          error.response?.data || error.message
+        );
+        setError(
+          error.response?.data?.message ||
+            "Failed to fetch tags. Please try again."
+        );
+      } else {
+        console.error("Unexpected error in fetchTags:", error);
+        setError(
+          "An unexpected error occurred while fetching tags. Please try again."
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const navigate = useNavigate();
 
   return (
     <SidebarContainer>
       <ProfileSection>
-        {user && (
+        {isUserInfoLoading ? (
+          <LoadingContainer>
+            <LoadingSpinner />
+          </LoadingContainer>
+        ) : userInfoError ? (
+          <ErrorContainer>
+            <ErrorMessage>{userInfoError}</ErrorMessage>
+          </ErrorContainer>
+        ) : userInfo ? (
           <>
             <Avatar
-              src={`data:image/png;base64,${user.userPortrait}`}
+              src={`data:image/png;base64,${userInfo.userPortrait}`}
               alt="User Avatar"
             />
             <UserInfo>
               <UserNameContainer>
-                <UserName>{user.userName}</UserName>
+                <UserName $textLength={userInfo.userName.toString().length}>
+                  {userInfo.userName}
+                </UserName>
                 <StyledArrowDown
                   onClick={() => setIsProfileClicked(!isProfileClicked)}
                 />
                 {isProfileClicked && (
-                  <ProfilePopUp onClose={() => setIsProfileClicked(false)} />
+                  <ProfilePopUp
+                    onClose={() => setIsProfileClicked(false)}
+                    userInfo={userInfo} // Pass the actual userInfo here
+                  />
                 )}
               </UserNameContainer>
-              <UserEmail>{user.userEmail}</UserEmail>
+              <UserEmail $textLength={userInfo.userEmail.toString().length}>
+                {userInfo.userEmail}
+              </UserEmail>
             </UserInfo>
           </>
+        ) : (
+          <EmptyStateContainer>
+            <EmptyStateMessage>No user information available</EmptyStateMessage>
+          </EmptyStateContainer>
         )}
       </ProfileSection>
       <LineSeparator />
@@ -533,6 +962,7 @@ const Sidebar: React.FC = () => {
       {isPlusButtonOverlayVisible && (
         <PlusButtonOverlay
           onClose={() => setIsPlusButtonOverlayVisible(false)}
+          userInfo={userInfo}
         />
       )}
 
@@ -551,40 +981,71 @@ const Sidebar: React.FC = () => {
         </ToggleButton>
       </ToggleContainer>
 
-      {activeTab === "myRooms" && (
-        <RoomList>
-          {filteredRooms.map((room, index) => (
-            <RoomContainer key={index}>
-              <Star />
-              <RoomDescContainer>
-                <RoomTitle>ROOM {room.title}</RoomTitle>
-                <RoomDesc>{room.desc}</RoomDesc>
-              </RoomDescContainer>
-            </RoomContainer>
-          ))}
-        </RoomList>
-      )}
+      {error && <ErrorMessage>{error}</ErrorMessage>}
 
-      {activeTab === "myTags" && (
-        <RoomList>
-          {filteredTags.map((tag, index) => (
-            <RoomContainer key={index}>
-              <Tag />
-              <RoomDescContainer>
-                <RoomTitle
-                  onClick={() =>
-                    navigate(`/my-class-${tag.title}`, {
-                      state: { title: tag.title, desc: tag.desc },
-                    })
-                  }
-                >
-                  CLASS {tag.title}
-                </RoomTitle>
-                <RoomDesc>{tag.desc}</RoomDesc>
-              </RoomDescContainer>
-            </RoomContainer>
-          ))}
-        </RoomList>
+      {isLoading ? (
+        <LoadingContainer>
+          <LoadingSpinner />
+        </LoadingContainer>
+      ) : (
+        <>
+          {activeTab === "myRooms" && (
+            <RoomList>
+              {rooms.length > 0
+                ? rooms.map((room) => (
+                    <RoomContainer key={room.groupId}>
+                      <Star />
+                      <RoomDescContainer>
+                        <RoomTitle
+                          key={room.groupId}
+                          onClick={() => {
+                            console.log("/my-room-${room.groupId.toString()}");
+                            navigate(`/my-room/${room.groupId.toString()}`, {
+                              state: {
+                                title: room.groupName,
+                                desc: room.groupDescription,
+                                groupId: room.groupId,
+                                adminId: room.adminId,
+                                adminName: room.adminName,
+                                memberCount: room.memberCount,
+                                groupType: room.groupType,
+                              },
+                            });
+                          }}
+                        >
+                          {room.groupName}
+                        </RoomTitle>
+                        <RoomDesc>{room.groupDescription}</RoomDesc>
+                      </RoomDescContainer>
+                    </RoomContainer>
+                  ))
+                : !isLoading && <ErrorMessage>No rooms found.</ErrorMessage>}
+            </RoomList>
+          )}
+
+          {activeTab === "myTags" && (
+            <RoomList>
+              {tags.length > 0
+                ? tags.map((tag) => (
+                    <RoomContainer key={tag.tagId}>
+                      <Tag />
+                      <RoomDescContainer>
+                        <RoomTitle
+                          onClick={() =>
+                            navigate(`/my-class/${tag.tagId.toString()}`, {
+                              state: { title: tag.tagName, tagId: tag.tagId },
+                            })
+                          }
+                        >
+                          {tag.tagName}
+                        </RoomTitle>
+                      </RoomDescContainer>
+                    </RoomContainer>
+                  ))
+                : !isLoading && <ErrorMessage>No tags found.</ErrorMessage>}
+            </RoomList>
+          )}
+        </>
       )}
     </SidebarContainer>
   );

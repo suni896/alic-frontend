@@ -28,6 +28,7 @@ const LeftSectionContainer = styled.div<{ currentImage: string }>`
 
   @media (max-width: 740px) {
     display: none;
+    flex: 0;
   }
 `;
 

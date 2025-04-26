@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>群组聊天室</title>
+    <!-- 使用更可靠的CDN链接 -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.1/sockjs.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-container {
+            max-width: 1000px;
+            margin: 20px auto;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 40px);
+        }
+        .chat-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .message {
+            max-width: 70%;
+            margin-bottom: 15px;
+            padding: 10px 15px;
+            border-radius: 18px;
+            position: relative;
+            word-wrap: break-word;
+        }
+        .message-time {
+            font-size: 0.7rem;
+            color: #888;
+            margin-top: 5px;
+            text-align: right;
+        }
+        .message-id {
+            font-size: 0.6rem;
+            color: #aaa;
+            margin-top: 2px;
+            text-align: right;
+        }
+        .message-sender {
+            font-weight: bold;
+            margin-bottom: 3px;
+            font-size: 0.9rem;
+        }
+        .message-content {
+            margin-bottom: 5px;
+        }
+        .message.received {
+            align-self: flex-start;
+            background-color: #f1f1f1;
+            border-bottom-left-radius: 5px;
+        }
+        .message.sent {
+            align-self: flex-end;
+            background-color: #dcf8c6;
+            border-bottom-right-radius: 5px;
+        }
+        .chat-input {
+            padding: 15px 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            align-items: center;
+        }
+        .chat-input input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid #ddd;
+            border-radius: 20px;
+            margin-right: 10px;
+            outline: none;
+        }
+        .chat-input button {
+            background-color: #128C7E;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+        .chat-input button:hover {
+            background-color: #075E54;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 100px auto;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .loading {
+            text-align: center;
+            padding: 20px;
+            display: none;
+        }
+        .loading-spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #128C7E;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .load-more {
+            text-align: center;
+            padding: 10px;
+            cursor: pointer;
+            color: #128C7E;
+            display: none;
+        }
+        .load-more:hover {
+            text-decoration: underline;
+        }
+        .connection-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 5px 10px;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            z-index: 1000;
+        }
+        .status-connected {
+            background-color: #4CAF50;
+            color: white;
+        }
+        .status-disconnected {
+            background-color: #f44336;
+            color: white;
+        }
+        .status-connecting {
+            background-color: #FFC107;
+            color: black;
+        }
+    </style>
+</head>
+<body>
+    <!-- 连接状态指示器 -->
+    <div id="connectionStatus" class="connection-status status-disconnected">未连接</div>
+
+    <!-- 登录界面 -->
+    <div id="loginContainer" class="login-container">
+        <h2 class="text-center mb-4">群组聊天室</h2>
+        <div class="mb-3">
+            <label for="groupId" class="form-label">群组ID</label>
+            <input type="number" class="form-control" id="groupId" placeholder="输入群组ID">
+        </div>
+        <div class="mb-3">
+            <label for="userId" class="form-label">用户ID</label>
+            <input type="number" class="form-control" id="userId" placeholder="输入用户ID">
+        </div>
+        <div class="mb-3">
+            <label for="jwtToken" class="form-label">JWT令牌</label>
+            <input type="text" class="form-control" id="jwtToken" placeholder="输入JWT令牌">
+        </div>
+        <button class="btn btn-primary w-100" onclick="initializeChat()">加入聊天</button>
+    </div>
+
+    <!-- 聊天界面 -->
+    <div id="chatContainer" class="chat-container" style="display: none;">
+        <div class="chat-header">
+            <h3 id="groupTitle">群组聊天</h3>
+            <div>
+                <span id="onlineCount" class="badge bg-success">0 在线</span>
+            </div>
+        </div>
+        <div class="chat-messages" id="chatMessages">
+            <div class="load-more" id="loadMore">加载更多消息</div>
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+            </div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="输入消息..." autocomplete="off">
+            <button id="sendButton" onclick="sendMessage()">
+                <i class="bi bi-send"></i>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let stompClient = null;
+        let groupId = null;
+        let userId = null;
+        let jwtToken = null;
+        let messageInput = document.getElementById("messageInput");
+        let chatMessages = document.getElementById("chatMessages");
+        let isConnected = false;
+        let currentPage = 1;
+        let isLoading = false;
+        let hasMoreMessages = true;
+        let lastMsgId = 0;
+        let reconnectAttempts = 0;
+        const maxReconnectAttempts = 5;
+        const pageSize = 20;
+
+        // 初始化聊天
+        function initializeChat() {
+            groupId = document.getElementById("groupId").value;
+            userId = document.getElementById("userId").value;
+            jwtToken = document.getElementById("jwtToken").value;
+
+            if (!groupId || !userId || !jwtToken) {
+                alert("请输入群组ID、用户ID和JWT令牌");
+                return;
+            }
+
+            // 显示聊天界面，隐藏登录界面
+            document.getElementById("loginContainer").style.display = "none";
+            document.getElementById("chatContainer").style.display = "flex";
+            document.getElementById("groupTitle").textContent = `群组 ${groupId}`;
+
+            // 连接WebSocket
+            connect();
+        }
+
+        // 连接到WebSocket服务器
+        function connect() {
+            updateConnectionStatus("connecting");
+            
+            socket = new SockJS('https://112.74.92.135/ws');
+            stompClient = Stomp.over(socket);
+
+            const headers = {
+                'Authorization': 'Bearer ' + jwtToken
+            };
+
+            stompClient.connect(headers, function(frame) {
+                console.log('已连接: ' + frame);
+                isConnected = true;
+                reconnectAttempts = 0;
+                updateConnectionStatus("connected");
+
+                // 订阅群组消息
+                stompClient.subscribe(`/topic/chat/${groupId}`, function(messageOutput) {
+                    const message = JSON.parse(messageOutput.body);
+                    displayMessage(message, false);
+                    lastMsgId = message.infoId || 0;
+                });
+
+                // 订阅个人消息
+                stompClient.subscribe(`/user/${userId}/${groupId}/chat`, function(messageOutput) {
+                    const message = JSON.parse(messageOutput.body);
+                    displayMessage(message, false);
+                    lastMsgId = message.infoId || 0;
+                });
+
+                // 订阅离线消息
+                stompClient.subscribe(`/user/${userId}/${groupId}/offline/chat`, function(messageOutput) {
+                    const message = JSON.parse(messageOutput.body);
+                    console.log("收到离线消息:", message);
+                    displayMessage(message, true, false);
+                    lastMsgId = message.infoId || 0;
+                });
+
+                // 订阅重连消息
+                stompClient.subscribe(`/user/${userId}/${groupId}/reconnect/chat`, function(messageOutput) {
+                    const message = JSON.parse(messageOutput.body);
+                    displayMessage(message, false);
+                    lastMsgId = message.infoId || 0;
+                });
+
+                // 拉取初始离线消息
+                fetchOfflineMessages(1, pageSize);
+            }, function(error) {
+                console.error('连接失败: ', error);
+                updateConnectionStatus("disconnected");
+                attemptReconnect();
+            });
+        }
+
+        // 更新连接状态显示
+        function updateConnectionStatus(status) {
+            const statusElement = document.getElementById("connectionStatus");
+            statusElement.className = "connection-status";
+            
+            switch(status) {
+                case "connected":
+                    statusElement.classList.add("status-connected");
+                    statusElement.textContent = "已连接";
+                    break;
+                case "disconnected":
+                    statusElement.classList.add("status-disconnected");
+                    statusElement.textContent = "未连接";
+                    break;
+                case "connecting":
+                    statusElement.classList.add("status-connecting");
+                    statusElement.textContent = "连接中...";
+                    break;
+            }
+        }
+
+        // 尝试重新连接
+        function attemptReconnect() {
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                console.log(`尝试重连 (${reconnectAttempts}/${maxReconnectAttempts})...`);
+                setTimeout(connect, 3000);
+            } else {
+                console.error("重连失败，请刷新页面重试");
+                alert("连接失败，请刷新页面重试");
+            }
+        }
+
+        // 显示消息
+        function displayMessage(message, prepend = false, reverseOrder = false) {
+            const messageElement = document.createElement("div");
+            messageElement.classList.add('message');
+            
+            // 判断消息是自己发送的还是接收的
+            if (message.senderId == userId) {
+                messageElement.classList.add('sent');
+            } else {
+                messageElement.classList.add('received');
+            }
+            
+            // 创建消息内容
+            const senderElement = document.createElement("div");
+            senderElement.classList.add('message-sender');
+            senderElement.textContent = message.senderId == userId ? "我" : `用户 ${message.senderId}`;
+            
+            const contentElement = document.createElement("div");
+            contentElement.classList.add('message-content');
+            contentElement.textContent = message.content;
+            
+            const timeElement = document.createElement("div");
+            timeElement.classList.add('message-time');
+            const date = new Date(message.createTime);
+            timeElement.textContent = date.toLocaleTimeString();
+            
+            // 添加消息ID显示
+            const idElement = document.createElement("div");
+            idElement.classList.add('message-id');
+            idElement.textContent = `消息ID: ${message.infoId || '未知'}`;
+            
+            messageElement.appendChild(senderElement);
+            messageElement.appendChild(contentElement);
+            messageElement.appendChild(timeElement);
+            messageElement.appendChild(idElement);
+            
+            // 添加到聊天区域
+            if (prepend) {
+                // 在加载更多按钮后插入
+                const loadMoreButton = document.getElementById("loadMore");
+                
+                if (reverseOrder) {
+                    // 如果是反转顺序，则将较旧的消息插入到顶部
+                    chatMessages.insertBefore(messageElement, loadMoreButton.nextSibling);
+                } else {
+                    // 存储所有当前消息元素
+                    const messageElements = document.querySelectorAll('.message');
+                    if (messageElements.length > 0) {
+                        // 找到第一个正常消息元素（非加载更多按钮和加载指示器）
+                        const firstMessage = messageElements[0];
+                        // 将较新的消息插入到最后一个历史消息之前
+                        chatMessages.insertBefore(messageElement, firstMessage);
+                    } else {
+                        // 如果没有现有消息，就在加载更多按钮后插入
+                        chatMessages.insertBefore(messageElement, loadMoreButton.nextSibling);
+                    }
+                }
+            } else {
+                chatMessages.appendChild(messageElement);
+                // 滚动到底部
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+        }
+
+        // 发送消息
+        function sendMessage() {
+            if (!isConnected) {
+                alert("尚未连接，请稍后再试");
+                return;
+            }
+
+            const content = messageInput.value.trim();
+            if (content) {
+                const message = {
+                    groupId: parseInt(groupId),
+                    senderId: parseInt(userId),
+                    content: content,
+                    msgType: 0,
+                    type: "CHAT",
+                    createTime: new Date()
+                };
+
+                stompClient.send(`/app/chat/${groupId}`, {}, JSON.stringify(message));
+                messageInput.value = '';
+            }
+        }
+
+        // 拉取离线消息
+        function fetchOfflineMessages(pageNum, pageSize) {
+            if (isLoading) return;
+
+            isLoading = true;
+            document.getElementById("loading").style.display = "block";
+            
+            // 清除现有的历史消息 (仅当加载第一页时)
+            if (pageNum === 1) {
+                // 移除除了loadMore和loading外的所有子元素
+                const messages = document.querySelectorAll('.message');
+                messages.forEach(msg => msg.remove());
+            }
+
+            // 记录当前滚动高度（历史消息插入后恢复用）
+            const previousScrollHeight = chatMessages.scrollHeight;
+
+            const offlineMsgVO = {
+                userId: parseInt(userId),
+                pageNum: pageNum,
+                pageSize: pageSize
+            };
+
+            console.log(`拉取第 ${pageNum} 页离线消息，每页 ${pageSize} 条`);
+            stompClient.send(`/app/getOfflineMsg/${groupId}`, {}, JSON.stringify(offlineMsgVO));
+
+            // 设置超时，防止服务器没有响应
+            setTimeout(() => {
+                isLoading = false;
+                document.getElementById("loading").style.display = "none";
+
+                // 如果是第一页，滚动到底部以显示最新消息
+                if (pageNum === 1) {
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                } else {
+                    // 恢复滚动位置
+                    const newScrollHeight = chatMessages.scrollHeight;
+                    chatMessages.scrollTop += (newScrollHeight - previousScrollHeight);
+                }
+                
+                // 如果没有收到任何消息，可能没有更多历史消息了
+                if (pageNum > 1 && document.querySelectorAll('.message').length < pageSize * pageNum) {
+                    hasMoreMessages = false;
+                    document.getElementById("loadMore").textContent = "没有更多消息了";
+                }
+            }, 1000); // 增加超时时间到 1 秒，给服务器更多处理时间
+        }
+
+        // 加载更多历史消息
+        function loadMoreMessages() {
+            if (isLoading || !hasMoreMessages) return;
+            
+            currentPage++;
+            fetchOfflineMessages(currentPage, pageSize);
+        }
+
+        // 监听滚动事件，实现向上滚动加载更多
+        document.getElementById("chatMessages").addEventListener("scroll", function() {
+            if (this.scrollTop === 0 && !isLoading && hasMoreMessages) {
+                loadMoreMessages();
+            }
+        });
+
+        // 监听回车键发送消息
+        messageInput.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                sendMessage();
+            }
+        });
+
+        // 页面加载完成后，如果URL中有参数，自动填充
+        window.onload = function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const groupIdParam = urlParams.get('groupId');
+            const userIdParam = urlParams.get('userId');
+            const jwtTokenParam = urlParams.get('jwtToken');
+            
+            if (groupIdParam) document.getElementById("groupId").value = groupIdParam;
+            if (userIdParam) document.getElementById("userId").value = userIdParam;
+            if (jwtTokenParam) document.getElementById("jwtToken").value = jwtTokenParam;
+        };
+    </script>
+</body>
+</html>

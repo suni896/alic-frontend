@@ -11,12 +11,12 @@ const images = [image1, image2, image3];
 
 const Container = styled.div`
   display: flex;
-  height: 92vh;
+  height: 100vh;
   box-sizing: border-box;
   justify-content: center;
   align-items: center;
-  margin-top: 8vh;
   background: white;
+  overflow-y: scroll;
 `;
 
 const Wrapper = styled.div`
@@ -29,7 +29,7 @@ const Wrapper = styled.div`
   border: 1px solid #016532;
   box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
 
-  @media (max-width: 740px) and (min-height: 720px) {
+  @media (max-width: 740px) {
     height: 63vh;
   }
 `;
