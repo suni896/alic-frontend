@@ -296,9 +296,9 @@ const RemoveIcon = styled(AiOutlineMinusCircle)<{ isSelected: boolean }>`
   }
 `;
 
-const membersCache = new Map<number, GroupMember[]>();
+export const membersCache = new Map<number, GroupMember[]>();
 
-interface GroupMember {
+export interface GroupMember {
   userId: number;
   userEmail: string;
   userName: string;
@@ -340,6 +340,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
   useEffect(() => {
     const fetchGroupMembers = async () => {
       const cachedMembers = membersCache.get(Number(groupId));
+      console.log("fetched members", groupId, cachedMembers);
       if (cachedMembers) {
         setMembers(cachedMembers);
         setLoading(false);
@@ -351,10 +352,12 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
           `/v1/group/get_group_member_list?groupId=${groupId}`
         );
 
+        console.log("get_group_member_list response", response);
         if (response.data.code === 200) {
           const fetchedMembers = response.data.data;
           setMembers(fetchedMembers);
           membersCache.set(Number(groupId), fetchedMembers); // Cache the result
+          console.log("fetched members", groupId, fetchedMembers);
         } else {
           throw new Error(
             response.data.message || "Failed to fetch group members"

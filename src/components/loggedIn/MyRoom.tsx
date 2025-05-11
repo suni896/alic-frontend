@@ -1,15 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { membersCache, GroupMember } from "./RoomMembersComponent";
+import SockJS from "sockjs-client";
+import Stomp from "stompjs";
 import styled from "styled-components";
 import { useLocation } from "react-router-dom";
 import { LuSend, LuX } from "react-icons/lu";
 import botIcon from "../../assets/chat-gpt.png";
 import apiClient from "../loggedOut/apiClient";
+import { useUser } from "./UserContext";
 
 interface MyRoomProps {
   title?: string;
   desc?: string;
   groupId?: number;
   onClose?: () => void;
+  onBotSelect?: (botName: string, botId: number) => void;
 }
 
 interface LocationState {
@@ -28,6 +33,16 @@ interface Bot {
   accessType: number;
 }
 
+interface Message {
+  infoId: number;
+  groupId: number;
+  senderId: number;
+  content: string;
+  msgType: number;
+  createTime: string;
+  senderType: string;
+}
+
 const Container = styled.div`
   background: white;
   width: 100%;
@@ -39,8 +54,10 @@ const Container = styled.div`
 const RenderedChatContainer = styled.div`
   width: 100%;
   height: 73vh;
-  border: solid red;
-  color: black;
+  overflow-y: auto;
+  padding: 1rem;
+  background: #f5f5f5;
+  border-radius: 8px;
 `;
 
 const SendMessageContainer = styled.div`
@@ -78,6 +95,26 @@ const LoadingSpinner = styled.div`
     100% {
       transform: rotate(360deg);
     }
+  }
+`;
+
+const Avatar = styled.img`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  margin-right: 12px;
+  object-fit: cover;
+
+  @media (max-width: 1000px) {
+    width: 30px;
+    height: 30px;
+  }
+  @media (max-width: 700px) {
+    margin-right: 5px;
+  }
+  @media (max-width: 400px) {
+    width: 23px;
+    height: 23px;
   }
 `;
 
@@ -164,9 +201,15 @@ const AccessType = styled.span`
   color: #666;
 `;
 
-const BotListPopUp: React.FC<MyRoomProps> = ({ onClose, groupId }) => {
+const BotListPopUp: React.FC<MyRoomProps> = ({
+  onClose,
+  onBotSelect,
+  groupId,
+}) => {
   const [bots, setBots] = useState<Bot[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { userInfo } = useUser();
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const fetchBots = async () => {
@@ -185,6 +228,22 @@ const BotListPopUp: React.FC<MyRoomProps> = ({ onClose, groupId }) => {
       }
     };
 
+    const checkIfAdmin = (): boolean => {
+      if (!groupId || !userInfo?.userId) return false;
+      try {
+        const members = membersCache.get(Number(groupId));
+        return (
+          members?.some(
+            (m) => m.userId === userInfo.userId && m.groupMemberType === "ADMIN"
+          ) ?? false
+        );
+      } catch (error) {
+        console.error("Error accessing membersCache:", error);
+        return false;
+      }
+    };
+
+    setIsAdmin(checkIfAdmin());
     fetchBots();
   }, [groupId]);
 
@@ -201,7 +260,17 @@ const BotListPopUp: React.FC<MyRoomProps> = ({ onClose, groupId }) => {
       </PopupHeader>
       <BotList>
         {bots.map((bot) => (
-          <BotItem key={bot.botId}>
+          <BotItem
+            key={bot.botId}
+            onClick={() => {
+              if (bot.accessType === 0 && !isAdmin) {
+                alert("Only admins can mention this bot");
+                return;
+              }
+              onClose?.();
+              onBotSelect?.(bot.botName, bot.botId);
+            }}
+          >
             <BotName>{bot.botName}</BotName>
             <AccessType>
               ({bot.accessType === 0 ? "Admin Only" : "Public Access"})
@@ -218,6 +287,130 @@ const MyRoom: React.FC<MyRoomProps> = ({
   desc: propDesc = "No description available.",
   groupId,
 }) => {
+  const { userInfo } = useUser();
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const stompClientRef = useRef<Stomp.Client | null>(null);
+
+  const cookie = document.cookie;
+  const token = localStorage.getItem("jwtToken");
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchMembers = async () => {
+      try {
+        const response = await apiClient.get(
+          `/v1/group/get_group_member_list?groupId=${groupId}`
+        );
+        if (response.data.code === 200) {
+          membersCache.set(Number(groupId), response.data.data);
+        }
+      } catch (error) {
+        console.error("Error fetching group members:", error);
+      }
+    };
+
+    if (groupId) fetchMembers();
+
+    const connectWebSocket = () => {
+      if (stompClientRef.current) {
+        console.log("WebSocket client already exists, skipping reconnection.");
+        return;
+      }
+
+      const socket = new SockJS(`https://112.74.92.135/ws`);
+      const client = Stomp.over(socket);
+
+      client.connect(
+        {
+          cookie: cookie,
+          Authorization: `Bearer ${token}`,
+        },
+        () => {
+          client.subscribe(`/topic/chat/${groupId}`, (message) => {
+            // if (isMounted) {
+            console.log("Received message:", message.body);
+            const receivedMessage = JSON.parse(message.body) as Message;
+            setMessages((prev) =>
+              [...prev, receivedMessage].sort((a, b) => a.infoId - b.infoId)
+            );
+            // }
+          });
+        }
+      );
+
+      stompClientRef.current = client;
+
+      return () => {
+        if (client) {
+          client.disconnect(() => {
+            console.log("Disconnected from WebSocket");
+            stompClientRef.current = null;
+          });
+        }
+      };
+    };
+
+    if (groupId) {
+      connectWebSocket();
+    }
+
+    // Fetch message history
+    const fetchMessageHistory = async () => {
+      try {
+        const response = await apiClient.post(`/v1/chat/getHistoryMsg`, {
+          groupId: groupId,
+          lastMsgId: -1,
+          pageSize: 20,
+        });
+        console.log("Message history:", response.data.data);
+        setMessages(
+          (response.data.data as Message[]).sort((a, b) => a.infoId - b.infoId)
+        );
+      } catch (error) {
+        console.error("Error fetching message history:", error);
+      }
+    };
+
+    if (groupId) {
+      fetchMessageHistory();
+    }
+
+    return () => {
+      isMounted = false;
+    };
+  }, [groupId]);
+
+  const sendMessage = () => {
+    if (inputMessage.trim() && stompClientRef.current && userInfo?.userId) {
+      const message = {
+        groupId: groupId,
+        senderId: userInfo.userId,
+        content: inputMessage,
+        msgType: 0,
+        createTime: new Date().toISOString(),
+        botId: selectedBot || 0,
+      };
+      setSelectedBot(null);
+      stompClientRef.current.send(
+        `/app/chat/${groupId}`,
+        {},
+        JSON.stringify(message)
+      );
+      setInputMessage("");
+    }
+  };
+
+  const [selectedBot, setSelectedBot] = useState<number | null>(null);
+
+  const handleBotSelect = (botName: string, botId: number) => {
+    console.log("Bot selected:", botName);
+    setInputMessage(`${inputMessage}@${botName} `);
+    setSelectedBot(botId);
+    setIsBotClicked(false);
+  };
+
   const location = useLocation();
   const state = location.state as LocationState | undefined;
   const [isBotClicked, setIsBotClicked] = useState(false);
@@ -227,12 +420,72 @@ const MyRoom: React.FC<MyRoomProps> = ({
 
   useEffect(() => {
     console.log(title, desc);
-  });
+  }, [title, desc]);
+
   return (
     <Container>
-      <RenderedChatContainer>render chats</RenderedChatContainer>
+      <RenderedChatContainer>
+        {messages.map((msg) => (
+          <div
+            key={msg.infoId}
+            style={{
+              marginBottom: "1rem",
+              padding: "1rem",
+              backgroundColor:
+                msg.senderId === userInfo?.userId ? "#dcf8c6" : "white",
+              borderRadius: "8px",
+              display: "flex",
+              alignItems: "center",
+              gap: "1rem",
+            }}
+          >
+            <Avatar
+              src={`data:image/png;base64, 
+                ${
+                  msg.senderId === userInfo?.userId
+                    ? userInfo.userPortrait
+                    : membersCache
+                        .get(Number(groupId))
+                        ?.find((m) => m.userId === msg.senderId)
+                        ?.userPortrait || "/default-avatar.png"
+                }
+              `}
+              alt="User portrait"
+            />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontWeight: 500 }}>
+                {msg.senderId === userInfo?.userId
+                  ? "You"
+                  : `User ${msg.senderId}`}
+              </div>
+              <div>{msg.content}</div>
+              <div
+                style={{
+                  fontSize: "0.8rem",
+                  color: "#666",
+                  marginTop: "0.5rem",
+                }}
+              >
+                {new Date(msg.createTime).toLocaleString("zh-CN", {
+                  year: "numeric",
+                  month: "2-digit",
+                  day: "2-digit",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })}
+              </div>
+            </div>
+          </div>
+        ))}
+      </RenderedChatContainer>
       <SendMessageContainer>
-        <MessageInput placeholder="Type your message..." />
+        <MessageInput
+          placeholder="Type your message..."
+          value={inputMessage}
+          onChange={(e) => setInputMessage(e.target.value)}
+          onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+        />
         <BotIcon
           src={botIcon}
           alt="Bot Icon"
@@ -242,9 +495,10 @@ const MyRoom: React.FC<MyRoomProps> = ({
           <BotListPopUp
             onClose={() => setIsBotClicked(false)}
             groupId={groupId}
+            onBotSelect={handleBotSelect}
           />
         )}
-        <SendIcon />
+        <SendIcon onClick={sendMessage} />
       </SendMessageContainer>
     </Container>
   );

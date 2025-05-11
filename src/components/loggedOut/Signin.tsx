@@ -206,6 +206,8 @@ const Signin: React.FC = () => {
 
         if (response.data.code === 200) {
           // On successful login, the server sets the JWT_Token cookie
+          const jwtToken = response.data.data["Bearer Token"];
+          localStorage.setItem("jwtToken", jwtToken);
           navigate("/search-rooms");
           console.log(response.data.code);
         }

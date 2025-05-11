@@ -299,9 +299,10 @@ interface ToggleButtonProps {
 
 const RoomList = styled.ul`
   list-style: none;
-  padding: 0;
-  max-height: 45vh;
+  padding: 0rem 0;
+  flex: 1;
   overflow-y: auto;
+  margin: 0rem 0;
 `;
 
 const RoomContainer = styled.div`
@@ -482,7 +483,8 @@ const StyledSignOutText = styled.p`
   }
 
   @media (max-width: 350px) {
-  font-size: 0.45rem; }
+    font-size: 0.45rem;
+  }
 `;
 
 const StyledSignOutIcon = styled(PiSignOutBold)`
@@ -495,9 +497,10 @@ const StyledSignOutIcon = styled(PiSignOutBold)`
     height: 1.2rem;
   }
 
-  @media (max-width: 350px){
-  width: 0.8rem;
-  height: 0.8rem;}
+  @media (max-width: 350px) {
+    width: 0.8rem;
+    height: 0.8rem;
+  }
 `;
 
 const PlusButtonOverlayContainer = styled.div`
@@ -591,6 +594,58 @@ const StyledPlusButtonOptionText = styled.span`
   @media (max-width: 500px) {
     font-size: 0.45rem;
   }
+`;
+
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 0;
+  background-color: white;
+  position: sticky;
+  bottom: 0;
+  width: 100%;
+  margin-top: auto;
+  border-top: 1px solid #e5e7eb;
+
+  @media (max-width: 800px) {
+    gap: 0.3rem;
+  }
+`;
+
+const PageButton = styled.button<{ $active?: boolean }>`
+  background: ${(props) => (props.$active ? "#016532" : "white")};
+  color: ${(props) => (props.$active ? "white" : "black")};
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+  padding: 0.3rem 0.3rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+
+  &:hover {
+    background: ${(props) => (props.$active ? "#016532" : "#f0f0f0")};
+  }
+
+  &:disabled {
+    color: #d9d9d9;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 800px) {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.5rem;
+  }
+
+  @media (max-width: 500px) {
+    font-size: 0.6rem;
+    padding: 0.2rem 0.4rem;
+  }
+`;
+
+const Ellipsis = styled.span`
+  padding: 0 0.3rem;
+  color: #666;
 `;
 
 const LoadingSpinner = () => (
@@ -737,12 +792,36 @@ const Sidebar: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
+
+  const [roomsPagination, setRoomsPagination] = useState({
     pageSize: 10,
     pageNum: 1,
     total: 0,
     pages: 0,
   });
+
+  const [tagsPagination, setTagsPagination] = useState({
+    pageSize: 10,
+    pageNum: 1,
+    total: 0,
+    pages: 0,
+  });
+
+  const handlePageChange = (page: number) => {
+    if (activeTab === "myRooms") {
+      const clampedPage = Math.max(1, Math.min(page, roomsPagination.pages));
+      setRoomsPagination((prev) => ({
+        ...prev,
+        pageNum: clampedPage,
+      }));
+    } else {
+      const clampedPage = Math.max(1, Math.min(page, tagsPagination.pages));
+      setTagsPagination((prev) => ({
+        ...prev,
+        pageNum: clampedPage,
+      }));
+    }
+  };
 
   const [isPlusButtonOverlayVisible, setIsPlusButtonOverlayVisible] =
     useState(false);
@@ -753,14 +832,20 @@ const Sidebar: React.FC = () => {
     } else {
       fetchTags();
     }
-  }, [pagination.pageNum, roomSearch, tagSearch, activeTab]);
+  }, [
+    roomsPagination.pageNum,
+    tagsPagination.pageNum,
+    roomSearch,
+    tagSearch,
+    activeTab,
+  ]);
 
   const fetchRooms = async () => {
     setIsLoading(true);
     setError(null);
 
     // Generate cache key based on search query and pagination
-    const cacheKey = `${roomSearch}-${pagination.pageNum}`;
+    const cacheKey = `${roomSearch}-${roomsPagination.pageNum}`;
 
     // Check if data is cached
     if (roomsCache.has(cacheKey)) {
@@ -774,8 +859,8 @@ const Sidebar: React.FC = () => {
         keyword: roomSearch || undefined,
         groupDemonTypeEnum: "JOINEDROOM",
         pageRequestVO: {
-          pageSize: pagination.pageSize,
-          pageNum: pagination.pageNum,
+          pageSize: roomsPagination.pageSize,
+          pageNum: roomsPagination.pageNum,
         },
       };
 
@@ -791,7 +876,7 @@ const Sidebar: React.FC = () => {
       if (response.data.code === 200) {
         const fetchedRooms = response.data.data.data;
         setRooms(fetchedRooms);
-        setPagination({
+        setRoomsPagination({
           pageSize: response.data.data.pageSize,
           pageNum: response.data.data.pageNum,
           total: response.data.data.total,
@@ -830,7 +915,7 @@ const Sidebar: React.FC = () => {
     setError(null);
 
     // Generate cache key based on search query and pagination
-    const cacheKey = `${tagSearch}-${pagination.pageNum}`;
+    const cacheKey = `${tagSearch}-${tagsPagination.pageNum}`;
 
     // Check if data is cached
     if (tagsCache.has(cacheKey)) {
@@ -843,8 +928,8 @@ const Sidebar: React.FC = () => {
       const requestData = {
         keyword: tagSearch || undefined,
         pageRequestVO: {
-          pageSize: pagination.pageSize,
-          pageNum: pagination.pageNum,
+          pageSize: tagsPagination.pageSize,
+          pageNum: tagsPagination.pageNum,
         },
       };
 
@@ -860,7 +945,7 @@ const Sidebar: React.FC = () => {
       if (response.data.code === 200) {
         const fetchedTags = response.data.data.data;
         setTags(fetchedTags);
-        setPagination({
+        setTagsPagination({
           pageSize: response.data.data.pageSize,
           pageNum: response.data.data.pageNum,
           total: response.data.data.total,
@@ -990,60 +1075,169 @@ const Sidebar: React.FC = () => {
       ) : (
         <>
           {activeTab === "myRooms" && (
-            <RoomList>
-              {rooms.length > 0
-                ? rooms.map((room) => (
-                    <RoomContainer key={room.groupId}>
-                      <Star />
-                      <RoomDescContainer>
-                        <RoomTitle
-                          key={room.groupId}
-                          onClick={() => {
-                            console.log("/my-room-${room.groupId.toString()}");
-                            navigate(`/my-room/${room.groupId.toString()}`, {
-                              state: {
-                                title: room.groupName,
-                                desc: room.groupDescription,
-                                groupId: room.groupId,
-                                adminId: room.adminId,
-                                adminName: room.adminName,
-                                memberCount: room.memberCount,
-                                groupType: room.groupType,
-                              },
-                            });
-                          }}
-                        >
-                          {room.groupName}
-                        </RoomTitle>
-                        <RoomDesc>{room.groupDescription}</RoomDesc>
-                      </RoomDescContainer>
-                    </RoomContainer>
-                  ))
-                : !isLoading && <ErrorMessage>No rooms found.</ErrorMessage>}
-            </RoomList>
+            <>
+              <RoomList>
+                {rooms.length > 0
+                  ? rooms.map((room) => (
+                      <RoomContainer key={room.groupId}>
+                        <Star />
+                        <RoomDescContainer>
+                          <RoomTitle
+                            key={room.groupId}
+                            onClick={() => {
+                              console.log(
+                                "/my-room-${room.groupId.toString()}"
+                              );
+                              navigate(`/my-room/${room.groupId.toString()}`, {
+                                state: {
+                                  title: room.groupName,
+                                  desc: room.groupDescription,
+                                  groupId: room.groupId,
+                                  adminId: room.adminId,
+                                  adminName: room.adminName,
+                                  memberCount: room.memberCount,
+                                  groupType: room.groupType,
+                                },
+                              });
+                            }}
+                          >
+                            {room.groupName}
+                          </RoomTitle>
+                          <RoomDesc>{room.groupDescription}</RoomDesc>
+                        </RoomDescContainer>
+                      </RoomContainer>
+                    ))
+                  : !isLoading && <ErrorMessage>No rooms found.</ErrorMessage>}
+              </RoomList>
+              <PaginationContainer>
+                <PageButton
+                  onClick={() => handlePageChange(1)}
+                  disabled={
+                    activeTab === "myRooms"
+                      ? roomsPagination.pageNum === 1
+                      : tagsPagination.pageNum === 1
+                  }
+                >
+                  First
+                </PageButton>
+                <PageButton
+                  onClick={() =>
+                    handlePageChange(
+                      activeTab === "myRooms"
+                        ? roomsPagination.pageNum - 1
+                        : tagsPagination.pageNum - 1
+                    )
+                  }
+                  disabled={
+                    activeTab === "myRooms"
+                      ? roomsPagination.pageNum === 1
+                      : tagsPagination.pageNum === 1
+                  }
+                >
+                  Previous
+                </PageButton>
+                <Ellipsis>
+                  Page{" "}
+                  {activeTab === "myRooms"
+                    ? roomsPagination.pageNum
+                    : tagsPagination.pageNum}{" "}
+                  of{" "}
+                  {activeTab === "myRooms"
+                    ? roomsPagination.pages
+                    : tagsPagination.pages}
+                </Ellipsis>
+                <PageButton
+                  $active={false}
+                  onClick={() =>
+                    handlePageChange(
+                      (activeTab === "myRooms"
+                        ? roomsPagination.pageNum
+                        : tagsPagination.pageNum) + 1
+                    )
+                  }
+                  disabled={
+                    (activeTab === "myRooms"
+                      ? roomsPagination.pageNum
+                      : tagsPagination.pageNum) ===
+                    (activeTab === "myRooms"
+                      ? roomsPagination.pages
+                      : tagsPagination.pages)
+                  }
+                >
+                  Next
+                </PageButton>
+                <PageButton
+                  onClick={() =>
+                    handlePageChange(
+                      activeTab === "myRooms"
+                        ? roomsPagination.pages
+                        : tagsPagination.pages
+                    )
+                  }
+                  disabled={
+                    activeTab === "myRooms"
+                      ? roomsPagination.pageNum === roomsPagination.pages
+                      : tagsPagination.pageNum === tagsPagination.pages
+                  }
+                >
+                  Last
+                </PageButton>
+              </PaginationContainer>
+            </>
           )}
 
           {activeTab === "myTags" && (
-            <RoomList>
-              {tags.length > 0
-                ? tags.map((tag) => (
-                    <RoomContainer key={tag.tagId}>
-                      <Tag />
-                      <RoomDescContainer>
-                        <RoomTitle
-                          onClick={() =>
-                            navigate(`/my-class/${tag.tagId.toString()}`, {
-                              state: { title: tag.tagName, tagId: tag.tagId },
-                            })
-                          }
-                        >
-                          {tag.tagName}
-                        </RoomTitle>
-                      </RoomDescContainer>
-                    </RoomContainer>
-                  ))
-                : !isLoading && <ErrorMessage>No tags found.</ErrorMessage>}
-            </RoomList>
+            <>
+              <RoomList>
+                {tags.length > 0
+                  ? tags.map((tag) => (
+                      <RoomContainer key={tag.tagId}>
+                        <Tag />
+                        <RoomDescContainer>
+                          <RoomTitle
+                            onClick={() =>
+                              navigate(`/my-class/${tag.tagId.toString()}`, {
+                                state: { title: tag.tagName, tagId: tag.tagId },
+                              })
+                            }
+                          >
+                            {tag.tagName}
+                          </RoomTitle>
+                        </RoomDescContainer>
+                      </RoomContainer>
+                    ))
+                  : !isLoading && <ErrorMessage>No tags found.</ErrorMessage>}
+              </RoomList>
+              <PaginationContainer>
+                <PageButton
+                  onClick={() => handlePageChange(1)}
+                  disabled={tagsPagination.pageNum === 1}
+                >
+                  First
+                </PageButton>
+                <PageButton
+                  onClick={() => handlePageChange(tagsPagination.pageNum - 1)}
+                  disabled={tagsPagination.pageNum === 1}
+                >
+                  Previous
+                </PageButton>
+                <Ellipsis>
+                  Page {tagsPagination.pageNum} of {tagsPagination.pages}
+                </Ellipsis>
+                <PageButton
+                  onClick={() => handlePageChange(tagsPagination.pageNum + 1)}
+                  disabled={tagsPagination.pageNum === tagsPagination.pages}
+                >
+                  Next
+                </PageButton>
+                <PageButton
+                  onClick={() => handlePageChange(tagsPagination.pages)}
+                  disabled={tagsPagination.pageNum === tagsPagination.pages}
+                >
+                  Last
+                </PageButton>
+              </PaginationContainer>
+            </>
           )}
         </>
       )}
