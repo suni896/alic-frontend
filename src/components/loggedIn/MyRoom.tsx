@@ -8,6 +8,9 @@ import { LuSend, LuX } from "react-icons/lu";
 import botIcon from "../../assets/chat-gpt.png";
 import apiClient from "../loggedOut/apiClient";
 import { useUser } from "./UserContext";
+import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
 
 interface MyRoomProps {
   title?: string;
@@ -58,6 +61,10 @@ const RenderedChatContainer = styled.div`
   padding: 1rem;
   background: #f5f5f5;
   border-radius: 8px;
+`;
+
+const MessageText = styled.div`
+  word-break: break-word;
 `;
 
 const SendMessageContainer = styled.div`
@@ -440,25 +447,55 @@ const MyRoom: React.FC<MyRoomProps> = ({
             }}
           >
             <Avatar
-              src={`data:image/png;base64, 
-                ${
-                  msg.senderId === userInfo?.userId
-                    ? userInfo.userPortrait
-                    : membersCache
-                        .get(Number(groupId))
-                        ?.find((m) => m.userId === msg.senderId)
-                        ?.userPortrait || "/default-avatar.png"
-                }
-              `}
+              src={
+                msg.senderType === "CHATBOT"
+                  ? botIcon
+                  : `data:image/png;base64, ${
+                      msg.senderId === userInfo?.userId
+                        ? userInfo.userPortrait
+                        : membersCache
+                            .get(Number(groupId))
+                            ?.find((m) => m.userId === msg.senderId)
+                            ?.userPortrait || "/default-avatar.png"
+                    }`
+              }
               alt="User portrait"
             />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 500 }}>
-                {msg.senderId === userInfo?.userId
+                {msg.senderType === "CHATBOT"
+                  ? `Bot ${msg.senderId}`
+                  : msg.senderId === userInfo?.userId
                   ? "You"
                   : `User ${msg.senderId}`}
               </div>
-              <div>{msg.content}</div>
+              {/* <MessageText
+                dangerouslySetInnerHTML={{ __html: marked(msg.content) }}
+              /> */}
+              <MessageText>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  rehypePlugins={[rehypeRaw]}
+                  components={{
+                    p: (props) => (
+                      <p {...props} style={{ margin: "0.5em 0" }} />
+                    ),
+                    code: (props) => (
+                      <code
+                        {...props}
+                        style={{
+                          backgroundColor: "#f5f5f5",
+                          padding: "2px 4px",
+                          borderRadius: "4px",
+                        }}
+                      />
+                    ),
+                    // 自定义其他组件的样式
+                  }}
+                >
+                  {msg.content}
+                </ReactMarkdown>
+              </MessageText>
               <div
                 style={{
                   fontSize: "0.8rem",
