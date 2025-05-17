@@ -61,6 +61,23 @@ const RenderedChatContainer = styled.div`
   padding: 1rem;
   background: #f5f5f5;
   border-radius: 8px;
+
+  &::-webkit-scrollbar {
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #555;
+  }
 `;
 
 const MessageText = styled.div`
@@ -294,6 +311,9 @@ const MyRoom: React.FC<MyRoomProps> = ({
   desc: propDesc = "No description available.",
   groupId,
 }) => {
+  const [isAtBottom, setIsAtBottom] = useState(true);
+  const [hasNewMessage, setHasNewMessage] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
   const { userInfo } = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
@@ -429,9 +449,37 @@ const MyRoom: React.FC<MyRoomProps> = ({
     console.log(title, desc);
   }, [title, desc]);
 
+  useEffect(() => {
+    const container = chatContainerRef.current;
+    if (container && isAtBottom) {
+      container.scrollTop = container.scrollHeight;
+      setHasNewMessage(false);
+    } else if (!isAtBottom) {
+      setHasNewMessage(true);
+    }
+  }, [messages]);
+
+  const handleScroll = () => {
+    const container = chatContainerRef.current;
+    if (container) {
+      const { scrollTop, scrollHeight, clientHeight } = container;
+      setIsAtBottom(scrollHeight - (scrollTop + clientHeight) < 50);
+      setHasNewMessage(false);
+    }
+  };
+
+  const scrollToBottom = () => {
+    const container = chatContainerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+      setIsAtBottom(true);
+      setHasNewMessage(false);
+    }
+  };
+
   return (
     <Container>
-      <RenderedChatContainer>
+      <RenderedChatContainer ref={chatContainerRef} onScroll={handleScroll}>
         {messages.map((msg) => (
           <div
             key={msg.infoId}
@@ -516,6 +564,25 @@ const MyRoom: React.FC<MyRoomProps> = ({
           </div>
         ))}
       </RenderedChatContainer>
+      {hasNewMessage && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "100px",
+            right: "20px",
+            backgroundColor: "#016532",
+            color: "white",
+            padding: "8px 16px",
+            borderRadius: "20px",
+            cursor: "pointer",
+            boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
+            zIndex: 1000,
+          }}
+          onClick={scrollToBottom}
+        >
+          新消息 ▼
+        </div>
+      )}
       <SendMessageContainer>
         <MessageInput
           placeholder="Type your message..."
