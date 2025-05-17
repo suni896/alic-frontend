@@ -111,6 +111,7 @@ const LoadingSpinner = styled.div`
   height: 16px;
   animation: spin 1s linear infinite;
   margin-left: 8px;
+  transition: opacity 0.3s ease-in-out;
 
   @keyframes spin {
     0% {
@@ -311,19 +312,94 @@ const MyRoom: React.FC<MyRoomProps> = ({
   desc: propDesc = "No description available.",
   groupId,
 }) => {
-  const [isAtBottom, setIsAtBottom] = useState(true);
   const [hasNewMessage, setHasNewMessage] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { userInfo } = useUser();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const stompClientRef = useRef<Stomp.Client | null>(null);
+  const [hasNoMoreMessages, setHasNoMoreMessages] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
 
   const cookie = document.cookie;
   const token = localStorage.getItem("jwtToken");
 
+  console.log("MyRoom enter groupId:", groupId);
+
+  const fetchMessageHistory = async (loadMore = false) => {
+    console.log(
+      "fetchMessageHistory enter:",
+      loadMore,
+      hasNoMoreMessages,
+      isLoading
+    );
+    // if (hasNoMoreMessages || isLoading) return;
+    const prevMessages = messages.length;
+    setIsLoading(true);
+    try {
+      const response = await apiClient.post(`/v1/chat/getHistoryMsg`, {
+        groupId: groupId,
+        lastMsgId: loadMore ? messages[0]?.infoId : -1,
+        pageSize: 20,
+      });
+
+      const newMessages = response.data.data as Message[];
+      setHasNoMoreMessages(newMessages.length < 20);
+
+      setMessages((prev) => {
+        const merged = [...newMessages, ...prev]
+          .filter((v, i, a) => a.findIndex((t) => t.infoId === v.infoId) === i)
+          .sort((a, b) => a.infoId - b.infoId);
+
+        requestAnimationFrame(() => {
+          if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop =
+              chatContainerRef.current.scrollHeight;
+            setInitialLoading(false);
+          }
+        });
+        return merged;
+      });
+
+      if (loadMore) {
+        const container = chatContainerRef.current;
+        if (container) {
+          setTimeout(() => {
+            container.scrollTop =
+              container.scrollHeight - prevScrollHeight.current;
+          }, 50);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching message history:", error);
+    } finally {
+      if (messages.length === prevMessages) {
+        setIsLoading(false);
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (initialLoading && messages.length > 0) {
+      requestAnimationFrame(() => {
+        if (chatContainerRef.current) {
+          chatContainerRef.current.style.overflowY = "auto";
+          chatContainerRef.current.scrollTop =
+            chatContainerRef.current.scrollHeight;
+        }
+      });
+    }
+  }, [messages, initialLoading]);
+
   useEffect(() => {
     let isMounted = true;
+
+    setMessages([]);
+    setPageNum(1);
+    setIsLoading(false);
+    setHasNoMoreMessages(false);
+    setSelectedBot(null);
 
     const fetchMembers = async () => {
       try {
@@ -356,13 +432,39 @@ const MyRoom: React.FC<MyRoomProps> = ({
         },
         () => {
           client.subscribe(`/topic/chat/${groupId}`, (message) => {
-            // if (isMounted) {
             console.log("Received message:", message.body);
             const receivedMessage = JSON.parse(message.body) as Message;
-            setMessages((prev) =>
-              [...prev, receivedMessage].sort((a, b) => a.infoId - b.infoId)
-            );
-            // }
+            setMessages((prev) => {
+              const newMessages = [...prev, receivedMessage].sort(
+                (a, b) => a.infoId - b.infoId
+              );
+
+              requestAnimationFrame(() => {
+                if (chatContainerRef.current) {
+                  const { scrollTop, scrollHeight, clientHeight } =
+                    chatContainerRef.current;
+                  const isNearBottom =
+                    scrollHeight - (scrollTop + clientHeight) < 200;
+                  console.log(
+                    "scrollHeight:",
+                    scrollHeight,
+                    "scrollTop:",
+                    scrollTop,
+                    "clientHeight:",
+                    clientHeight
+                  );
+
+                  if (isNearBottom) {
+                    chatContainerRef.current.scrollTop = scrollHeight;
+                    setHasNewMessage(false);
+                  } else {
+                    setHasNewMessage(true);
+                  }
+                }
+              });
+
+              return newMessages;
+            });
           });
         }
       );
@@ -383,25 +485,8 @@ const MyRoom: React.FC<MyRoomProps> = ({
       connectWebSocket();
     }
 
-    // Fetch message history
-    const fetchMessageHistory = async () => {
-      try {
-        const response = await apiClient.post(`/v1/chat/getHistoryMsg`, {
-          groupId: groupId,
-          lastMsgId: -1,
-          pageSize: 20,
-        });
-        console.log("Message history:", response.data.data);
-        setMessages(
-          (response.data.data as Message[]).sort((a, b) => a.infoId - b.infoId)
-        );
-      } catch (error) {
-        console.error("Error fetching message history:", error);
-      }
-    };
-
     if (groupId) {
-      fetchMessageHistory();
+      fetchMessageHistory(false);
     }
 
     return () => {
@@ -429,6 +514,8 @@ const MyRoom: React.FC<MyRoomProps> = ({
     }
   };
 
+  const prevScrollHeight = useRef(0);
+  const [pageNum, setPageNum] = useState(1);
   const [selectedBot, setSelectedBot] = useState<number | null>(null);
 
   const handleBotSelect = (botName: string, botId: number) => {
@@ -449,22 +536,23 @@ const MyRoom: React.FC<MyRoomProps> = ({
     console.log(title, desc);
   }, [title, desc]);
 
-  useEffect(() => {
-    const container = chatContainerRef.current;
-    if (container && isAtBottom) {
-      container.scrollTop = container.scrollHeight;
-      setHasNewMessage(false);
-    } else if (!isAtBottom) {
-      setHasNewMessage(true);
-    }
-  }, [messages]);
-
+  // 修改滚动事件处理
   const handleScroll = () => {
     const container = chatContainerRef.current;
     if (container) {
-      const { scrollTop, scrollHeight, clientHeight } = container;
-      setIsAtBottom(scrollHeight - (scrollTop + clientHeight) < 50);
-      setHasNewMessage(false);
+      const { scrollTop } = container;
+      const isNearBottom =
+        container.scrollHeight - (scrollTop + container.clientHeight) < 200;
+      if (!isNearBottom) {
+        setHasNewMessage(false);
+      }
+
+      if (scrollTop < 200 && !isLoading && !hasNoMoreMessages) {
+        setHasNewMessage(false); // 立即关闭新消息提示
+        prevScrollHeight.current = container.scrollHeight;
+        setIsLoading(true);
+        fetchMessageHistory(true);
+      }
     }
   };
 
@@ -472,7 +560,6 @@ const MyRoom: React.FC<MyRoomProps> = ({
     const container = chatContainerRef.current;
     if (container) {
       container.scrollTop = container.scrollHeight;
-      setIsAtBottom(true);
       setHasNewMessage(false);
     }
   };
@@ -480,6 +567,11 @@ const MyRoom: React.FC<MyRoomProps> = ({
   return (
     <Container>
       <RenderedChatContainer ref={chatContainerRef} onScroll={handleScroll}>
+        {hasNoMoreMessages && (
+          <div style={{ textAlign: "center", padding: "5px", color: "#666" }}>
+            No more messages
+          </div>
+        )}
         {messages.map((msg) => (
           <div
             key={msg.infoId}
