@@ -417,9 +417,11 @@ const MyRoom: React.FC<MyRoomProps> = ({
     if (groupId) fetchMembers();
 
     const connectWebSocket = () => {
-      if (stompClientRef.current) {
-        console.log("WebSocket client already exists, skipping reconnection.");
-        return;
+      if (stompClientRef.current && stompClientRef.current.connected) {
+        stompClientRef.current.disconnect(() => {
+          console.log("Disconnected previous WebSocket connection");
+        });
+        stompClientRef.current = null;
       }
 
       const socket = new SockJS(`https://112.74.92.135/ws`);
@@ -472,9 +474,9 @@ const MyRoom: React.FC<MyRoomProps> = ({
       stompClientRef.current = client;
 
       return () => {
-        if (client) {
+        if (client && client.connected) {
           client.disconnect(() => {
-            console.log("Disconnected from WebSocket");
+            console.log("Cleanup: WebSocket disconnected");
             stompClientRef.current = null;
           });
         }

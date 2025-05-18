@@ -666,8 +666,11 @@ const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
     try {
       const response = await apiClient.post("/v1/user/logout");
       if (response.data.code === 200) {
+        localStorage.clear();
+        document.cookie =
+          "jwtToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=None";
         alert("Successfully logged out!");
-        navigate("/"); // Use the navigate function to go to the home page
+        navigate("/");
       } else {
         alert(response.data.message || "Failed to log out");
       }
