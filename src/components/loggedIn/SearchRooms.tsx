@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { CiSearch } from "react-icons/ci";
 import styled from "styled-components";
 import CreateRoomComponent from "./CreateRoomComponent"; // Modal Component
-import apiClient from "../loggedOut/apiClient";
+import { useRoomContext } from "./RoomContext";
+import { useNavigate } from "react-router-dom";
 
 const Container = styled.div`
   background: white;
@@ -78,7 +79,7 @@ const SearchRoomsContainer = styled.div`
   box-sizing: border-box;
   margin-left: auto;
   margin-right: auto;
-  justify-content: center;
+  justify-content: flex-start;
 
   @media (max-width: 1000px) {
     gap: 2rem;
@@ -200,14 +201,6 @@ interface Room {
   memberCount: number;
 }
 
-interface PaginationResponse {
-  pageSize: number;
-  pageNum: number;
-  pages: number;
-  total: number;
-  data: Room[];
-}
-
 const getPageNumbers = (currentPage: number, totalPages: number) => {
   if (totalPages <= 6) {
     return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -237,90 +230,69 @@ const getPageNumbers = (currentPage: number, totalPages: number) => {
 const roomsCache = new Map<string, Map<number, Room[]>>();
 
 const SearchRooms: React.FC = () => {
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const { mainAreaRooms, mainAreaRoomsPagination, setMainAreaRoomListRequest } =
+    useRoomContext();
   const [currentPage, setCurrentPage] = useState(1);
   const [roomsPerPage, setRoomsPerPage] = useState(8);
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
-  const [totalPages, setTotalPages] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [loading, setLoading] = useState(false);
 
   const roomRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const calculateRoomsPerPage = () => {
-      if (roomRef.current) {
-        const roomHeight = roomRef.current.offsetHeight;
-        const containerHeight = window.innerHeight * 0.65;
-        const verticalGap = 32;
+  // useEffect(() => {
+  //   const calculateRoomsPerPage = () => {
+  //     if (roomRef.current) {
+  //       const roomHeight = roomRef.current.offsetHeight;
+  //       const containerHeight = window.innerHeight * 0.65;
+  //       const verticalGap = 32;
 
-        const rowHeight = roomHeight + verticalGap;
-        const rowsPerPage = Math.floor(containerHeight / rowHeight);
+  //       const rowHeight = roomHeight + verticalGap;
+  //       const rowsPerPage = Math.floor(containerHeight / rowHeight);
 
-        const calculatedRoomsPerPage = rowsPerPage * 2;
+  //       const calculatedRoomsPerPage = rowsPerPage * 2;
 
-        setRoomsPerPage(calculatedRoomsPerPage || 8);
-      }
-    };
+  //       setRoomsPerPage(calculatedRoomsPerPage || 8);
+  //       setRoomsPerPage(8);
+  //     }
+  //   };
 
-    calculateRoomsPerPage();
+  // calculateRoomsPerPage();
 
-    window.addEventListener("resize", calculateRoomsPerPage);
-    return () => {
-      window.removeEventListener("resize", calculateRoomsPerPage);
-    };
-  }, []);
+  //   window.addEventListener("resize", calculateRoomsPerPage);
+  //   return () => {
+  //     window.removeEventListener("resize", calculateRoomsPerPage);
+  //   };
+  // }, []);
 
   useEffect(() => {
     fetchRooms();
   }, [currentPage, roomsPerPage, searchKeyword]);
 
   const fetchRooms = async () => {
-    if (roomsCache.has(searchKeyword)) {
-      const keywordCache = roomsCache.get(searchKeyword)!;
-      if (keywordCache.has(currentPage)) {
-        setRooms(keywordCache.get(currentPage)!);
-        setLoading(false);
-        return;
-      }
-    }
-    try {
-      setLoading(true);
-      const response = await apiClient.post("/v1/group/get_group_list", {
-        keyword: searchKeyword,
-        groupDemonTypeEnum: "PUBLICROOM",
-        pageRequestVO: {
-          pageSize: roomsPerPage,
-          pageNum: currentPage,
-        },
-      });
-
-      if (response.data.code === 200) {
-        const paginationData: PaginationResponse = response.data.data;
-        const fetchedRooms = paginationData.data;
-
-        setRooms(fetchedRooms);
-        setTotalPages(paginationData.pages);
-
-        // Cache the fetched data
-        if (!roomsCache.has(searchKeyword)) {
-          roomsCache.set(searchKeyword, new Map());
-        }
-        roomsCache.get(searchKeyword)!.set(currentPage, fetchedRooms);
-      } else {
-        console.error("Failed to fetch rooms:", response.data.message);
-      }
-    } catch (error) {
-      console.error("Error fetching rooms:", error);
-    } finally {
-      setLoading(false);
-    }
+    setMainAreaRoomListRequest({
+      keyword: searchKeyword,
+      groupDemonTypeEnum: "PUBLICROOM",
+      pageRequestVO: {
+        pageSize: roomsPerPage,
+        pageNum: currentPage,
+      },
+    });
   };
 
   const handlePageChange = (page: number) => {
-    if (page > 0 && page <= totalPages) {
-      setCurrentPage(page);
-    }
+    const clampedPage = Math.max(
+      1,
+      Math.min(page, mainAreaRoomsPagination.pages)
+    );
+    setMainAreaRoomListRequest({
+      keyword: searchKeyword,
+      groupDemonTypeEnum: "JOINEDROOM",
+      pageRequestVO: {
+        pageSize: mainAreaRoomsPagination.pageSize,
+        pageNum: clampedPage,
+      },
+    });
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -330,6 +302,8 @@ const SearchRooms: React.FC = () => {
       setCurrentPage(1); // Reset to first page when search changes
     }
   };
+
+  const navigate = useNavigate();
 
   return (
     <>
@@ -351,12 +325,26 @@ const SearchRooms: React.FC = () => {
         <SearchRoomsContainer>
           {loading ? (
             <div>Loading...</div>
-          ) : rooms.length === 0 ? (
+          ) : mainAreaRooms.length === 0 ? (
             <div>No rooms found</div>
           ) : (
-            rooms.map((room, index) => (
+            mainAreaRooms.map((room, index) => (
               <RoomContainer
                 key={room.groupId}
+                onClick={() => {
+                  console.log("/my-room-${room.groupId.toString()}");
+                  navigate(`/my-room/${room.groupId.toString()}`, {
+                    state: {
+                      title: room.groupName,
+                      desc: room.groupDescription,
+                      groupId: room.groupId,
+                      adminId: room.adminId,
+                      adminName: room.adminName,
+                      memberCount: room.memberCount,
+                      groupType: room.groupType,
+                    },
+                  });
+                }}
                 ref={index === 0 ? roomRef : null}
               >
                 <RoomTitle>{room.groupName}</RoomTitle>
@@ -368,29 +356,40 @@ const SearchRooms: React.FC = () => {
         </SearchRoomsContainer>
         <Footer>
           <PageButton
-            onClick={() => handlePageChange(currentPage - 1)}
-            disabled={currentPage === 1}
+            onClick={() => handlePageChange(1)}
+            disabled={mainAreaRoomsPagination.pageNum === 1}
+          >
+            First
+          </PageButton>
+          <PageButton
+            onClick={() =>
+              handlePageChange(mainAreaRoomsPagination.pageNum - 1)
+            }
+            disabled={mainAreaRoomsPagination.pageNum === 1}
           >
             Previous
           </PageButton>
-          {getPageNumbers(currentPage, totalPages).map((page, index) =>
-            page === "..." ? (
-              <Ellipsis key={`ellipsis-${index}`}>...</Ellipsis>
-            ) : (
-              <PageButton
-                key={`page-${page}`}
-                active={currentPage === page}
-                onClick={() => handlePageChange(page as number)}
-              >
-                {page}
-              </PageButton>
-            )
-          )}
+          <Ellipsis>
+            Page {mainAreaRoomsPagination.pageNum} of{" "}
+            {mainAreaRoomsPagination.pages}
+          </Ellipsis>
           <PageButton
-            onClick={() => handlePageChange(currentPage + 1)}
-            disabled={currentPage === totalPages}
+            onClick={() =>
+              handlePageChange(mainAreaRoomsPagination.pageNum + 1)
+            }
+            disabled={
+              mainAreaRoomsPagination.pageNum === mainAreaRoomsPagination.pages
+            }
           >
             Next
+          </PageButton>
+          <PageButton
+            onClick={() => handlePageChange(mainAreaRoomsPagination.pages)}
+            disabled={
+              mainAreaRoomsPagination.pageNum === mainAreaRoomsPagination.pages
+            }
+          >
+            Last
           </PageButton>
         </Footer>
       </Container>

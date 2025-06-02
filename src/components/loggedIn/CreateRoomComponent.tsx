@@ -10,6 +10,8 @@ import { RxCross2 } from "react-icons/rx";
 import axios from "axios";
 import apiClient from "../loggedOut/apiClient";
 import { useParams } from "react-router-dom";
+import { useRoomContext } from "./RoomContext";
+
 axios.defaults.baseURL = "https://112.74.92.135:443";
 
 const Overlay = styled.div`
@@ -43,7 +45,8 @@ const Modal = styled.div`
   }
 
   @media (max-width: 400px) {
-  width: 80%;}
+    width: 80%;
+  }
 `;
 
 const CloseButton = styled.button`
@@ -90,6 +93,30 @@ const Input = styled.input`
   width: 80%;
   margin-top: 0.3rem;
   margin-bottom: 1.5rem;
+
+  &:focus {
+    border-color: #4ade80;
+    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.5);
+  }
+
+  @media (max-width: 700px) {
+    width: 96%;
+  }
+`;
+
+const Textarea = styled.textarea`
+  font-size: 1rem;
+  padding: 0.75rem;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  color: #6b7280;
+  background-color: white;
+  outline: none;
+  width: 80%;
+  margin-top: 0.3rem;
+  margin-bottom: 1.5rem;
+  resize: vertical;
+  height: 80px; /* Adjust the height as needed */
 
   &:focus {
     border-color: #4ade80;
@@ -184,8 +211,8 @@ const AddAssistantRow = styled.div`
   @media (max-width: 700px) {
     width: 100%;
   }
-  @media (max-width: 400px) {grid-template-columns: 2rem minmax(0, 3fr) minmax(0, 3fr) 2.5rem 3rem;
-
+  @media (max-width: 400px) {
+    grid-template-columns: 2rem minmax(0, 3fr) minmax(0, 3fr) 2.5rem 3rem;
   }
 `;
 
@@ -200,9 +227,9 @@ const ToggleSwitchContainer = styled.div`
   left: -5vw;
 
   @media (max-width: 400px) {
-  width: 40%;
-  min-width: none;
-  left: 1vw;
+    width: 40%;
+    min-width: none;
+    left: 1vw;
   }
 `;
 
@@ -214,7 +241,6 @@ const ToggleSwitch = styled.label`
   input {
     display: none;
   }
-
 
   span {
     width: 2rem;
@@ -245,9 +271,10 @@ const ToggleSwitch = styled.label`
     }
   }
 
-  @media (max-width: 400px){
-  width: 1.5rem;
-  height: 0.8rem;}
+  @media (max-width: 400px) {
+    width: 1.5rem;
+    height: 0.8rem;
+  }
 `;
 
 const RemoveIcon = styled(IoIosRemoveCircleOutline)`
@@ -287,25 +314,31 @@ const StyledSpan = styled.span<StyledSpanProps>`
   font-weight: 600;
   color: #374151;
   margin-bottom: 0.25rem;
-  
-  ${props => props.isadminlabel && `
+
+  ${(props) =>
+    props.isadminlabel &&
+    `
     position: relative;
     top: -1.2vh;
   `}
 
   @media (max-width: 700px) {
     font-size: 0.5rem;
-    ${props => props.isadminlabel && `
+    ${(props) =>
+      props.isadminlabel &&
+      `
       position: relative;
       top: -0.8vh;
       left: 3vw;
     `}
   }
-  
+
   @media (max-width: 400px) {
     font-size: 0.4rem;
-    
-    ${props => props.isadminlabel && `
+
+    ${(props) =>
+      props.isadminlabel &&
+      `
       position: relative;
       
       left: -4vw;
@@ -372,7 +405,7 @@ const validationSchema = (showAssistants: boolean) =>
       .required("Room Name is required")
       .matches(
         /^[A-Za-z0-9 ]{1,20}$/,
-        "Room Name must be 1-20 characters long"
+        "Must be 1-20 characters long, supports uppercase and lowercase English letters and numbers"
       ),
     roomDescription: Yup.string()
       .required("Room Description is required")
@@ -387,8 +420,8 @@ const validationSchema = (showAssistants: boolean) =>
         schema
           .required("Password is required for private rooms")
           .matches(
-            /^[A-Za-z0-9!@#$%^&*()_+\-={}$.]{6,20}$/,
-            "Password must be 6-20 characters long and contain valid characters"
+            /^[A-Za-z0-9!@#$%^&*()_+\-={}$.]{6,33}$/,
+            "Password must be 6-33 characters long and contain valid characters"
           ),
       otherwise: (schema) => schema.notRequired(),
     }),
@@ -396,7 +429,12 @@ const validationSchema = (showAssistants: boolean) =>
       ? Yup.array()
           .of(
             Yup.object().shape({
-              name: Yup.string().required("Assistant name is required"),
+              name: Yup.string()
+                .required("Assistant name is required")
+                .matches(
+                  /^[A-Za-z0-9 ]{1,20}$/,
+                  "Must be 1-20 characters long, supports uppercase and lowercase English letters and numbers"
+                ),
               prompt: Yup.string()
                 .required("Prompt is required")
                 .max(400, "Prompt cannot exceed 400 characters"),
@@ -437,51 +475,6 @@ interface CreateGroupPayload {
   chatBotVOList: ChatBotVO[];
 }
 
-const handleAddGroup = async (
-  values: FormikValues,
-  onClose: () => void,
-  showAssistantsEnabled: boolean
-) => {
-  const groupTypeValue = parseInt(values.roomType, 10);
-
-  // Transform bots into ChatBotVO array
-  const chatBotVOList: ChatBotVO[] = showAssistantsEnabled
-    ? values.bots.map((bot: FormBot) => ({
-        accessType: bot.adminOnly ? 0 : 1,
-        botContext:
-          typeof bot.context === "number"
-            ? bot.context
-            : parseInt(String(bot.context), 10),
-        botName: bot.name || "",
-        botPrompt: bot.prompt || "",
-      }))
-    : [];
-
-  const requestPayload: CreateGroupPayload = {
-    groupName: values.roomName,
-    groupDescription: values.roomDescription,
-    groupType: groupTypeValue,
-    ...(groupTypeValue === 0 ? { password: values.password } : {}),
-    chatBotVOList,
-  };
-
-  try {
-    const response = await apiClient.post(
-      "/v1/group/create_new_group",
-      requestPayload
-    );
-
-    if (response.data.code === 200 && response.data.data?.groupId) {
-      alert("Room successfully created!");
-      onClose();
-    } else {
-      throw new Error(response.data.message || "Failed to create room");
-    }
-  } catch (error: any) {
-    console.error("Error creating group:", error);
-    alert(`Error: ${error.response?.data?.message || error.message}`);
-  }
-};
 interface CreateRoomComponentProps {
   onClose: () => void;
   isModify?: boolean;
@@ -529,6 +522,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   groupId: propGroupId,
   fromSidebar = false,
 }) => {
+  const { addRoom } = useRoomContext();
   const [showAssistants, setShowAssistants] = useState(false);
   const [apiRequestMade, setApiRequestMade] = useState(false);
   const [originalBots, setOriginalBots] = useState<
@@ -549,6 +543,43 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   // Determine the groupId to use - from props or URL params
   const currentGroupId =
     propGroupId || (urlGroupId ? parseInt(urlGroupId, 10) : undefined);
+
+  const handleAddGroup = async (
+    values: FormikValues,
+    onClose: () => void,
+    showAssistantsEnabled: boolean
+  ) => {
+    const groupTypeValue = parseInt(values.roomType, 10);
+
+    // Transform bots into ChatBotVO array
+    const chatBotVOList: ChatBotVO[] = showAssistantsEnabled
+      ? values.bots.map((bot: FormBot) => ({
+          accessType: bot.adminOnly ? 0 : 1,
+          botContext:
+            typeof bot.context === "number"
+              ? bot.context
+              : parseInt(String(bot.context), 10),
+          botName: bot.name || "",
+          botPrompt: bot.prompt || "",
+        }))
+      : [];
+
+    const requestPayload: CreateGroupPayload = {
+      groupName: values.roomName,
+      groupDescription: values.roomDescription,
+      groupType: groupTypeValue,
+      ...(groupTypeValue === 0 ? { password: values.password } : {}),
+      chatBotVOList,
+    };
+
+    try {
+      addRoom(requestPayload);
+      onClose();
+    } catch (error: any) {
+      console.error("Error creating group:", error);
+      alert(`Error: ${error.response?.data?.message || error.message}`);
+    }
+  };
 
   const formik = useFormik({
     initialValues: {
@@ -571,11 +602,14 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
     onSubmit: async (values) => {
       console.log("Form Submitted", values);
       console.log("roomType value:", values.roomType);
-      console.log("Bot status summary:", values.bots.map(bot => ({
-        botId: bot.botId,
-        name: bot.name,
-        status: bot.status
-      })));
+      console.log(
+        "Bot status summary:",
+        values.bots.map((bot) => ({
+          botId: bot.botId,
+          name: bot.name,
+          status: bot.status,
+        }))
+      );
 
       if (effectiveIsModify && userRole === "ADMIN") {
         // Handle edit group logic
@@ -678,7 +712,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
     try {
       // Debug log the form values
       console.log("Edit form values:", values);
-      
+
       // Separate bots based on their status
       const addedBots = values.bots
         .filter((bot: FormBotWithStatus) => bot.status === "new")
@@ -701,15 +735,16 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       const deletedBotIds = originalBots
         .filter((bot) => !currentBotIds.includes(bot.botId))
         .map((bot) => bot.botId);
-      
+
       console.log("Deleted bot IDs:", deletedBotIds);
-      
+
       // For API, we need ALL existing bots that haven't been deleted in modifyChatBotVOS
       // This includes both modified and unchanged bots
       const existingBots = values.bots
         .filter(
           (bot: FormBotWithStatus) =>
-            bot.botId && (bot.status === "modified" || bot.status === "unchanged")
+            bot.botId &&
+            (bot.status === "modified" || bot.status === "unchanged")
         )
         .map((bot: FormBotWithStatus) => ({
           botId: bot.botId,
@@ -730,13 +765,15 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
         // Include password only for private rooms or if it was previously set
         ...(values.roomType === "0" ? { password: values.password } : {}),
         // Include bots only if assistants are enabled
-        ...(showAssistants ? {
-          addChatBotVOList: addedBots,
-          modifyChatBotVOS: existingBots, // All existing bots that haven't been deleted
-        } : {
-          addChatBotVOList: [],
-          modifyChatBotVOS: []
-        })
+        ...(showAssistants
+          ? {
+              addChatBotVOList: addedBots,
+              modifyChatBotVOS: existingBots, // All existing bots that haven't been deleted
+            }
+          : {
+              addChatBotVOList: [],
+              modifyChatBotVOS: [],
+            }),
       };
 
       console.log("Edit request payload:", requestPayload);
@@ -751,12 +788,14 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       if (response.data.code === 200) {
         // Verify the update by fetching the updated data
         try {
-          const verifyResponse = await apiClient.get(`/v1/group/get_group_info?groupId=${currentGroupId}`);
+          const verifyResponse = await apiClient.get(
+            `/v1/group/get_group_info?groupId=${currentGroupId}`
+          );
           console.log("Verification response:", verifyResponse.data);
         } catch (verifyError) {
           console.error("Failed to verify update:", verifyError);
         }
-        
+
         alert("Room successfully updated!");
         onClose();
       } else {
@@ -895,17 +934,21 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
     index: number
   ) => {
     const { name, value, type, checked } = e.target;
-    
+
     // Call the standard formik handler to update the value
     formik.handleChange(e);
-    
+
     // Get the current bot
     const bot = formik.values.bots[index];
-    
+
     // If this is an existing bot (has botId), mark it as modified
     if (bot && bot.botId && bot.status === "unchanged") {
-      console.log(`Marking bot at index ${index} as modified: ${name} changed to ${type === 'checkbox' ? checked : value}`);
-      
+      console.log(
+        `Marking bot at index ${index} as modified: ${name} changed to ${
+          type === "checkbox" ? checked : value
+        }`
+      );
+
       const updatedBots = [...formik.values.bots];
       updatedBots[index] = {
         ...updatedBots[index],
@@ -949,7 +992,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
             )}
 
             <Label htmlFor="roomDescription">Description</Label>
-            <Input
+            <Textarea
               id="roomDescription"
               name="roomDescription"
               placeholder="Let's discuss AGI"
@@ -1056,7 +1099,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                             {index === 0 && (
                               <StyledSpan>Assistant Name*</StyledSpan>
                             )}
-                            <SmallInput 
+                            <SmallInput
                               name={`bots[${index}].name`}
                               placeholder="Assistant Name"
                               value={bot.name}
@@ -1076,9 +1119,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                           </SmallInputContainer>
                           <ToggleSwitchContainer>
                             {index === 0 && (
-                              <StyledSpan
-                                isadminlabel="true"                    
-                              >
+                              <StyledSpan isadminlabel="true">
                                 Only for Admin
                               </StyledSpan>
                             )}
@@ -1091,10 +1132,13 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                                 onChange={(e) => {
                                   // Special handling for checkbox
                                   const isChecked = e.target.checked;
-                                  
+
                                   // First update the value
-                                  formik.setFieldValue(`bots[${index}].adminOnly`, isChecked);
-                                  
+                                  formik.setFieldValue(
+                                    `bots[${index}].adminOnly`,
+                                    isChecked
+                                  );
+
                                   // Then mark as modified if it's an existing bot
                                   if (bot.botId && bot.status === "unchanged") {
                                     const updatedBots = [...formik.values.bots];
@@ -1104,7 +1148,9 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                                       status: "modified",
                                     };
                                     formik.setFieldValue("bots", updatedBots);
-                                    console.log(`Bot at index ${index} marked as modified (adminOnly: ${isChecked})`);
+                                    console.log(
+                                      `Bot at index ${index} marked as modified (adminOnly: ${isChecked})`
+                                    );
                                   }
                                 }}
                               />

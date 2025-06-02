@@ -20,6 +20,7 @@ import axios from "axios";
 import apiClient from "../loggedOut/apiClient";
 import { UserInformation } from "./types";
 import { useUser } from "./UserContext";
+import { useRoomContext } from "./RoomContext";
 
 const SidebarContainer = styled.div`
   width: 23%;
@@ -787,21 +788,15 @@ const tagsCache = new Map<string, Tag[]>(); // Cache keyed by search query
 
 const Sidebar: React.FC = () => {
   const { userInfo, isUserInfoLoading, userInfoError } = useUser();
+  const { sidebarRooms, sidebarRoomsPagination, setSidebarRoomListRequest } =
+    useRoomContext();
   const [roomSearch, setRoomSearch] = useState("");
   const [tagSearch, setTagSearch] = useState("");
   const [isProfileClicked, setIsProfileClicked] = useState(false);
   const [activeTab, setActiveTab] = useState<"myRooms" | "myTags">("myRooms");
-  const [rooms, setRooms] = useState<RoomGroup[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const [roomsPagination, setRoomsPagination] = useState({
-    pageSize: 10,
-    pageNum: 1,
-    total: 0,
-    pages: 0,
-  });
 
   const [tagsPagination, setTagsPagination] = useState({
     pageSize: 10,
@@ -812,11 +807,18 @@ const Sidebar: React.FC = () => {
 
   const handlePageChange = (page: number) => {
     if (activeTab === "myRooms") {
-      const clampedPage = Math.max(1, Math.min(page, roomsPagination.pages));
-      setRoomsPagination((prev) => ({
-        ...prev,
-        pageNum: clampedPage,
-      }));
+      const clampedPage = Math.max(
+        1,
+        Math.min(page, sidebarRoomsPagination.pages)
+      );
+      setSidebarRoomListRequest({
+        keyword: roomSearch,
+        groupDemonTypeEnum: "JOINEDROOM",
+        pageRequestVO: {
+          pageSize: sidebarRoomsPagination.pageSize,
+          pageNum: clampedPage,
+        },
+      });
     } else {
       const clampedPage = Math.max(1, Math.min(page, tagsPagination.pages));
       setTagsPagination((prev) => ({
@@ -836,7 +838,7 @@ const Sidebar: React.FC = () => {
       fetchTags();
     }
   }, [
-    roomsPagination.pageNum,
+    sidebarRoomsPagination.pageNum,
     tagsPagination.pageNum,
     roomSearch,
     tagSearch,
@@ -844,73 +846,14 @@ const Sidebar: React.FC = () => {
   ]);
 
   const fetchRooms = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    // Generate cache key based on search query and pagination
-    const cacheKey = `${roomSearch}-${roomsPagination.pageNum}`;
-
-    // Check if data is cached
-    if (roomsCache.has(cacheKey)) {
-      setRooms(roomsCache.get(cacheKey)!);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const requestData = {
-        keyword: roomSearch || undefined,
-        groupDemonTypeEnum: "JOINEDROOM",
-        pageRequestVO: {
-          pageSize: roomsPagination.pageSize,
-          pageNum: roomsPagination.pageNum,
-        },
-      };
-
-      console.log("Fetching rooms with params:", requestData);
-
-      const response = await apiClient.post<GroupListResponse>(
-        "/v1/group/get_group_list",
-        requestData
-      );
-
-      console.log("Room API response:", response.data);
-
-      if (response.data.code === 200) {
-        const fetchedRooms = response.data.data.data;
-        setRooms(fetchedRooms);
-        setRoomsPagination({
-          pageSize: response.data.data.pageSize,
-          pageNum: response.data.data.pageNum,
-          total: response.data.data.total,
-          pages: response.data.data.pages,
-        });
-        // Cache the fetched data
-        roomsCache.set(cacheKey, fetchedRooms);
-      } else {
-        setError(
-          `API returned error code: ${response.data.code}, message: ${response.data.message}`
-        );
-      }
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          "Axios error in fetchRooms:",
-          error.response?.data || error.message
-        );
-        setError(
-          error.response?.data?.message ||
-            "Failed to fetch rooms. Please try again."
-        );
-      } else {
-        console.error("Unexpected error in fetchRooms:", error);
-        setError(
-          "An unexpected error occurred while fetching rooms. Please try again."
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    setSidebarRoomListRequest({
+      keyword: roomSearch,
+      groupDemonTypeEnum: "JOINEDROOM",
+      pageRequestVO: {
+        pageSize: sidebarRoomsPagination.pageSize,
+        pageNum: sidebarRoomsPagination.pageNum,
+      },
+    });
   };
 
   const fetchTags = async () => {
@@ -1080,8 +1023,8 @@ const Sidebar: React.FC = () => {
           {activeTab === "myRooms" && (
             <>
               <RoomList>
-                {rooms.length > 0
-                  ? rooms.map((room) => (
+                {sidebarRooms.length > 0
+                  ? sidebarRooms.map((room) => (
                       <RoomContainer key={room.groupId}>
                         <Star />
                         <RoomDescContainer>
@@ -1115,72 +1058,39 @@ const Sidebar: React.FC = () => {
               <PaginationContainer>
                 <PageButton
                   onClick={() => handlePageChange(1)}
-                  disabled={
-                    activeTab === "myRooms"
-                      ? roomsPagination.pageNum === 1
-                      : tagsPagination.pageNum === 1
-                  }
+                  disabled={sidebarRoomsPagination.pageNum === 1}
                 >
                   First
                 </PageButton>
                 <PageButton
                   onClick={() =>
-                    handlePageChange(
-                      activeTab === "myRooms"
-                        ? roomsPagination.pageNum - 1
-                        : tagsPagination.pageNum - 1
-                    )
+                    handlePageChange(sidebarRoomsPagination.pageNum - 1)
                   }
-                  disabled={
-                    activeTab === "myRooms"
-                      ? roomsPagination.pageNum === 1
-                      : tagsPagination.pageNum === 1
-                  }
+                  disabled={sidebarRoomsPagination.pageNum === 1}
                 >
                   Previous
                 </PageButton>
                 <Ellipsis>
-                  Page{" "}
-                  {activeTab === "myRooms"
-                    ? roomsPagination.pageNum
-                    : tagsPagination.pageNum}{" "}
-                  of{" "}
-                  {activeTab === "myRooms"
-                    ? roomsPagination.pages
-                    : tagsPagination.pages}
+                  Page {sidebarRoomsPagination.pageNum} of{" "}
+                  {sidebarRoomsPagination.pages}
                 </Ellipsis>
                 <PageButton
                   $active={false}
                   onClick={() =>
-                    handlePageChange(
-                      (activeTab === "myRooms"
-                        ? roomsPagination.pageNum
-                        : tagsPagination.pageNum) + 1
-                    )
+                    handlePageChange(sidebarRoomsPagination.pageNum + 1)
                   }
                   disabled={
-                    (activeTab === "myRooms"
-                      ? roomsPagination.pageNum
-                      : tagsPagination.pageNum) ===
-                    (activeTab === "myRooms"
-                      ? roomsPagination.pages
-                      : tagsPagination.pages)
+                    sidebarRoomsPagination.pageNum ===
+                    sidebarRoomsPagination.pages
                   }
                 >
                   Next
                 </PageButton>
                 <PageButton
-                  onClick={() =>
-                    handlePageChange(
-                      activeTab === "myRooms"
-                        ? roomsPagination.pages
-                        : tagsPagination.pages
-                    )
-                  }
+                  onClick={() => handlePageChange(sidebarRoomsPagination.pages)}
                   disabled={
-                    activeTab === "myRooms"
-                      ? roomsPagination.pageNum === roomsPagination.pages
-                      : tagsPagination.pageNum === tagsPagination.pages
+                    sidebarRoomsPagination.pageNum ===
+                    sidebarRoomsPagination.pages
                   }
                 >
                   Last
