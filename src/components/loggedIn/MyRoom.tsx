@@ -321,6 +321,7 @@ const MyRoom: React.FC<MyRoomProps> = ({
   const [hasNoMoreMessages, setHasNoMoreMessages] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const isInitialMount = useRef(true);
 
   const cookie = document.cookie;
   const token = localStorage.getItem("jwtToken");
@@ -393,107 +394,104 @@ const MyRoom: React.FC<MyRoomProps> = ({
   }, [messages, initialLoading]);
 
   useEffect(() => {
-    let isMounted = true;
+    if (!isInitialMount.current) {
+      setMessages([]);
+      setPageNum(1);
+      setIsLoading(false);
+      setHasNoMoreMessages(false);
+      setSelectedBot(null);
 
-    setMessages([]);
-    setPageNum(1);
-    setIsLoading(false);
-    setHasNoMoreMessages(false);
-    setSelectedBot(null);
-
-    const fetchMembers = async () => {
-      try {
-        const response = await apiClient.get(
-          `/v1/group/get_group_member_list?groupId=${groupId}`
-        );
-        if (response.data.code === 200) {
-          membersCache.set(Number(groupId), response.data.data);
-        }
-      } catch (error) {
-        console.error("Error fetching group members:", error);
-      }
-    };
-
-    if (groupId) fetchMembers();
-
-    const connectWebSocket = () => {
-      if (stompClientRef.current && stompClientRef.current.connected) {
-        stompClientRef.current.disconnect(() => {
-          console.log("Disconnected previous WebSocket connection");
-        });
-        stompClientRef.current = null;
-      }
-
-      const socket = new SockJS(`https://112.74.92.135/ws`);
-      const client = Stomp.over(socket);
-
-      client.connect(
-        {
-          cookie: cookie,
-          Authorization: `Bearer ${token}`,
-        },
-        () => {
-          client.subscribe(`/topic/chat/${groupId}`, (message) => {
-            console.log("Received message:", message.body);
-            const receivedMessage = JSON.parse(message.body) as Message;
-            setMessages((prev) => {
-              const newMessages = [...prev, receivedMessage].sort(
-                (a, b) => a.infoId - b.infoId
-              );
-
-              requestAnimationFrame(() => {
-                if (chatContainerRef.current) {
-                  const { scrollTop, scrollHeight, clientHeight } =
-                    chatContainerRef.current;
-                  const isNearBottom =
-                    scrollHeight - (scrollTop + clientHeight) < 200;
-                  console.log(
-                    "scrollHeight:",
-                    scrollHeight,
-                    "scrollTop:",
-                    scrollTop,
-                    "clientHeight:",
-                    clientHeight
-                  );
-
-                  if (isNearBottom) {
-                    chatContainerRef.current.scrollTop = scrollHeight;
-                    setHasNewMessage(false);
-                  } else {
-                    setHasNewMessage(true);
-                  }
-                }
-              });
-
-              return newMessages;
-            });
-          });
-        }
-      );
-
-      stompClientRef.current = client;
-
-      return () => {
-        if (client && client.connected) {
-          client.disconnect(() => {
-            console.log("Cleanup: WebSocket disconnected");
-            stompClientRef.current = null;
-          });
+      const fetchMembers = async () => {
+        try {
+          const response = await apiClient.get(
+            `/v1/group/get_group_member_list?groupId=${groupId}`
+          );
+          if (response.data.code === 200) {
+            membersCache.set(Number(groupId), response.data.data);
+          }
+        } catch (error) {
+          console.error("Error fetching group members:", error);
         }
       };
-    };
 
-    if (groupId) {
-      connectWebSocket();
+      if (groupId) fetchMembers();
+
+      const connectWebSocket = () => {
+        if (stompClientRef.current && stompClientRef.current.connected) {
+          stompClientRef.current.disconnect(() => {
+            console.log("Disconnected previous WebSocket connection");
+          });
+          stompClientRef.current = null;
+        }
+
+        const socket = new SockJS(`https://112.74.92.135/ws`);
+        const client = Stomp.over(socket);
+
+        client.connect(
+          {
+            cookie: cookie,
+            Authorization: `Bearer ${token}`,
+          },
+          () => {
+            client.subscribe(`/topic/chat/${groupId}`, (message) => {
+              console.log("Received message:", message.body);
+              const receivedMessage = JSON.parse(message.body) as Message;
+              setMessages((prev) => {
+                const newMessages = [...prev, receivedMessage].sort(
+                  (a, b) => a.infoId - b.infoId
+                );
+
+                requestAnimationFrame(() => {
+                  if (chatContainerRef.current) {
+                    const { scrollTop, scrollHeight, clientHeight } =
+                      chatContainerRef.current;
+                    const isNearBottom =
+                      scrollHeight - (scrollTop + clientHeight) < 200;
+                    console.log(
+                      "scrollHeight:",
+                      scrollHeight,
+                      "scrollTop:",
+                      scrollTop,
+                      "clientHeight:",
+                      clientHeight
+                    );
+
+                    if (isNearBottom) {
+                      chatContainerRef.current.scrollTop = scrollHeight;
+                      setHasNewMessage(false);
+                    } else {
+                      setHasNewMessage(true);
+                    }
+                  }
+                });
+
+                return newMessages;
+              });
+            });
+          }
+        );
+
+        stompClientRef.current = client;
+
+        return () => {
+          if (client && client.connected) {
+            client.disconnect(() => {
+              console.log("Cleanup: WebSocket disconnected");
+              stompClientRef.current = null;
+            });
+          }
+        };
+      };
+
+      if (groupId) {
+        connectWebSocket();
+        fetchMessageHistory(false);
+      }
+    } else {
+      isInitialMount.current = false;
     }
 
-    if (groupId) {
-      fetchMessageHistory(false);
-    }
-
-    return () => {
-      isMounted = false;
-    };
+    return () => {};
   }, [groupId]);
 
   const sendMessage = () => {

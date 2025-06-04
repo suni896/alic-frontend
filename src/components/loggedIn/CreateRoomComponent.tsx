@@ -483,7 +483,7 @@ interface CreateRoomComponentProps {
 }
 
 // Define the RoomInfoResponse interface at the appropriate scope
-interface RoomInfoResponse {
+export interface RoomInfoResponse {
   code: number;
   message: string;
   data?: {
@@ -976,7 +976,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
               value={formik.values.roomName}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
-              disabled={shouldCheckRole && userRole !== "ADMIN"}
+              disabled={effectiveIsModify}
             />
             {formik.touched.roomName && formik.errors.roomName && (
               <div

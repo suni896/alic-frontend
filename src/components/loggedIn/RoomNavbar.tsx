@@ -3,7 +3,7 @@ import { IoEllipsisHorizontal, IoSettingsOutline } from "react-icons/io5";
 import { MdOutlineArrowBack, MdOutlineIosShare } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { styled } from "styled-components";
-import CreateRoomComponent from "./CreateRoomComponent";
+import CreateRoomComponent, { RoomInfoResponse } from "./CreateRoomComponent";
 import RoomMembersComponent from "./RoomMembersComponent";
 import apiClient from "../loggedOut/apiClient";
 
@@ -79,8 +79,9 @@ const RightContainer = styled.div`
   margin-right: 2%;
   gap: 1rem;
 
-  @media (max-width: 500px){
-  gap: 0.4rem;}
+  @media (max-width: 500px) {
+    gap: 0.4rem;
+  }
 `;
 
 const Settings = styled(IoSettingsOutline)`
@@ -89,8 +90,9 @@ const Settings = styled(IoSettingsOutline)`
   cursor: pointer;
 
   @media (max-width: 500px) {
-  font-size: 1.4rem;
-  margin-left: 5px;}
+    font-size: 1.4rem;
+    margin-left: 5px;
+  }
 `;
 
 const Share = styled(MdOutlineIosShare)`
@@ -99,7 +101,8 @@ const Share = styled(MdOutlineIosShare)`
   cursor: pointer;
 
   @media (max-width: 500px) {
-  font-size: 1.5rem;}
+    font-size: 1.5rem;
+  }
 `;
 
 const Menu = styled(IoEllipsisHorizontal)`
@@ -108,7 +111,8 @@ const Menu = styled(IoEllipsisHorizontal)`
   cursor: pointer;
 
   @media (max-width: 500px) {
-  font-size: 1.5rem;}
+    font-size: 1.5rem;
+  }
 `;
 
 interface RoomNavbarProps {
@@ -119,6 +123,8 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
   const [isModifyRoomInfoVisible, setIsModifyRoomInfoVisible] = useState(false);
   const [isRoomMembersVisible, setIsRoomMembersVisible] = useState(false);
   const [tagData, setTagData] = useState<TagData[]>([]);
+  const [roomData, setRoomData] = useState<RoomInfoResponse | null>(null);
+  const [userRole, setUserRole] = useState<string>("MEMBER");
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -142,7 +148,53 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
       }
     };
 
+    const fetchUserRole = async (groupId: number) => {
+      try {
+        const response = await apiClient.get(
+          `/v1/group/get_role_in_group?groupId=${groupId}`
+        );
+        if (response.data.code === 200) {
+          return response.data.data; // "ADMIN" or "MEMBER"
+        }
+        return null;
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+        return null;
+      }
+    };
+
+    const fetchRoomInfo = async (groupId: number) => {
+      try {
+        const roleResponse = await fetchUserRole(groupId);
+        setUserRole(roleResponse); // Store the role
+        const url = `/v1/group/get_group_info?groupId=${groupId}`;
+
+        try {
+          const response = await apiClient.get<RoomInfoResponse>(url);
+
+          if (
+            response.status === 200 &&
+            response.data.code === 200 &&
+            response.data.data
+          ) {
+            setRoomData(response.data);
+          } else {
+            console.error(
+              "API returned successfully but with unexpected format or error code"
+            );
+          }
+        } catch (apiError) {
+          console.error("API request failed:", apiError);
+        }
+      } catch (error: any) {
+        console.error("Error message:", error.message);
+      }
+    };
+
     fetchTagData();
+    if (groupId) {
+      fetchRoomInfo(groupId);
+    }
   }, [groupId]);
 
   // Add this to debug render
@@ -154,7 +206,7 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
     <Container>
       <TitleContainer>
         <BackArrow onClick={() => navigate("/search-rooms")} />
-        <Title>Explore Generative AI</Title>
+        <Title>{roomData?.data?.groupName}</Title>
         {tagData &&
           tagData.length > 0 &&
           tagData.map((tag) => (
@@ -162,7 +214,9 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
           ))}
       </TitleContainer>
       <RightContainer>
-        <Settings onClick={() => setIsModifyRoomInfoVisible(true)} />
+        {userRole === "ADMIN" && (
+          <Settings onClick={() => setIsModifyRoomInfoVisible(true)} />
+        )}
         {isModifyRoomInfoVisible && (
           <CreateRoomComponent
             onClose={() => setIsModifyRoomInfoVisible(false)}
