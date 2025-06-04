@@ -214,9 +214,7 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
           ))}
       </TitleContainer>
       <RightContainer>
-        {userRole === "ADMIN" && (
-          <Settings onClick={() => setIsModifyRoomInfoVisible(true)} />
-        )}
+        <Settings onClick={() => setIsModifyRoomInfoVisible(true)} />
         {isModifyRoomInfoVisible && (
           <CreateRoomComponent
             onClose={() => setIsModifyRoomInfoVisible(false)}
