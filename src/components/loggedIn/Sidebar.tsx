@@ -538,6 +538,16 @@ const PlusButtonOptionContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 3%;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+
+  &:hover {
+    background-color: #f4f4f4;
+  }
+
+  &:active {
+    transform: scale(0.9);
+  }
 `;
 
 const StyledIoMdPersonAdd = styled(IoMdPersonAdd)`
@@ -566,6 +576,8 @@ const StyledFiTag = styled(FaTag)`
   width: 20px;
   height: 20px;
   color: #016532;
+  position: relative;
+  left: 2px; 
   @media (max-width: 500px) {
     width: 16px;
     height: 16px;
@@ -663,6 +675,23 @@ interface OverlayProps {
 const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
   const navigate = useNavigate(); // Call useNavigate directly
 
+  // Add useRef to reference the popup container
+  const popupRef = React.useRef<HTMLDivElement>(null);
+
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [onClose]);
+
   const handleLogout = async () => {
     try {
       const response = await apiClient.post("/v1/user/logout");
@@ -682,7 +711,7 @@ const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
   };
 
   return (
-    <ProfilePopUpContainer>
+    <ProfilePopUpContainer ref={popupRef}>
       <ModalCloseButton onClick={onClose}>
         <StyledProfilePopUpCross />
       </ModalCloseButton>
@@ -704,8 +733,25 @@ const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose, userInfo }) => {
   const [isCreateTagOverlayVisible, setIsCreateTagOverlayVisible] =
     useState(false);
 
+  // Add useRef to reference the overlay container
+  const overlayRef = React.useRef<HTMLDivElement>(null);
+
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (overlayRef.current && !overlayRef.current.contains(event.target as Node)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [onClose]);
+
   return (
-    <PlusButtonOverlayContainer>
+    <PlusButtonOverlayContainer ref={overlayRef}>
       <ModalCloseButton onClick={onClose}>
         <StyledProfilePopUpCross />
       </ModalCloseButton>
@@ -713,19 +759,19 @@ const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose, userInfo }) => {
         onClick={() => setIsCreateRoomOverlayVisible(true)}
       >
         <StyledIoMdPersonAdd />
-        <StyledPlusButtonOptionText>CREATE NEW ROOM</StyledPlusButtonOptionText>
+        <StyledPlusButtonOptionText>Create New Room</StyledPlusButtonOptionText>
       </PlusButtonOptionContainer>
       <PlusButtonOptionContainer
         onClick={() => setIsJoinRoomsOverlayVisible(true)}
       >
         <StyledMdPeopleAlt />
-        <StyledPlusButtonOptionText>JOIN A ROOM</StyledPlusButtonOptionText>
+        <StyledPlusButtonOptionText>Join A Room</StyledPlusButtonOptionText>
       </PlusButtonOptionContainer>
       <PlusButtonOptionContainer
         onClick={() => setIsCreateTagOverlayVisible(true)}
       >
         <StyledFiTag />
-        <StyledPlusButtonOptionText>CREATE NEW TAG</StyledPlusButtonOptionText>
+        <StyledPlusButtonOptionText>Create New Tag</StyledPlusButtonOptionText>
       </PlusButtonOptionContainer>
 
       {isCreateRoomOverlayVisible && (
