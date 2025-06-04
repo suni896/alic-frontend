@@ -30,14 +30,15 @@ const Overlay = styled.div`
 const Modal = styled.div`
   position: relative;
   width: 75%;
-  margin-top: 8vh;
+  
   max-width: 50rem;
   background-color: #ffffff;
   border-radius: 0.5rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   padding: 2rem;
   height: auto;
-  max-height: 80vh;
+  max-height: 90vh;
+  overflow-y: auto;
   overflow-x: visible;
   @media (max-width: 700px) {
     width: 85%;
@@ -969,7 +970,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
         <FormikProvider value={formik}>
           <Form onSubmit={formik.handleSubmit}>
             <Label htmlFor="roomName">Room Name</Label>
-            <Input
+            <Textarea
               id="roomName"
               name="roomName"
               placeholder="Explore Generative AI"
@@ -1085,6 +1086,24 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   name="bots"
                   render={(arrayHelpers) => (
                     <FieldArrayContainer>
+                      {/* 添加标题行 */}
+                      <AddAssistantRow>
+                        <RemoveIcon style={{ visibility: "hidden", width: "24px", height: "24px" }} />
+                        <SmallInputContainer>
+                          <StyledSpan>Assistant Name*</StyledSpan>
+                        </SmallInputContainer>
+                        <SmallInputContainer>
+                          <StyledSpan>Prompt*</StyledSpan>
+                        </SmallInputContainer>
+                        <ToggleSwitchContainer>
+                          <StyledSpan>Only for Admin</StyledSpan>
+                        </ToggleSwitchContainer>
+                        <SmallInputContainer>
+                          <StyledSpan>Context*</StyledSpan>
+                        </SmallInputContainer>
+                      </AddAssistantRow>
+            
+                      {/* 渲染每一行 bot 配置 */}
                       {formik.values.bots.map((bot, index) => (
                         <AddAssistantRow key={index}>
                           <RemoveIcon
@@ -1096,9 +1115,6 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                             }}
                           />
                           <SmallInputContainer>
-                            {index === 0 && (
-                              <StyledSpan>Assistant Name*</StyledSpan>
-                            )}
                             <SmallInput
                               name={`bots[${index}].name`}
                               placeholder="Assistant Name"
@@ -1106,9 +1122,23 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
                             />
+                            {formik.touched.bots?.[index]?.name && 
+                             formik.errors.bots?.[index] && 
+                             typeof formik.errors.bots[index] === 'object' &&
+                             (formik.errors.bots[index] as any).name && (
+                              <div
+                                style={{
+                                  color: "red",
+                                  fontSize: "0.7rem",
+                                  marginTop: "0.2rem",
+                                  lineHeight: "1.2",
+                                }}
+                              >
+                                {(formik.errors.bots[index] as any).name}
+                              </div>
+                            )}
                           </SmallInputContainer>
                           <SmallInputContainer>
-                            {index === 0 && <StyledSpan>Prompt*</StyledSpan>}
                             <SmallInput
                               name={`bots[${index}].prompt`}
                               placeholder="Prompt"
@@ -1116,13 +1146,23 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
                             />
+                            {formik.touched.bots?.[index]?.prompt && 
+                             formik.errors.bots?.[index] && 
+                             typeof formik.errors.bots[index] === 'object' &&
+                             (formik.errors.bots[index] as any).prompt && (
+                              <div
+                                style={{
+                                  color: "red",
+                                  fontSize: "0.7rem",
+                                  marginTop: "0.2rem",
+                                  lineHeight: "1.2",
+                                }}
+                              >
+                                {(formik.errors.bots[index] as any).prompt}
+                              </div>
+                            )}
                           </SmallInputContainer>
                           <ToggleSwitchContainer>
-                            {index === 0 && (
-                              <StyledSpan isadminlabel="true">
-                                Only for Admin
-                              </StyledSpan>
-                            )}
                             {/* MODIFIED: special handling for checkbox */}
                             <ToggleSwitch>
                               <input
@@ -1158,7 +1198,6 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                             </ToggleSwitch>
                           </ToggleSwitchContainer>
                           <SmallInputContainer>
-                            {index === 0 && <StyledSpan>Context*</StyledSpan>}
                             <RightAlignedSmallInput
                               type="number"
                               name={`bots[${index}].context`}
@@ -1169,6 +1208,21 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               min={1}
                               max={20}
                             />
+                            {formik.touched.bots?.[index]?.context && 
+                             formik.errors.bots?.[index] && 
+                             typeof formik.errors.bots[index] === 'object' &&
+                             (formik.errors.bots[index] as any).context && (
+                              <div
+                                style={{
+                                  color: "red",
+                                  fontSize: "0.7rem",
+                                  marginTop: "0.2rem",
+                                  lineHeight: "1.2",
+                                }}
+                              >
+                                {(formik.errors.bots[index] as any).context}
+                              </div>
+                            )}
                           </SmallInputContainer>
                         </AddAssistantRow>
                       ))}
