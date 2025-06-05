@@ -105,7 +105,7 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
   });
   const [mainAreaRoomListRequest, setMainAreaRoomListRequest] = useState({
     keyword: "",
-    groupDemonTypeEnum: "JOINEDROOM",
+    groupDemonTypeEnum: "PUBLICROOM",
     pageRequestVO: {
       pageSize: 8,
       pageNum: 1,

@@ -287,7 +287,7 @@ const SearchRooms: React.FC = () => {
     );
     setMainAreaRoomListRequest({
       keyword: searchKeyword,
-      groupDemonTypeEnum: "JOINEDROOM",
+      groupDemonTypeEnum: "PUBLICROOM",
       pageRequestVO: {
         pageSize: mainAreaRoomsPagination.pageSize,
         pageNum: clampedPage,
