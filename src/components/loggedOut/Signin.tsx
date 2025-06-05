@@ -340,7 +340,7 @@ const Signin: React.FC = () => {
             Forgot password?
           </ForgotPassword>
           <RegisterButton type="button" onClick={handleRegister}>
-            CREATE AN ACCOUNT
+            Create an account
           </RegisterButton>
         </SigninForm>
       </ContainerLayout>

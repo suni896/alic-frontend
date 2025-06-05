@@ -150,17 +150,34 @@ const RadioOption = styled.label`
   gap: 0.5rem;
   font-size: 1rem;
   font-weight: 500;
+  cursor: pointer;
 
   input {
     appearance: none;
     width: 1.25rem;
     height: 1.25rem;
+    border: 2px solid #757575;
     border-radius: 50%;
-    background-color: #757575;
+    background-color: transparent;
+    position: relative;
     cursor: pointer;
+    transition: border-color 0.2s ease;
 
     &:checked {
-      background-color: #016532;
+      border-color: #016532;
+    }
+
+    &:checked::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 0.5rem;
+      height: 0.5rem;
+      background-color: transparent;
+      border: 6px solid #016532;
+      border-radius: 50%;
+      transform: translate(-50%, -50%);
     }
   }
 `;
@@ -206,9 +223,9 @@ const FieldArrayContainer = styled.div`
 const AddAssistantRow = styled.div`
   display: grid;
   grid-template-columns: 2rem minmax(0, 1.5fr) minmax(0, 1.5fr) 6rem 4rem;
-  align-items: center;
+  align-items: start;
+  margin-bottom: 2.5rem; /* Increased to accommodate error messages */
 
-  margin-bottom: 1vh;
   @media (max-width: 700px) {
     width: 100%;
   }
@@ -244,8 +261,8 @@ const ToggleSwitch = styled.label`
   }
 
   span {
-    width: 2rem;
-    height: 1rem;
+    width: 4rem;
+    height: 2rem;
     background-color: #d1d5db;
     border-radius: 1rem;
     position: relative;
@@ -254,10 +271,10 @@ const ToggleSwitch = styled.label`
     &::before {
       content: "";
       position: absolute;
-      top: 0.15rem;
-      left: 0.15rem;
-      width: 0.7rem;
-      height: 0.7rem;
+      top: 0.25rem;
+      left: 0.25rem;
+      width: 1.5rem;
+      height: 1.5rem;
       background-color: white;
       border-radius: 50%;
       transition: transform 0.3s ease;
@@ -268,7 +285,7 @@ const ToggleSwitch = styled.label`
     background-color: #016532;
 
     &::before {
-      transform: translateX(1rem);
+      transform: translateX(2rem);
     }
   }
 
@@ -282,7 +299,8 @@ const RemoveIcon = styled(IoIosRemoveCircleOutline)`
   font-size: 1.5rem;
   color: #ef4444;
   cursor: pointer;
-  margin-right: -20rem;
+  justify-self: center;
+  align-self: center;
 
   @media (max-width: 400px) {
     font-size: 1.1rem;
@@ -303,6 +321,7 @@ const SmallInputContainer = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
+  position: relative; /* For absolute positioning of error messages */
 `;
 
 interface StyledSpanProps {
@@ -311,7 +330,7 @@ interface StyledSpanProps {
 
 const StyledSpan = styled.span<StyledSpanProps>`
   display: block;
-  font-size: 0.8rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #374151;
   margin-bottom: 0.25rem;
@@ -400,26 +419,38 @@ const ErrorMessage = styled.div`
   margin-bottom: 1vh;
 `;
 
+const BotFieldErrorMessage = styled.div`
+  color: red;
+  font-size: 0.7rem;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  line-height: 1.2;
+  margin-top: 0.2rem;
+  z-index: 1;
+`;
+
 const validationSchema = (showAssistants: boolean) =>
   Yup.object().shape({
     roomName: Yup.string()
-      .required("Room Name is required")
+      .required("Group Name is required")
       .matches(
         /^[A-Za-z0-9 ]{1,20}$/,
         "Must be 1-20 characters long, supports uppercase and lowercase English letters and numbers"
       ),
     roomDescription: Yup.string()
-      .required("Room Description is required")
-      .max(200, "Room Description cannot exceed 200 characters"),
+      .required("Group Description is required")
+      .max(200, "Group Description cannot exceed 200 characters"),
     roomType: Yup.string() // Changed to string to match form values
       .oneOf(["0", "1"], "Invalid group type") // Changed to string values
-      .required("Room Type is required"),
+      .required("Group Type is required"),
 
     password: Yup.string().when("roomType", {
       is: (value: string) => value === "0", // Changed to "0" for private
       then: (schema) =>
         schema
-          .required("Password is required for private rooms")
+          .required("Password is required for private groups")
           .matches(
             /^[A-Za-z0-9!@#$%^&*()_+\-={}$.]{6,33}$/,
             "Password must be 6-33 characters long and contain valid characters"
@@ -435,6 +466,25 @@ const validationSchema = (showAssistants: boolean) =>
                 .matches(
                   /^[A-Za-z0-9 ]{1,20}$/,
                   "Must be 1-20 characters long, supports uppercase and lowercase English letters and numbers"
+                )
+                .test(
+                  'unique-name',
+                  'Assistant name must be unique',
+                  function(value) {
+                    if (!value) return true; // Let required validation handle empty values
+                    
+                    const { from } = this;
+                    if (!from || !from[1] || !from[1].value) return true;
+                    
+                    const allBots = from[1].value.bots || [];
+                    
+                    // Count how many times this name appears
+                    const nameCount = allBots.filter((bot: any) => 
+                      bot.name && bot.name.trim().toLowerCase() === value.trim().toLowerCase()
+                    ).length;
+                    
+                    return nameCount <= 1;
+                  }
                 ),
               prompt: Yup.string()
                 .required("Prompt is required")
@@ -969,7 +1019,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
 
         <FormikProvider value={formik}>
           <Form onSubmit={formik.handleSubmit}>
-            <Label htmlFor="roomName">Room Name</Label>
+            <Label htmlFor="roomName">Group Name</Label>
             <Textarea
               id="roomName"
               name="roomName"
@@ -1016,7 +1066,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                 </div>
               )}
 
-            <Label>Room Type</Label>
+            <Label>Group Type</Label>
             <RadioGroup>
               <RadioTextContainer>
                 <RadioOption>
@@ -1032,7 +1082,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   />
                   Public
                 </RadioOption>
-                <RadioOptionDesc>Show on main page</RadioOptionDesc>
+                {/* <RadioOptionDesc>Show on main page</RadioOptionDesc> */}
               </RadioTextContainer>
 
               <RadioTextContainer>
@@ -1050,7 +1100,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   />
                   Private
                 </RadioOption>
-                <RadioOptionDesc>Need room password</RadioOptionDesc>
+                {/* <RadioOptionDesc>Need room password</RadioOptionDesc> */}
               </RadioTextContainer>
             </RadioGroup>
             {formik.values.roomType === "0" && (
@@ -1096,7 +1146,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                           <StyledSpan>Prompt*</StyledSpan>
                         </SmallInputContainer>
                         <ToggleSwitchContainer>
-                          <StyledSpan>Only for Admin</StyledSpan>
+                          <StyledSpan>Admin Only</StyledSpan>
                         </ToggleSwitchContainer>
                         <SmallInputContainer>
                           <StyledSpan>Context*</StyledSpan>
@@ -1126,16 +1176,9 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                              formik.errors.bots?.[index] && 
                              typeof formik.errors.bots[index] === 'object' &&
                              (formik.errors.bots[index] as any).name && (
-                              <div
-                                style={{
-                                  color: "red",
-                                  fontSize: "0.7rem",
-                                  marginTop: "0.2rem",
-                                  lineHeight: "1.2",
-                                }}
-                              >
+                              <BotFieldErrorMessage>
                                 {(formik.errors.bots[index] as any).name}
-                              </div>
+                              </BotFieldErrorMessage>
                             )}
                           </SmallInputContainer>
                           <SmallInputContainer>
@@ -1150,16 +1193,9 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                              formik.errors.bots?.[index] && 
                              typeof formik.errors.bots[index] === 'object' &&
                              (formik.errors.bots[index] as any).prompt && (
-                              <div
-                                style={{
-                                  color: "red",
-                                  fontSize: "0.7rem",
-                                  marginTop: "0.2rem",
-                                  lineHeight: "1.2",
-                                }}
-                              >
+                              <BotFieldErrorMessage>
                                 {(formik.errors.bots[index] as any).prompt}
-                              </div>
+                              </BotFieldErrorMessage>
                             )}
                           </SmallInputContainer>
                           <ToggleSwitchContainer>
@@ -1212,16 +1248,9 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                              formik.errors.bots?.[index] && 
                              typeof formik.errors.bots[index] === 'object' &&
                              (formik.errors.bots[index] as any).context && (
-                              <div
-                                style={{
-                                  color: "red",
-                                  fontSize: "0.7rem",
-                                  marginTop: "0.2rem",
-                                  lineHeight: "1.2",
-                                }}
-                              >
+                              <BotFieldErrorMessage>
                                 {(formik.errors.bots[index] as any).context}
-                              </div>
+                              </BotFieldErrorMessage>
                             )}
                           </SmallInputContainer>
                         </AddAssistantRow>

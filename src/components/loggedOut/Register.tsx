@@ -100,6 +100,8 @@ const RegisterButton = styled.button<{ hasError: boolean }>`
   cursor: pointer;
   margin: 1rem auto 1.5rem auto;
   border-radius: 5px;
+  background-color: black;
+  color: white;
 
   @media (max-width: 740px) {
     width: 60%;
