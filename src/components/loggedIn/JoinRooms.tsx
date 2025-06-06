@@ -5,6 +5,7 @@ import styled, { css } from "styled-components";
 import axios, { AxiosResponse } from "axios";
 import apiClient from "../loggedOut/apiClient";
 import { useUser } from "./UserContext";
+import { useNavigate } from "react-router-dom";
 
 const OverlayContainer = styled.div`
   position: fixed;
@@ -78,7 +79,6 @@ const SearchInput = styled.input`
     font-size: 0.9rem;
     padding-left: 2.5rem;
   }
-
 `;
 
 const RoomList = styled.div<{ blur: boolean }>`
@@ -344,6 +344,7 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
   const [password, setPassword] = useState<string>("");
   const [joinSuccess, setJoinSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("Chat Room Password Error");
+  const navigate = useNavigate();
 
   const handleJoinClick = async (roomId: number, groupType: number) => {
     setSelectedRoomId(roomId);
@@ -376,11 +377,22 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
         requestData
       );
 
-      if (response.data.code === 200) {
+      if (response.data.code === 200 || response.data.code === 1009) {
         setJoinSuccess(true);
         setErrorMessage("Successfully joined group");
         setShowErrorModal(true);
         fetchAllRooms(); // Refetch all rooms after successful join
+        navigate(`/my-room/${groupId.toString()}`, {
+          // state: {
+          //   title: room.groupName,
+          //   desc: room.groupDescription,
+          //   groupId: room.groupId,
+          //   adminId: room.adminId,
+          //   adminName: room.adminName,
+          //   memberCount: room.memberCount,
+          //   groupType: room.groupType,
+          // },
+        });
       } else {
         setJoinSuccess(false);
         setErrorMessage(response.data.message || "Failed to join group");

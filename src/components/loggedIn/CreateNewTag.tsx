@@ -2,6 +2,7 @@ import React, { useState, ChangeEvent } from "react";
 import styled from "styled-components";
 import apiClient from "../loggedOut/apiClient";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
 
 const Overlay = styled.div`
   position: fixed;
@@ -94,6 +95,7 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({ onClose }) => {
   const [tagName, setTagName] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const navigate = useNavigate();
 
   const handleCreateTag = async () => {
     if (!tagName.match(/^[A-Za-z0-9]{1,20}$/)) {
@@ -121,6 +123,7 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({ onClose }) => {
           response.data.data.tagId
         );
         alert(`Tag "${tagName}" created successfully!`);
+        navigate(`/my-class/${response.data.data.tagId.toString()}`);
         onClose();
       } else {
         console.error("API returned error:", response.data);
