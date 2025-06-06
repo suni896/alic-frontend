@@ -24,7 +24,7 @@ import { useRoomContext } from "./RoomContext";
 
 const SidebarContainer = styled.div`
   width: 23%;
-  height: 100vh;
+  height: calc(100vh - 72px);
   background-color: #ffffff;
   padding: 2rem 0rem 1.5rem 1rem;
   display: flex;
@@ -65,26 +65,41 @@ const ErrorContainer = styled.div`
   padding: 1rem;
   color: #dc2626;
   text-align: center;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
 `;
 
 const ErrorMessage = styled.p`
   margin: 0;
   font-size: 0.875rem;
+  font-weight: 500;
+  color: #dc2626;
 
   @media (max-width: 600px) {
-    font-size: 0.6rem;
+    font-size: 0.75rem;
   }
 `;
 
 const EmptyStateContainer = styled.div`
-  padding: 1rem;
+  padding: 2rem 1rem;
   text-align: center;
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  margin: 0.5rem 0;
 `;
 
 const EmptyStateMessage = styled.p`
   margin: 0;
-  color: #6b7280;
+  color: #64748b;
   font-size: 0.875rem;
+  font-weight: 500;
+  
+  @media (max-width: 500px) {
+    font-size: 0.75rem;
+  }
 `;
 
 const ProfileSection = styled.div`
@@ -244,11 +259,14 @@ const StyledPlus = styled(TiPlus)`
 const ToggleContainer = styled.div`
   display: flex;
   align-items: center;
-  padding: 0.4rem;
-  margin-top: 1vh;
-  gap: 0.3rem;
+  padding: 0.25rem;
+  margin: 1rem 0 0.5rem 0;
+  gap: 0.2rem;
   width: 84%;
-  background-color: #d9d9d9;
+  background-color: #f1f5f9;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
   @media (max-width: 600px) {
     gap: 0rem;
@@ -261,23 +279,26 @@ const ToggleButton = styled.button<ToggleButtonProps>`
   align-items: center;
   justify-content: center;
   flex: 1;
-  padding: 0.5rem;
+  padding: 0.6rem 0.5rem;
   height: 100%;
   border: none;
-  border-radius: 0;
+  border-radius: 0.375rem;
   font-family: Roboto, sans-serif;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.8rem;
   word-wrap: break-word;
   word-break: break-word;
   background-color: ${({ isActive }) => (isActive ? "white" : "transparent")};
-  color: ${({ isActive }) => (isActive ? "#016532" : "black")};
+  color: ${({ isActive }) => (isActive ? "#016532" : "#64748b")};
   cursor: pointer;
-  transition: background-color 0.3s, color 0.3s;
+  transition: all 0.2s ease;
+  box-shadow: ${({ isActive }) => (isActive ? "0 1px 3px rgba(0, 0, 0, 0.1)" : "none")};
 
   &:hover {
-    background-color: ${({ isActive }) => (isActive ? "white" : "#e0e0e0")};
+    background-color: ${({ isActive }) => (isActive ? "white" : "#e2e8f0")};
+    color: ${({ isActive }) => (isActive ? "#016532" : "#374151")};
   }
+  
   @media (max-width: 900px) {
     font-size: 0.65rem;
     padding: 0.5rem 0rem;
@@ -300,29 +321,52 @@ interface ToggleButtonProps {
 
 const RoomList = styled.ul`
   list-style: none;
-  padding: 0rem 0;
+  padding: 0.5rem;
   flex: 1;
   overflow-y: auto;
-  margin: 0rem 0;
+  margin: 0.5rem 0;
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  width: 84%;
 `;
 
 const RoomContainer = styled.div`
   display: flex;
-  margin: 0;
-  margin-bottom: 12px;
+  align-items: center;
+  margin: 0 0 0.5rem 0;
+  padding: 0.75rem;
+  background-color: white;
+  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+    border-color: #016532;
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 const Tag = styled(FiTag)`
-  color: black;
-  font-size: 1.3rem;
-  margin: 0rem 1rem 0 1rem;
+  color: #016532;
+  font-size: 1.2rem;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
 
   @media (max-width: 700px) {
-    margin: 0rem 0.3rem 0 0.2rem;
+    margin-right: 0.5rem;
     font-size: 1rem;
   }
   @media (max-width: 400px) {
-    margin: 0rem 0.2rem 0 0.1rem;
+    margin-right: 0.3rem;
+    font-size: 0.9rem;
   }
 `;
 
@@ -330,34 +374,46 @@ const RoomDescContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  width: 100%; /* or set a specific width like width: 200px; */
-  min-width: 0; /* Important for text truncation/wrapping */
+  width: 100%;
+  min-width: 0;
+  gap: 0.25rem;
 `;
 
 const RoomTitle = styled.p`
   font-size: 0.9rem;
-  font-family: Roboto;
-  color: black;
+  font-family: Roboto, sans-serif;
+  font-weight: 600;
+  color: #1f2937;
   margin: 0;
   cursor: pointer;
   width: 100%;
   word-wrap: break-word;
   word-break: break-word;
   overflow-wrap: break-word;
+  line-height: 1.3;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #016532;
+  }
 
   @media (max-width: 500px) {
-    font-size: 0.6rem;
+    font-size: 0.8rem;
   }
 `;
 
 const RoomDesc = styled.p`
-  font-family: Roboto;
-  font-size: 0.8rem;
-  color: #757575;
+  font-family: Roboto, sans-serif;
+  font-size: 0.75rem;
+  color: #6b7280;
   margin: 0;
+  line-height: 1.2;
+  word-wrap: break-word;
+  word-break: break-word;
+  overflow-wrap: break-word;
 
   @media (max-width: 500px) {
-    font-size: 0.5rem;
+    font-size: 0.65rem;
   }
 `;
 
@@ -377,16 +433,18 @@ const SearchIcon = styled(CiSearch)`
 `;
 
 const Star = styled(IoIosStarOutline)`
-  color: black;
-  font-size: 1.3rem;
-  margin: 0.2rem 1rem 0 1rem;
+  color: #016532;
+  font-size: 1.2rem;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
 
   @media (max-width: 700px) {
-    margin: 0.2rem 0.3rem 0 0.2rem;
+    margin-right: 0.5rem;
     font-size: 1rem;
   }
   @media (max-width: 400px) {
-    margin: 0.2rem 0.2rem 0 0.1rem;
+    margin-right: 0.3rem;
+    font-size: 0.9rem;
   }
 `;
 
@@ -614,35 +672,53 @@ const PaginationContainer = styled.div`
   justify-content: center;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.8rem 0;
+  padding: 1rem 0.5rem;
   background-color: white;
   position: sticky;
   bottom: 0;
   width: 100%;
   margin-top: auto;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid #e2e8f0;
+  border-radius: 0 0 0.5rem 0.5rem;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
 
   @media (max-width: 800px) {
     gap: 0.3rem;
+    padding: 0.75rem 0.5rem;
   }
 `;
 
 const PageButton = styled.button<{ $active?: boolean }>`
   background: ${(props) => (props.$active ? "#016532" : "white")};
-  color: ${(props) => (props.$active ? "white" : "black")};
-  border: 1px solid #d9d9d9;
-  border-radius: 4px;
-  padding: 0.3rem 0.3rem;
+  color: ${(props) => (props.$active ? "white" : "#374151")};
+  border: 1px solid ${(props) => (props.$active ? "#016532" : "#d1d5db")};
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.6rem;
   cursor: pointer;
   font-size: 0.8rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: ${(props) => (props.$active ? "0 1px 3px rgba(1, 101, 50, 0.2)" : "0 1px 2px rgba(0, 0, 0, 0.05)")};
 
   &:hover {
-    background: ${(props) => (props.$active ? "#016532" : "#f0f0f0")};
+    background: ${(props) => (props.$active ? "#014d28" : "#f3f4f6")};
+    border-color: ${(props) => (props.$active ? "#014d28" : "#9ca3af")};
+    transform: translateY(-1px);
   }
 
   &:disabled {
-    color: #d9d9d9;
+    color: #9ca3af;
+    background: #f9fafb;
+    border-color: #e5e7eb;
     cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    
+    &:hover {
+      background: #f9fafb;
+      border-color: #e5e7eb;
+      transform: none;
+    }
   }
 
   @media (max-width: 800px) {
@@ -652,13 +728,20 @@ const PageButton = styled.button<{ $active?: boolean }>`
 
   @media (max-width: 500px) {
     font-size: 0.6rem;
-    padding: 0.2rem 0.4rem;
+    padding: 0.25rem 0.4rem;
   }
 `;
 
 const Ellipsis = styled.span`
-  padding: 0 0.3rem;
-  color: #666;
+  padding: 0 0.5rem;
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 500;
+  
+  @media (max-width: 500px) {
+    font-size: 0.7rem;
+    padding: 0 0.3rem;
+  }
 `;
 
 const LoadingSpinner = () => (
