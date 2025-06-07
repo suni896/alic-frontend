@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { CiSearch } from "react-icons/ci";
 import { RxCross2 } from "react-icons/rx";
 import styled, { css } from "styled-components";
@@ -322,6 +322,27 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  
+  // Add useRef to reference the container
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
+
   const {
     handleJoinClick,
     showPasswordModal,
@@ -421,7 +442,7 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
 
   return (
     <OverlayContainer>
-      <Container>
+      <Container ref={containerRef}>
         <ModalCloseButton onClick={onClose}>
           <StyledCross size={24} />
         </ModalCloseButton>

@@ -473,6 +473,7 @@ const ProfilePopUpContainer = styled.div`
   justify-content: space-between;
   padding: 1vh 1%;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 3500;
   z-index: 3000;
 
   @media (max-width: 1000px) {
@@ -574,8 +575,8 @@ const StyledSignOutIcon = styled(PiSignOutBold)`
 
 const PlusButtonOverlayContainer = styled.div`
   position: absolute;
-  top: 24vh;
-  left: 14.8%;
+  top: 23vh;
+  left: 17.8%;
   width: 13%;
   height: 12vh;
   border: 1px solid #016532;
@@ -587,6 +588,7 @@ const PlusButtonOverlayContainer = styled.div`
   justify-content: space-between;
   padding: 0.8vh 1%;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 3500;
 
   @media (max-width: 650px) {
     left: -10%;

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { MdOutlineKeyboardDoubleArrowRight, MdPeopleAlt } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { styled } from "styled-components";
@@ -326,6 +326,26 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
   const navigate = useNavigate();
 
+  // Add useRef to reference the members list container
+  const membersContainerRef = useRef<HTMLDivElement>(null);
+
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        membersContainerRef.current &&
+        !membersContainerRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
+
   useEffect(() => {
     const initialize = async () => {
       if (groupId) {
@@ -456,7 +476,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
   return (
     <>
       <Overlay>
-        <MembersListContainer>
+        <MembersListContainer ref={membersContainerRef}>
           <TitleContainer>
             <MembersLogo />
             <Title>Group Members</Title>

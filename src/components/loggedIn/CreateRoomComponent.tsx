@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { useFormik, FieldArray, FormikProvider, FormikValues } from "formik";
 import * as Yup from "yup";
 import styled from "styled-components";
@@ -591,6 +591,27 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   const [userRole, setUserRole] = useState<string | null>(
     fromSidebar ? "ADMIN" : null
   );
+  
+  // Add useRef to reference the modal container
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
+
   // Determine the groupId to use - from props or URL params
   const currentGroupId =
     propGroupId || (urlGroupId ? parseInt(urlGroupId, 10) : undefined);
@@ -1012,7 +1033,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
 
   return (
     <Overlay>
-      <Modal>
+      <Modal ref={modalRef}>
         <CloseButton onClick={onClose}>
           <StyledCross size={24} />
         </CloseButton>

@@ -1,4 +1,4 @@
-import React, { useState, ChangeEvent } from "react";
+import React, { useState, ChangeEvent, useEffect, useRef } from "react";
 import styled from "styled-components";
 import apiClient from "../loggedOut/apiClient";
 import axios from "axios";
@@ -97,6 +97,26 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({ onClose }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const navigate = useNavigate();
 
+  // Add useRef to reference the modal container
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
+
   const handleCreateTag = async () => {
     if (!tagName.match(/^[A-Za-z0-9]{1,20}$/)) {
       setError(
@@ -160,7 +180,7 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({ onClose }) => {
 
   return (
     <Overlay>
-      <Modal>
+      <Modal ref={modalRef}>
         <ModalTitle>Tag Name</ModalTitle>
         <ModalInput
           type="text"
