@@ -18,7 +18,7 @@ interface EditButtonProps {
 }
 
 interface PageButtonProps {
-  $active?: boolean;
+  active?: boolean;
 }
 
 interface StyledMinusProps {
@@ -33,11 +33,33 @@ const Container = styled.div`
 
 const TopContainer = styled.div`
   display: flex;
-  gap: 1.5%;
   width: 100%;
-  height: 10vh;
+  height: 12vh;
   align-items: center;
-  padding: 3vh 3%;
+  justify-content: center;
+`;
+
+// const ButtonContainer = styled.div`
+//   position: absolute;
+//   right: 3%;
+//   display: flex;
+//   gap: 1rem;
+//   align-items: center;
+// `;
+
+const ButtonContainer = styled.div`
+  position: fixed;
+  display: flex;
+  align-items: center;
+  right: 5rem;
+  top: 9.5rem;
+  width: auto;
+  z-index: 1000;
+  gap: 1rem;
+
+  @media (max-width: 1000px) {
+    right: 1.5rem;
+  }
 `;
 
 const Title = styled.p`
@@ -73,12 +95,11 @@ const StyledPlus = styled(AiOutlinePlus)`
 `;
 
 const SearchRoomsContainer = styled.div<RoomContainerProps>`
-  display: flex;
-  flex-direction: ${(props) => (props.$isEditMode ? "column" : "row")};
-  flex-wrap: ${(props) => (props.$isEditMode ? "nowrap" : "wrap")};
-  min-height: 50vh;
+  display: ${(props) => (props.$isEditMode ? "flex" : "grid")};
+  grid-template-columns: repeat(2, 1fr); /* 两列布局 */
   gap: 2rem;
   padding: 0 2rem;
+  margin-top: 4vh;
   margin-bottom: 8vh;
   box-sizing: border-box;
   position: relative;
@@ -90,6 +111,14 @@ const SearchRoomsContainer = styled.div<RoomContainerProps>`
     gap: 1rem;
     padding: 0 1rem;
   }
+
+  ${(props) =>
+    props.$isEditMode &&
+    `
+      display: flex;
+      flex-direction: column;
+      flex-wrap: nowrap;
+    `}
 `;
 
 const LoadingOverlay = styled.div`
@@ -106,10 +135,23 @@ const LoadingOverlay = styled.div`
 `;
 
 const SearchRoomContainer = styled.div<RoomContainerProps>`
+  width: ${(props) => (props.$isEditMode ? "55%" : "100%")};
   display: flex;
-  align-items: center;
-  width: ${(props) => (props.$isEditMode ? "55%" : "45%")};
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 2rem 4rem;
+  // padding: 2rem;
+  box-sizing: border-box;
+  margin-left: auto;
+  margin-right: auto;
+  justify-content: flex-start;
+
+  @media (max-width: 1000px) {
+    gap: 2rem;
+  }
+  @media (max-width: 600px) {
+    gap: 2rem 0.8rem;
+    padding: 2rem 1rem;
+  }
 `;
 
 const RoomContainer = styled.div<RoomContainerProps>`
@@ -118,10 +160,16 @@ const RoomContainer = styled.div<RoomContainerProps>`
   border: solid #d9d9d9;
   padding: 1rem;
   box-sizing: border-box;
+
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 100px; // Fixed height for consistency
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 0.3rem;
+
+  @media (max-width: 600px) {
+    padding: 1rem 0.5rem;
+  }
 `;
 
 const StyledMinus = styled(AiOutlineMinusCircle)<StyledMinusProps>`
@@ -135,6 +183,7 @@ const RoomContent = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.3rem;
+  flex-grow: 1;
 `;
 
 const RoomTitle = styled.h2`
@@ -177,23 +226,18 @@ const RoomDescription = styled.span`
 `;
 
 const EditButton = styled.button<EditButtonProps>`
-  display: block;
-  margin: 0 auto;
-  width: 15%;
-  padding: 0.5rem;
+  padding: 0.5rem 1rem;
   background-color: ${(props) => (props.$isEditMode ? "#016532" : "#000")};
   color: white;
   border: none;
   border-radius: 8px;
   cursor: ${(props) => (props.$isLoading ? "not-allowed" : "pointer")};
   opacity: ${(props) => (props.$isLoading ? "0.7" : "1")};
+  font-size: 0.9rem;
+  white-space: nowrap;
 
   &:hover {
     background-color: ${(props) => (props.$isEditMode ? "#015528" : "#333")};
-  }
-  @media (max-width: 800px) {
-    width: 25%;
-    font-size: 0.6rem;
   }
 `;
 
@@ -201,14 +245,21 @@ const Footer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 4vh;
+  gap: 0.3rem;
+  position: fixed;
+  bottom: 4vh;
+  width: 80%;
+  background-color: white;
+`;
+
+const Ellipsis = styled.span`
+  padding: 0 0.5rem;
 `;
 
 const PageButton = styled.button<PageButtonProps>`
-  background: ${(props) => (props.$active ? "black" : "white")};
-  color: ${(props) => (props.$active ? "white" : "black")};
-  border: ${(props) => (props.$active ? "1px solid #d9d9d9" : "none")};
+  background: ${(props) => (props.active ? "black" : "white")};
+  color: ${(props) => (props.active ? "white" : "black")};
+  border: ${(props) => (props.active ? "1px solid #d9d9d9" : "none")};
   border-radius: 4px;
   padding: 0.3rem 1rem;
   cursor: pointer;
@@ -230,10 +281,6 @@ const PageButton = styled.button<PageButtonProps>`
     font-size: 0.6rem;
     padding: 0.3rem;
   }
-`;
-
-const Ellipsis = styled.span`
-  padding: 0 0.5rem;
 `;
 interface TagGroupItem {
   groupId: number;
@@ -345,8 +392,9 @@ const SearchInput = styled.input`
   cursor: pointer;
 
   @media (max-width: 500px) {
-  font-size: 0.9rem;
-  padding: 0.6rem 0.5rem 0.6rem 2.2rem;}
+    font-size: 0.9rem;
+    padding: 0.6rem 0.5rem 0.6rem 2.2rem;
+  }
 `;
 
 const SearchIcon = styled(CiSearch)`
@@ -355,7 +403,8 @@ const SearchIcon = styled(CiSearch)`
   left: 0.5rem;
 
   @media (max-width: 500px) {
-  font-size: 1.5rem;}
+    font-size: 1.5rem;
+  }
 `;
 
 const RoomList = styled.ul`
@@ -364,6 +413,20 @@ const RoomList = styled.ul`
   max-height: 26vh;
   overflow-y: auto;
   margin: 2vh 0;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  padding: 1rem;
+
+  @media (max-width: 1000px) {
+    padding: 0.8rem;
+  }
+  @media (max-width: 700px) {
+    padding: 0.5rem;
+  }
+  @media (max-width: 400px) {
+    padding: 0.3rem;
+  }
 `;
 
 const AddRoomContainer = styled.div`
@@ -437,8 +500,9 @@ const NoRoomsMessage = styled.p`
   font-size: 1.1rem;
   color: #666;
 
-  @media (max-width: 500px){
-  font-size: 0.8rem;}
+  @media (max-width: 500px) {
+    font-size: 0.8rem;
+  }
 `;
 
 interface AddRoomProps {
@@ -565,7 +629,9 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
               </AddRoomContainer>
             ))
           )}
-          {isProcessing && <ErrorMessage>Processing your request...</ErrorMessage>}
+          {isProcessing && (
+            <ErrorMessage>Processing your request...</ErrorMessage>
+          )}
         </RoomList>
         <AddButton onClick={handleAddRooms} disabled={isProcessing}>
           {isProcessing ? "ADDING..." : "ADD"}
@@ -639,8 +705,8 @@ const MyClass: React.FC<MyClassProps> = ({
   const [selectedRoomsToRemove, setSelectedRoomsToRemove] = useState<{
     [key: number]: boolean;
   }>({});
-  const [, setPagination] = useState({
-    pageSize: 6,
+  const [pagination, setPagination] = useState({
+    pageSize: 8,
     pageNum: 1,
     total: 0,
     pages: 0,
@@ -678,7 +744,7 @@ const MyClass: React.FC<MyClassProps> = ({
         const boundGroups = response.data.data.filter(
           (group) => group.isBinded
         );
-        const roomsPerPage = isEditMode ? 3 : 6;
+        const roomsPerPage = isEditMode ? 4 : 8;
 
         setPagination({
           pageSize: roomsPerPage,
@@ -712,12 +778,13 @@ const MyClass: React.FC<MyClassProps> = ({
     }
   };
 
-  const roomsPerPage = isEditMode ? 3 : 6;
+  const roomsPerPage = isEditMode ? 4 : 8;
 
   // Filter for groups that are bound to the tag (isBinded = true)
   const boundGroups = tagGroups.filter((group) => group.isBinded);
 
-  const totalPages = Math.ceil(boundGroups.length / roomsPerPage);
+  // const totalPages = Math.ceil(boundGroups.length / roomsPerPage);
+  // setTotalPages(Math.ceil(boundGroups.length / roomsPerPage));
 
   const currentRooms = boundGroups.slice(
     (currentPage - 1) * roomsPerPage,
@@ -725,7 +792,7 @@ const MyClass: React.FC<MyClassProps> = ({
   );
 
   const handlePageChange = (page: number): void => {
-    if (page > 0 && page <= totalPages) {
+    if (page > 0 && page <= pagination.pages) {
       setCurrentPage(page);
     }
   };
@@ -879,7 +946,20 @@ const MyClass: React.FC<MyClassProps> = ({
       <TopContainer>
         <Tag />
         <Title>CLASS {title}</Title>
-        <StyledPlus onClick={() => setIsAddRoomVisible(true)} />
+
+        {/* 将按钮移到顶部 */}
+        <ButtonContainer>
+          <StyledPlus onClick={() => setIsAddRoomVisible(true)} />
+          <EditButton
+            onClick={toggleEditMode}
+            $isEditMode={isEditMode}
+            $isLoading={isLoading}
+            disabled={isLoading}
+          >
+            {isEditMode ? "SUBMIT" : "EDIT"}
+          </EditButton>
+        </ButtonContainer>
+
         {isAddRoomVisible && (
           <AddRoomOverlay
             onAddRooms={handleAddRooms}
@@ -905,50 +985,40 @@ const MyClass: React.FC<MyClassProps> = ({
 
         {error && <ErrorMessage>{error}</ErrorMessage>}
 
-        {currentRooms.length > 0
-          ? currentRooms.map((room) => (
-              <SearchRoomContainer key={room.groupId} $isEditMode={isEditMode}>
-                <RoomContainer $isEditMode={isEditMode}>
-                  <RoomContent>
-                    <RoomTitle>{room.groupName}</RoomTitle>
-                    {/* Note: The API response doesn't include admin name and description */}
-                    {/* We would need to fetch these details separately */}
-                    <RoomAdmin>Admin: Admin</RoomAdmin>
-                    <RoomDescription>Room from tag</RoomDescription>
-                  </RoomContent>
-                </RoomContainer>
-                {isEditMode && (
-                  <StyledMinus
-                    onClick={() => handleRemoveRoom(room.groupId)}
-                    $isSelected={selectedRoomsToRemove[room.groupId] || false}
-                  />
-                )}
-              </SearchRoomContainer>
-            ))
-          : !isLoading && (
-              <NoRoomsMessage>
-                No rooms are bound to this tag yet. Click the '+' button to add
-                rooms.
-              </NoRoomsMessage>
-            )}
+        {currentRooms.length > 0 ? (
+          currentRooms.map((room) => (
+            <SearchRoomContainer key={room.groupId} $isEditMode={isEditMode}>
+              <RoomContainer $isEditMode={isEditMode}>
+                <RoomContent>
+                  <RoomTitle>{room.groupName}</RoomTitle>
+                  <RoomAdmin>Admin: Admin</RoomAdmin>
+                  <RoomDescription>Room from tag</RoomDescription>
+                </RoomContent>
+              </RoomContainer>
+              {isEditMode && (
+                <StyledMinus
+                  onClick={() => handleRemoveRoom(room.groupId)}
+                  $isSelected={selectedRoomsToRemove[room.groupId] || false}
+                />
+              )}
+            </SearchRoomContainer>
+          ))
+        ) : !isLoading ? (
+          <NoRoomsMessage>
+            No rooms are bound to this tag yet. Click the '+' button to add
+            rooms.
+          </NoRoomsMessage>
+        ) : null}
       </SearchRoomsContainer>
 
-      <EditButton
-        onClick={toggleEditMode}
-        $isEditMode={isEditMode}
-        $isLoading={isLoading}
-        disabled={isLoading}
-      >
-        {isEditMode ? "SUBMIT" : "EDIT"}
-      </EditButton>
-      <Footer>
+      {/* <Footer>
         <PageButton
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1 || isLoading || boundGroups.length === 0}
         >
           Previous
         </PageButton>
-        {getPageNumbers(currentPage, totalPages).map((page, index) =>
+        {getPageNumbers(currentPage, pagination.pages).map((page, index) =>
           page === "..." ? (
             <Ellipsis key={`ellipsis-${index}`}>...</Ellipsis>
           ) : (
@@ -965,10 +1035,41 @@ const MyClass: React.FC<MyClassProps> = ({
         <PageButton
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={
-            currentPage === totalPages || isLoading || boundGroups.length === 0
+            currentPage === pagination.pages ||
+            isLoading ||
+            boundGroups.length === 0
           }
         >
           Next
+        </PageButton>
+      </Footer> */}
+      <Footer>
+        <PageButton
+          onClick={() => handlePageChange(1)}
+          disabled={currentPage === 1}
+        >
+          First
+        </PageButton>
+        <PageButton
+          onClick={() => handlePageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          Previous
+        </PageButton>
+        <Ellipsis>
+          Page {currentPage} of {pagination.pages}
+        </Ellipsis>
+        <PageButton
+          onClick={() => handlePageChange(currentPage + 1)}
+          disabled={currentPage === pagination.pages}
+        >
+          Next
+        </PageButton>
+        <PageButton
+          onClick={() => handlePageChange(pagination.pages)}
+          disabled={currentPage === pagination.pages}
+        >
+          Last
         </PageButton>
       </Footer>
     </Container>
