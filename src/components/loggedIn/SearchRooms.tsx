@@ -4,6 +4,7 @@ import styled from "styled-components";
 import CreateRoomComponent from "./CreateRoomComponent"; // Modal Component
 import { useRoomContext } from "./RoomContext";
 import { useNavigate } from "react-router-dom";
+import { useJoinRoom, RoomGroup } from "./useJoinRoom";
 
 const Container = styled.div`
   background: white;
@@ -209,31 +210,16 @@ const SearchRooms: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const roomRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
-  // useEffect(() => {
-  //   const calculateRoomsPerPage = () => {
-  //     if (roomRef.current) {
-  //       const roomHeight = roomRef.current.offsetHeight;
-  //       const containerHeight = window.innerHeight * 0.65;
-  //       const verticalGap = 32;
+  const { handleJoinClick, redirectPath, setRedirectPath } = useJoinRoom();
 
-  //       const rowHeight = roomHeight + verticalGap;
-  //       const rowsPerPage = Math.floor(containerHeight / rowHeight);
-
-  //       const calculatedRoomsPerPage = rowsPerPage * 2;
-
-  //       setRoomsPerPage(calculatedRoomsPerPage || 8);
-  //       setRoomsPerPage(8);
-  //     }
-  //   };
-
-  // calculateRoomsPerPage();
-
-  //   window.addEventListener("resize", calculateRoomsPerPage);
-  //   return () => {
-  //     window.removeEventListener("resize", calculateRoomsPerPage);
-  //   };
-  // }, []);
+  useEffect(() => {
+    if (redirectPath) {
+      navigate(redirectPath);
+      setRedirectPath(null);
+    }
+  }, [redirectPath, navigate, setRedirectPath]);
 
   useEffect(() => {
     fetchRooms();
@@ -273,8 +259,6 @@ const SearchRooms: React.FC = () => {
     }
   };
 
-  const navigate = useNavigate();
-
   return (
     <>
       {isCreateRoomOpen && (
@@ -301,20 +285,7 @@ const SearchRooms: React.FC = () => {
             mainAreaRooms.map((room, index) => (
               <RoomContainer
                 key={room.groupId}
-                onClick={() => {
-                  console.log("/my-room-${room.groupId.toString()}");
-                  navigate(`/my-room/${room.groupId.toString()}`, {
-                    state: {
-                      title: room.groupName,
-                      desc: room.groupDescription,
-                      groupId: room.groupId,
-                      adminId: room.adminId,
-                      adminName: room.adminName,
-                      memberCount: room.memberCount,
-                      groupType: room.groupType,
-                    },
-                  });
-                }}
+                onClick={() => handleJoinClick(room.groupId, room.groupType)}
                 ref={index === 0 ? roomRef : null}
               >
                 <RoomTitle>{room.groupName}</RoomTitle>

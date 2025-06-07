@@ -98,8 +98,8 @@ const StyledPlus = styled(AiOutlinePlus)`
 `;
 
 const SearchRoomsContainer = styled.div<RoomContainerProps>`
-  display: ${(props) => (props.$isEditMode ? "flex" : "grid")};
-  grid-template-columns: repeat(2, 1fr); /* 两列布局 */
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 2rem;
   padding: 0 2rem;
   margin-top: 4vh;
@@ -114,14 +114,6 @@ const SearchRoomsContainer = styled.div<RoomContainerProps>`
     gap: 1rem;
     padding: 0 1rem;
   }
-
-  ${(props) =>
-    props.$isEditMode &&
-    `
-      display: flex;
-      flex-direction: column;
-      flex-wrap: nowrap;
-    `}
 `;
 
 const LoadingOverlay = styled.div`
@@ -138,37 +130,20 @@ const LoadingOverlay = styled.div`
 `;
 
 const SearchRoomContainer = styled.div<RoomContainerProps>`
-  width: ${(props) => (props.$isEditMode ? "55%" : "100%")};
+  width: 100%;
   display: flex;
-  flex-wrap: wrap;
-  gap: 2rem 4rem;
-  // padding: 2rem;
+  flex-wrap: nowrap;
+  gap: 1rem;
   box-sizing: border-box;
-  margin-left: auto;
-  margin-right: auto;
-  justify-content: flex-start;
-
-  @media (max-width: 1000px) {
-    gap: 2rem;
-  }
-  @media (max-width: 600px) {
-    gap: 2rem 0.8rem;
-    padding: 2rem 1rem;
-  }
+  align-items: center;
 `;
 
 const RoomContainer = styled.div<RoomContainerProps>`
-  width: ${(props) => (props.$isEditMode ? "80%" : "100%")};
+  width: ${(props) => (props.$isEditMode ? "calc(100% - 2.5rem)" : "100%")};
   border-radius: 6px;
   border: solid #d9d9d9;
   padding: 1rem;
   box-sizing: border-box;
-
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  align-items: flex-start;
-  gap: 0.3rem;
   transition: all 0.2s ease;
   cursor: pointer;
 
@@ -188,6 +163,7 @@ const StyledMinus = styled(AiOutlineMinusCircle)<StyledMinusProps>`
   font-size: 1.5rem;
   cursor: pointer;
   flex-shrink: 0;
+  min-width: 1.5rem;
 `;
 
 const RoomContent = styled.div`
@@ -249,6 +225,22 @@ const EditButton = styled.button<EditButtonProps>`
 
   &:hover {
     background-color: ${(props) => (props.$isEditMode ? "#015528" : "#333")};
+  }
+`;
+
+const CancelButton = styled.button<{ $isLoading?: boolean }>`
+  padding: 0.5rem 1rem;
+  background-color: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: ${(props) => (props.$isLoading ? "not-allowed" : "pointer")};
+  opacity: ${(props) => (props.$isLoading ? "0.7" : "1")};
+  font-size: 0.9rem;
+  white-space: nowrap;
+
+  &:hover {
+    background-color: #5a6268;
   }
 `;
 
@@ -455,6 +447,11 @@ const AddRoomTitle = styled.p`
   margin: 0;
 `;
 
+const BindedRoomTitle = styled(AddRoomTitle)`
+  color: #888;
+  font-style: italic;
+`;
+
 const Checkbox = styled.input.attrs({ type: "checkbox" })`
   width: 20px;
   height: 20px;
@@ -589,11 +586,13 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
     }
   };
 
-  const handleCheckboxChange = (groupId: number) => {
-    setSelectedRooms((prev) => ({
-      ...prev,
-      [groupId]: !prev[groupId],
-    }));
+  const handleCheckboxChange = (groupId: number, isBinded: boolean) => {
+    if (!isBinded) {
+      setSelectedRooms((prev) => ({
+        ...prev,
+        [groupId]: !prev[groupId],
+      }));
+    }
   };
 
   const handleAddRooms = () => {
@@ -603,9 +602,6 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
 
     onAddRooms(selectedRoomIds);
   };
-
-  // Filter groups that are NOT yet bound to the tag (isBinded = false)
-  const unboundGroups = tagGroups.filter((group) => !group.isBinded);
 
   return (
     <Overlay>
@@ -627,16 +623,29 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
             <p>Loading...</p>
           ) : error ? (
             <ErrorMessage>{error}</ErrorMessage>
+          ) : tagGroups.length === 0 ? (
+            <NoRoomsMessage>No rooms found</NoRoomsMessage>
           ) : (
-            unboundGroups.map((room) => (
+            tagGroups.map((room) => (
               <AddRoomContainer key={room.groupId}>
                 <Checkbox
                   type="checkbox"
-                  checked={selectedRooms[room.groupId] || false}
-                  onChange={() => handleCheckboxChange(room.groupId)}
-                  disabled={isProcessing}
+                  checked={
+                    room.isBinded || selectedRooms[room.groupId] || false
+                  }
+                  title={room.isBinded ? "This room is already bound" : ""}
+                  onChange={() =>
+                    handleCheckboxChange(room.groupId, room.isBinded)
+                  }
+                  disabled={room.isBinded || isProcessing}
                 />
-                <AddRoomTitle>{room.groupName}</AddRoomTitle>
+                {room.isBinded ? (
+                  <BindedRoomTitle>
+                    {room.groupName} (Already bound)
+                  </BindedRoomTitle>
+                ) : (
+                  <AddRoomTitle>{room.groupName}</AddRoomTitle>
+                )}
               </AddRoomContainer>
             ))
           )}
@@ -666,32 +675,6 @@ const ErrorPopup: React.FC<ErrorPopupProps> = ({ message, onClose }) => {
       </ErrorModal>
     </Overlay>
   );
-};
-
-const getPageNumbers = (currentPage: number, totalPages: number) => {
-  if (totalPages <= 6) {
-    return Array.from({ length: totalPages }, (_, i) => i + 1);
-  }
-
-  let pages = [];
-
-  pages.push(1);
-
-  if (currentPage <= 3) {
-    pages.push(2, 3, 4);
-    pages.push("...");
-    pages.push(totalPages);
-  } else if (currentPage >= totalPages - 2) {
-    pages.push("...");
-    pages.push(totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-  } else {
-    pages.push("...");
-    pages.push(currentPage - 1, currentPage, currentPage + 1);
-    pages.push("...");
-    pages.push(totalPages);
-  }
-
-  return pages;
 };
 
 const MyClass: React.FC<MyClassProps> = ({
@@ -799,7 +782,7 @@ const MyClass: React.FC<MyClassProps> = ({
         const boundGroups = response.data.data.filter(
           (group) => group.isBinded
         );
-        const roomsPerPage = isEditMode ? 4 : 8;
+        const roomsPerPage = 8;
 
         setPagination({
           pageSize: roomsPerPage,
@@ -833,13 +816,9 @@ const MyClass: React.FC<MyClassProps> = ({
     }
   };
 
-  const roomsPerPage = isEditMode ? 4 : 8;
+  const roomsPerPage = 8;
 
-  // Filter for groups that are bound to the tag (isBinded = true)
   const boundGroups = tagGroups.filter((group) => group.isBinded);
-
-  // const totalPages = Math.ceil(boundGroups.length / roomsPerPage);
-  // setTotalPages(Math.ceil(boundGroups.length / roomsPerPage));
 
   const currentRooms = boundGroups.slice(
     (currentPage - 1) * roomsPerPage,
@@ -1000,19 +979,45 @@ const MyClass: React.FC<MyClassProps> = ({
     <Container>
       <TopContainer>
         <Tag />
-        <Title>CLASS {title}</Title>
+        <Title>{title}</Title>
 
         {/* 将按钮移到顶部 */}
         <ButtonContainer>
           <StyledPlus onClick={() => setIsAddRoomVisible(true)} />
-          <EditButton
-            onClick={toggleEditMode}
-            $isEditMode={isEditMode}
-            $isLoading={isLoading}
-            disabled={isLoading}
-          >
-            {isEditMode ? "SUBMIT" : "EDIT"}
-          </EditButton>
+          {isEditMode ? (
+            // 编辑模式下显示提交和取消按钮
+            <>
+              <CancelButton
+                onClick={() => {
+                  // 退出编辑模式，清除选择
+                  setSelectedRoomsToRemove({});
+                  setIsEditMode(false);
+                }}
+                $isLoading={isLoading}
+                disabled={isLoading}
+              >
+                CANCEL
+              </CancelButton>
+              <EditButton
+                onClick={toggleEditMode}
+                $isEditMode={isEditMode}
+                $isLoading={isLoading}
+                disabled={isLoading}
+              >
+                {isLoading ? "PROCESSING..." : "SUBMIT"}
+              </EditButton>
+            </>
+          ) : (
+            // 非编辑模式下只显示编辑按钮
+            <EditButton
+              onClick={toggleEditMode}
+              $isEditMode={isEditMode}
+              $isLoading={isLoading}
+              disabled={isLoading}
+            >
+              EDIT
+            </EditButton>
+          )}
         </ButtonContainer>
 
         {isAddRoomVisible && (

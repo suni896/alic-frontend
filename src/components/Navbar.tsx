@@ -118,7 +118,7 @@ const Navbar = () => {
       </LogoContainer>
       <RightContainer>
         <LanguageDropdown show={dropdownOpen}>
-          <DropdownOption onClick={closeDropdown}>简体中文</DropdownOption>
+          {/* <DropdownOption onClick={closeDropdown}>简体中文</DropdownOption> */}
           <DropdownOption onClick={closeDropdown}>English</DropdownOption>
         </LanguageDropdown>
         <GlobeIcon onClick={toggleDropdown} />
