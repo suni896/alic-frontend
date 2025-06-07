@@ -2,10 +2,10 @@ import React, { useState, useEffect } from "react";
 import { CiSearch } from "react-icons/ci";
 import { RxCross2 } from "react-icons/rx";
 import styled, { css } from "styled-components";
-import axios, { AxiosResponse } from "axios";
+import axios from "axios";
 import apiClient from "../loggedOut/apiClient";
-import { useUser } from "./UserContext";
 import { useNavigate } from "react-router-dom";
+import { useJoinRoom, RoomGroup } from "./useJoinRoom";
 
 const OverlayContainer = styled.div`
   position: fixed;
@@ -298,12 +298,6 @@ const ErrorContainer = styled.div`
   border-radius: 8px;
 `;
 
-interface JoinGroupResponse {
-  code: number;
-  message: string;
-}
-
-// Define interface for API response
 interface GroupListResponse {
   code: number;
   message: string;
@@ -316,16 +310,6 @@ interface GroupListResponse {
   };
 }
 
-interface RoomGroup {
-  groupId: number;
-  groupName: string;
-  groupDescription: string;
-  groupType: number;
-  adminId: number;
-  adminName: string;
-  memberCount: number;
-}
-
 interface CreateRoomComponentProps {
   onClose: () => void;
 }
@@ -333,97 +317,33 @@ interface CreateRoomComponentProps {
 const roomsCache = new Map<string, RoomGroup[]>();
 
 const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
-  const { userInfo } = useUser();
   const [rooms, setRooms] = useState<RoomGroup[]>([]);
   const [roomSearch, setRoomSearch] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
-  const [showErrorModal, setShowErrorModal] = useState<boolean>(false);
-  const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
-  const [password, setPassword] = useState<string>("");
-  const [joinSuccess, setJoinSuccess] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("Chat Room Password Error");
   const navigate = useNavigate();
+  const {
+    handleJoinClick,
+    showPasswordModal,
+    setShowPasswordModal,
+    showErrorModal,
+    setShowErrorModal,
+    password,
+    setPassword,
+    errorMessage,
+    joinSuccess,
+    redirectPath,
+    setRedirectPath,
+    handlePasswordSubmit,
+  } = useJoinRoom();
 
-  const handleJoinClick = async (roomId: number, groupType: number) => {
-    setSelectedRoomId(roomId);
-
-    if (groupType === 1) {
-      try {
-        await joinGroup(roomId);
-      } catch (error) {
-        setErrorMessage("Failed to join group");
-        setShowErrorModal(true);
-      }
-    } else {
-      setShowPasswordModal(true);
+  useEffect(() => {
+    if (redirectPath) {
+      navigate(redirectPath);
+      setRedirectPath(null);
+      onClose();
     }
-  };
-
-  const joinGroup = async (
-    groupId: number,
-    password?: string
-  ): Promise<void> => {
-    try {
-      const requestData = {
-        groupId: groupId,
-        joinMemberID: userInfo?.userId,
-        password: password || undefined,
-      };
-
-      const response: AxiosResponse<JoinGroupResponse> = await apiClient.post(
-        "/v1/group/add_group_member",
-        requestData
-      );
-
-      if (response.data.code === 200 || response.data.code === 1009) {
-        setJoinSuccess(true);
-        setErrorMessage("Successfully joined group");
-        setShowErrorModal(true);
-        fetchAllRooms(); // Refetch all rooms after successful join
-        navigate(`/my-room/${groupId.toString()}`, {
-          // state: {
-          //   title: room.groupName,
-          //   desc: room.groupDescription,
-          //   groupId: room.groupId,
-          //   adminId: room.adminId,
-          //   adminName: room.adminName,
-          //   memberCount: room.memberCount,
-          //   groupType: room.groupType,
-          // },
-        });
-      } else {
-        setJoinSuccess(false);
-        setErrorMessage(response.data.message || "Failed to join group");
-        setShowErrorModal(true);
-      }
-    } catch (error) {
-      setJoinSuccess(false);
-      if (axios.isAxiosError(error)) {
-        setErrorMessage(
-          error.response?.data?.message || "Failed to join group"
-        );
-      } else {
-        setErrorMessage("An unexpected error occurred");
-      }
-      setShowErrorModal(true);
-    }
-  };
-
-  const handlePasswordSubmit = async (): Promise<void> => {
-    if (!selectedRoomId) return;
-    setShowPasswordModal(false);
-
-    try {
-      await joinGroup(selectedRoomId, password);
-    } catch (error) {
-      setErrorMessage("Failed to join group");
-      setShowErrorModal(true);
-    }
-
-    setPassword("");
-  };
+  }, [redirectPath, navigate, setRedirectPath, onClose]);
 
   const fetchAllRooms = async () => {
     setIsLoading(true);

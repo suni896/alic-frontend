@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import styled, { keyframes } from "styled-components";
 import {
   IoIosArrowDown,
@@ -7,7 +7,7 @@ import {
 } from "react-icons/io";
 import { FiTag } from "react-icons/fi";
 import { CiSearch } from "react-icons/ci";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { TiPlus } from "react-icons/ti";
 import { PiSignOutBold } from "react-icons/pi";
 import { RxCross2 } from "react-icons/rx";
@@ -21,6 +21,7 @@ import apiClient from "../loggedOut/apiClient";
 import { UserInformation } from "./types";
 import { useUser } from "./UserContext";
 import { useRoomContext } from "./RoomContext";
+import { RoomGroup } from "./useJoinRoom";
 
 const SidebarContainer = styled.div`
   width: 23%;
@@ -96,7 +97,7 @@ const EmptyStateMessage = styled.p`
   color: #64748b;
   font-size: 0.875rem;
   font-weight: 500;
-  
+
   @media (max-width: 500px) {
     font-size: 0.75rem;
   }
@@ -292,13 +293,14 @@ const ToggleButton = styled.button<ToggleButtonProps>`
   color: ${({ isActive }) => (isActive ? "#016532" : "#64748b")};
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: ${({ isActive }) => (isActive ? "0 1px 3px rgba(0, 0, 0, 0.1)" : "none")};
+  box-shadow: ${({ isActive }) =>
+    isActive ? "0 1px 3px rgba(0, 0, 0, 0.1)" : "none"};
 
   &:hover {
     background-color: ${({ isActive }) => (isActive ? "white" : "#e2e8f0")};
     color: ${({ isActive }) => (isActive ? "#016532" : "#374151")};
   }
-  
+
   @media (max-width: 900px) {
     font-size: 0.65rem;
     padding: 0.5rem 0rem;
@@ -331,7 +333,7 @@ const RoomList = styled.ul`
   width: 84%;
 `;
 
-const RoomContainer = styled.div`
+const RoomContainer = styled.div<{ $isActive?: boolean }>`
   display: flex;
   align-items: center;
   margin: 0 0 0.5rem 0;
@@ -342,6 +344,14 @@ const RoomContainer = styled.div`
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
   cursor: pointer;
+
+  ${({ $isActive }) =>
+    $isActive &&
+    `
+      background-color: #e6f7ff;
+      border: 2px solid #016532;
+      box-shadow: 0 0 0 2px rgba(1, 101, 50, 0.2);
+    `}
 
   &:hover {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -635,7 +645,7 @@ const StyledFiTag = styled(FaTag)`
   height: 20px;
   color: #016532;
   position: relative;
-  left: 2px; 
+  left: 2px;
   @media (max-width: 500px) {
     width: 16px;
     height: 16px;
@@ -698,7 +708,10 @@ const PageButton = styled.button<{ $active?: boolean }>`
   font-size: 0.8rem;
   font-weight: 500;
   transition: all 0.2s ease;
-  box-shadow: ${(props) => (props.$active ? "0 1px 3px rgba(1, 101, 50, 0.2)" : "0 1px 2px rgba(0, 0, 0, 0.05)")};
+  box-shadow: ${(props) =>
+    props.$active
+      ? "0 1px 3px rgba(1, 101, 50, 0.2)"
+      : "0 1px 2px rgba(0, 0, 0, 0.05)"};
 
   &:hover {
     background: ${(props) => (props.$active ? "#014d28" : "#f3f4f6")};
@@ -713,7 +726,7 @@ const PageButton = styled.button<{ $active?: boolean }>`
     cursor: not-allowed;
     transform: none;
     box-shadow: none;
-    
+
     &:hover {
       background: #f9fafb;
       border-color: #e5e7eb;
@@ -737,7 +750,7 @@ const Ellipsis = styled.span`
   color: #6b7280;
   font-size: 0.8rem;
   font-weight: 500;
-  
+
   @media (max-width: 500px) {
     font-size: 0.7rem;
     padding: 0 0.3rem;
@@ -764,14 +777,17 @@ const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
   // Add click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (popupRef.current && !popupRef.current.contains(event.target as Node)) {
+      if (
+        popupRef.current &&
+        !popupRef.current.contains(event.target as Node)
+      ) {
         onClose();
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [onClose]);
 
@@ -822,14 +838,17 @@ const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose, userInfo }) => {
   // Add click outside handler
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (overlayRef.current && !overlayRef.current.contains(event.target as Node)) {
+      if (
+        overlayRef.current &&
+        !overlayRef.current.contains(event.target as Node)
+      ) {
         onClose();
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [onClose]);
 
@@ -873,28 +892,6 @@ const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose, userInfo }) => {
   );
 };
 
-interface RoomGroup {
-  groupId: number;
-  groupName: string;
-  groupDescription: string;
-  groupType: number;
-  adminId: number;
-  adminName: string;
-  memberCount: number;
-}
-
-interface GroupListResponse {
-  code: number;
-  message: string;
-  data: {
-    pageSize: number;
-    pageNum: number;
-    pages: number;
-    total: number;
-    data: RoomGroup[];
-  };
-}
-
 interface Tag {
   tagId: number;
   tagName: string;
@@ -912,7 +909,6 @@ interface TagListResponse {
   };
 }
 
-const roomsCache = new Map<string, RoomGroup[]>(); // Cache keyed by search query
 const tagsCache = new Map<string, Tag[]>(); // Cache keyed by search query
 
 const Sidebar: React.FC = () => {
@@ -922,7 +918,6 @@ const Sidebar: React.FC = () => {
   const [roomSearch, setRoomSearch] = useState("");
   const [tagSearch, setTagSearch] = useState("");
   const [isProfileClicked, setIsProfileClicked] = useState(false);
-  const [activeTab, setActiveTab] = useState<"myRooms" | "myTags">("myRooms");
   const [tags, setTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -933,6 +928,65 @@ const Sidebar: React.FC = () => {
     total: 0,
     pages: 0,
   });
+
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<"myRooms" | "myTags">(
+    location.pathname.startsWith("/my-class/") ? "myTags" : "myRooms"
+  );
+  useEffect(() => {
+    if (location.pathname.startsWith("/my-class/")) {
+      setActiveTab("myTags");
+    } else if (location.pathname.startsWith("/my-room/")) {
+      setActiveTab("myRooms");
+    }
+  }, [location.pathname]);
+
+  const navigateToRoom = useCallback(
+    (room: RoomGroup) => {
+      navigate(`/my-room/${room.groupId.toString()}`, {
+        state: {
+          title: room.groupName,
+          desc: room.groupDescription,
+          groupId: room.groupId,
+          adminId: room.adminId,
+          adminName: room.adminName,
+          memberCount: room.memberCount,
+          groupType: room.groupType,
+        },
+      });
+    },
+    [navigate]
+  );
+
+  const navigateToTag = useCallback(
+    (tag: Tag) => {
+      navigate(`/my-class/${tag.tagId.toString()}`, {
+        state: { title: tag.tagName, tagId: tag.tagId },
+      });
+    },
+    [navigate]
+  );
+
+  const [activeRoomId, setActiveRoomId] = useState<number | null>(null);
+  useEffect(() => {
+    const match = location.pathname.match(/\/my-room\/(\d+)/);
+    if (match) {
+      setActiveRoomId(parseInt(match[1], 10));
+    } else {
+      setActiveRoomId(null);
+    }
+  }, [location.pathname]);
+
+  const [activeTagId, setActiveTagId] = useState<number | null>(null);
+  useEffect(() => {
+    const match = location.pathname.match(/\/my-class\/(\d+)/);
+    if (match) {
+      setActiveTagId(parseInt(match[1], 10));
+    } else {
+      setActiveTagId(null);
+    }
+  }, [location.pathname]);
 
   const handlePageChange = (page: number) => {
     if (activeTab === "myRooms") {
@@ -1054,8 +1108,6 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  const navigate = useNavigate();
-
   return (
     <SidebarContainer>
       <ProfileSection>
@@ -1154,30 +1206,14 @@ const Sidebar: React.FC = () => {
               <RoomList>
                 {sidebarRooms.length > 0
                   ? sidebarRooms.map((room) => (
-                      <RoomContainer key={room.groupId}>
+                      <RoomContainer
+                        key={room.groupId}
+                        onClick={() => navigateToRoom(room)}
+                        $isActive={room.groupId === activeRoomId}
+                      >
                         <Star />
                         <RoomDescContainer>
-                          <RoomTitle
-                            key={room.groupId}
-                            onClick={() => {
-                              console.log(
-                                "/my-room-${room.groupId.toString()}"
-                              );
-                              navigate(`/my-room/${room.groupId.toString()}`, {
-                                state: {
-                                  title: room.groupName,
-                                  desc: room.groupDescription,
-                                  groupId: room.groupId,
-                                  adminId: room.adminId,
-                                  adminName: room.adminName,
-                                  memberCount: room.memberCount,
-                                  groupType: room.groupType,
-                                },
-                              });
-                            }}
-                          >
-                            {room.groupName}
-                          </RoomTitle>
+                          <RoomTitle>{room.groupName}</RoomTitle>
                           <RoomDesc>{room.groupDescription}</RoomDesc>
                         </RoomDescContainer>
                       </RoomContainer>
@@ -1233,18 +1269,14 @@ const Sidebar: React.FC = () => {
               <RoomList>
                 {tags.length > 0
                   ? tags.map((tag) => (
-                      <RoomContainer key={tag.tagId}>
+                      <RoomContainer
+                        key={tag.tagId}
+                        onClick={() => navigateToTag(tag)}
+                        $isActive={tag.tagId === activeTagId}
+                      >
                         <Tag />
                         <RoomDescContainer>
-                          <RoomTitle
-                            onClick={() =>
-                              navigate(`/my-class/${tag.tagId.toString()}`, {
-                                state: { title: tag.tagName, tagId: tag.tagId },
-                              })
-                            }
-                          >
-                            {tag.tagName}
-                          </RoomTitle>
+                          <RoomTitle>{tag.tagName}</RoomTitle>
                         </RoomDescContainer>
                       </RoomContainer>
                     ))

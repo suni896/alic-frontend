@@ -7,6 +7,9 @@ import { RxCross2 } from "react-icons/rx";
 import { useLocation, useParams } from "react-router-dom";
 import apiClient from "../loggedOut/apiClient";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useJoinRoom } from "./useJoinRoom";
+import { RoomInfoResponse } from "./CreateRoomComponent";
 
 interface RoomContainerProps {
   $isEditMode: boolean;
@@ -166,6 +169,14 @@ const RoomContainer = styled.div<RoomContainerProps>`
   justify-content: flex-start;
   align-items: flex-start;
   gap: 0.3rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+    border-color: #016532;
+  }
 
   @media (max-width: 600px) {
     padding: 1rem 0.5rem;
@@ -711,10 +722,54 @@ const MyClass: React.FC<MyClassProps> = ({
     total: 0,
     pages: 0,
   });
+  const navigate = useNavigate();
+  const { handleJoinClick, redirectPath, setRedirectPath } = useJoinRoom();
+
+  useEffect(() => {
+    if (redirectPath) {
+      navigate(redirectPath);
+      setRedirectPath(null);
+    }
+  }, [redirectPath, navigate, setRedirectPath]);
 
   useEffect(() => {
     fetchTagGroups();
   }, [tagId, currentPage, isEditMode]);
+
+  const fetchRoomInfo = async (groupId: number) => {
+    try {
+      const url = `/v1/group/get_group_info?groupId=${groupId}`;
+
+      try {
+        const response = await apiClient.get<RoomInfoResponse>(url);
+
+        if (
+          response.status === 200 &&
+          response.data.code === 200 &&
+          response.data.data
+        ) {
+          return response.data.data;
+        } else {
+          console.error(
+            "API returned successfully but with unexpected format or error code"
+          );
+        }
+      } catch (apiError) {
+        console.error("API request failed:", apiError);
+      }
+    } catch (error: any) {
+      console.error("Error message:", error.message);
+    }
+  };
+
+  const handleRoomClick = async (groupId: number) => {
+    if (isEditMode) return;
+
+    const roomDetails = await fetchRoomInfo(groupId);
+    if (roomDetails) {
+      handleJoinClick(groupId, roomDetails.groupType);
+    }
+  };
 
   const fetchTagGroups = async () => {
     if (!tagId) return;
@@ -988,7 +1043,10 @@ const MyClass: React.FC<MyClassProps> = ({
         {currentRooms.length > 0 ? (
           currentRooms.map((room) => (
             <SearchRoomContainer key={room.groupId} $isEditMode={isEditMode}>
-              <RoomContainer $isEditMode={isEditMode}>
+              <RoomContainer
+                $isEditMode={isEditMode}
+                onClick={() => handleRoomClick(room.groupId)}
+              >
                 <RoomContent>
                   <RoomTitle>{room.groupName}</RoomTitle>
                   <RoomAdmin>Admin: Admin</RoomAdmin>
@@ -1010,39 +1068,6 @@ const MyClass: React.FC<MyClassProps> = ({
           </NoRoomsMessage>
         ) : null}
       </SearchRoomsContainer>
-
-      {/* <Footer>
-        <PageButton
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1 || isLoading || boundGroups.length === 0}
-        >
-          Previous
-        </PageButton>
-        {getPageNumbers(currentPage, pagination.pages).map((page, index) =>
-          page === "..." ? (
-            <Ellipsis key={`ellipsis-${index}`}>...</Ellipsis>
-          ) : (
-            <PageButton
-              key={`page-${page}`}
-              $active={currentPage === page}
-              onClick={() => handlePageChange(page as number)}
-              disabled={isLoading || boundGroups.length === 0}
-            >
-              {page}
-            </PageButton>
-          )
-        )}
-        <PageButton
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={
-            currentPage === pagination.pages ||
-            isLoading ||
-            boundGroups.length === 0
-          }
-        >
-          Next
-        </PageButton>
-      </Footer> */}
       <Footer>
         <PageButton
           onClick={() => handlePageChange(1)}

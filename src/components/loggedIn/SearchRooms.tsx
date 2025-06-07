@@ -102,6 +102,14 @@ const RoomContainer = styled.div`
   justify-content: flex-start;
   align-items: flex-start;
   gap: 0.3rem;
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+    border-color: #016532;
+  }
 
   @media (max-width: 600px) {
     padding: 1rem 0.5rem;
@@ -190,44 +198,6 @@ const PageButton = styled.button<PageButtonProps>`
 interface PageButtonProps {
   active?: boolean;
 }
-
-interface Room {
-  groupId: number;
-  groupName: string;
-  groupDescription: string;
-  groupType: number;
-  adminId: number;
-  adminName: string;
-  memberCount: number;
-}
-
-const getPageNumbers = (currentPage: number, totalPages: number) => {
-  if (totalPages <= 6) {
-    return Array.from({ length: totalPages }, (_, i) => i + 1);
-  }
-
-  let pages = [];
-
-  pages.push(1);
-
-  if (currentPage <= 3) {
-    pages.push(2, 3, 4);
-    pages.push("...");
-    pages.push(totalPages);
-  } else if (currentPage >= totalPages - 2) {
-    pages.push("...");
-    pages.push(totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-  } else {
-    pages.push("...");
-    pages.push(currentPage - 1, currentPage, currentPage + 1);
-    pages.push("...");
-    pages.push(totalPages);
-  }
-
-  return pages;
-};
-
-const roomsCache = new Map<string, Map<number, Room[]>>();
 
 const SearchRooms: React.FC = () => {
   const { mainAreaRooms, mainAreaRoomsPagination, setMainAreaRoomListRequest } =
