@@ -768,6 +768,7 @@ const LoadingSpinner = () => (
 interface OverlayProps {
   onClose: () => void;
   userInfo?: UserInformation | null;
+  onTagCreated?: () => void;
 }
 
 const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
@@ -826,7 +827,11 @@ const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
   );
 };
 
-const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose, userInfo }) => {
+const PlusButtonOverlay: React.FC<OverlayProps> = ({
+  onClose,
+  userInfo,
+  onTagCreated,
+}) => {
   const [isCreateRoomOverlayVisible, setIsCreateRoomOverlayVisible] =
     useState(false);
   const [isJoinRoomsOverlayVisible, setIsJoinRoomsOverlayVisible] =
@@ -888,7 +893,10 @@ const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose, userInfo }) => {
         <JoinRooms onClose={() => setIsJoinRoomsOverlayVisible(false)} />
       )}
       {isCreateTagOverlayVisible && (
-        <CreateNewTag onClose={() => setIsCreateTagOverlayVisible(false)} />
+        <CreateNewTag
+          onClose={() => setIsCreateTagOverlayVisible(false)}
+          onTagCreated={onTagCreated}
+        />
       )}
     </PlusButtonOverlayContainer>
   );
@@ -910,8 +918,6 @@ interface TagListResponse {
     data: Tag[];
   };
 }
-
-const tagsCache = new Map<string, Tag[]>(); // Cache keyed by search query
 
 const Sidebar: React.FC = () => {
   const { userInfo, isUserInfoLoading, userInfoError } = useUser();
@@ -1045,16 +1051,6 @@ const Sidebar: React.FC = () => {
     setIsLoading(true);
     setError(null);
 
-    // Generate cache key based on search query and pagination
-    const cacheKey = `${tagSearch}-${tagsPagination.pageNum}`;
-
-    // Check if data is cached
-    if (tagsCache.has(cacheKey)) {
-      setTags(tagsCache.get(cacheKey)!);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const requestData = {
         keyword: tagSearch || undefined,
@@ -1082,8 +1078,6 @@ const Sidebar: React.FC = () => {
           total: response.data.data.total,
           pages: response.data.data.pages,
         });
-        // Cache the fetched data
-        tagsCache.set(cacheKey, fetchedTags);
       } else {
         setError(
           `API returned error code: ${response.data.code}, message: ${response.data.message}`
@@ -1109,6 +1103,14 @@ const Sidebar: React.FC = () => {
       setIsLoading(false);
     }
   };
+
+  const refreshTags = useCallback(() => {
+    setTagsPagination((prev) => ({
+      ...prev,
+      pageNum: 1,
+    }));
+    fetchTags();
+  }, [fetchTags]);
 
   return (
     <SidebarContainer>
@@ -1177,6 +1179,7 @@ const Sidebar: React.FC = () => {
         <PlusButtonOverlay
           onClose={() => setIsPlusButtonOverlayVisible(false)}
           userInfo={userInfo}
+          onTagCreated={refreshTags}
         />
       )}
 

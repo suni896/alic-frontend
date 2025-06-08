@@ -89,9 +89,13 @@ const CreateButton = styled.button``;
 
 interface CreateNewTagProps {
   onClose: () => void;
+  onTagCreated?: () => void;
 }
 
-const CreateNewTag: React.FC<CreateNewTagProps> = ({ onClose }) => {
+const CreateNewTag: React.FC<CreateNewTagProps> = ({
+  onClose,
+  onTagCreated,
+}) => {
   const [tagName, setTagName] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -145,6 +149,9 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({ onClose }) => {
         alert(`Tag "${tagName}" created successfully!`);
         navigate(`/my-class/${response.data.data.tagId.toString()}`);
         onClose();
+        if (onTagCreated) {
+          onTagCreated();
+        }
       } else {
         console.error("API returned error:", response.data);
         setError(`Failed to create tag: ${response.data.message}`);

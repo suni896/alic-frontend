@@ -30,7 +30,7 @@ const Overlay = styled.div`
 const Modal = styled.div`
   position: relative;
   width: 75%;
-  
+
   max-width: 50rem;
   background-color: #ffffff;
   border-radius: 0.5rem;
@@ -168,7 +168,7 @@ const RadioOption = styled.label`
     }
 
     &:checked::before {
-      content: '';
+      content: "";
       position: absolute;
       top: 50%;
       left: 50%;
@@ -468,21 +468,24 @@ const validationSchema = (showAssistants: boolean) =>
                   "Must be 1-20 characters long, supports uppercase and lowercase English letters and numbers"
                 )
                 .test(
-                  'unique-name',
-                  'Assistant name must be unique',
-                  function(value) {
+                  "unique-name",
+                  "Assistant name must be unique",
+                  function (value) {
                     if (!value) return true; // Let required validation handle empty values
-                    
+
                     const { from } = this;
                     if (!from || !from[1] || !from[1].value) return true;
-                    
+
                     const allBots = from[1].value.bots || [];
-                    
+
                     // Count how many times this name appears
-                    const nameCount = allBots.filter((bot: any) => 
-                      bot.name && bot.name.trim().toLowerCase() === value.trim().toLowerCase()
+                    const nameCount = allBots.filter(
+                      (bot: any) =>
+                        bot.name &&
+                        bot.name.trim().toLowerCase() ===
+                          value.trim().toLowerCase()
                     ).length;
-                    
+
                     return nameCount <= 1;
                   }
                 ),
@@ -591,7 +594,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   const [userRole, setUserRole] = useState<string | null>(
     fromSidebar ? "ADMIN" : null
   );
-  
+
   // Add useRef to reference the modal container
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -1159,7 +1162,13 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                     <FieldArrayContainer>
                       {/* 添加标题行 */}
                       <AddAssistantRow>
-                        <RemoveIcon style={{ visibility: "hidden", width: "24px", height: "24px" }} />
+                        <RemoveIcon
+                          style={{
+                            visibility: "hidden",
+                            width: "24px",
+                            height: "24px",
+                          }}
+                        />
                         <SmallInputContainer>
                           <StyledSpan>Assistant Name*</StyledSpan>
                         </SmallInputContainer>
@@ -1173,7 +1182,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                           <StyledSpan>Context*</StyledSpan>
                         </SmallInputContainer>
                       </AddAssistantRow>
-            
+
                       {/* 渲染每一行 bot 配置 */}
                       {formik.values.bots.map((bot, index) => (
                         <AddAssistantRow key={index}>
@@ -1193,14 +1202,14 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
                             />
-                            {formik.touched.bots?.[index]?.name && 
-                             formik.errors.bots?.[index] && 
-                             typeof formik.errors.bots[index] === 'object' &&
-                             (formik.errors.bots[index] as any).name && (
-                              <BotFieldErrorMessage>
-                                {(formik.errors.bots[index] as any).name}
-                              </BotFieldErrorMessage>
-                            )}
+                            {formik.touched.bots?.[index]?.name &&
+                              formik.errors.bots?.[index] &&
+                              typeof formik.errors.bots[index] === "object" &&
+                              (formik.errors.bots[index] as any).name && (
+                                <BotFieldErrorMessage>
+                                  {(formik.errors.bots[index] as any).name}
+                                </BotFieldErrorMessage>
+                              )}
                           </SmallInputContainer>
                           <SmallInputContainer>
                             <SmallInput
@@ -1210,14 +1219,14 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
                             />
-                            {formik.touched.bots?.[index]?.prompt && 
-                             formik.errors.bots?.[index] && 
-                             typeof formik.errors.bots[index] === 'object' &&
-                             (formik.errors.bots[index] as any).prompt && (
-                              <BotFieldErrorMessage>
-                                {(formik.errors.bots[index] as any).prompt}
-                              </BotFieldErrorMessage>
-                            )}
+                            {formik.touched.bots?.[index]?.prompt &&
+                              formik.errors.bots?.[index] &&
+                              typeof formik.errors.bots[index] === "object" &&
+                              (formik.errors.bots[index] as any).prompt && (
+                                <BotFieldErrorMessage>
+                                  {(formik.errors.bots[index] as any).prompt}
+                                </BotFieldErrorMessage>
+                              )}
                           </SmallInputContainer>
                           <ToggleSwitchContainer>
                             {/* MODIFIED: special handling for checkbox */}
@@ -1265,14 +1274,14 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               min={1}
                               max={20}
                             />
-                            {formik.touched.bots?.[index]?.context && 
-                             formik.errors.bots?.[index] && 
-                             typeof formik.errors.bots[index] === 'object' &&
-                             (formik.errors.bots[index] as any).context && (
-                              <BotFieldErrorMessage>
-                                {(formik.errors.bots[index] as any).context}
-                              </BotFieldErrorMessage>
-                            )}
+                            {formik.touched.bots?.[index]?.context &&
+                              formik.errors.bots?.[index] &&
+                              typeof formik.errors.bots[index] === "object" &&
+                              (formik.errors.bots[index] as any).context && (
+                                <BotFieldErrorMessage>
+                                  {(formik.errors.bots[index] as any).context}
+                                </BotFieldErrorMessage>
+                              )}
                           </SmallInputContainer>
                         </AddAssistantRow>
                       ))}
@@ -1310,9 +1319,11 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                 )}
               </>
             )}
-            <CreateButton type="submit">
-              {effectiveIsModify ? "Update" : "Create"}
-            </CreateButton>
+            {userRole === "ADMIN" && (
+              <CreateButton type="submit">
+                {effectiveIsModify ? "Update" : "Create"}
+              </CreateButton>
+            )}
           </Form>
         </FormikProvider>
       </Modal>
