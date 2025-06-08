@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from "react";
-import { membersCache, GroupMember } from "./RoomMembersComponent";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { membersCache } from "./RoomMembersComponent";
 import SockJS from "sockjs-client";
 import Stomp from "stompjs";
 import styled from "styled-components";
@@ -307,11 +307,11 @@ const BotListPopUp: React.FC<MyRoomProps> = ({
   );
 };
 
-const MyRoom: React.FC<MyRoomProps> = ({
-  title: propTitle = "Default Title",
-  desc: propDesc = "No description available.",
-  groupId,
-}) => {
+const botsCache = new Map<number, string>();
+
+const clientCache = new Map<number, Stomp.Client | null>();
+
+const MyRoom: React.FC<MyRoomProps> = ({ title, desc, groupId }) => {
   const [hasNewMessage, setHasNewMessage] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { userInfo } = useUser();
@@ -323,19 +323,28 @@ const MyRoom: React.FC<MyRoomProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const isInitialMount = useRef(true);
 
-  const cookie = document.cookie;
-  const token = localStorage.getItem("jwtToken");
-
-  console.log("MyRoom enter groupId:", groupId);
+  useEffect(() => {
+    const fetchBots = async () => {
+      try {
+        setIsLoading(true);
+        const response = await apiClient.get(
+          `/v1/group/get_group_chat_bot_list?groupId=${groupId}`
+        );
+        if (response.data.code === 200) {
+          response.data.data.forEach((bot: Bot) => {
+            botsCache.set(bot.botId, bot.botName);
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching bots:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchBots();
+  }, [groupId]);
 
   const fetchMessageHistory = async (loadMore = false) => {
-    console.log(
-      "fetchMessageHistory enter:",
-      loadMore,
-      hasNoMoreMessages,
-      isLoading
-    );
-    // if (hasNoMoreMessages || isLoading) return;
     const prevMessages = messages.length;
     setIsLoading(true);
     try {
@@ -393,44 +402,54 @@ const MyRoom: React.FC<MyRoomProps> = ({
     }
   }, [messages, initialLoading]);
 
-  useEffect(() => {
-    if (!isInitialMount.current) {
-      setMessages([]);
-      setPageNum(1);
-      setIsLoading(false);
-      setHasNoMoreMessages(false);
-      setSelectedBot(null);
+  const connectionStatusRef = useRef<{
+    currentGroupId: number | null;
+    connectionPromise: Promise<void> | null;
+  }>({ currentGroupId: null, connectionPromise: null });
 
-      const fetchMembers = async () => {
-        try {
-          const response = await apiClient.get(
-            `/v1/group/get_group_member_list?groupId=${groupId}`
-          );
-          if (response.data.code === 200) {
-            membersCache.set(Number(groupId), response.data.data);
-          }
-        } catch (error) {
-          console.error("Error fetching group members:", error);
-        }
-      };
+  const manageWebSocketConnection = useCallback(async () => {
+    // 如果正在连接相同房间，直接返回
+    if (connectionStatusRef.current.currentGroupId === groupId) {
+      return;
+    }
 
-      if (groupId) fetchMembers();
+    if (groupId && clientCache.has(groupId)) {
+      const cachedClient = clientCache.get(groupId);
+      if (cachedClient !== undefined) {
+        stompClientRef.current = cachedClient;
+      }
+      return;
+    }
 
-      const connectWebSocket = () => {
-        if (stompClientRef.current && stompClientRef.current.connected) {
-          stompClientRef.current.disconnect(() => {
-            console.log("Disconnected previous WebSocket connection");
-          });
-          stompClientRef.current = null;
-        }
+    // 断开之前的连接
+    if (stompClientRef.current?.connected) {
+      stompClientRef.current.disconnect(() => {
+        console.log("Disconnected from previous connection");
+      });
+      console.log(
+        `Disconnected from previous room: ${connectionStatusRef.current.currentGroupId}`
+      );
+    }
 
-        const socket = new SockJS(`https://112.74.92.135/ws`);
-        const client = Stomp.over(socket);
+    // 更新连接状态
+    connectionStatusRef.current.currentGroupId = groupId ?? null;
 
+    // 如果没有groupId，停止连接
+    if (!groupId) return;
+
+    // 创建新的连接
+    const socket = new SockJS(`https://112.74.92.135/ws`);
+    const client = Stomp.over(socket);
+    stompClientRef.current = client;
+    clientCache.set(groupId, client);
+
+    // 创建连接Promise
+    connectionStatusRef.current.connectionPromise = new Promise(
+      (resolve, reject) => {
         client.connect(
           {
-            cookie: cookie,
-            Authorization: `Bearer ${token}`,
+            cookie: document.cookie,
+            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
           },
           () => {
             client.subscribe(`/topic/chat/${groupId}`, (message) => {
@@ -447,14 +466,6 @@ const MyRoom: React.FC<MyRoomProps> = ({
                       chatContainerRef.current;
                     const isNearBottom =
                       scrollHeight - (scrollTop + clientHeight) < 200;
-                    console.log(
-                      "scrollHeight:",
-                      scrollHeight,
-                      "scrollTop:",
-                      scrollTop,
-                      "clientHeight:",
-                      clientHeight
-                    );
 
                     if (isNearBottom) {
                       chatContainerRef.current.scrollTop = scrollHeight;
@@ -468,31 +479,71 @@ const MyRoom: React.FC<MyRoomProps> = ({
                 return newMessages;
               });
             });
+
+            resolve();
+          },
+          (error) => {
+            console.error(`Connection failed for room ${groupId}:`, error);
+            reject(error);
           }
         );
+      }
+    );
 
-        stompClientRef.current = client;
+    try {
+      connectionStatusRef.current.connectionPromise;
+    } catch (error) {
+      console.error("WebSocket connection error:", error);
+    }
+  }, [groupId]);
 
-        return () => {
-          if (client && client.connected) {
-            client.disconnect(() => {
-              console.log("Cleanup: WebSocket disconnected");
-              stompClientRef.current = null;
-            });
+  useEffect(() => {
+    if (!isInitialMount.current) {
+      setMessages([]);
+      setIsLoading(false);
+      setHasNoMoreMessages(false);
+      setSelectedBot(null);
+
+      // 获取群组成员
+      const fetchMembers = async () => {
+        try {
+          const response = await apiClient.get(
+            `/v1/group/get_group_member_list?groupId=${groupId}`
+          );
+          if (response.data.code === 200) {
+            membersCache.set(Number(groupId), response.data.data);
           }
-        };
+        } catch (error) {
+          console.error("Error fetching group members:", error);
+        }
       };
 
       if (groupId) {
-        connectWebSocket();
+        fetchMembers();
+        manageWebSocketConnection();
         fetchMessageHistory(false);
       }
     } else {
       isInitialMount.current = false;
     }
 
-    return () => {};
-  }, [groupId]);
+    // 清理函数
+    return () => {
+      if (stompClientRef.current?.connected) {
+        stompClientRef.current.disconnect(() => {
+          console.log("Disconnected successfully");
+          if (groupId) {
+            clientCache.delete(groupId);
+          }
+        });
+        console.log("Cleanup: WebSocket disconnected");
+      }
+      connectionStatusRef.current = {
+        currentGroupId: null,
+        connectionPromise: null,
+      };
+    };
+  }, [groupId, manageWebSocketConnection]);
 
   const sendMessage = () => {
     if (inputMessage.trim() && stompClientRef.current && userInfo?.userId) {
@@ -515,7 +566,6 @@ const MyRoom: React.FC<MyRoomProps> = ({
   };
 
   const prevScrollHeight = useRef(0);
-  const [pageNum, setPageNum] = useState(1);
   const [selectedBot, setSelectedBot] = useState<number | null>(null);
 
   const handleBotSelect = (botName: string, botId: number) => {
@@ -526,17 +576,8 @@ const MyRoom: React.FC<MyRoomProps> = ({
   };
 
   const location = useLocation();
-  const state = location.state as LocationState | undefined;
   const [isBotClicked, setIsBotClicked] = useState(false);
 
-  const title = state?.title || propTitle;
-  const desc = state?.desc || propDesc;
-
-  useEffect(() => {
-    console.log(title, desc);
-  }, [title, desc]);
-
-  // 修改滚动事件处理
   const handleScroll = () => {
     const container = chatContainerRef.current;
     if (container) {
@@ -604,10 +645,15 @@ const MyRoom: React.FC<MyRoomProps> = ({
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 500 }}>
                 {msg.senderType === "CHATBOT"
-                  ? `Bot ${msg.senderId}`
+                  ? `${botsCache.get(msg.senderId) || msg.senderId}`
                   : msg.senderId === userInfo?.userId
                   ? "You"
-                  : `User ${msg.senderId}`}
+                  : `${
+                      membersCache
+                        .get(Number(groupId))
+                        ?.find((m) => m.userId === msg.senderId)?.userName ||
+                      msg.senderId
+                    }`}
               </div>
               {/* <MessageText
                 dangerouslySetInnerHTML={{ __html: marked(msg.content) }}

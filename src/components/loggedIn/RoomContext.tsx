@@ -126,7 +126,6 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
       sidebarRoomListRequest
     );
 
-    console.log("fetchSidebarRooms Room API response:", response.data);
     if (response.data.code === 200) {
       const rooms = response.data.data.data;
       setSidebarRooms(rooms);
@@ -149,7 +148,6 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
       mainAreaRoomListRequest
     );
 
-    console.log("fetchMainAreaRooms Room API response:", response.data);
     if (response.data.code === 200) {
       const rooms = response.data.data.data;
       setMainAreaRooms(rooms);

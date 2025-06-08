@@ -131,13 +131,10 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
     const fetchTagData = async () => {
       if (groupId) {
         try {
-          console.log("Fetching tags for groupId:", groupId);
           const response = await apiClient.get(
             `/v1/tag/get_tag_binded_group_list?groupId=${groupId}`
           );
-          console.log("API Response:", response.data);
           if (response.data.code === 200) {
-            console.log("Tags data:", response.data.data);
             setTagData(response.data.data);
           }
         } catch (error) {
@@ -196,11 +193,6 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
       fetchRoomInfo(groupId);
     }
   }, [groupId]);
-
-  // Add this to debug render
-  useEffect(() => {
-    console.log("Current tagData state:", tagData);
-  }, [tagData]);
 
   return (
     <Container>

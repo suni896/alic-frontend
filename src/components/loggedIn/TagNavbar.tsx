@@ -4,9 +4,31 @@ import { useNavigate } from "react-router-dom";
 import { styled } from "styled-components";
 import apiClient from "../loggedOut/apiClient";
 
-interface TagData {
+interface TagInfoGroup {
+  groupId: number;
+  groupName: string;
+  groupAdmin: number;
+  groupDescription: string;
+}
+
+interface TagGroups {
+  pageNum: number;
+  pageSize: number;
+  pages: number;
+  total: number;
+  data: TagInfoGroup[];
+}
+
+interface TagInfoData {
   tagId: number;
   tagName: string;
+  tagGroups: TagGroups;
+}
+
+interface TagInfoResponse {
+  code: number;
+  message: string;
+  data: TagInfoData;
 }
 
 const Container = styled.div`
@@ -63,18 +85,25 @@ interface TagNavbarProps {
 }
 
 const TagNavbar: React.FC<TagNavbarProps> = ({ tagId }) => {
-  const [tagData, setTagData] = useState<TagData | null>(null);
+  const [tagData, setTagData] = useState<TagInfoData | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTagData = async () => {
       if (tagId) {
+        const requestData = {
+          tagId: tagId,
+          pageRequestVO: {
+            pageNum: 1,
+            pageSize: 1,
+          },
+        };
+
         try {
-          console.log("Fetching tag for tagId:", tagId);
-          const response = await apiClient.get(
-            `/v1/tag/get_tag_info?tagId=${tagId}`
+          const response = await apiClient.post<TagInfoResponse>(
+            "/v1/tag/get_tag_info",
+            requestData
           );
-          console.log("API Response:", response.data);
           if (response.data.code === 200) {
             console.log("Tags data:", response.data.data);
             setTagData(response.data.data);

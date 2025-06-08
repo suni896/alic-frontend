@@ -65,6 +65,12 @@ const ButtonContainer = styled.div`
   }
 `;
 
+const ButtonContainer2 = styled.div`
+  width: 100%;
+  display: flex;
+  justify-content: center;
+`;
+
 const Title = styled.p`
   font-family: Roboto;
   font-weight: 600;
@@ -296,6 +302,34 @@ interface TagGroupListResponse {
   message: string;
   data: TagGroupItem[];
 }
+
+interface TagInfoGroup {
+  groupId: number;
+  groupName: string;
+  groupAdmin: number;
+  groupDescription: string;
+}
+
+interface TagGroups {
+  pageNum: number;
+  pageSize: number;
+  pages: number;
+  total: number;
+  data: TagInfoGroup[];
+}
+
+interface TagInfoData {
+  tagId: number;
+  tagName: string;
+  tagGroups: TagGroups;
+}
+
+interface TagInfoResponse {
+  code: number;
+  message: string;
+  data: TagInfoData;
+}
+
 interface MyClassProps {
   title?: string;
   desc?: string;
@@ -346,6 +380,72 @@ const ErrorModal = styled(Modal)`
   width: 25%;
   text-align: center;
   padding: 2rem;
+`;
+
+const ErrorModalButton = styled.button`
+  padding: 5px 10px;
+  background-color: black;
+  margin-left: 44%;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #333;
+  }
+`;
+
+const ModalCloseButton = styled.button`
+  position: absolute;
+  top: 0.5vh;
+  right: 1%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+
+  &:hover {
+    opacity: 0.7;
+  }
+
+  @media (max-width: 500px) {
+    right: -1%;
+    font-size: 0.6rem;
+  }
+`;
+
+const PasswordTitle = styled.label`
+  font-family: Roboto;
+  font-weight: 400;
+`;
+
+const PasswordInput = styled.input`
+  margin-top: 1vh;
+  margin-bottom: 3vh;
+  width: 85%;
+  padding: 0.8rem 1rem;
+  font-size: 1rem;
+  border: 1px solid #016532;
+  border-radius: 8px;
+  color: #b3b3b3;
+  background-color: white;
+`;
+
+const SubmitButton = styled.button`
+  padding: 0.5rem;
+  background-color: black;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #016532;
+  }
 `;
 
 const CloseButton = styled.button`
@@ -690,7 +790,7 @@ const MyClass: React.FC<MyClassProps> = ({
 
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isAddRoomVisible, setIsAddRoomVisible] = useState(false);
-  const [tagGroups, setTagGroups] = useState<TagGroupItem[]>([]);
+  const [tagGroups, setTagGroups] = useState<TagInfoGroup[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -706,7 +806,20 @@ const MyClass: React.FC<MyClassProps> = ({
     pages: 0,
   });
   const navigate = useNavigate();
-  const { handleJoinClick, redirectPath, setRedirectPath } = useJoinRoom();
+  const {
+    handleJoinClick,
+    showPasswordModal,
+    setShowPasswordModal,
+    showErrorModal,
+    setShowErrorModal,
+    password,
+    setPassword,
+    errorMessage,
+    joinSuccess,
+    redirectPath,
+    setRedirectPath,
+    handlePasswordSubmit,
+  } = useJoinRoom();
 
   useEffect(() => {
     if (redirectPath) {
@@ -763,32 +876,28 @@ const MyClass: React.FC<MyClassProps> = ({
     try {
       const requestData = {
         tagId: tagId,
-        keyword: undefined,
+        pageRequestVO: {
+          pageNum: currentPage,
+          pageSize: pagination.pageSize,
+        },
       };
 
       console.log("Fetching tag groups with params:", requestData);
 
-      const response = await apiClient.post<TagGroupListResponse>(
-        "/v1/tag/get_group_list_for_tag",
+      const response = await apiClient.post<TagInfoResponse>(
+        "/v1/tag/get_tag_info",
         requestData
       );
 
       console.log("Tag groups API response:", response.data);
 
       if (response.data.code === 200) {
-        setTagGroups(response.data.data);
-
-        // Update pagination based on bound groups
-        const boundGroups = response.data.data.filter(
-          (group) => group.isBinded
-        );
-        const roomsPerPage = 8;
-
+        setTagGroups(response.data.data.tagGroups.data);
         setPagination({
-          pageSize: roomsPerPage,
-          pageNum: currentPage,
-          total: boundGroups.length,
-          pages: Math.ceil(boundGroups.length / roomsPerPage),
+          pageSize: response.data.data.tagGroups.pageSize,
+          pageNum: response.data.data.tagGroups.pageNum,
+          total: response.data.data.tagGroups.total,
+          pages: response.data.data.tagGroups.pages,
         });
       } else {
         setError(
@@ -815,15 +924,6 @@ const MyClass: React.FC<MyClassProps> = ({
       setIsLoading(false);
     }
   };
-
-  const roomsPerPage = 8;
-
-  const boundGroups = tagGroups.filter((group) => group.isBinded);
-
-  const currentRooms = boundGroups.slice(
-    (currentPage - 1) * roomsPerPage,
-    currentPage * roomsPerPage
-  );
 
   const handlePageChange = (page: number): void => {
     if (page > 0 && page <= pagination.pages) {
@@ -1045,8 +1145,8 @@ const MyClass: React.FC<MyClassProps> = ({
 
         {error && <ErrorMessage>{error}</ErrorMessage>}
 
-        {currentRooms.length > 0 ? (
-          currentRooms.map((room) => (
+        {tagGroups.length > 0 ? (
+          tagGroups.map((room) => (
             <SearchRoomContainer key={room.groupId} $isEditMode={isEditMode}>
               <RoomContainer
                 $isEditMode={isEditMode}
@@ -1072,6 +1172,55 @@ const MyClass: React.FC<MyClassProps> = ({
             rooms.
           </NoRoomsMessage>
         ) : null}
+
+        {(showPasswordModal || showErrorModal) && (
+          <Overlay>
+            {showPasswordModal && (
+              <Modal>
+                <ModalCloseButton onClick={() => setShowPasswordModal(false)}>
+                  <StyledCross size={24} />
+                </ModalCloseButton>
+                <PasswordTitle>PASSWORD</PasswordTitle>
+                <PasswordInput
+                  type="password"
+                  placeholder="Enter password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      handlePasswordSubmit();
+                    }
+                  }}
+                />
+                <ButtonContainer2>
+                  <SubmitButton onClick={handlePasswordSubmit}>
+                    Submit
+                  </SubmitButton>
+                </ButtonContainer2>
+              </Modal>
+            )}
+            {showErrorModal && !joinSuccess && (
+              <Modal>
+                <ErrorMessage style={{ color: joinSuccess ? "green" : "red" }}>
+                  {errorMessage}
+                </ErrorMessage>
+                <ErrorModalButton
+                  onClick={() => {
+                    setShowErrorModal(false);
+                    if (joinSuccess) {
+                      // onClose();
+                    }
+                  }}
+                  style={{
+                    backgroundColor: joinSuccess ? "#4CAF50" : "#ff4444",
+                  }}
+                >
+                  OK
+                </ErrorModalButton>
+              </Modal>
+            )}
+          </Overlay>
+        )}
       </SearchRoomsContainer>
       <Footer>
         <PageButton

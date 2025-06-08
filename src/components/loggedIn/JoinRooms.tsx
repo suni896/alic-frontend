@@ -322,7 +322,7 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  
+
   // Add useRef to reference the container
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -437,7 +437,11 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
   };
 
   useEffect(() => {
-    fetchAllRooms();
+    if (roomSearch.trim() !== "") {
+      fetchAllRooms();
+    } else {
+      setRooms([]);
+    }
   }, [roomSearch]);
 
   return (
