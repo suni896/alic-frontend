@@ -36,6 +36,13 @@ interface Bot {
   accessType: number;
 }
 
+interface User {
+  userId: number;
+  userName: string;
+  userPortrait: string;
+  userEmail: string;
+}
+
 interface Message {
   infoId: number;
   groupId: number;
@@ -44,6 +51,8 @@ interface Message {
   msgType: number;
   createTime: string;
   senderType: string;
+  name: string;
+  portrait: string;
 }
 
 const Container = styled.div`
@@ -307,9 +316,11 @@ const BotListPopUp: React.FC<MyRoomProps> = ({
   );
 };
 
-const botsCache = new Map<number, string>();
+const botsCache = new Map<number, Bot>();
 
 const clientCache = new Map<number, Stomp.Client | null>();
+
+const usersCache = new Map<number, User>();
 
 const MyRoom: React.FC<MyRoomProps> = ({ title, desc, groupId }) => {
   const [hasNewMessage, setHasNewMessage] = useState(false);
@@ -323,6 +334,56 @@ const MyRoom: React.FC<MyRoomProps> = ({ title, desc, groupId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const isInitialMount = useRef(true);
 
+  const fetchBotInfo = async (botId: number): Promise<Bot> => {
+    if (botsCache.has(botId)) {
+      return botsCache.get(botId)!;
+    }
+
+    try {
+      setIsLoading(true);
+      const response = await apiClient.get(
+        `/v1/group/get_group_chat_bot_info?botId=${botId}`
+      );
+      if (response.data.code === 200) {
+        botsCache.set(botId, response.data.data);
+        return response.data.data;
+      }
+    } catch (error) {
+      console.error("Error fetching bots:", error);
+    } finally {
+      setIsLoading(false);
+    }
+    return {
+      botId,
+      botName: `Bot ${botId}`,
+      accessType: 0,
+    };
+  };
+
+  const fetchUserInfo = async (userId: number): Promise<User> => {
+    if (usersCache.has(userId)) {
+      return usersCache.get(userId)!;
+    }
+
+    try {
+      const response = await apiClient.get(
+        `/v1/user/get_user_info_in_group?userId=${userId}`
+      );
+      if (response.data.code === 200) {
+        usersCache.set(userId, response.data.data);
+        return response.data.data;
+      }
+    } catch (error) {
+      console.error("Error fetching group members:", error);
+    }
+    return {
+      userId,
+      userName: `User ${userId}`,
+      userPortrait: "/default-avatar.png",
+      userEmail: "",
+    };
+  };
+
   useEffect(() => {
     const fetchBots = async () => {
       try {
@@ -331,9 +392,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ title, desc, groupId }) => {
           `/v1/group/get_group_chat_bot_list?groupId=${groupId}`
         );
         if (response.data.code === 200) {
-          response.data.data.forEach((bot: Bot) => {
-            botsCache.set(bot.botId, bot.botName);
-          });
+          // response.data.data.forEach((bot: Bot) => {
+          //   botsCache.set(bot.botId, bot.botName);
+          // });
         }
       } catch (error) {
         console.error("Error fetching bots:", error);
@@ -356,6 +417,19 @@ const MyRoom: React.FC<MyRoomProps> = ({ title, desc, groupId }) => {
 
       const newMessages = response.data.data as Message[];
       setHasNoMoreMessages(newMessages.length < 20);
+      await Promise.all(
+        newMessages.map(async (msg) => {
+          if (msg.senderType === "CHATBOT") {
+            const botInfo = await fetchBotInfo(msg.senderId);
+            msg.name = botInfo.botName;
+            msg.portrait = botIcon;
+          } else {
+            const userInfo = await fetchUserInfo(msg.senderId);
+            msg.name = userInfo.userName;
+            msg.portrait = userInfo.userPortrait;
+          }
+        })
+      );
 
       setMessages((prev) => {
         const merged = [...newMessages, ...prev]
@@ -455,6 +529,17 @@ const MyRoom: React.FC<MyRoomProps> = ({ title, desc, groupId }) => {
             client.subscribe(`/topic/chat/${groupId}`, (message) => {
               console.log("Received message:", message.body);
               const receivedMessage = JSON.parse(message.body) as Message;
+              Promise.all([
+                receivedMessage.senderType === "CHATBOT"
+                  ? fetchBotInfo(receivedMessage.senderId).then((botInfo) => {
+                      receivedMessage.name = botInfo.botName;
+                      receivedMessage.portrait = botIcon;
+                    })
+                  : fetchUserInfo(receivedMessage.senderId).then((userInfo) => {
+                      receivedMessage.name = userInfo.userName;
+                      receivedMessage.portrait = userInfo.userPortrait;
+                    }),
+              ]);
               setMessages((prev) => {
                 const newMessages = [...prev, receivedMessage].sort(
                   (a, b) => a.infoId - b.infoId
@@ -631,29 +716,13 @@ const MyRoom: React.FC<MyRoomProps> = ({ title, desc, groupId }) => {
               src={
                 msg.senderType === "CHATBOT"
                   ? botIcon
-                  : `data:image/png;base64, ${
-                      msg.senderId === userInfo?.userId
-                        ? userInfo.userPortrait
-                        : membersCache
-                            .get(Number(groupId))
-                            ?.find((m) => m.userId === msg.senderId)
-                            ?.userPortrait || "/default-avatar.png"
-                    }`
+                  : `data:image/png;base64, ${msg.portrait}`
               }
               alt="User portrait"
             />
             <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 500 }}>
-                {msg.senderType === "CHATBOT"
-                  ? `${botsCache.get(msg.senderId) || msg.senderId}`
-                  : msg.senderId === userInfo?.userId
-                  ? "You"
-                  : `${
-                      membersCache
-                        .get(Number(groupId))
-                        ?.find((m) => m.userId === msg.senderId)?.userName ||
-                      msg.senderId
-                    }`}
+                {msg.senderId === userInfo?.userId ? "You" : `${msg.name}`}
               </div>
               {/* <MessageText
                 dangerouslySetInnerHTML={{ __html: marked(msg.content) }}

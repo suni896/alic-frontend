@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { MdOutlineKeyboardDoubleArrowRight, MdPeopleAlt } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { styled } from "styled-components";
@@ -326,26 +326,6 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
   const navigate = useNavigate();
 
-  // Add useRef to reference the members list container
-  const membersContainerRef = useRef<HTMLDivElement>(null);
-
-  // Add click outside handler
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        membersContainerRef.current &&
-        !membersContainerRef.current.contains(event.target as Node)
-      ) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [onClose]);
-
   useEffect(() => {
     const initialize = async () => {
       if (groupId) {
@@ -417,6 +397,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
         );
         if (response.data.code === 200) {
           setMembers(response.data.data);
+          membersCache.delete(Number(groupId));
         }
 
         setIsRemoveMode(false);
@@ -429,6 +410,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
         });
 
         if (response.data.code === 200) {
+          membersCache.delete(Number(groupId));
           navigate("/search-rooms");
         }
       }
@@ -475,8 +457,14 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
 
   return (
     <>
-      <Overlay>
-        <MembersListContainer ref={membersContainerRef}>
+      <Overlay
+        onClick={(e) => {
+          if (e.target === e.currentTarget && !showConfirmation) {
+            onClose();
+          }
+        }}
+      >
+        <MembersListContainer>
           <TitleContainer>
             <MembersLogo />
             <Title>Group Members</Title>
@@ -526,7 +514,10 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
       </Overlay>
 
       {showConfirmation && (
-        <ConfirmationOverlay onClick={() => setShowConfirmation(false)}>
+        <ConfirmationOverlay
+          onClick={() => setShowConfirmation(false)}
+          style={{ zIndex: 3000 }}
+        >
           <ConfirmationContainer onClick={(e) => e.stopPropagation()}>
             <CloseButton onClick={() => setShowConfirmation(false)}>
               <X size={20} />
