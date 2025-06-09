@@ -14,62 +14,105 @@ const Container = styled.div`
 
 const TopContainer = styled.div`
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2vh 4vw;
   width: 100%;
   height: 12vh;
-  align-items: center;
-  justify-content: center;
+  box-sizing: border-box;
+
+  @media (max-width: 800px) {
+    padding: 2vh 2vw;
+  }
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    height: auto;
+    gap: 1rem;
+    padding: 2vh 1rem;
+  }
 `;
 
 const Title = styled.h1`
-  font-family: Roboto;
-  font-weight: 800;
-  font-size: 2.5rem;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 700;
+  font-size: 2rem;
+  letter-spacing: 0.5px;
+  color: #222;
 
   @media (max-width: 800px) {
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: 1.8rem;
   }
 
   @media (max-width: 500px) {
-    font-size: 1.7rem;
+    font-size: 1.5rem;
   }
 `;
 
 const SearchContainer = styled.div`
-  position: fixed;
   display: flex;
   align-items: center;
-  right: 5rem;
-  top: 9.5rem;
-  width: auto;
-  z-index: 1000;
+  position: relative;
+  background-color: white;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  width: 280px;
+  max-width: 100%;
+  flex-shrink: 0;
+
+  &:focus-within {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border-color: #016532;
+    transform: translateY(-1px);
+  }
 
   @media (max-width: 1000px) {
-    right: 1.5rem;
+    width: 240px;
+  }
+
+  @media (max-width: 800px) {
+    width: 200px;
+  }
+
+  @media (max-width: 600px) {
+    width: 100%;
+    max-width: 300px;
+    padding: 0.7rem 0.8rem;
   }
 `;
 
 const SearchIcon = styled(CiSearch)`
-  font-size: 1.5rem;
-  margin-left: 0.5rem;
-  color: black;
+  font-size: 1.4rem;
+  color: #6b7280;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
+
+  @media (max-width: 600px) {
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+  }
 `;
 
 const SearchInput = styled.input`
-  padding: 5% 1%;
+  border: none;
+  outline: none;
   font-size: 1rem;
-  border: 1px solid #b7b7b7;
-  color: #757575;
-  background: white;
-  border-radius: 6px;
-  outline: #016532;
-  cursor: pointer;
+  color: #374151;
+  background: transparent;
+  width: 100%;
+  flex: 1;
+  min-width: 0;
 
-  &:focus {
-    border-color: #333;
+  &::placeholder {
+    color: #9ca3af;
   }
 
-  font-size: 80%;
+  @media (max-width: 600px) {
+    font-size: 0.9rem;
+  }
 `;
 
 const SearchRoomsContainer = styled.div`
@@ -268,12 +311,12 @@ const SearchRooms: React.FC = () => {
         <TopContainer>
           <Title>Public Chat Rooms</Title>
           <SearchContainer>
+            <SearchIcon />
             <SearchInput
               placeholder="Search Public Rooms"
               value={searchKeyword}
               onChange={handleSearchChange}
             />
-            <SearchIcon />
           </SearchContainer>
         </TopContainer>
         <SearchRoomsContainer>

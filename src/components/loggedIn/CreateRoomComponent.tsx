@@ -7,6 +7,8 @@ import {
   IoIosRemoveCircleOutline,
 } from "react-icons/io";
 import { RxCross2 } from "react-icons/rx";
+import { MdGroup, MdLock, MdPublic } from "react-icons/md";
+import { FiUsers } from "react-icons/fi";
 import axios from "axios";
 import apiClient from "../loggedOut/apiClient";
 import { useParams } from "react-router-dom";
@@ -19,34 +21,60 @@ const Overlay = styled.div`
   top: 0;
   left: 0;
   width: 100%;
-  height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
+  height: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 2000;
+  animation: fadeIn 0.2s ease-out;
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 `;
 
 const Modal = styled.div`
   position: relative;
   width: 75%;
-
   max-width: 50rem;
-  background-color: #ffffff;
-  border-radius: 0.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
+  min-width: 320px;
+  background: white;
+  border: none;
+  border-radius: 20px;
+  padding: 2.5rem;
   height: auto;
   max-height: 90vh;
   overflow-y: auto;
   overflow-x: visible;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: slideIn 0.3s ease-out;
+  
+  @keyframes slideIn {
+    from {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
   @media (max-width: 700px) {
     width: 85%;
-    padding-left: 0.6rem;
+    padding: 2rem;
   }
 
   @media (max-width: 400px) {
-    width: 80%;
+    width: 90%;
+    padding: 1.5rem;
   }
 `;
 
@@ -61,177 +89,401 @@ const CloseButton = styled.button`
   align-items: center;
   justify-content: center;
   padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  outline: none;
 
   &:hover {
-    opacity: 0.7;
+    background-color: #f3f4f6;
+    transform: scale(1.1);
+  }
+
+  &:focus {
+    outline: none;
   }
 `;
 
 const StyledCross = styled(RxCross2)`
-  color: black;
+  color: #6b7280;
+  font-size: 1.25rem;
+`;
+
+const Header = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 2rem;
+`;
+
+const GroupIcon = styled(MdGroup)`
+  color: #016532;
+  font-size: 1.5rem;
+`;
+
+const ModalTitle = styled.h2`
+  font-family: 'Roboto', sans-serif;
+  font-weight: 600;
+  font-size: 1.5rem;
+  color: #1f2937;
+  margin: 0;
+  
+  @media (max-width: 500px) {
+    font-size: 1.25rem;
+  }
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
+  gap: 1.5rem;
+`;
+
+const InputGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 `;
 
 const Label = styled.label`
-  font-size: 1rem;
+  font-family: 'Roboto', sans-serif;
   font-weight: 500;
+  font-size: 0.875rem;
   color: #374151;
   margin: 0;
 `;
 
-const Input = styled.input`
+interface InputProps {
+  hasError?: boolean;
+}
+
+const Input = styled.input<InputProps>`
   font-size: 1rem;
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  color: #6b7280;
-  background-color: white;
+  font-family: 'Roboto', sans-serif;
+  padding: 0.875rem 1rem;
+  border: 2px solid ${(props) => (props.hasError ? "#ef4444" : "#e5e7eb")};
+  border-radius: 12px;
+  color: #1f2937;
+  background-color: #f9fafb;
   outline: none;
-  width: 80%;
-  margin-top: 0.3rem;
-  margin-bottom: 1.5rem;
+  transition: all 0.2s ease;
+  box-sizing: border-box;
 
   &:focus {
-    border-color: #4ade80;
-    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.5);
+    border-color: ${(props) => (props.hasError ? "#ef4444" : "#016532")};
+    background-color: white;
+    box-shadow: 0 0 0 3px ${(props) => 
+      props.hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
   }
 
-  @media (max-width: 700px) {
-    width: 96%;
+  &::placeholder {
+    color: #9ca3af;
+  }
+
+  &:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 500px) {
+    font-size: 0.9rem;
+    padding: 0.75rem 0.875rem;
   }
 `;
 
-const Textarea = styled.textarea`
+const Textarea = styled.textarea<InputProps>`
   font-size: 1rem;
-  padding: 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  color: #6b7280;
-  background-color: white;
+  font-family: 'Roboto', sans-serif;
+  padding: 0.875rem 1rem;
+  border: 2px solid ${(props) => (props.hasError ? "#ef4444" : "#e5e7eb")};
+  border-radius: 12px;
+  color: #1f2937;
+  background-color: #f9fafb;
   outline: none;
-  width: 80%;
-  margin-top: 0.3rem;
-  margin-bottom: 1.5rem;
+  transition: all 0.2s ease;
   resize: vertical;
-  height: 80px; /* Adjust the height as needed */
+  min-height: 80px;
+  box-sizing: border-box;
 
   &:focus {
-    border-color: #4ade80;
-    box-shadow: 0 0 0 2px rgba(74, 222, 128, 0.5);
+    border-color: ${(props) => (props.hasError ? "#ef4444" : "#016532")};
+    background-color: white;
+    box-shadow: 0 0 0 3px ${(props) => 
+      props.hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
   }
 
-  @media (max-width: 700px) {
-    width: 96%;
+  &::placeholder {
+    color: #9ca3af;
+  }
+
+  &:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  @media (max-width: 500px) {
+    font-size: 0.9rem;
+    padding: 0.75rem 0.875rem;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  color: #ef4444;
+  font-size: 0.875rem;
+  font-family: 'Roboto', sans-serif;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  
+  &::before {
+    content: "⚠";
+    font-size: 0.75rem;
   }
 `;
 
 const RadioGroup = styled.div`
-  display: flex;
-  gap: 20%;
-  margin: 1vh 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.5rem;
 
   @media (max-width: 500px) {
-    gap: 10%;
+    gap: 0.75rem;
   }
 `;
 
-const RadioTextContainer = styled.div`
+const RadioCard = styled.label<{ checked: boolean; disabled?: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 2px solid ${(props) => props.checked ? "#016532" : "#e5e7eb"};
+  border-radius: 12px;
+  background-color: ${(props) => props.checked ? "#f0fdf4" : "#f9fafb"};
+  cursor: ${(props) => props.disabled ? "not-allowed" : "pointer"};
+  transition: all 0.2s ease;
+  opacity: ${(props) => props.disabled ? 0.6 : 1};
+
+  &:hover:not(:disabled) {
+    border-color: ${(props) => props.checked ? "#016532" : "#9ca3af"};
+    background-color: ${(props) => props.checked ? "#f0fdf4" : "#f3f4f6"};
+  }
+
+  input {
+    display: none;
+  }
+`;
+
+const RadioIcon = styled.div<{ checked: boolean }>`
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid ${(props) => props.checked ? "#016532" : "#d1d5db"};
+  border-radius: 50%;
+  background-color: ${(props) => props.checked ? "#016532" : "transparent"};
+  position: relative;
+  transition: all 0.2s ease;
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0.5rem;
+    height: 0.5rem;
+    background-color: white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    opacity: ${(props) => props.checked ? 1 : 0};
+    transition: opacity 0.2s ease;
+  }
+`;
+
+const RadioContent = styled.div`
   display: flex;
   flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
 `;
 
-const RadioOption = styled.label`
+const RadioTitle = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-
-  input {
-    appearance: none;
-    width: 1.25rem;
-    height: 1.25rem;
-    border: 2px solid #757575;
-    border-radius: 50%;
-    background-color: transparent;
-    position: relative;
-    cursor: pointer;
-    transition: border-color 0.2s ease;
-
-    &:checked {
-      border-color: #016532;
-    }
-
-    &:checked::before {
-      content: "";
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      width: 0.5rem;
-      height: 0.5rem;
-      background-color: transparent;
-      border: 6px solid #016532;
-      border-radius: 50%;
-      transform: translate(-50%, -50%);
-    }
-  }
-`;
-
-const RadioOptionDesc = styled.span`
+  font-family: 'Roboto', sans-serif;
+  font-weight: 600;
   font-size: 0.875rem;
-  color: #6b7280;
+  color: #1f2937;
+`;
 
-  @media (max-width: 500px) {
-    font-size: 0.7rem;
+const RadioDescription = styled.div`
+  font-family: 'Roboto', sans-serif;
+  font-size: 0.75rem;
+  color: #6b7280;
+`;
+
+const CheckboxContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  background-color: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #f1f5f9;
+    border-color: #cbd5e1;
   }
 `;
 
-const CheckboxLabel = styled.div`
+const CheckboxInput = styled.input`
+  width: 1.25rem;
+  height: 1.25rem;
+  accent-color: #016532;
+  cursor: pointer;
+`;
+
+const CheckboxLabel = styled.label`
+  font-family: 'Roboto', sans-serif;
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 1rem;
-  font-weight: 500;
-  margin: 1vh 0;
+`;
 
-  input {
-    width: 1.25rem;
-    height: 1.25rem;
-    border-radius: 0.25rem;
-    background-color: #016532;
-    border: none;
-    outline: none;
-    cursor: pointer;
-  }
+const AssistantIcon = styled(FiUsers)`
+  color: #016532;
+  font-size: 1rem;
 `;
 
 const FieldArrayContainer = styled.div`
-  max-height: 25vh;
-  overflow-y: auto;
-  overflow-x: visible;
-  padding: 0.75rem;
-  @media (max-width: 700px) {
-    padding: 0.3rem;
-  }
+  margin-top: 1.5rem;
+  padding: 1.5rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+`;
+
+const AssistantHeader = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+`;
+
+const AssistantTitle = styled.h3`
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+`;
+
+const ColumnHeader = styled.div`
+  font-weight: 600;
+  font-size: 0.875rem;
+  color: #475569;
+  text-align: left;
 `;
 
 const AddAssistantRow = styled.div`
   display: grid;
-  grid-template-columns: 2rem minmax(0, 1.5fr) minmax(0, 1.5fr) 6rem 4rem;
+  grid-template-columns: 40px 1fr 1fr 120px 100px;
+  gap: 1rem;
   align-items: start;
-  margin-bottom: 2.5rem; /* Increased to accommodate error messages */
+  padding: 1rem 0;
+  border-bottom: 1px solid #e2e8f0;
+  transition: background-color 0.2s ease;
 
-  @media (max-width: 700px) {
-    width: 100%;
+  &:hover {
+    background-color: #f1f5f9;
+    border-radius: 8px;
+    margin: 0 -0.5rem;
+    padding: 1rem 0.5rem;
   }
-  @media (max-width: 400px) {
-    grid-template-columns: 2rem minmax(0, 3fr) minmax(0, 3fr) 2.5rem 3rem;
+
+  &:last-child {
+    border-bottom: none;
   }
+
+  @media (max-width: 800px) {
+    grid-template-columns: 30px 1fr 1fr 80px 80px;
+    gap: 0.5rem;
+  }
+`;
+
+const HeaderRow = styled.div`
+  display: grid;
+  grid-template-columns: 40px 1fr 1fr 120px 100px;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #cbd5e1;
+  align-items: center;
+
+  @media (max-width: 800px) {
+    grid-template-columns: 30px 1fr 1fr 80px 80px;
+    gap: 0.5rem;
+  }
+`;
+
+const SmallInputContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  position: relative;
+`;
+
+const SmallInput = styled(Input)<InputProps>`
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+
+  @media (max-width: 800px) {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
+  }
+  
+  @media (max-width: 600px) {
+    font-size: 0.7rem;
+  }
+`;
+
+const SmallTextarea = styled(Textarea)<InputProps>`
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  margin: 0;
+  min-height: 60px;
+  resize: vertical;
+
+  @media (max-width: 800px) {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
+    min-height: 50px;
+  }
+  
+  @media (max-width: 600px) {
+    font-size: 0.7rem;
+    min-height: 45px;
+  }
+`;
+
+const BotFieldErrorMessage = styled.div`
+  color: #ef4444;
+  font-size: 0.7rem;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  width: 100%;
+  line-height: 1.2;
+  margin-top: 0.2rem;
+  z-index: 1;
 `;
 
 const ToggleSwitchContainer = styled.div`
@@ -239,15 +491,11 @@ const ToggleSwitchContainer = styled.div`
   width: 100%;
   flex-direction: column;
   justify-content: center;
-  min-width: 6rem;
+  align-items: center;
   gap: 0;
-  position: relative;
-  left: -5vw;
 
   @media (max-width: 400px) {
-    width: 40%;
-    min-width: none;
-    left: 1vw;
+    width: 100%;
   }
 `;
 
@@ -256,28 +504,30 @@ const ToggleSwitch = styled.label`
   align-items: center;
   justify-content: center;
   cursor: pointer;
+  
   input {
     display: none;
   }
 
   span {
-    width: 4rem;
-    height: 2rem;
+    width: 3rem;
+    height: 1.5rem;
     background-color: #d1d5db;
-    border-radius: 1rem;
+    border-radius: 0.75rem;
     position: relative;
     transition: background-color 0.3s ease;
 
     &::before {
       content: "";
       position: absolute;
-      top: 0.25rem;
-      left: 0.25rem;
-      width: 1.5rem;
-      height: 1.5rem;
+      top: 0.125rem;
+      left: 0.125rem;
+      width: 1.25rem;
+      height: 1.25rem;
       background-color: white;
       border-radius: 50%;
       transition: transform 0.3s ease;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
   }
 
@@ -285,13 +535,8 @@ const ToggleSwitch = styled.label`
     background-color: #016532;
 
     &::before {
-      transform: translateX(2rem);
+      transform: translateX(1.5rem);
     }
-  }
-
-  @media (max-width: 400px) {
-    width: 1.5rem;
-    height: 0.8rem;
   }
 `;
 
@@ -301,9 +546,15 @@ const RemoveIcon = styled(IoIosRemoveCircleOutline)`
   cursor: pointer;
   justify-self: center;
   align-self: center;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #dc2626;
+    transform: scale(1.1);
+  }
 
   @media (max-width: 400px) {
-    font-size: 1.1rem;
+    font-size: 1.2rem;
   }
 `;
 
@@ -312,123 +563,68 @@ const AddIcon = styled(IoIosAddCircleOutline)`
   color: #10b981;
   cursor: pointer;
   margin-top: 0.5rem;
-  @media (max-width: 400px) {
-    font-size: 1.1rem;
-  }
-`;
-
-const SmallInputContainer = styled.div`
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  position: relative; /* For absolute positioning of error messages */
-`;
-
-interface StyledSpanProps {
-  isadminlabel?: string;
-}
-
-const StyledSpan = styled.span<StyledSpanProps>`
-  display: block;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #374151;
-  margin-bottom: 0.25rem;
-
-  ${(props) =>
-    props.isadminlabel &&
-    `
-    position: relative;
-    top: -1.2vh;
-  `}
-
-  @media (max-width: 700px) {
-    font-size: 0.5rem;
-    ${(props) =>
-      props.isadminlabel &&
-      `
-      position: relative;
-      top: -0.8vh;
-      left: 3vw;
-    `}
-  }
-
-  @media (max-width: 400px) {
-    font-size: 0.4rem;
-
-    ${(props) =>
-      props.isadminlabel &&
-      `
-      position: relative;
-      
-      left: -4vw;
-    `}
-  }
-`;
-
-interface SmallInputProps {
-  hasError?: boolean;
-}
-
-const SmallInput = styled(Input)<SmallInputProps>`
-  font-size: 0.9rem;
-  padding: 0.5rem;
-  margin: auto 0;
-  width: 60%;
-  border: 1px solid ${({ hasError }) => (hasError ? "red" : "#ccc")};
-  &:focus {
-    border-color: ${({ hasError }) => (hasError ? "red" : "#007BFF")};
-  }
-
-  @media (max-width: 800px) {
-    width: 75%;
-    font-size: 0.7rem;
-  }
-  @media (max-width: 600px) {
-    width: 75%;
-    font-size: 0.55rem;
-  }
-`;
-
-const RightAlignedSmallInput = styled(SmallInput)`
-  justify-self: end;
-  width: 50%;
-`;
-
-const CreateButton = styled.button`
-  width: 20%;
-  background-color: black;
-  color: white;
-  font-size: 1rem;
-  margin-top: 4vh;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  font-weight: 600;
+  transition: all 0.2s ease;
   align-self: center;
 
-  @media (max-width: 600px) {
-    width: 35%;
+  &:hover {
+    color: #059669;
+    transform: scale(1.1);
+  }
+
+  @media (max-width: 400px) {
+    font-size: 1.2rem;
+  }
+`;
+
+const ButtonContainer = styled.div`
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  justify-content: center;
+  
+  @media (max-width: 500px) {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+`;
+
+const BaseButton = styled.button`
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 600;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 2px solid transparent;
+  min-width: 120px;
+  
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  @media (max-width: 500px) {
+    padding: 0.75rem 1.5rem;
     font-size: 0.9rem;
   }
 `;
 
-const ErrorMessage = styled.div`
-  color: red;
-  font-size: 0.8rem;
-  margin-top: -3vh;
-  margin-bottom: 1vh;
-`;
+const CreateButton = styled(BaseButton)`
+  background-color: #016532;
+  color: white;
+  border-color: #016532;
 
-const BotFieldErrorMessage = styled.div`
-  color: red;
-  font-size: 0.7rem;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  line-height: 1.2;
-  margin-top: 0.2rem;
-  z-index: 1;
+  &:hover:not(:disabled) {
+    background-color: #014a24;
+    border-color: #014a24;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(1, 101, 50, 0.3);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(0);
+  }
 `;
 
 const validationSchema = (showAssistants: boolean) =>
@@ -1005,10 +1201,11 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
 
   // MODIFIED: Track changes in bot fields to update their status
   const handleBotFieldChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     index: number
   ) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type } = e.target;
+    const checked = (e.target as HTMLInputElement).checked;
 
     // Call the standard formik handler to update the value
     formik.handleChange(e);
@@ -1038,97 +1235,108 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
     <Overlay>
       <Modal ref={modalRef}>
         <CloseButton onClick={onClose}>
-          <StyledCross size={24} />
+          <StyledCross />
         </CloseButton>
+
+        <Header>
+          <GroupIcon />
+          <ModalTitle>
+            {effectiveIsModify ? "Edit Room" : "Create New Room"}
+          </ModalTitle>
+        </Header>
 
         <FormikProvider value={formik}>
           <Form onSubmit={formik.handleSubmit}>
-            <Label htmlFor="roomName">Group Name</Label>
-            <Textarea
-              id="roomName"
-              name="roomName"
-              placeholder="Explore Generative AI"
-              value={formik.values.roomName}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              disabled={effectiveIsModify}
-            />
-            {formik.touched.roomName && formik.errors.roomName && (
-              <div
-                style={{
-                  color: "red",
-                  fontSize: "0.8rem",
-                  marginTop: "-3vh",
-                  marginBottom: "1vh",
-                }}
-              >
-                {formik.errors.roomName}
-              </div>
-            )}
-
-            <Label htmlFor="roomDescription">Description</Label>
-            <Textarea
-              id="roomDescription"
-              name="roomDescription"
-              placeholder="Let's discuss AGI"
-              value={formik.values.roomDescription}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-              disabled={shouldCheckRole && userRole !== "ADMIN"}
-            />
-            {formik.touched.roomDescription &&
-              formik.errors.roomDescription && (
-                <div
-                  style={{
-                    color: "red",
-                    fontSize: "0.8rem",
-                    marginTop: "-3vh",
-                    marginBottom: "1vh",
-                  }}
-                >
-                  {formik.errors.roomDescription}
-                </div>
+            <InputGroup>
+              <Label htmlFor="roomName">Group Name</Label>
+              <Textarea
+                id="roomName"
+                name="roomName"
+                placeholder="Explore Generative AI"
+                value={formik.values.roomName}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                disabled={effectiveIsModify}
+                hasError={!!(formik.touched.roomName && formik.errors.roomName)}
+              />
+              {formik.touched.roomName && formik.errors.roomName && (
+                <ErrorMessage>{formik.errors.roomName}</ErrorMessage>
               )}
+            </InputGroup>
 
-            <Label>Group Type</Label>
-            <RadioGroup>
-              <RadioTextContainer>
-                <RadioOption>
+            <InputGroup>
+              <Label htmlFor="roomDescription">Description</Label>
+              <Textarea
+                id="roomDescription"
+                name="roomDescription"
+                placeholder="Let's discuss AGI"
+                value={formik.values.roomDescription}
+                onChange={formik.handleChange}
+                onBlur={formik.handleBlur}
+                disabled={shouldCheckRole && userRole !== "ADMIN"}
+                hasError={!!(formik.touched.roomDescription && formik.errors.roomDescription)}
+              />
+              {formik.touched.roomDescription && formik.errors.roomDescription && (
+                <ErrorMessage>{formik.errors.roomDescription}</ErrorMessage>
+              )}
+            </InputGroup>
+
+            <InputGroup>
+              <Label>Group Type</Label>
+              <RadioGroup>
+                <RadioCard 
+                  checked={formik.values.roomType === "1"}
+                  disabled={effectiveIsModify}
+                >
                   <input
                     type="radio"
                     name="roomType"
-                    value="1" // Public is 1
+                    value="1"
                     checked={formik.values.roomType === "1"}
                     onChange={(e) => {
                       formik.handleChange(e);
                     }}
-                    disabled={effectiveIsModify} // Disable only when actually modifying
+                    disabled={effectiveIsModify}
                   />
-                  Public
-                </RadioOption>
-                {/* <RadioOptionDesc>Show on main page</RadioOptionDesc> */}
-              </RadioTextContainer>
+                  <RadioIcon checked={formik.values.roomType === "1"} />
+                  <RadioContent>
+                    <RadioTitle>
+                      <MdPublic />
+                      Public
+                    </RadioTitle>
+                    <RadioDescription>Show on main page</RadioDescription>
+                  </RadioContent>
+                </RadioCard>
 
-              <RadioTextContainer>
-                <RadioOption>
+                <RadioCard 
+                  checked={formik.values.roomType === "0"}
+                  disabled={effectiveIsModify}
+                >
                   <input
                     type="radio"
                     name="roomType"
-                    value="0" // Private is 0
+                    value="0"
                     checked={formik.values.roomType === "0"}
                     onChange={(e) => {
                       formik.handleChange(e);
                       console.log("Radio changed to:", e.target.value);
                     }}
-                    disabled={effectiveIsModify} // Disable only when actually modifying
+                    disabled={effectiveIsModify}
                   />
-                  Private
-                </RadioOption>
-                {/* <RadioOptionDesc>Need room password</RadioOptionDesc> */}
-              </RadioTextContainer>
-            </RadioGroup>
+                  <RadioIcon checked={formik.values.roomType === "0"} />
+                  <RadioContent>
+                    <RadioTitle>
+                      <MdLock />
+                      Private
+                    </RadioTitle>
+                    <RadioDescription>Need room password</RadioDescription>
+                  </RadioContent>
+                </RadioCard>
+              </RadioGroup>
+            </InputGroup>
+
             {formik.values.roomType === "0" && (
-              <>
+              <InputGroup>
                 <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
@@ -1137,59 +1345,52 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   value={formik.values.password}
+                  hasError={!!(formik.touched.password && formik.errors.password)}
                 />
                 {formik.touched.password && formik.errors.password && (
                   <ErrorMessage>{formik.errors.password}</ErrorMessage>
                 )}
-              </>
+              </InputGroup>
             )}
+
             {(!effectiveIsModify || userRole === "ADMIN") && (
-              <CheckboxLabel>
-                <input
+              <CheckboxContainer>
+                <CheckboxInput
                   type="checkbox"
                   checked={showAssistants}
                   onChange={handleAssistantToggle}
                 />
-                Add AI Assistant(s)
-              </CheckboxLabel>
+                <CheckboxLabel>
+                  <AssistantIcon />
+                  Add AI Assistant(s)
+                </CheckboxLabel>
+              </CheckboxContainer>
             )}
 
             {showAssistants && (
-              <>
+              <FieldArrayContainer>
+                <AssistantHeader>
+                  <AssistantIcon />
+                  <AssistantTitle>AI Assistants Configuration</AssistantTitle>
+                </AssistantHeader>
+
                 <FieldArray
                   name="bots"
                   render={(arrayHelpers) => (
-                    <FieldArrayContainer>
-                      {/* 添加标题行 */}
-                      <AddAssistantRow>
-                        <RemoveIcon
-                          style={{
-                            visibility: "hidden",
-                            width: "24px",
-                            height: "24px",
-                          }}
-                        />
-                        <SmallInputContainer>
-                          <StyledSpan>Assistant Name*</StyledSpan>
-                        </SmallInputContainer>
-                        <SmallInputContainer>
-                          <StyledSpan>Prompt*</StyledSpan>
-                        </SmallInputContainer>
-                        <ToggleSwitchContainer>
-                          <StyledSpan>Admin Only</StyledSpan>
-                        </ToggleSwitchContainer>
-                        <SmallInputContainer>
-                          <StyledSpan>Context*</StyledSpan>
-                        </SmallInputContainer>
-                      </AddAssistantRow>
+                    <>
+                      <HeaderRow>
+                        <div></div>
+                        <ColumnHeader>Assistant Name</ColumnHeader>
+                        <ColumnHeader>Prompt</ColumnHeader>
+                        <ColumnHeader>Admin Only</ColumnHeader>
+                        <ColumnHeader>Context</ColumnHeader>
+                      </HeaderRow>
 
-                      {/* 渲染每一行 bot 配置 */}
                       {formik.values.bots.map((bot, index) => (
                         <AddAssistantRow key={index}>
                           <RemoveIcon
                             onClick={() => {
                               if (formik.values.bots.length > 1) {
-                                // Remove from form
                                 arrayHelpers.remove(index);
                               }
                             }}
@@ -1201,6 +1402,12 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               value={bot.name}
                               onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
+                              hasError={!!(
+                                formik.touched.bots?.[index]?.name &&
+                                formik.errors.bots?.[index] &&
+                                typeof formik.errors.bots[index] === "object" &&
+                                (formik.errors.bots[index] as any).name
+                              )}
                             />
                             {formik.touched.bots?.[index]?.name &&
                               formik.errors.bots?.[index] &&
@@ -1212,12 +1419,18 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               )}
                           </SmallInputContainer>
                           <SmallInputContainer>
-                            <SmallInput
+                            <SmallTextarea
                               name={`bots[${index}].prompt`}
                               placeholder="Prompt"
                               value={bot.prompt}
                               onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
+                              hasError={!!(
+                                formik.touched.bots?.[index]?.prompt &&
+                                formik.errors.bots?.[index] &&
+                                typeof formik.errors.bots[index] === "object" &&
+                                (formik.errors.bots[index] as any).prompt
+                              )}
                             />
                             {formik.touched.bots?.[index]?.prompt &&
                               formik.errors.bots?.[index] &&
@@ -1229,23 +1442,17 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               )}
                           </SmallInputContainer>
                           <ToggleSwitchContainer>
-                            {/* MODIFIED: special handling for checkbox */}
                             <ToggleSwitch>
                               <input
                                 type="checkbox"
                                 name={`bots[${index}].adminOnly`}
                                 checked={bot.adminOnly}
                                 onChange={(e) => {
-                                  // Special handling for checkbox
                                   const isChecked = e.target.checked;
-
-                                  // First update the value
                                   formik.setFieldValue(
                                     `bots[${index}].adminOnly`,
                                     isChecked
                                   );
-
-                                  // Then mark as modified if it's an existing bot
                                   if (bot.botId && bot.status === "unchanged") {
                                     const updatedBots = [...formik.values.bots];
                                     updatedBots[index] = {
@@ -1264,7 +1471,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                             </ToggleSwitch>
                           </ToggleSwitchContainer>
                           <SmallInputContainer>
-                            <RightAlignedSmallInput
+                            <SmallInput
                               type="number"
                               name={`bots[${index}].context`}
                               placeholder="Context"
@@ -1273,6 +1480,12 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               onBlur={formik.handleBlur}
                               min={1}
                               max={20}
+                              hasError={!!(
+                                formik.touched.bots?.[index]?.context &&
+                                formik.errors.bots?.[index] &&
+                                typeof formik.errors.bots[index] === "object" &&
+                                (formik.errors.bots[index] as any).context
+                              )}
                             />
                             {formik.touched.bots?.[index]?.context &&
                               formik.errors.bots?.[index] &&
@@ -1285,6 +1498,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                           </SmallInputContainer>
                         </AddAssistantRow>
                       ))}
+                      
                       <AddIcon
                         onClick={() =>
                           arrayHelpers.push({
@@ -1296,33 +1510,26 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                           })
                         }
                       />
-                    </FieldArrayContainer>
+                    </>
                   )}
                 />
 
-                {/* Error message below FieldArrayContainer for any bot validation errors */}
                 {hasBotErrors() && (
-                  <div
-                    style={{
-                      color: "red",
-                      fontSize: "0.8rem",
-                      marginTop: "0.5rem",
-                      marginBottom: "1vh",
-                    }}
-                  >
-                    All assistant fields are required
-                  </div>
+                  <ErrorMessage>All assistant fields are required</ErrorMessage>
                 )}
 
                 {typeof formik.errors.bots === "string" && (
                   <ErrorMessage>{formik.errors.bots}</ErrorMessage>
                 )}
-              </>
+              </FieldArrayContainer>
             )}
-            {userRole === "ADMIN" && (
-              <CreateButton type="submit">
-                {effectiveIsModify ? "Update" : "Create"}
-              </CreateButton>
+
+            {(!effectiveIsModify || userRole === "ADMIN") && (
+              <ButtonContainer>
+                <CreateButton type="submit">
+                  {effectiveIsModify ? "Update Room" : "Create Room"}
+                </CreateButton>
+              </ButtonContainer>
             )}
           </Form>
         </FormikProvider>

@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FiTag } from "react-icons/fi";
-import { AiOutlinePlus, AiOutlineMinusCircle } from "react-icons/ai";
+import { AiOutlineMinusCircle } from "react-icons/ai";
 import styled from "styled-components";
 import { CiSearch } from "react-icons/ci";
 import { RxCross2 } from "react-icons/rx";
@@ -10,6 +10,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useJoinRoom } from "./useJoinRoom";
 import { RoomInfoResponse } from "./CreateRoomComponent";
+import { TiPlus } from "react-icons/ti";
 
 interface RoomContainerProps {
   $isEditMode: boolean;
@@ -94,12 +95,45 @@ const Tag = styled(FiTag)`
   }
 `;
 
-const StyledPlus = styled(AiOutlinePlus)`
-  color: #016532;
-  font-size: 2rem;
+
+const StyledPlusContainer = styled.div`
+  background-color: #d9d9d9;
+  width: 3rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
   cursor: pointer;
-  @media (max-width: 500px) {
-    font-size: 1.7rem;
+
+  &:hover {
+    background-color: #c9c9c9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+
+  @media (max-width: 600px) {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+`;
+
+const StyledPlus = styled(TiPlus)`
+  color: #016532;
+  font-size: 1.6rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #014a24;
+    transform: scale(1.1);
+  }
+
+  @media (max-width: 600px) {
+    font-size: 1.4rem;
   }
 `;
 
@@ -356,23 +390,34 @@ const Overlay = styled.div`
 
 const Modal = styled.div`
   background: white;
-  border: 1px solid #016532;
-  border-radius: 8px;
-  padding: 1rem 1.5rem;
-  width: 20%;
+  border: none;
+  border-radius: 16px;
+  padding: 2rem;
+  width: 28%;
+  max-width: 500px;
+  min-width: 320px;
   position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
 
+  @media (max-width: 1200px) {
+    width: 35%;
+  }
   @media (max-width: 1000px) {
-    width: 30%;
+    width: 45%;
   }
   @media (max-width: 700px) {
-    width: 40%;
+    width: 55%;
   }
   @media (max-width: 600px) {
-    width: 50%;
+    width: 70%;
+    padding: 1.5rem;
   }
   @media (max-width: 400px) {
-    width: 60%;
+    width: 85%;
+    padding: 1rem;
   }
 `;
 
@@ -450,12 +495,23 @@ const SubmitButton = styled.button`
 
 const CloseButton = styled.button`
   position: absolute;
-  top: 0;
-  right: 0;
-  width: 1%;
-  border: none;
+  top: 0.5rem;
+  right: 0.5rem;
   background: none;
+  border: none;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  outline: none;
+
+  &:hover {
+    opacity: 0.7;
+  }
+  &:focus {
+    outline: none;
+  }
 `;
 
 const ErrorCloseButton = styled.button`
@@ -473,54 +529,87 @@ const ErrorCloseButton = styled.button`
 `;
 
 const StyledCross = styled(RxCross2)`
-  color: black;
-  font-size: 1rem;
+  color: #888;
+  font-size: 2rem;
 `;
 
 const SearchContainer = styled.div`
   display: flex;
-  position: relative;
-  gap: 0.5rem;
   align-items: center;
-`;
+  position: relative;
+  background-color: white;
+  padding: 0.8rem 1rem;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  width: 400px;
+  max-width: 100%;
+  flex-shrink: 0;
 
-const SearchInput = styled.input`
-  width: 95%;
-  padding: 0.6rem 0.5rem 0.6rem 3rem;
-  font-size: 1rem;
-  border: 1px solid #9f9e9e;
-  color: black;
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
+  &:focus-within {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+    border-color: #016532;
+    transform: translateY(-1px);
+  }
 
-  @media (max-width: 500px) {
-    font-size: 0.9rem;
-    padding: 0.6rem 0.5rem 0.6rem 2.2rem;
+  @media (max-width: 1000px) {
+    width: 240px;
+  }
+
+  @media (max-width: 800px) {
+    width: 200px;
+  }
+
+  @media (max-width: 600px) {
+    width: 100%;
+    max-width: 300px;
+    padding: 0.7rem 0.8rem;
   }
 `;
 
 const SearchIcon = styled(CiSearch)`
-  position: absolute;
-  font-size: 2rem;
-  left: 0.5rem;
+  font-size: 1.4rem;
+  color: #6b7280;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
 
-  @media (max-width: 500px) {
-    font-size: 1.5rem;
+  @media (max-width: 600px) {
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+  }
+`;
+
+const SearchInput = styled.input`
+  border: none;
+  outline: none;
+  font-size: 1rem;
+  color: #374151;
+  background: transparent;
+  width: 100%;
+  flex: 1;
+  min-width: 0;
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+
+  @media (max-width: 600px) {
+    font-size: 0.9rem;
   }
 `;
 
 const RoomList = styled.ul`
   list-style: none;
-  padding: 0;
+  padding: 1rem;
   max-height: 26vh;
   overflow-y: auto;
   margin: 2vh 0;
   background: white;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   border-radius: 8px;
-  padding: 1rem;
-
+  width: 400px;
+  max-width: 100%;
   @media (max-width: 1000px) {
     padding: 0.8rem;
   }
@@ -535,9 +624,24 @@ const RoomList = styled.ul`
 const AddRoomContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 2%;
-  padding-left: 1%;
-  margin-bottom: 1.5vh;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #f1f5f9;
+  }
+
+  &:first-child {
+    margin-top: 0;
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 const AddRoomTitle = styled.p`
@@ -549,7 +653,7 @@ const AddRoomTitle = styled.p`
 
 const BindedRoomTitle = styled(AddRoomTitle)`
   color: #888;
-  font-style: italic;
+  // font-style: italic;
 `;
 
 const Checkbox = styled.input.attrs({ type: "checkbox" })`
@@ -634,6 +738,26 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Add useRef to reference the modal container
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
+
   useEffect(() => {
     fetchTagGroups();
   }, [roomSearch, tagId]);
@@ -705,9 +829,9 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
 
   return (
     <Overlay>
-      <Modal>
+      <Modal ref={modalRef}>
         <CloseButton onClick={onClose} disabled={isProcessing}>
-          <StyledCross />
+          <StyledCross size={20} />
         </CloseButton>
         <SearchContainer>
           <SearchIcon />
@@ -754,7 +878,7 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
           )}
         </RoomList>
         <AddButton onClick={handleAddRooms} disabled={isProcessing}>
-          {isProcessing ? "ADDING..." : "ADD"}
+          {isProcessing ? "Adding..." : "Add"}
         </AddButton>
       </Modal>
     </Overlay>
@@ -1083,7 +1207,9 @@ const MyClass: React.FC<MyClassProps> = ({
 
         {/* 将按钮移到顶部 */}
         <ButtonContainer>
-          <StyledPlus onClick={() => setIsAddRoomVisible(true)} />
+          <StyledPlusContainer onClick={() => setIsAddRoomVisible(true)}>
+            <StyledPlus/>
+          </StyledPlusContainer>
           {isEditMode ? (
             // 编辑模式下显示提交和取消按钮
             <>

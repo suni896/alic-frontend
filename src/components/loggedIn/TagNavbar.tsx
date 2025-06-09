@@ -46,8 +46,9 @@ const Container = styled.div`
 
 const BackArrow = styled(MdOutlineArrowBack)`
   color: white;
-  font-size: 2rem;
+  font-size: 1.5rem;
   margin-right: 1rem;
+  cursor: pointer;
 `;
 
 const Title = styled.h1`

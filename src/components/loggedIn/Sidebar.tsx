@@ -11,7 +11,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { TiPlus } from "react-icons/ti";
 import { PiSignOutBold } from "react-icons/pi";
 import { RxCross2 } from "react-icons/rx";
-import { MdPeopleAlt } from "react-icons/md";
+import { MdPeopleAlt, MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight, MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import CreateRoomComponent from "./CreateRoomComponent";
 import { FaTag } from "react-icons/fa";
 import JoinRooms from "./JoinRooms";
@@ -211,50 +211,89 @@ const SearchContainer = styled.div`
   position: relative;
   align-items: center;
   margin-top: 1.5rem;
+  gap: 1rem;
   z-index: 0;
+  width: 84%;
+  justify-content: space-between;
 `;
 
 const SearchInput = styled.input`
-  width: 55%;
-  padding: 0.6rem 0.5rem 0.6rem 2rem;
-  font-size: 0.7rem;
-  border: 1px solid #9f9e9e;
-  color: black;
-  background: white;
-  border-radius: 6px;
+  width: calc(100% - 4rem);
+  max-width: 200px;
+  padding: 0.8rem 0.5rem 0.8rem 2.5rem;
+  font-size: 0.9rem;
+  border: 1px solid #d1d5db;
+  color: #374151;
+  background: #f9fafb;
+  border-radius: 8px;
   cursor: pointer;
-  margin-right: 4%;
+  outline: none;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+
+  &:focus {
+    background: white;
+    border-color: #016532;
+    box-shadow: 0 0 0 3px rgba(1, 101, 50, 0.1), 0 4px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+  }
+
+  &::placeholder {
+    color: #9ca3af;
+  }
 
   @media (max-width: 1000px) {
-    width: 60%;
-    font-size: 0.55rem;
-    padding: 0.6rem 0rem 0.6rem 1.5rem;
-    word-break: break-word;
-    word-wrap: break-word;
+    max-width: 180px;
+    font-size: 0.8rem;
+    padding: 0.7rem 0.5rem 0.7rem 2rem;
   }
+  
   @media (max-width: 700px) {
-    font-size: 0.4rem;
-    padding: 0.6rem 0rem 0.6rem 0.7rem;
+    max-width: 160px;
+    font-size: 0.7rem;
+    padding: 0.6rem 0.4rem 0.6rem 1.8rem;
   }
 `;
 
 const StyledPlusContainer = styled.div`
   background-color: #d9d9d9;
-  width: 14%;
-  height: 88%;
+  width: 3rem;
+  height: 2.6rem;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  cursor: pointer;
+
+  &:hover {
+    background-color: #c9c9c9;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
 
   @media (max-width: 1000px) {
-    width: 12%;
+    width: 2.8rem;
+    height: 2.6rem;
   }
 `;
 
 const StyledPlus = styled(TiPlus)`
   color: #016532;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    color: #014a24;
+    transform: scale(1.1);
+  }
+
+  @media (max-width: 1000px) {
+    font-size: 1.4rem;
+  }
 `;
 
 const ToggleContainer = styled.div`
@@ -295,10 +334,19 @@ const ToggleButton = styled.button<ToggleButtonProps>`
   transition: all 0.2s ease;
   box-shadow: ${({ isActive }) =>
     isActive ? "0 1px 3px rgba(0, 0, 0, 0.1)" : "none"};
+  outline: none;
 
   &:hover {
     background-color: ${({ isActive }) => (isActive ? "white" : "#e2e8f0")};
     color: ${({ isActive }) => (isActive ? "#016532" : "#374151")};
+  }
+
+  &:focus {
+    outline: none;
+    box-shadow: ${({ isActive }) =>
+      isActive 
+        ? "0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 2px rgba(1, 101, 50, 0.2)" 
+        : "0 0 0 2px rgba(1, 101, 50, 0.2)"};
   }
 
   @media (max-width: 900px) {
@@ -331,6 +379,7 @@ const RoomList = styled.ul`
   border-radius: 0.5rem;
   border: 1px solid #e2e8f0;
   width: 84%;
+  max-height: 50vh;
 `;
 
 const RoomContainer = styled.div<{ $isActive?: boolean }>`
@@ -429,16 +478,18 @@ const RoomDesc = styled.p`
 
 const SearchIcon = styled(CiSearch)`
   position: absolute;
-  font-size: 1.5rem;
-  left: 0.5rem;
+  font-size: 1.4rem;
+  color: #6b7280;
+  left: 0.75rem;
+  z-index: 1;
 
   @media (max-width: 1000px) {
     font-size: 1.2rem;
-    left: 0.3rem;
+    left: 0.6rem;
   }
   @media (max-width: 700px) {
-    font-size: 0.7rem;
-    left: 0.1rem;
+    font-size: 1rem;
+    left: 0.5rem;
   }
 `;
 
@@ -496,7 +547,10 @@ const ModalCloseButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-
+  outline: none;
+  &:focus {
+    outline: none;
+  }
   &:hover {
     opacity: 0.7;
   }
@@ -684,11 +738,11 @@ const PaginationContainer = styled.div`
   justify-content: center;
   align-items: center;
   gap: 0.5rem;
-  padding: 1rem 0.5rem;
+  padding: 0.75rem 0.5rem;
   background-color: white;
   position: sticky;
   bottom: 0;
-  width: 100%;
+  width: 84%;
   margin-top: auto;
   border-top: 1px solid #e2e8f0;
   border-radius: 0 0 0.5rem 0.5rem;
@@ -1171,8 +1225,8 @@ const Sidebar: React.FC = () => {
           }
         />
 
-        <StyledPlusContainer>
-          <StyledPlus onClick={() => setIsPlusButtonOverlayVisible(true)} />
+        <StyledPlusContainer onClick={() => setIsPlusButtonOverlayVisible(true)}>
+          <StyledPlus/>
         </StyledPlusContainer>
       </SearchContainer>
       {isPlusButtonOverlayVisible && (
@@ -1230,7 +1284,7 @@ const Sidebar: React.FC = () => {
                   onClick={() => handlePageChange(1)}
                   disabled={sidebarRoomsPagination.pageNum === 1}
                 >
-                  First
+                  <MdKeyboardDoubleArrowLeft />
                 </PageButton>
                 <PageButton
                   onClick={() =>
@@ -1238,7 +1292,7 @@ const Sidebar: React.FC = () => {
                   }
                   disabled={sidebarRoomsPagination.pageNum === 1}
                 >
-                  Previous
+                  <MdKeyboardArrowLeft />
                 </PageButton>
                 <Ellipsis>
                   Page {sidebarRoomsPagination.pageNum} of{" "}
@@ -1254,7 +1308,7 @@ const Sidebar: React.FC = () => {
                     sidebarRoomsPagination.pages
                   }
                 >
-                  Next
+                  <MdKeyboardArrowRight />
                 </PageButton>
                 <PageButton
                   onClick={() => handlePageChange(sidebarRoomsPagination.pages)}
@@ -1263,7 +1317,7 @@ const Sidebar: React.FC = () => {
                     sidebarRoomsPagination.pages
                   }
                 >
-                  Last
+                  <MdKeyboardDoubleArrowRight />
                 </PageButton>
               </PaginationContainer>
             </>
@@ -1292,13 +1346,13 @@ const Sidebar: React.FC = () => {
                   onClick={() => handlePageChange(1)}
                   disabled={tagsPagination.pageNum === 1}
                 >
-                  First
+                  <MdKeyboardDoubleArrowLeft />
                 </PageButton>
                 <PageButton
                   onClick={() => handlePageChange(tagsPagination.pageNum - 1)}
                   disabled={tagsPagination.pageNum === 1}
                 >
-                  Previous
+                  <MdKeyboardArrowLeft />
                 </PageButton>
                 <Ellipsis>
                   Page {tagsPagination.pageNum} of {tagsPagination.pages}
@@ -1307,13 +1361,13 @@ const Sidebar: React.FC = () => {
                   onClick={() => handlePageChange(tagsPagination.pageNum + 1)}
                   disabled={tagsPagination.pageNum === tagsPagination.pages}
                 >
-                  Next
+                  <MdKeyboardArrowRight />
                 </PageButton>
                 <PageButton
                   onClick={() => handlePageChange(tagsPagination.pages)}
                   disabled={tagsPagination.pageNum === tagsPagination.pages}
                 >
-                  Last
+                  <MdKeyboardDoubleArrowRight />
                 </PageButton>
               </PaginationContainer>
             </>
