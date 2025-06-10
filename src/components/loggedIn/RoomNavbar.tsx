@@ -125,7 +125,7 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
   const [isRoomMembersVisible, setIsRoomMembersVisible] = useState(false);
   const [tagData, setTagData] = useState<TagData[]>([]);
   const [roomData, setRoomData] = useState<RoomInfoResponse | null>(null);
-  const [userRole, setUserRole] = useState<string>("MEMBER");
+  const [, setUserRole] = useState<string>("MEMBER");
   const navigate = useNavigate();
 
   useEffect(() => {

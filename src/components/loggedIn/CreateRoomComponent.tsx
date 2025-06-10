@@ -94,7 +94,7 @@ const CloseButton = styled.button`
   outline: none;
 
   &:hover {
-    background-color: #f3f4f6;
+    background-color: rgba(255, 255, 255, 0.1);
     transform: scale(1.1);
   }
 
@@ -104,33 +104,50 @@ const CloseButton = styled.button`
 `;
 
 const StyledCross = styled(RxCross2)`
-  color: #6b7280;
-  font-size: 1.25rem;
+  color: white;
+  font-size: 1.2rem;
 `;
 
 const Header = styled.div`
+  background: #016532;
+  color: white;
+  padding: 1.5rem 2rem;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
+  justify-content: space-between;
+  box-shadow: 0 2px 10px rgba(1, 101, 50, 0.2);
+  margin: -2.5rem -2.5rem 2rem -2.5rem;
+  border-radius: 20px 20px 0 0;
+
+  @media (max-width: 700px) {
+    margin: -2rem -2rem 2rem -2rem;
+    padding: 1.25rem 1.5rem;
+  }
+
+  @media (max-width: 400px) {
+    margin: -1.5rem -1.5rem 2rem -1.5rem;
+    padding: 1rem 1.25rem;
+  }
+`;
+
+const HeaderTitle = styled.h2`
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  @media (max-width: 500px) {
+    font-size: 1.2rem;
+  }
 `;
 
 const GroupIcon = styled(MdGroup)`
-  color: #016532;
+  color: white;
   font-size: 1.5rem;
 `;
 
-const ModalTitle = styled.h2`
-  font-family: 'Roboto', sans-serif;
-  font-weight: 600;
-  font-size: 1.5rem;
-  color: #1f2937;
-  margin: 0;
-  
-  @media (max-width: 500px) {
-    font-size: 1.25rem;
-  }
-`;
 
 const Form = styled.form`
   display: flex;
@@ -1234,15 +1251,14 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   return (
     <Overlay>
       <Modal ref={modalRef}>
-        <CloseButton onClick={onClose}>
-          <StyledCross />
-        </CloseButton>
-
         <Header>
-          <GroupIcon />
-          <ModalTitle>
+          <HeaderTitle>
+            <GroupIcon />
             {effectiveIsModify ? "Edit Room" : "Create New Room"}
-          </ModalTitle>
+          </HeaderTitle>
+          <CloseButton onClick={onClose}>
+            <StyledCross />
+          </CloseButton>
         </Header>
 
         <FormikProvider value={formik}>

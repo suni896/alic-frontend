@@ -15,6 +15,7 @@ export interface RoomGroup {
   adminId: number;
   adminName: string;
   memberCount: number;
+  isJoined: boolean;
 }
 
 export function useJoinRoom() {
@@ -63,13 +64,25 @@ export function useJoinRoom() {
   );
 
   const handleJoinClick = useCallback(
-    (groupId: number, groupType: number) => {
+    (groupId: number, groupType: number, isJoined?: boolean) => {
       setSelectedRoomId(groupId);
       setPassword("");
+      console.log("isJoined", isJoined);
+      // 如果用户已经加入群组，直接跳转
+      if (isJoined) {
+        console.log("Already joined this group");
+        setJoinSuccess(true);
+        setErrorMessage("Already joined this group");
+        setShowErrorModal(true);
+        setRedirectPath(`/my-room/${groupId}`);
+        return;
+      }
 
+      // 如果是私有群组，显示密码输入框
       if (groupType === 0) {
         setShowPasswordModal(true);
       } else {
+        // 公开群组，直接加入
         joinGroup(groupId);
       }
     },

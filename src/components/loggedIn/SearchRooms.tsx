@@ -4,7 +4,7 @@ import styled from "styled-components";
 import CreateRoomComponent from "./CreateRoomComponent"; // Modal Component
 import { useRoomContext } from "./RoomContext";
 import { useNavigate } from "react-router-dom";
-import { useJoinRoom, RoomGroup } from "./useJoinRoom";
+import { useJoinRoom } from "./useJoinRoom";
 
 const Container = styled.div`
   background: white;
@@ -247,10 +247,10 @@ const SearchRooms: React.FC = () => {
   const { mainAreaRooms, mainAreaRoomsPagination, setMainAreaRoomListRequest } =
     useRoomContext();
   const [currentPage, setCurrentPage] = useState(1);
-  const [roomsPerPage, setRoomsPerPage] = useState(8);
+  const [roomsPerPage] = useState(8);
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   const roomRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();

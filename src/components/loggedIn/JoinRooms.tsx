@@ -1,11 +1,29 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { CiSearch } from "react-icons/ci";
 import { RxCross2 } from "react-icons/rx";
-import styled, { css } from "styled-components";
+import { MdLock, MdPublic, MdGroup, MdDescription } from "react-icons/md";
+import { BiLoaderAlt } from "react-icons/bi";
+import styled, { css, keyframes } from "styled-components";
 import axios from "axios";
 import apiClient from "../loggedOut/apiClient";
 import { useNavigate } from "react-router-dom";
 import { useJoinRoom, RoomGroup } from "./useJoinRoom";
+
+// Animations
+const fadeIn = keyframes`
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+`;
+
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+const slideIn = keyframes`
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+`;
 
 const OverlayContainer = styled.div`
   position: fixed;
@@ -13,81 +31,168 @@ const OverlayContainer = styled.div`
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 3000;
+  animation: ${fadeIn} 0.3s ease-out;
 `;
 
 const Container = styled.div`
   background: white;
   width: 90%;
-  max-width: 800px;
-  height: 80vh;
-  border-radius: 8px;
+  max-width: 900px;
+  height: 85vh;
+  border-radius: 16px;
   position: relative;
-  padding: 1rem;
-  overflow-y: auto;
-  border: 1px solid #016532;
+  overflow: hidden;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  animation: ${slideIn} 0.3s ease-out;
+  display: flex;
+  flex-direction: column;
 
   @media (max-width: 700px) {
-    width: 85%;
+    width: 95%;
+    height: 90vh;
+    border-radius: 12px;
   }
+`;
+
+const Header = styled.div`
+  background: #016532;
+  color: white;
+  padding: 1.5rem 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  box-shadow: 0 2px 10px rgba(1, 101, 50, 0.2);
+`;
+
+const HeaderTitle = styled.h2`
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
   @media (max-width: 500px) {
-    width: 75%;
+    font-size: 1.2rem;
+  }
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+  outline: none;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    transform: scale(1.1);
+  }
+
+  &:focus {
+    outline: none;
   }
 `;
 
 const StyledCross = styled(RxCross2)`
-  color: #016532;
+  color: white;
+  font-size: 1.2rem;
+`;
+
+const ContentArea = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 `;
 
 const SearchContainer = styled.div`
-  display: flex;
+  padding: 1.5rem 2rem;
+  background: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+`;
+
+const SearchWrapper = styled.div`
   position: relative;
-  gap: 2rem;
-  align-items: center;
-  margin: 3% 4%;
+  max-width: 500px;
+  margin: 0 auto;
 `;
 
 const SearchIcon = styled(CiSearch)`
   position: absolute;
-  font-size: 2.2rem;
-  color: #b3b3b3;
-  left: 0.5rem;
-
-  @media (max-width: 500px) {
-    font-size: 1.6rem;
-  }
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  color: #6c757d;
+  z-index: 1;
 `;
 
 const SearchInput = styled.input`
   width: 100%;
-  height: 4vh;
-  padding: 0.65rem 3.5rem;
-  font-size: 1.2rem;
-  font-family: Roboto;
-  font-weight: 400;
-  border: 1px solid #d9d9d9;
-  border-radius: 8px;
-  color: #b3b3b3;
+  height: 48px;
+  padding: 0 1rem 0 3rem;
+  font-size: 1rem;
+  border: 2px solid #e9ecef;
+  border-radius: 24px;
   background: white;
-  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 
-  @media (max-width: 400px) {
-    font-size: 0.9rem;
-    padding-left: 2.5rem;
+  &:focus {
+    outline: none;
+    border-color: #016532;
+    box-shadow: 0 0 0 3px rgba(1, 101, 50, 0.1);
+  }
+
+  &::placeholder {
+    color: #adb5bd;
+  }
+`;
+
+const RoomListContainer = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem 2rem 2rem;
+  
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f3f4;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #c1c8cd;
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb:hover {
+    background: #a8b2ba;
   }
 `;
 
 const RoomList = styled.div<{ blur: boolean }>`
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  max-height: 80vh;
-  overflow-y: auto;
-  padding: 0 4%;
+  gap: 1rem;
+  max-width: 800px;
+  margin: 0 auto;
 
   ${({ blur }) =>
     blur &&
@@ -98,204 +203,270 @@ const RoomList = styled.div<{ blur: boolean }>`
 `;
 
 const RoomCard = styled.div`
-  border: 1px solid #016532;
-  border-radius: 8px;
-  padding: 0.7rem 1.5rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1.5vh;
-`;
-
-const RoomHeader = styled.span`
-  font-family: Roboto;
-  font-weight: 600;
-`;
-
-const JoinButton = styled.button`
-  padding: 0.5rem 1.5rem;
-  background-color: #eaeaea;
-  color: #016532;
-  border: 1px solid #016532;
-  border-radius: 6px;
-  cursor: pointer;
+  background: white;
+  border: 1px solid #e9ecef;
+  border-radius: 12px;
+  padding: 1.5rem;
+  transition: all 0.2s ease;
+  animation: ${fadeIn} 0.3s ease-out;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 
   &:hover {
-    background-color: #43a047;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border-color: #016532;
   }
+`;
 
-  @media (max-width: 500px) {
-    padding: 0.5rem 1rem;
-  }
+const RoomHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+`;
+
+const RoomTitle = styled.h3`
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #212529;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const RoomType = styled.div<{ isPrivate: boolean }>`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  background: ${props => props.isPrivate ? '#fff3cd' : '#d1edff'};
+  color: ${props => props.isPrivate ? '#856404' : '#0c5460'};
 `;
 
 const RoomInfo = styled.div`
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 1rem;
-  font-family: Roboto;
+  margin-bottom: 1rem;
+  color: #6c757d;
+  font-size: 0.9rem;
+`;
+
+const InfoItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
+const RoomDescription = styled.p`
+  margin: 0 0 1rem 0;
+  color: #495057;
+  line-height: 1.5;
+  font-size: 0.95rem;
+`;
+
+const JoinButton = styled.button<{ isJoined?: boolean }>`
+  padding: 0.75rem 2rem;
+  background: ${props => props.isJoined ? '#28a745' : '#016532'};
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  min-width: 100px;
+
+  &:hover {
+    background: ${props => props.isJoined ? '#218838' : '#014d26'};
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
 
   @media (max-width: 500px) {
-    font-size: 0.8rem;
-    gap: 0.5rem;
+    padding: 0.6rem 1.5rem;
+    font-size: 0.85rem;
   }
 `;
 
+const LoadingContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+  gap: 1rem;
+`;
+
+const LoadingSpinner = styled(BiLoaderAlt)`
+  font-size: 2rem;
+  color: #016532;
+  animation: ${spin} 1s linear infinite;
+`;
+
+const LoadingText = styled.p`
+  color: #6c757d;
+  margin: 0;
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: 3rem 1rem;
+  color: #6c757d;
+`;
+
+const EmptyStateIcon = styled(CiSearch)`
+  font-size: 4rem;
+  color: #dee2e6;
+  margin-bottom: 1rem;
+`;
+
+const ErrorContainer = styled.div`
+  background: #f8d7da;
+  color: #721c24;
+  text-align: center;
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid #f5c6cb;
+  border-radius: 8px;
+`;
+
+// Modal styles remain similar but with improved design
 const Overlay = styled.div`
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 4000;
+  animation: ${fadeIn} 0.2s ease-out;
 `;
 
 const Modal = styled.div`
   background: white;
-  border: 1px solid #016532;
-  border-radius: 8px;
-  padding: 1rem 1.5rem;
-  width: 20%;
+  border-radius: 16px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 400px;
   position: relative;
-
-  @media (max-width: 1000px) {
-    width: 30%;
-  }
-  @media (max-width: 700px) {
-    width: 40%;
-  }
-  @media (max-width: 600px) {
-    width: 50%;
-  }
-  @media (max-width: 400px) {
-    width: 60%;
-  }
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  animation: ${slideIn} 0.2s ease-out;
 `;
 
 const ModalCloseButton = styled.button`
   position: absolute;
-  top: 0.5vh;
-  right: 1%;
-  background: none;
+  top: 1rem;
+  right: 1rem;
+  background: #f8f9fa;
   border: none;
-  cursor: pointer;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
 
   &:hover {
-    opacity: 0.7;
-  }
-
-  @media (max-width: 500px) {
-    right: -1%;
-    font-size: 0.6rem;
+    background: #e9ecef;
+    transform: scale(1.1);
   }
 `;
 
 const PasswordTitle = styled.label`
-  font-family: Roboto;
-  font-weight: 400;
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #212529;
 `;
 
 const PasswordInput = styled.input`
-  margin-top: 1vh;
-  margin-bottom: 3vh;
-  width: 85%;
-  padding: 0.8rem 1rem;
+  width: 100%;
+  padding: 0.75rem;
   font-size: 1rem;
-  border: 1px solid #016532;
+  border: 2px solid #e9ecef;
   border-radius: 8px;
-  color: #b3b3b3;
-  background-color: white;
+  margin-bottom: 1.5rem;
+  transition: border-color 0.2s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #016532;
+  }
 `;
 
 const ButtonContainer = styled.div`
-  width: 100%;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
+  gap: 0.75rem;
 `;
 
 const SubmitButton = styled.button`
-  padding: 0.5rem;
-  background-color: black;
+  padding: 0.75rem 1.5rem;
+  background: #016532;
   color: white;
   border: none;
   border-radius: 8px;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
 
   &:hover {
-    background-color: #016532;
+    background: #014d26;
+  }
+`;
+
+const CancelButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: #5a6268;
   }
 `;
 
 const ErrorMessage = styled.div`
   font-size: 1rem;
-  color: black;
   font-weight: 600;
-  margin-bottom: 2.5vh;
-
-  @media (max-width: 700px) {
-    font-size: 0.9rem;
-  }
-
-  @media (max-width: 500px) {
-    font-size: 0.8rem;
-  }
+  margin-bottom: 1.5rem;
+  text-align: center;
 `;
 
-const ErrorModalButton = styled.button`
-  padding: 5px 10px;
-  background-color: black;
-  margin-left: 44%;
+const ErrorModalButton = styled.button<{ success?: boolean }>`
+  padding: 0.75rem 1.5rem;
+  background: ${props => props.success ? '#28a745' : '#dc3545'};
   color: white;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
+  font-weight: 600;
   cursor: pointer;
+  transition: all 0.2s ease;
+  display: block;
+  margin: 0 auto;
 
   &:hover {
-    background-color: #333;
+    background: ${props => props.success ? '#218838' : '#c82333'};
   }
-`;
-
-const LoadingSpinner = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100px;
-
-  &:after {
-    content: " ";
-    display: block;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    border: 6px solid #016532;
-    border-color: #016532 transparent #016532 transparent;
-    animation: spin 1.2s linear infinite;
-  }
-
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
-  }
-`;
-
-const ErrorContainer = styled.div`
-  color: red;
-  text-align: center;
-  padding: 1rem;
-  margin: 1rem 0;
-  border: 1px solid red;
-  border-radius: 8px;
 `;
 
 interface GroupListResponse {
@@ -371,7 +542,7 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
     setError(null);
 
     if (roomsCache.has(roomSearch)) {
-      setRooms(roomsCache.get(roomSearch)!); // Use cached data
+      setRooms(roomsCache.get(roomSearch)!);
       setIsLoading(false);
       return;
     }
@@ -381,13 +552,12 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
       let currentPage = 1;
       let totalPages = 1;
 
-      // Fetch all pages of rooms
       while (currentPage <= totalPages) {
         const requestData = {
           keyword: roomSearch || undefined,
           groupDemonTypeEnum: "ALLROOM",
           pageRequestVO: {
-            pageSize: 10, // Keep the page size fixed
+            pageSize: 10,
             pageNum: currentPage,
           },
         };
@@ -404,8 +574,8 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
             allRooms.push(...data);
           }
 
-          totalPages = response.data.data.pages; // Update total pages
-          currentPage++; // Move to the next page
+          totalPages = response.data.data.pages;
+          currentPage++;
         } else {
           throw new Error(
             `API error: ${response.data.message || "Unknown error"}`
@@ -413,7 +583,7 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
         }
       }
 
-      setRooms(allRooms); // Set all fetched rooms to state
+      setRooms(allRooms);
       roomsCache.set(roomSearch, allRooms);
     } catch (error: unknown) {
       if (axios.isAxiosError(error)) {
@@ -436,68 +606,128 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
     setRoomSearch(query);
   };
 
+  // Debounced search effect
   useEffect(() => {
-    if (roomSearch.trim() !== "") {
-      fetchAllRooms();
-    } else {
-      setRooms([]);
-    }
+    const timeoutId = setTimeout(() => {
+      if (roomSearch.trim() !== "") {
+        fetchAllRooms();
+      } else {
+        setRooms([]);
+      }
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
   }, [roomSearch]);
+
+  // Memoized filtered rooms for better performance
+  const displayRooms = useMemo(() => {
+    return rooms.filter(room => 
+      room.groupName.toLowerCase().includes(roomSearch.toLowerCase()) ||
+      room.groupDescription.toLowerCase().includes(roomSearch.toLowerCase())
+    );
+  }, [rooms, roomSearch]);
 
   return (
     <OverlayContainer>
       <Container ref={containerRef}>
-        <ModalCloseButton onClick={onClose}>
-          <StyledCross size={24} />
-        </ModalCloseButton>
-        <SearchContainer>
-          <SearchIcon />
-          <SearchInput
-            placeholder="Search in Platform"
-            value={roomSearch}
-            onChange={handleSearch}
-          />
-        </SearchContainer>
+        <Header>
+          <HeaderTitle>
+            <MdGroup />
+            Join Rooms
+          </HeaderTitle>
+          <CloseButton onClick={onClose}>
+            <StyledCross />
+          </CloseButton>
+        </Header>
 
-        {error && <ErrorContainer>{error}</ErrorContainer>}
+        <ContentArea>
+          <SearchContainer>
+            <SearchWrapper>
+              <SearchIcon />
+              <SearchInput
+                placeholder="Search rooms by name or description..."
+                value={roomSearch}
+                onChange={handleSearch}
+              />
+            </SearchWrapper>
+          </SearchContainer>
 
-        {isLoading ? (
-          <LoadingSpinner />
-        ) : (
-          <RoomList blur={showPasswordModal || showErrorModal}>
-            {rooms.length > 0 ? (
-              rooms.map((room) => (
-                <RoomCard key={room.groupId}>
-                  <RoomHeader>{room.groupName}</RoomHeader>
-                  <RoomInfo>
-                    <JoinButton
-                      onClick={() =>
-                        handleJoinClick(room.groupId, room.groupType)
-                      }
-                    >
-                      JOIN
-                    </JoinButton>
-                    • {room.memberCount} members • {room.groupDescription}
-                    {room.groupType == 0 && " • Requires Password"}
-                  </RoomInfo>
-                </RoomCard>
-              ))
+          <RoomListContainer>
+            {error && <ErrorContainer>{error}</ErrorContainer>}
+
+            {isLoading ? (
+              <LoadingContainer>
+                <LoadingSpinner />
+                <LoadingText>Searching for rooms...</LoadingText>
+              </LoadingContainer>
             ) : (
-              <div style={{ textAlign: "center", padding: "2rem" }}>
-                No rooms found.
-              </div>
+              <RoomList blur={showPasswordModal || showErrorModal}>
+                {displayRooms.length > 0 ? (
+                  displayRooms.map((room) => (
+                    <RoomCard key={room.groupId}>
+                      <RoomHeader>
+                        <RoomTitle>
+                          {room.groupName}
+                        </RoomTitle>
+                        <RoomType isPrivate={room.groupType === 0}>
+                          {room.groupType === 0 ? <MdLock /> : <MdPublic />}
+                          {room.groupType === 0 ? 'Private' : 'Public'}
+                        </RoomType>
+                      </RoomHeader>
+                      
+                      <RoomInfo>
+                        <InfoItem>
+                          <MdGroup />
+                          {room.memberCount} members
+                        </InfoItem>
+                        <InfoItem>
+                          Admin: {room.adminName}
+                        </InfoItem>
+                      </RoomInfo>
+
+                      {room.groupDescription && (
+                        <RoomDescription>
+                          <MdDescription style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
+                          {room.groupDescription}
+                        </RoomDescription>
+                      )}
+
+                      <JoinButton
+                        isJoined={room.isJoined}
+                        onClick={() =>
+                          handleJoinClick(room.groupId, room.groupType, room.isJoined)
+                        }
+                      >
+                        {room.isJoined ? 'JOINED' : 'JOIN'}
+                      </JoinButton>
+                    </RoomCard>
+                  ))
+                ) : roomSearch.trim() !== "" ? (
+                  <EmptyState>
+                    <EmptyStateIcon />
+                    <h3>No rooms found</h3>
+                    <p>Try adjusting your search terms or browse all available rooms.</p>
+                  </EmptyState>
+                ) : (
+                  <EmptyState>
+                    <EmptyStateIcon />
+                    <h3>Start searching</h3>
+                    <p>Enter a room name or description to find groups to join.</p>
+                  </EmptyState>
+                )}
+              </RoomList>
             )}
-          </RoomList>
-        )}
+          </RoomListContainer>
+        </ContentArea>
 
         {(showPasswordModal || showErrorModal) && (
           <Overlay>
             {showPasswordModal && (
               <Modal>
                 <ModalCloseButton onClick={() => setShowPasswordModal(false)}>
-                  <StyledCross size={24} />
+                  <StyledCross size={16} />
                 </ModalCloseButton>
-                <PasswordTitle>PASSWORD</PasswordTitle>
+                <PasswordTitle>Enter Room Password</PasswordTitle>
                 <PasswordInput
                   type="password"
                   placeholder="Enter password"
@@ -510,26 +740,27 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
                   }}
                 />
                 <ButtonContainer>
+                  <CancelButton onClick={() => setShowPasswordModal(false)}>
+                    Cancel
+                  </CancelButton>
                   <SubmitButton onClick={handlePasswordSubmit}>
-                    Submit
+                    Join Room
                   </SubmitButton>
                 </ButtonContainer>
               </Modal>
             )}
             {showErrorModal && (
               <Modal>
-                <ErrorMessage style={{ color: joinSuccess ? "green" : "red" }}>
+                <ErrorMessage style={{ color: joinSuccess ? "#28a745" : "#dc3545" }}>
                   {errorMessage}
                 </ErrorMessage>
                 <ErrorModalButton
+                  success={joinSuccess}
                   onClick={() => {
                     setShowErrorModal(false);
                     if (joinSuccess) {
                       onClose();
                     }
-                  }}
-                  style={{
-                    backgroundColor: joinSuccess ? "#4CAF50" : "#ff4444",
                   }}
                 >
                   OK

@@ -17,6 +17,7 @@ interface Room {
   adminId: number;
   adminName: string;
   memberCount: number;
+  isJoined: boolean;
 }
 
 interface RoomListRequest {

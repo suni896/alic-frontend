@@ -22,6 +22,7 @@ import { UserInformation } from "./types";
 import { useUser } from "./UserContext";
 import { useRoomContext } from "./RoomContext";
 import { RoomGroup } from "./useJoinRoom";
+import { MdGroup } from "react-icons/md";
 
 const SidebarContainer = styled.div`
   width: 23%;
@@ -64,7 +65,7 @@ const LoadingContainer = styled.div`
 
 const ErrorContainer = styled.div`
   padding: 1rem;
-  color: #dc2626;
+  color: black;
   text-align: center;
   background-color: #fef2f2;
   border: 1px solid #fecaca;
@@ -76,7 +77,7 @@ const ErrorMessage = styled.p`
   margin: 0;
   font-size: 0.875rem;
   font-weight: 500;
-  color: #dc2626;
+  color: black;
 
   @media (max-width: 600px) {
     font-size: 0.75rem;
@@ -384,7 +385,7 @@ const RoomList = styled.ul`
 
 const RoomContainer = styled.div<{ $isActive?: boolean }>`
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   margin: 0 0 0.5rem 0;
   padding: 0.75rem;
   background-color: white;
@@ -467,9 +468,10 @@ const RoomDesc = styled.p`
   color: #6b7280;
   margin: 0;
   line-height: 1.2;
-  word-wrap: break-word;
-  word-break: break-word;
-  overflow-wrap: break-word;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 
   @media (max-width: 500px) {
     font-size: 0.65rem;
@@ -493,19 +495,23 @@ const SearchIcon = styled(CiSearch)`
   }
 `;
 
-const Star = styled(IoIosStarOutline)`
+
+const GroupIcon = styled(MdGroup)`
   color: #016532;
   font-size: 1.2rem;
   margin-right: 0.75rem;
+  margin-top: 0.1rem;
   flex-shrink: 0;
 
   @media (max-width: 700px) {
     margin-right: 0.5rem;
     font-size: 1rem;
+    margin-top: 0.05rem;
   }
   @media (max-width: 400px) {
     margin-right: 0.3rem;
     font-size: 0.9rem;
+    margin-top: 0.05rem;
   }
 `;
 
@@ -1270,7 +1276,7 @@ const Sidebar: React.FC = () => {
                         onClick={() => navigateToRoom(room)}
                         $isActive={room.groupId === activeRoomId}
                       >
-                        <Star />
+                        <GroupIcon />
                         <RoomDescContainer>
                           <RoomTitle>{room.groupName}</RoomTitle>
                           <RoomDesc>{room.groupDescription}</RoomDesc>

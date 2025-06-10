@@ -3,7 +3,6 @@ import { membersCache } from "./RoomMembersComponent";
 import SockJS from "sockjs-client";
 import Stomp from "stompjs";
 import styled from "styled-components";
-import { useLocation } from "react-router-dom";
 import { LuSend, LuX } from "react-icons/lu";
 import botIcon from "../../assets/chat-gpt.png";
 import apiClient from "../loggedOut/apiClient";
@@ -20,15 +19,6 @@ interface MyRoomProps {
   onBotSelect?: (botName: string, botId: number) => void;
 }
 
-interface LocationState {
-  title?: string;
-  desc?: string;
-  groupId?: string;
-  adminId?: string;
-  adminName?: string;
-  memberCount?: number;
-  groupType?: string;
-}
 
 interface Bot {
   botId: number;
@@ -322,7 +312,7 @@ const clientCache = new Map<number, Stomp.Client | null>();
 
 const usersCache = new Map<number, User>();
 
-const MyRoom: React.FC<MyRoomProps> = ({ title, desc, groupId }) => {
+const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [hasNewMessage, setHasNewMessage] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { userInfo } = useUser();
@@ -660,7 +650,6 @@ const MyRoom: React.FC<MyRoomProps> = ({ title, desc, groupId }) => {
     setIsBotClicked(false);
   };
 
-  const location = useLocation();
   const [isBotClicked, setIsBotClicked] = useState(false);
 
   const handleScroll = () => {
