@@ -14,12 +14,13 @@ const Container = styled.div`
 
 const TopContainer = styled.div`
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   padding: 2vh 4vw;
   width: 100%;
   height: 12vh;
   box-sizing: border-box;
+  position: relative;
 
   @media (max-width: 800px) {
     padding: 2vh 2vw;
@@ -39,6 +40,8 @@ const Title = styled.h1`
   font-size: 2rem;
   letter-spacing: 0.5px;
   color: #222;
+  text-align: center;
+  margin: 0;
 
   @media (max-width: 800px) {
     font-size: 1.8rem;
@@ -52,7 +55,8 @@ const Title = styled.h1`
 const SearchContainer = styled.div`
   display: flex;
   align-items: center;
-  position: relative;
+  position: absolute;
+  right: 4vw;
   background-color: white;
   padding: 0.8rem 1rem;
   border-radius: 8px;
@@ -71,6 +75,7 @@ const SearchContainer = styled.div`
 
   @media (max-width: 1000px) {
     width: 240px;
+    right: 2vw;
   }
 
   @media (max-width: 800px) {
@@ -78,6 +83,7 @@ const SearchContainer = styled.div`
   }
 
   @media (max-width: 600px) {
+    position: static;
     width: 100%;
     max-width: 300px;
     padding: 0.7rem 0.8rem;
@@ -119,33 +125,40 @@ const SearchRoomsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 2rem 4rem;
-  padding: 2rem;
+  padding: 2rem 4rem;
   box-sizing: border-box;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 1400px;
+  margin: 0 auto;
   justify-content: flex-start;
+
+  @media (max-width: 1200px) {
+    gap: 2rem 3rem;
+    padding: 2rem 3rem;
+  }
 
   @media (max-width: 1000px) {
     gap: 2rem;
   }
+
+  @media (max-width: 800px) {
+    padding: 2rem;
+  }
+
   @media (max-width: 600px) {
     gap: 2rem 0.8rem;
-    padding: 2rem 1rem;
+    padding: 1.5rem 1rem;
   }
 `;
 
 const RoomContainer = styled.div`
-  width: 45%;
-  border-radius: 6px;
-  border: solid #d9d9d9;
-  padding: 1rem;
-  box-sizing: border-box;
-
   display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
   align-items: flex-start;
-  gap: 0.3rem;
+  width: 45%;
+  padding: 0.75rem;
+  background-color: white;
+  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
   cursor: pointer;
 
@@ -156,8 +169,17 @@ const RoomContainer = styled.div`
   }
 
   @media (max-width: 600px) {
-    padding: 1rem 0.5rem;
+    width: 100%;
+    padding: 0.6rem;
   }
+`;
+const RoomDescContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+  gap: 0.25rem;
 `;
 
 const RoomTitle = styled.h2`
@@ -243,6 +265,28 @@ interface PageButtonProps {
   active?: boolean;
 }
 
+const LoadingContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-family: 'Roboto', sans-serif;
+  width: 100%;
+  grid-column: 1 / -1;
+`;
+
+const EmptyState = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-family: 'Roboto', sans-serif;
+  width: 100%;
+  grid-column: 1 / -1;
+`;
+
 const SearchRooms: React.FC = () => {
   const { mainAreaRooms, mainAreaRoomsPagination, setMainAreaRoomListRequest } =
     useRoomContext();
@@ -321,9 +365,9 @@ const SearchRooms: React.FC = () => {
         </TopContainer>
         <SearchRoomsContainer>
           {loading ? (
-            <div>Loading...</div>
+            <LoadingContainer>Loading...</LoadingContainer>
           ) : mainAreaRooms.length === 0 ? (
-            <div>No rooms found</div>
+            <EmptyState>No rooms found</EmptyState>
           ) : (
             mainAreaRooms.map((room, index) => (
               <RoomContainer
@@ -331,9 +375,13 @@ const SearchRooms: React.FC = () => {
                 onClick={() => handleJoinClick(room.groupId, room.groupType)}
                 ref={index === 0 ? roomRef : null}
               >
-                <RoomTitle>{room.groupName}</RoomTitle>
-                <RoomAdmin>Admin: {room.adminName}</RoomAdmin>
-                <RoomDescription>{room.groupDescription}</RoomDescription>
+                <RoomDescContainer>
+                  <RoomTitle>{room.groupName}</RoomTitle>
+                  <RoomAdmin>Admin: {room.adminName}</RoomAdmin>
+                  {room.groupDescription && (
+                    <RoomDescription>{room.groupDescription}</RoomDescription>
+                  )}
+                </RoomDescContainer>
               </RoomContainer>
             ))
           )}

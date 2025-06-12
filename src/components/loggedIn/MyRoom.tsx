@@ -128,6 +128,9 @@ const Avatar = styled.img`
   border-radius: 50%;
   margin-right: 12px;
   object-fit: cover;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 2px;
 
   @media (max-width: 1000px) {
     width: 30px;
@@ -679,6 +682,37 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     }
   };
 
+  const MessageContainer = styled.div<{ $isOwnMessage: boolean }>`
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background-color: ${props => props.$isOwnMessage ? "#dcf8c6" : "white"};
+    border-radius: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  `;
+
+  const MessageContent = styled.div`
+    flex: 1;
+    min-width: 0;
+  `;
+
+  const UserName = styled.div`
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #1a202c;
+    margin-bottom: 0.25rem;
+    line-height: 1.2;
+  `;
+
+  const TimeStamp = styled.div`
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.5rem;
+    line-height: 1;
+  `;
+
   return (
     <Container>
       <RenderedChatContainer ref={chatContainerRef} onScroll={handleScroll}>
@@ -688,19 +722,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           </div>
         )}
         {messages.map((msg) => (
-          <div
-            key={msg.infoId}
-            style={{
-              marginBottom: "1rem",
-              padding: "1rem",
-              backgroundColor:
-                msg.senderId === userInfo?.userId ? "#dcf8c6" : "white",
-              borderRadius: "8px",
-              display: "flex",
-              alignItems: "center",
-              gap: "1rem",
-            }}
-          >
+          <MessageContainer key={msg.infoId} $isOwnMessage={msg.senderId === userInfo?.userId}>
             <Avatar
               src={
                 msg.senderType === "CHATBOT"
@@ -709,13 +731,8 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               }
               alt="User portrait"
             />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 500 }}>
-                {msg.senderId === userInfo?.userId ? "You" : `${msg.name}`}
-              </div>
-              {/* <MessageText
-                dangerouslySetInnerHTML={{ __html: marked(msg.content) }}
-              /> */}
+            <MessageContent>
+              <UserName>{msg.senderId === userInfo?.userId ? "You" : `${msg.name}`}</UserName>
               <MessageText>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
@@ -740,13 +757,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                   {msg.content}
                 </ReactMarkdown>
               </MessageText>
-              <div
-                style={{
-                  fontSize: "0.8rem",
-                  color: "#666",
-                  marginTop: "0.5rem",
-                }}
-              >
+              <TimeStamp>
                 {new Date(msg.createTime).toLocaleString("zh-CN", {
                   year: "numeric",
                   month: "2-digit",
@@ -755,9 +766,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                   minute: "2-digit",
                   second: "2-digit",
                 })}
-              </div>
-            </div>
-          </div>
+              </TimeStamp>
+            </MessageContent>
+          </MessageContainer>
         ))}
       </RenderedChatContainer>
       {hasNewMessage && (

@@ -23,6 +23,9 @@ const Overlay = styled.div`
 const MembersListContainer = styled.div`
   height: 100%;
   width: 20%;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+  
   @media (max-width: 1000px) {
     width: 22%;
   }
@@ -39,13 +42,27 @@ const TitleContainer = styled.div`
   align-items: center;
   width: 100%;
   height: 10%;
-  background-color: #016532;
+  background: linear-gradient(135deg, #016532 0%, #014a24 100%);
+  box-shadow: 0 2px 10px rgba(1, 101, 50, 0.3);
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  }
 `;
 
 const MembersLogo = styled(MdPeopleAlt)`
   color: white;
   font-size: clamp(1.5rem, 5vw, 2rem);
   margin-left: 1rem;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  
   @media (max-width: 1000px) {
     margin-left: 2%;
   }
@@ -54,7 +71,10 @@ const MembersLogo = styled(MdPeopleAlt)`
 const Title = styled.p`
   color: white;
   font-size: 1.2rem;
+  font-weight: 600;
   margin-left: 5%;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  letter-spacing: 0.5px;
 
   @media (max-width: 1000px) {
     font-size: 1rem;
@@ -66,40 +86,80 @@ const Title = styled.p`
 
 const BottomContainer = styled.div`
   width: 100%;
-  height: 100%;
+  height: 90%;
   background-color: white;
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
 `;
 
 const ListContainer = styled.div`
-  width: 90%;
+  width: 95%;
   height: auto;
-  max-height: 40%;
-  margin-top: 3vh;
+  max-height: 70%;
+  margin-top: 2rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 2vh;
+  gap: 0.75rem;
   overflow-y: auto;
+  padding: 0 0.5rem;
+  
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+    
+    &:hover {
+      background: #a8a8a8;
+    }
+  }
 `;
 
 const LineSeparator = styled.hr`
-  margin: 2vh;
+  margin: 1.5rem 0;
   width: 90%;
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
 `;
 
 const ExitGroupButton = styled.button`
-  border: 1px solid #b2beb5;
-  border-radius: 6px;
-  background-color: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
   color: #fc5600;
-  margin-top: 1vh;
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  margin-top: 1rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  
+  &:hover {
+    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+    border-color: #fc5600;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(252, 86, 0, 0.2);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+  
   @media (max-width: 1000px) {
     width: 85%;
     font-size: 0.8rem;
+    padding: 0.6rem 1.2rem;
   }
 `;
 
@@ -107,20 +167,43 @@ const CloseArrow = styled(MdOutlineKeyboardDoubleArrowRight)`
   font-size: 2.5rem;
   position: fixed;
   bottom: 4vh;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    color: #374151;
+    transform: translateX(4px);
+  }
 `;
 
 const MemberContainer = styled.div`
   display: flex;
-  width: 100%;
+  width: 90%;
   align-items: center;
   justify-content: space-between;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  
+  &:hover {
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-color: #016532;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(1, 101, 50, 0.1);
+  }
 `;
 
 const MemberInfo = styled.div`
   display: flex;
   align-items: center;
   font-size: 0.9rem;
-  margin-right: 0;
+  flex: 1;
+  min-width: 0;
+  
   @media (max-width: 900px) {
     font-size: 0.8rem;
   }
@@ -135,49 +218,92 @@ const LoadingIndicator = styled.div`
   align-items: center;
   height: 100px;
   width: 100%;
+  color: #6b7280;
+  font-family: 'Roboto', sans-serif;
+  font-size: 1rem;
 `;
 
 const Avatar = styled.img`
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   margin-right: 12px;
   object-fit: cover;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: #016532;
+    transform: scale(1.05);
+  }
 
   @media (max-width: 1000px) {
-    width: 30px;
-    height: 30px;
+    width: 36px;
+    height: 36px;
+    margin-right: 10px;
   }
   @media (max-width: 700px) {
-    margin-right: 5px;
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
   }
   @media (max-width: 400px) {
-    width: 23px;
-    height: 23px;
+    width: 28px;
+    height: 28px;
+    margin-right: 6px;
   }
 `;
 
-const Username = styled.p`
+const Username = styled.div`
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  flex: 1;
+`;
 
-  @media (max-width: 600px) {
-    flex-wrap: wrap;
+const UserNameText = styled.p`
+  margin: 0;
+  font-weight: 600;
+  color: #1a202c;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  
+  @media (max-width: 900px) {
+    font-size: 0.8rem;
+  }
+  @media (max-width: 700px) {
+    font-size: 0.75rem;
   }
 `;
 
 const AdminLabel = styled.span`
-  color: red;
-  margin-left: 5px;
-
-  @media (max-width: 600px) {
-    display: block;
-    margin-left: 0;
-  }
+  color: #dc2626;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  border: 1px solid #fca5a5;
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 const MemberLabel = styled.span`
-  margin-left: 5px;
+  color: #6b7280;
+  font-size: 0.7rem;
+  font-weight: 500;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 const ConfirmationOverlay = styled.div`
@@ -283,16 +409,22 @@ const X = styled(RxCross2)`
 const RemoveIcon = styled(AiOutlineMinusCircle)<{ isSelected: boolean }>`
   margin-left: 8px;
   cursor: pointer;
-  font-size: 20px;
-  color: ${(props) => (props.isSelected ? "#FC5600" : "#666")};
-  transition: color 0.2s ease;
-
+  font-size: 22px;
+  color: ${(props) => (props.isSelected ? "#dc2626" : "#9ca3af")};
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  padding: 4px;
+  border-radius: 50%;
+  
   &:hover {
-    color: ${(props) => (props.isSelected ? "#FC5600" : "#999")};
+    color: ${(props) => (props.isSelected ? "#b91c1c" : "#6b7280")};
+    background-color: ${(props) => (props.isSelected ? "#fee2e2" : "#f3f4f6")};
+    transform: scale(1.1);
   }
 
   @media (max-width: 1100px) {
-    margin-left: 0;
+    margin-left: 4px;
+    font-size: 20px;
   }
 `;
 
@@ -484,7 +616,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
                         alt={member.userName}
                       />
                       <Username>
-                        {member.userName}
+                        <UserNameText>{member.userName}</UserNameText>
                         {member.groupMemberType === "ADMIN" ? (
                           <AdminLabel>(ADMIN)</AdminLabel>
                         ) : (

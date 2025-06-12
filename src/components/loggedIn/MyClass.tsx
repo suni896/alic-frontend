@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FiTag } from "react-icons/fi";
 import { AiOutlineMinusCircle } from "react-icons/ai";
+import { MdGroup } from "react-icons/md";
 import styled from "styled-components";
 import { CiSearch } from "react-icons/ci";
 import { RxCross2 } from "react-icons/rx";
@@ -38,18 +39,25 @@ const Container = styled.div`
 const TopContainer = styled.div`
   display: flex;
   width: 100%;
-  height: 12vh;
+  min-height: 12vh;
   align-items: center;
-  justify-content: center;
+  justify-content: ;
+  position: relative;
+  padding: 1.5rem 2rem;
+  
+  @media (max-width: 800px) {
+    padding: 1rem;
+    min-height: 10vh;
+  }
+  
+  @media (max-width: 600px) {
+    flex-direction: column;
+    gap: 1rem;
+    min-height: auto;
+    padding: 1rem 0.5rem;
+    justify-content: center;
+  }
 `;
-
-// const ButtonContainer = styled.div`
-//   position: absolute;
-//   right: 3%;
-//   display: flex;
-//   gap: 1rem;
-//   align-items: center;
-// `;
 
 const ButtonContainer = styled.div`
   position: fixed;
@@ -66,23 +74,29 @@ const ButtonContainer = styled.div`
   }
 `;
 
-const ButtonContainer2 = styled.div`
-  width: 100%;
-  display: flex;
-  justify-content: center;
-`;
-
 const Title = styled.p`
-  font-family: Roboto;
-  font-weight: 600;
-  font-size: 2.2rem;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 700;
+  font-size: 2.5rem;
+  color: #1a202c;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  letter-spacing: -0.5px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-right: 2rem;
+  
   @media (max-width: 800px) {
     font-size: 2rem;
-    font-weight: 500;
+    font-weight: 600;
+    margin-right: 1rem;
   }
 
-  @media (max-width: 500px) {
+  @media (max-width: 600px) {
     font-size: 1.7rem;
+    gap: 0.75rem;
+    margin-right: 0;
   }
 `;
 
@@ -94,7 +108,6 @@ const Tag = styled(FiTag)`
     font-size: 1.7rem;
   }
 `;
-
 
 const StyledPlusContainer = styled.div`
   background-color: #d9d9d9;
@@ -180,10 +193,13 @@ const SearchRoomContainer = styled.div<RoomContainerProps>`
 
 const RoomContainer = styled.div<RoomContainerProps>`
   width: ${(props) => (props.$isEditMode ? "calc(100% - 2.5rem)" : "100%")};
-  border-radius: 6px;
-  border: solid #d9d9d9;
-  padding: 1rem;
-  box-sizing: border-box;
+  display: flex;
+  align-items: flex-start;
+  padding: 0.75rem;
+  background-color: white;
+  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
   cursor: pointer;
 
@@ -194,7 +210,26 @@ const RoomContainer = styled.div<RoomContainerProps>`
   }
 
   @media (max-width: 600px) {
-    padding: 1rem 0.5rem;
+    padding: 0.6rem;
+  }
+`;
+
+const GroupIcon = styled(MdGroup)`
+  color: #016532;
+  font-size: 1.2rem;
+  margin-right: 0.75rem;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
+
+  @media (max-width: 700px) {
+    margin-right: 0.5rem;
+    font-size: 1rem;
+    margin-top: 0.05rem;
+  }
+  @media (max-width: 400px) {
+    margin-right: 0.3rem;
+    font-size: 0.9rem;
+    margin-top: 0.05rem;
   }
 `;
 
@@ -209,8 +244,10 @@ const StyledMinus = styled(AiOutlineMinusCircle)<StyledMinusProps>`
 const RoomContent = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
-  flex-grow: 1;
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+  gap: 0.25rem;
 `;
 
 const RoomTitle = styled.h2`
@@ -219,6 +256,7 @@ const RoomTitle = styled.h2`
   font-family: Roboto;
   font-weight: 700;
   margin: 0;
+
   @media (max-width: 600px) {
     font-size: 0.8rem;
   }
@@ -246,9 +284,6 @@ const RoomDescription = styled.span`
   margin: 0;
   @media (max-width: 600px) {
     font-size: 0.7rem;
-  }
-  @media (max-width: 400px) {
-    font-size: 0.6rem;
   }
 `;
 
@@ -325,6 +360,7 @@ const PageButton = styled.button<PageButtonProps>`
     padding: 0.3rem;
   }
 `;
+
 interface TagGroupItem {
   groupId: number;
   groupName: string;
@@ -425,72 +461,6 @@ const ErrorModal = styled(Modal)`
   width: 25%;
   text-align: center;
   padding: 2rem;
-`;
-
-const ErrorModalButton = styled.button`
-  padding: 5px 10px;
-  background-color: black;
-  margin-left: 44%;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #333;
-  }
-`;
-
-const ModalCloseButton = styled.button`
-  position: absolute;
-  top: 0.5vh;
-  right: 1%;
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-
-  &:hover {
-    opacity: 0.7;
-  }
-
-  @media (max-width: 500px) {
-    right: -1%;
-    font-size: 0.6rem;
-  }
-`;
-
-const PasswordTitle = styled.label`
-  font-family: Roboto;
-  font-weight: 400;
-`;
-
-const PasswordInput = styled.input`
-  margin-top: 1vh;
-  margin-bottom: 3vh;
-  width: 85%;
-  padding: 0.8rem 1rem;
-  font-size: 1rem;
-  border: 1px solid #016532;
-  border-radius: 8px;
-  color: #b3b3b3;
-  background-color: white;
-`;
-
-const SubmitButton = styled.button`
-  padding: 0.5rem;
-  background-color: black;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #016532;
-  }
 `;
 
 const CloseButton = styled.button`
@@ -932,17 +902,8 @@ const MyClass: React.FC<MyClassProps> = ({
   const navigate = useNavigate();
   const {
     handleJoinClick,
-    showPasswordModal,
-    setShowPasswordModal,
-    showErrorModal,
-    setShowErrorModal,
-    password,
-    setPassword,
-    errorMessage,
-    joinSuccess,
     redirectPath,
     setRedirectPath,
-    handlePasswordSubmit,
   } = useJoinRoom();
 
   useEffect(() => {
@@ -1278,10 +1239,13 @@ const MyClass: React.FC<MyClassProps> = ({
                 $isEditMode={isEditMode}
                 onClick={() => handleRoomClick(room.groupId)}
               >
+                <GroupIcon />
                 <RoomContent>
                   <RoomTitle>{room.groupName}</RoomTitle>
-                  <RoomAdmin>Admin: Admin</RoomAdmin>
-                  <RoomDescription>Room from tag</RoomDescription>
+                  <RoomAdmin>Admin: {room.groupAdmin}</RoomAdmin>
+                  {room.groupDescription && (
+                    <RoomDescription>{room.groupDescription}</RoomDescription>
+                  )}
                 </RoomContent>
               </RoomContainer>
               {isEditMode && (
@@ -1299,54 +1263,6 @@ const MyClass: React.FC<MyClassProps> = ({
           </NoRoomsMessage>
         ) : null}
 
-        {(showPasswordModal || showErrorModal) && (
-          <Overlay>
-            {showPasswordModal && (
-              <Modal>
-                <ModalCloseButton onClick={() => setShowPasswordModal(false)}>
-                  <StyledCross size={24} />
-                </ModalCloseButton>
-                <PasswordTitle>PASSWORD</PasswordTitle>
-                <PasswordInput
-                  type="password"
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handlePasswordSubmit();
-                    }
-                  }}
-                />
-                <ButtonContainer2>
-                  <SubmitButton onClick={handlePasswordSubmit}>
-                    Submit
-                  </SubmitButton>
-                </ButtonContainer2>
-              </Modal>
-            )}
-            {showErrorModal && !joinSuccess && (
-              <Modal>
-                <ErrorMessage style={{ color: joinSuccess ? "green" : "red" }}>
-                  {errorMessage}
-                </ErrorMessage>
-                <ErrorModalButton
-                  onClick={() => {
-                    setShowErrorModal(false);
-                    if (joinSuccess) {
-                      // onClose();
-                    }
-                  }}
-                  style={{
-                    backgroundColor: joinSuccess ? "#4CAF50" : "#ff4444",
-                  }}
-                >
-                  OK
-                </ErrorModalButton>
-              </Modal>
-            )}
-          </Overlay>
-        )}
       </SearchRoomsContainer>
       <Footer>
         <PageButton

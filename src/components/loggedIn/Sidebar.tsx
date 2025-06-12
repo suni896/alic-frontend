@@ -2,7 +2,6 @@ import React, { useEffect, useState, useCallback } from "react";
 import styled, { keyframes } from "styled-components";
 import {
   IoIosArrowDown,
-  IoIosStarOutline,
   IoMdPersonAdd,
 } from "react-icons/io";
 import { FiTag } from "react-icons/fi";
@@ -222,7 +221,7 @@ const SearchInput = styled.input`
   width: calc(100% - 4rem);
   max-width: 200px;
   padding: 0.8rem 0.5rem 0.8rem 2.5rem;
-  font-size: 0.9rem;
+  font-size: 0.8rem;
   border: 1px solid #d1d5db;
   color: #374151;
   background: #f9fafb;
