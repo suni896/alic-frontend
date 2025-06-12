@@ -33,7 +33,7 @@ interface StyledMinusProps {
 const Container = styled.div`
   background: white;
   width: 100%;
-  margin-top: 72px;
+  margin-top: 60px;
 `;
 
 const TopContainer = styled.div`

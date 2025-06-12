@@ -12,7 +12,7 @@ const Container = styled.div`
   top: 0;
   left: 0;
   width: 100%;
-  height: 72px;
+  height: 60px;
   background-color: #016532;
   display: flex;
   align-items: center;
@@ -26,8 +26,8 @@ const LogoContainer = styled.div`
 `;
 
 const Logo = styled.img`
-  width: 60px;
-  height: 66px;
+  width: 40px;
+  height: 46px;
   margin-right: 20px;
 `;
 
@@ -53,7 +53,7 @@ const RightContainer = styled.div`
 
 const GlobeIcon = styled(FaGlobe)`
   color: white;
-  font-size: 32px;
+  font-size: 28px;
   cursor: pointer;
 
   &:hover {

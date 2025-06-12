@@ -25,13 +25,13 @@ import { MdGroup } from "react-icons/md";
 
 const SidebarContainer = styled.div`
   width: 23%;
-  height: calc(100vh - 72px);
+  height: calc(100vh - 60px);
   background-color: #ffffff;
   padding: 2rem 0rem 1.5rem 1rem;
   display: flex;
   flex-direction: column;
   border-right: 1px solid #016532;
-  margin-top: 72px;
+  margin-top: 60px;
 `;
 
 const spin = keyframes`
@@ -1020,6 +1020,7 @@ const Sidebar: React.FC = () => {
           adminName: room.adminName,
           memberCount: room.memberCount,
           groupType: room.groupType,
+          isJoined: room.isJoined,
         },
       });
     },

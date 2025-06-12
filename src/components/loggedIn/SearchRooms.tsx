@@ -9,18 +9,17 @@ import { useJoinRoom } from "./useJoinRoom";
 const Container = styled.div`
   background: white;
   width: 100%;
-  margin-top: 72px;
+  margin-top: 60px;
 `;
 
 const TopContainer = styled.div`
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
   padding: 2vh 4vw;
   width: 100%;
   height: 12vh;
   box-sizing: border-box;
-  position: relative;
 
   @media (max-width: 800px) {
     padding: 2vh 2vw;
@@ -40,8 +39,6 @@ const Title = styled.h1`
   font-size: 2rem;
   letter-spacing: 0.5px;
   color: #222;
-  text-align: center;
-  margin: 0;
 
   @media (max-width: 800px) {
     font-size: 1.8rem;
@@ -55,8 +52,7 @@ const Title = styled.h1`
 const SearchContainer = styled.div`
   display: flex;
   align-items: center;
-  position: absolute;
-  right: 4vw;
+  position: relative;
   background-color: white;
   padding: 0.8rem 1rem;
   border-radius: 8px;
@@ -75,7 +71,6 @@ const SearchContainer = styled.div`
 
   @media (max-width: 1000px) {
     width: 240px;
-    right: 2vw;
   }
 
   @media (max-width: 800px) {
@@ -83,7 +78,6 @@ const SearchContainer = styled.div`
   }
 
   @media (max-width: 600px) {
-    position: static;
     width: 100%;
     max-width: 300px;
     padding: 0.7rem 0.8rem;
@@ -375,6 +369,7 @@ const SearchRooms: React.FC = () => {
                 onClick={() => handleJoinClick(room.groupId, room.groupType)}
                 ref={index === 0 ? roomRef : null}
               >
+
                 <RoomDescContainer>
                   <RoomTitle>{room.groupName}</RoomTitle>
                   <RoomAdmin>Admin: {room.adminName}</RoomAdmin>
