@@ -51,6 +51,7 @@ const BackArrow = styled(MdOutlineArrowBack)`
   cursor: pointer;
 `;
 
+
 const Title = styled.h1`
   color: white;
   font-size: 1.5rem;

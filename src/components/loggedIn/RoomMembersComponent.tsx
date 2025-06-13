@@ -4,9 +4,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { styled } from "styled-components";
 import apiClient from "../loggedOut/apiClient";
 import { useUser } from "./UserContext";
-import { RxCross2 } from "react-icons/rx";
 import { AiOutlineMinusCircle } from "react-icons/ai";
 import { fetchUserRole } from "./fetchUserRole";
+import Button from "../button";
+import ConfirmationModal from "../ConfirmationModal";
 
 const Overlay = styled.div`
   position: fixed;
@@ -133,38 +134,9 @@ const LineSeparator = styled.hr`
   background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
 `;
 
-const ExitGroupButton = styled.button`
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  color: #fc5600;
-  font-weight: 600;
-  padding: 0.75rem 1.5rem;
-  margin-top: 1rem;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  cursor: pointer;
-  
-  &:hover {
-    background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-    border-color: #fc5600;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(252, 86, 0, 0.2);
-  }
-  
-  &:active {
-    transform: translateY(0);
-  }
-  
-  @media (max-width: 1000px) {
-    width: 85%;
-    font-size: 0.8rem;
-    padding: 0.6rem 1.2rem;
-  }
-`;
 
 const CloseArrow = styled(MdOutlineKeyboardDoubleArrowRight)`
-  font-size: 2.5rem;
+  font-size: 1.5rem;
   position: fixed;
   bottom: 4vh;
   color: #6b7280;
@@ -306,104 +278,10 @@ const MemberLabel = styled.span`
   letter-spacing: 0.5px;
 `;
 
-const ConfirmationOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 3000;
-`;
-
-const ConfirmationContainer = styled.div`
-  background: white;
-  padding: 24px;
-  border-radius: 8px;
-  width: 30%;
-  min-width: 400px;
-  position: relative;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  @media (max-width: 420px) {
-    width: 60%;
-    min-width: 0;
-  }
-`;
-
-const CloseButton = styled.button`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-
-  &:hover {
-    opacity: 0.7;
-  }
-`;
-
-const ConfirmTitle = styled.h2`
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: black;
-  text-align: left;
-  margin-bottom: 0;
-
-  @media (max-width: 420px) {
-    font-size: 1rem;
-  }
-`;
-
-const ConfirmMessage = styled.p`
-  font-size: 1rem;
-  color: #666;
-  margin-top: 0.2vh;
-  margin-bottom: 5vh;
-  text-align: left;
-
-  @media (max-width: 420px) {
-    font-size: 0.8rem;
-  }
-`;
-
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-`;
-
-const ConfirmButton = styled.button<{ variant?: "primary" | "secondary" }>`
-  padding: 8px 16px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-
-  ${({ variant }) =>
-    variant === "primary"
-      ? `
-    background-color: #dc3545;
-    color: white;
-    &:hover {
-      background-color: #c82333;
-    }
-    `
-      : `
-    background-color: #e9ecef;
-    color: #333;
-    &:hover {
-      background-color: #dee2e6;
-    }
-    `}
-`;
-
-const X = styled(RxCross2)`
-  color: black;
 `;
 
 const RemoveIcon = styled(AiOutlineMinusCircle)<{ isSelected: boolean }>`
@@ -637,44 +515,29 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
               )}
             </ListContainer>
             <LineSeparator />
-            <ExitGroupButton onClick={handleActionButton} disabled={isExiting}>
-              {getButtonText()}
-            </ExitGroupButton>
+            <ButtonContainer>
+              <Button variant="primary" onClick={handleActionButton} disabled={isExiting}>
+                {getButtonText()}
+              </Button>
+            </ButtonContainer>
+            
             <CloseArrow onClick={onClose} />
           </BottomContainer>
         </MembersListContainer>
       </Overlay>
 
       {showConfirmation && (
-        <ConfirmationOverlay
-          onClick={() => setShowConfirmation(false)}
-          style={{ zIndex: 3000 }}
-        >
-          <ConfirmationContainer onClick={(e) => e.stopPropagation()}>
-            <CloseButton onClick={() => setShowConfirmation(false)}>
-              <X size={20} />
-            </CloseButton>
-
-            <ConfirmTitle>
-              {userRole === "ADMIN" && isRemoveMode
-                ? "Confirm to remove selected members"
-                : "Confirm to exit chat group"}
-            </ConfirmTitle>
-            <ConfirmMessage>Caution: cannot be withdrawn</ConfirmMessage>
-
-            <ButtonContainer>
-              <ConfirmButton
-                variant="secondary"
-                onClick={() => setShowConfirmation(false)}
-              >
-                Cancel
-              </ConfirmButton>
-              <ConfirmButton variant="primary" onClick={handleExitGroup}>
-                Yes
-              </ConfirmButton>
-            </ButtonContainer>
-          </ConfirmationContainer>
-        </ConfirmationOverlay>
+        <ConfirmationModal
+          isOpen={showConfirmation}
+          onClose={() => setShowConfirmation(false)}
+          onConfirm={handleExitGroup}
+          title={
+            userRole === "ADMIN" && isRemoveMode
+              ? "Confirm to remove selected members"
+              : "Confirm to exit chat group"
+          }
+          message="Caution: cannot be withdrawn"
+        />
       )}
     </>
   );

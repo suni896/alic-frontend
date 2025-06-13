@@ -90,6 +90,12 @@ export function useJoinRoom() {
   );
 
   const handlePasswordSubmit = useCallback(() => {
+    if (!password.trim()) {
+      setErrorMessage("Password is required");
+      setShowErrorModal(true);
+      return;
+    }
+    
     if (selectedRoomId !== null) {
       joinGroup(selectedRoomId, password);
       setShowPasswordModal(false);
@@ -111,5 +117,6 @@ export function useJoinRoom() {
     redirectPath,
     setRedirectPath,
     isProcessing,
+    isPasswordEmpty: !password.trim(),
   };
 }

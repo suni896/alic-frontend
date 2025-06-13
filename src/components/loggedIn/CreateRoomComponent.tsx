@@ -6,13 +6,15 @@ import {
   IoIosAddCircleOutline,
   IoIosRemoveCircleOutline,
 } from "react-icons/io";
-import { RxCross2 } from "react-icons/rx";
 import { MdGroup, MdLock, MdPublic } from "react-icons/md";
 import { FiUsers } from "react-icons/fi";
 import axios from "axios";
 import apiClient from "../loggedOut/apiClient";
 import { useParams } from "react-router-dom";
 import { useRoomContext } from "./RoomContext";
+import Button from "../button";
+import ModalHeader from "../Header";
+
 
 axios.defaults.baseURL = "https://112.74.92.135:443";
 
@@ -77,77 +79,6 @@ const Modal = styled.div`
     padding: 1.5rem;
   }
 `;
-
-const CloseButton = styled.button`
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  outline: none;
-
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    transform: scale(1.1);
-  }
-
-  &:focus {
-    outline: none;
-  }
-`;
-
-const StyledCross = styled(RxCross2)`
-  color: white;
-  font-size: 1.2rem;
-`;
-
-const Header = styled.div`
-  background: #016532;
-  color: white;
-  padding: 1.5rem 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 2px 10px rgba(1, 101, 50, 0.2);
-  margin: -2.5rem -2.5rem 2rem -2.5rem;
-  border-radius: 20px 20px 0 0;
-
-  @media (max-width: 700px) {
-    margin: -2rem -2rem 2rem -2rem;
-    padding: 1.25rem 1.5rem;
-  }
-
-  @media (max-width: 400px) {
-    margin: -1.5rem -1.5rem 2rem -1.5rem;
-    padding: 1rem 1.25rem;
-  }
-`;
-
-const HeaderTitle = styled.h2`
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  @media (max-width: 500px) {
-    font-size: 1.2rem;
-  }
-`;
-
-const GroupIcon = styled(MdGroup)`
-  color: white;
-  font-size: 1.5rem;
-`;
-
 
 const Form = styled.form`
   display: flex;
@@ -605,44 +536,6 @@ const ButtonContainer = styled.div`
   }
 `;
 
-const BaseButton = styled.button`
-  padding: 0.875rem 2rem;
-  font-size: 1rem;
-  font-family: 'Roboto', sans-serif;
-  font-weight: 600;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 2px solid transparent;
-  min-width: 120px;
-  
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-
-  @media (max-width: 500px) {
-    padding: 0.75rem 1.5rem;
-    font-size: 0.9rem;
-  }
-`;
-
-const CreateButton = styled(BaseButton)`
-  background-color: #016532;
-  color: white;
-  border-color: #016532;
-
-  &:hover:not(:disabled) {
-    background-color: #014a24;
-    border-color: #014a24;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(1, 101, 50, 0.3);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-`;
 
 const validationSchema = (showAssistants: boolean) =>
   Yup.object().shape({
@@ -807,7 +700,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   const [userRole, setUserRole] = useState<string | null>(
     fromSidebar ? "ADMIN" : null
   );
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
   // Add useRef to reference the modal container
   const modalRef = useRef<HTMLDivElement>(null);
 
@@ -860,12 +753,15 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       chatBotVOList,
     };
 
+    setIsSubmitting(true);
     try {
       addRoom(requestPayload);
       onClose();
     } catch (error: any) {
       console.error("Error creating group:", error);
       alert(`Error: ${error.response?.data?.message || error.message}`);
+    }finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -1251,16 +1147,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   return (
     <Overlay>
       <Modal ref={modalRef}>
-        <Header>
-          <HeaderTitle>
-            <GroupIcon />
-            {effectiveIsModify ? "Edit Room" : "Create New Room"}
-          </HeaderTitle>
-          <CloseButton onClick={onClose}>
-            <StyledCross />
-          </CloseButton>
-        </Header>
-
+        <ModalHeader icon={MdGroup} title={effectiveIsModify ? "Edit Room" : "Create New Room"} onClose={onClose} />
         <FormikProvider value={formik}>
           <Form onSubmit={formik.handleSubmit}>
             <InputGroup>
@@ -1542,10 +1429,21 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
 
             {(!effectiveIsModify || userRole === "ADMIN") && (
               <ButtonContainer>
-                <CreateButton type="submit">
+                <Button variant="cancel" onClick={onClose} disabled={isSubmitting}>
+                    Cancel
+                </Button>
+                <Button variant="primary" disabled={isSubmitting}>
                   {effectiveIsModify ? "Update Room" : "Create Room"}
-                </CreateButton>
+                </Button>
+
+               
+                {/* <Button variant="primary" onClick={handleCreateTag} disabled={isSubmitting || !tagName.trim()}>
+                  {isSubmitting && <LoadingSpinner />}
+                  {isSubmitting ? "Creating..." : "Create Tag"}
+                </Button> */}
               </ButtonContainer>
+
+              
             )}
           </Form>
         </FormikProvider>

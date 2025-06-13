@@ -5,6 +5,7 @@ import CreateRoomComponent from "./CreateRoomComponent"; // Modal Component
 import { useRoomContext } from "./RoomContext";
 import { useNavigate } from "react-router-dom";
 import { useJoinRoom } from "./useJoinRoom";
+import LabeledInputWithCount from "../Input";
 
 const Container = styled.div`
   background: white;
@@ -50,70 +51,27 @@ const Title = styled.h1`
 `;
 
 const SearchContainer = styled.div`
-  display: flex;
-  align-items: center;
+  padding: 1.5rem 2rem;
+  background: #white;
+  // border-bottom: 1px solid #e9ecef;
   position: relative;
-  background-color: white;
-  padding: 0.8rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  width: 280px;
-  max-width: 100%;
-  flex-shrink: 0;
-
-  &:focus-within {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    border-color: #016532;
-    transform: translateY(-1px);
-  }
-
-  @media (max-width: 1000px) {
-    width: 240px;
-  }
-
-  @media (max-width: 800px) {
-    width: 200px;
-  }
-
-  @media (max-width: 600px) {
-    width: 100%;
-    max-width: 300px;
-    padding: 0.7rem 0.8rem;
-  }
+`;
+const SearchWrapper = styled.div`
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
 `;
 
 const SearchIcon = styled(CiSearch)`
-  font-size: 1.4rem;
-  color: #6b7280;
-  margin-right: 0.75rem;
-  flex-shrink: 0;
-
-  @media (max-width: 600px) {
-    font-size: 1.2rem;
-    margin-right: 0.5rem;
-  }
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  color: #6c757d;
+  z-index: 1;
 `;
 
-const SearchInput = styled.input`
-  border: none;
-  outline: none;
-  font-size: 1rem;
-  color: #374151;
-  background: transparent;
-  width: 100%;
-  flex: 1;
-  min-width: 0;
-
-  &::placeholder {
-    color: #9ca3af;
-  }
-
-  @media (max-width: 600px) {
-    font-size: 0.9rem;
-  }
-`;
 
 const SearchRoomsContainer = styled.div`
   display: flex;
@@ -147,7 +105,7 @@ const SearchRoomsContainer = styled.div`
 const RoomContainer = styled.div`
   display: flex;
   align-items: flex-start;
-  width: 45%;
+  width: 40%;
   padding: 0.75rem;
   background-color: white;
   border-radius: 0.375rem;
@@ -332,14 +290,14 @@ const SearchRooms: React.FC = () => {
     });
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target.value;
     if (value.length <= 100) {
       setSearchKeyword(value);
       setCurrentPage(1); // Reset to first page when search changes
     }
   };
-
+  
   return (
     <>
       {isCreateRoomOpen && (
@@ -349,12 +307,17 @@ const SearchRooms: React.FC = () => {
         <TopContainer>
           <Title>Public Chat Rooms</Title>
           <SearchContainer>
-            <SearchIcon />
-            <SearchInput
-              placeholder="Search Public Rooms"
-              value={searchKeyword}
-              onChange={handleSearchChange}
-            />
+            <SearchWrapper>
+              <SearchIcon />
+                <LabeledInputWithCount
+                  variant="withIcon"
+                  value={searchKeyword}
+                  onChange={handleSearchChange}
+                  placeholder="Search rooms by name or description..."
+                  type="text"
+                  showCount={false} // 搜索框通常不需要字数统计
+                />
+            </SearchWrapper>
           </SearchContainer>
         </TopContainer>
         <SearchRoomsContainer>

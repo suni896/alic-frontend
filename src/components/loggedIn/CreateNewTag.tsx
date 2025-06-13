@@ -1,10 +1,12 @@
-import React, { useState, ChangeEvent, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import styled from "styled-components";
-import { RxCross2 } from "react-icons/rx";
 import { FiTag } from "react-icons/fi";
 import apiClient from "../loggedOut/apiClient";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Button from "../button";
+import LabeledInputWithCount from "../Input";
+import ModalHeader from "../Header";
 
 const Overlay = styled.div`
   position: fixed;
@@ -33,7 +35,7 @@ const Overlay = styled.div`
 const Modal = styled.div`
   background: white;
   border: none;
-  border-radius: 20px;
+  border-radius: 16px;
   padding: 2.5rem;
   width: 28%;
   max-width: 480px;
@@ -73,53 +75,9 @@ const Modal = styled.div`
   }
 `;
 
-const CloseButton = styled.button`
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  outline: none;
-
-  &:hover {
-    opacity: 0.7;
-  }
-  &:focus {
-    outline: none;
-  }
-`;
-
-const StyledCross = styled(RxCross2)`
-  font-size: 1.25rem;
-`;
-
-const Header = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  margin-bottom: 2rem;
-`;
-
 const TagIcon = styled(FiTag)`
-  color: #016532;
+  color: #white;
   font-size: 1.5rem;
-`;
-
-const ModalTitle = styled.h2`
-  font-family: 'Roboto', sans-serif;
-  font-weight: 600;
-  font-size: 1.5rem;
-  color: #1f2937;
-  margin: 0;
-  
-  @media (max-width: 500px) {
-    font-size: 1.25rem;
-  }
 `;
 
 const InputContainer = styled.div`
@@ -135,67 +93,11 @@ const InputLabel = styled.label`
   margin-bottom: 0.5rem;
 `;
 
-interface ModalInputProps {
-  hasError?: boolean;
-}
-
-const ModalInput = styled.input<ModalInputProps>`
-  width: 100%;
-  padding: 0.875rem 1rem;
-  font-size: 1rem;
-  font-family: 'Roboto', sans-serif;
-  border: 2px solid ${(props) => (props.hasError ? "#ef4444" : "#e5e7eb")};
-  border-radius: 12px;
-  color: #1f2937;
-  background-color: #f9fafb;
-  transition: all 0.2s ease;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: ${(props) => (props.hasError ? "#ef4444" : "#016532")};
-    background-color: white;
-    box-shadow: 0 0 0 3px ${(props) => 
-      props.hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
-  }
-
-  &::placeholder {
-    color: #9ca3af;
-  }
-
-  @media (max-width: 500px) {
-    font-size: 0.9rem;
-    padding: 0.75rem 0.875rem;
-  }
-`;
-
-const ErrorMessage = styled.div`
-  color: #ef4444;
-  font-size: 0.875rem;
-  font-family: 'Roboto', sans-serif;
-  margin-top: 0.5rem;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  
-  &::before {
-    content: "⚠";
-    font-size: 0.75rem;
-  }
-`;
-
-const CharacterCount = styled.div`
-  font-size: 0.75rem;
-  color: #6b7280;
-  text-align: right;
-  margin-top: 0.25rem;
-  font-family: 'Roboto', sans-serif;
-`;
-
 const ButtonContainer = styled.div`
   display: flex;
   gap: 0.75rem;
   margin-top: 2rem;
+  justify-content: center;
   
   @media (max-width: 500px) {
     flex-direction: column;
@@ -203,60 +105,6 @@ const ButtonContainer = styled.div`
   }
 `;
 
-const BaseButton = styled.button`
-  flex: 1;
-  padding: 0.875rem 1.5rem;
-  font-size: 1rem;
-  font-family: 'Roboto', sans-serif;
-  font-weight: 600;
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 2px solid transparent;
-  
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
-  }
-
-  @media (max-width: 500px) {
-    padding: 0.75rem 1.25rem;
-    font-size: 0.9rem;
-  }
-`;
-
-const CancelButton = styled(BaseButton)`
-  background-color: #f8fafc;
-  color: #374151;
-  border-color: #e5e7eb;
-
-  &:hover:not(:disabled) {
-    background-color: #f1f5f9;
-    border-color: #d1d5db;
-    transform: translateY(-1px);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-`;
-
-const CreateButton = styled(BaseButton)`
-  background-color: #016532;
-  color: white;
-  border-color: #016532;
-
-  &:hover:not(:disabled) {
-    background-color: #014a24;
-    border-color: #014a24;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(1, 101, 50, 0.3);
-  }
-
-  &:active:not(:disabled) {
-    transform: translateY(0);
-  }
-`;
 
 const LoadingSpinner = styled.div`
   display: inline-block;
@@ -364,9 +212,10 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({
     }
   };
 
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setTagName(e.target.value);
-    if (error) setError("");
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -378,39 +227,29 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({
   return (
     <Overlay>
       <Modal ref={modalRef}>
-        <CloseButton onClick={onClose} disabled={isSubmitting}>
-          <StyledCross />
-        </CloseButton>
-        
-        <Header>
-          <TagIcon />
-          <ModalTitle>Create New Tag</ModalTitle>
-        </Header>
-
+        <ModalHeader icon={TagIcon} title="Create New Tag" onClose={onClose} />
         <InputContainer>
           <InputLabel>Tag Name</InputLabel>
-          <ModalInput
-            type="text"
-            placeholder="Enter tag name (e.g., CLASS D)"
+          <LabeledInputWithCount
             value={tagName}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            hasError={!!error}
+            error={error}
             maxLength={20}
+            placeholder="Enter tag name"
+            type="text"
             disabled={isSubmitting}
           />
-          <CharacterCount>{tagName.length}/20</CharacterCount>
-          {error && <ErrorMessage>{error}</ErrorMessage>}
         </InputContainer>
 
         <ButtonContainer>
-          <CancelButton onClick={onClose} disabled={isSubmitting}>
+          <Button variant="cancel" onClick={onClose} disabled={isSubmitting}>
             Cancel
-          </CancelButton>
-          <CreateButton onClick={handleCreateTag} disabled={isSubmitting || !tagName.trim()}>
+          </Button>
+          <Button variant="primary" onClick={handleCreateTag} disabled={isSubmitting || !tagName.trim()}>
             {isSubmitting && <LoadingSpinner />}
             {isSubmitting ? "Creating..." : "Create Tag"}
-          </CreateButton>
+          </Button>
         </ButtonContainer>
       </Modal>
     </Overlay>

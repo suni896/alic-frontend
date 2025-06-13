@@ -7,7 +7,6 @@ import {
 import { FiTag } from "react-icons/fi";
 import { CiSearch } from "react-icons/ci";
 import { useLocation, useNavigate } from "react-router-dom";
-import { TiPlus } from "react-icons/ti";
 import { PiSignOutBold } from "react-icons/pi";
 import { RxCross2 } from "react-icons/rx";
 import { MdPeopleAlt, MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight, MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
@@ -22,6 +21,8 @@ import { useUser } from "./UserContext";
 import { useRoomContext } from "./RoomContext";
 import { RoomGroup } from "./useJoinRoom";
 import { MdGroup } from "react-icons/md";
+import LabeledInputWithCount from "../Input";
+import PlusButton from "../PlusButton";
 
 const SidebarContainer = styled.div`
   width: 23%;
@@ -208,92 +209,34 @@ const StyledArrowDown = styled(IoIosArrowDown)`
 
 const SearchContainer = styled.div`
   display: flex;
-  position: relative;
-  align-items: center;
+  align-items: flex-start;
   margin-top: 1.5rem;
   gap: 1rem;
-  z-index: 0;
-  width: 84%;
-  justify-content: space-between;
+  padding: 0 1rem;
+  justify-content: flex-start;
+  margin-left: -10px;
+
 `;
 
-const SearchInput = styled.input`
-  width: calc(100% - 4rem);
-  max-width: 200px;
-  padding: 0.8rem 0.5rem 0.8rem 2.5rem;
-  font-size: 0.8rem;
-  border: 1px solid #d1d5db;
-  color: #374151;
-  background: #f9fafb;
-  border-radius: 8px;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+const SearchWrapper = styled.div`
+  position: relative;
+  flex: 1;
+  max-width: 1000px;
+    width: 160px;
+  height: 42px;
 
-  &:focus {
-    background: white;
-    border-color: #016532;
-    box-shadow: 0 0 0 3px rgba(1, 101, 50, 0.1), 0 4px 8px rgba(0, 0, 0, 0.1);
-    transform: translateY(-1px);
-  }
-
-  &::placeholder {
-    color: #9ca3af;
-  }
-
-  @media (max-width: 1000px) {
-    max-width: 180px;
-    font-size: 0.8rem;
-    padding: 0.7rem 0.5rem 0.7rem 2rem;
-  }
-  
-  @media (max-width: 700px) {
-    max-width: 160px;
-    font-size: 0.7rem;
-    padding: 0.6rem 0.4rem 0.6rem 1.8rem;
-  }
-`;
-
-const StyledPlusContainer = styled.div`
-  background-color: #d9d9d9;
-  width: 3rem;
-  height: 2.6rem;
+  // 让里面的输入框继承这个高度
   display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #c9c9c9;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  @media (max-width: 1000px) {
-    width: 2.8rem;
-    height: 2.6rem;
-  }
 `;
 
-const StyledPlus = styled(TiPlus)`
-  color: #016532;
-  font-size: 1.6rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    color: #014a24;
-    transform: scale(1.1);
-  }
-
-  @media (max-width: 1000px) {
-    font-size: 1.4rem;
-  }
+const SearchIcon = styled(CiSearch)`
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  color: #6c757d;
+  z-index: 1;
 `;
 
 const ToggleContainer = styled.div`
@@ -474,23 +417,6 @@ const RoomDesc = styled.p`
 
   @media (max-width: 500px) {
     font-size: 0.65rem;
-  }
-`;
-
-const SearchIcon = styled(CiSearch)`
-  position: absolute;
-  font-size: 1.4rem;
-  color: #6b7280;
-  left: 0.75rem;
-  z-index: 1;
-
-  @media (max-width: 1000px) {
-    font-size: 1.2rem;
-    left: 0.6rem;
-  }
-  @media (max-width: 700px) {
-    font-size: 1rem;
-    left: 0.5rem;
   }
 `;
 
@@ -824,13 +750,24 @@ const LoadingSpinner = () => (
   </SpinnerWrapper>
 );
 
-interface OverlayProps {
+interface ProfilePopUpProps {
+  onClose: () => void;
+  userInfo?: UserInformation | null;
+}
+
+interface PlusButtonOverlayProps {
   onClose: () => void;
   userInfo?: UserInformation | null;
   onTagCreated?: () => void;
+  isCreateRoomOverlayVisible: boolean;
+  setIsCreateRoomOverlayVisible: (visible: boolean) => void;
+  isJoinRoomsOverlayVisible: boolean;
+  setIsJoinRoomsOverlayVisible: (visible: boolean) => void;
+  isCreateTagOverlayVisible: boolean;
+  setIsCreateTagOverlayVisible: (visible: boolean) => void;
 }
 
-const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
+const ProfilePopUp: React.FC<ProfilePopUpProps> = ({ onClose }) => {
   const navigate = useNavigate(); // Call useNavigate directly
 
   // Add useRef to reference the popup container
@@ -886,18 +823,17 @@ const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
   );
 };
 
-const PlusButtonOverlay: React.FC<OverlayProps> = ({
+const PlusButtonOverlay: React.FC<PlusButtonOverlayProps> = ({
   onClose,
   userInfo,
   onTagCreated,
+  isCreateRoomOverlayVisible,
+  setIsCreateRoomOverlayVisible,
+  isJoinRoomsOverlayVisible,
+  setIsJoinRoomsOverlayVisible,
+  isCreateTagOverlayVisible,
+  setIsCreateTagOverlayVisible,
 }) => {
-  const [isCreateRoomOverlayVisible, setIsCreateRoomOverlayVisible] =
-    useState(false);
-  const [isJoinRoomsOverlayVisible, setIsJoinRoomsOverlayVisible] =
-    useState(false);
-  const [isCreateTagOverlayVisible, setIsCreateTagOverlayVisible] =
-    useState(false);
-
   // Add useRef to reference the overlay container
   const overlayRef = React.useRef<HTMLDivElement>(null);
 
@@ -924,19 +860,28 @@ const PlusButtonOverlay: React.FC<OverlayProps> = ({
         <StyledProfilePopUpCross />
       </ModalCloseButton>
       <PlusButtonOptionContainer
-        onClick={() => setIsCreateRoomOverlayVisible(true)}
+        onClick={() => {
+          setIsCreateRoomOverlayVisible(true);
+          onClose(); // 关闭 plus button overlay
+        }}
       >
         <StyledIoMdPersonAdd />
         <StyledPlusButtonOptionText>Create New Room</StyledPlusButtonOptionText>
       </PlusButtonOptionContainer>
       <PlusButtonOptionContainer
-        onClick={() => setIsJoinRoomsOverlayVisible(true)}
+        onClick={() => {
+          setIsJoinRoomsOverlayVisible(true);
+          onClose(); // 关闭 plus button overlay
+        }}
       >
         <StyledMdPeopleAlt />
         <StyledPlusButtonOptionText>Join A Room</StyledPlusButtonOptionText>
       </PlusButtonOptionContainer>
       <PlusButtonOptionContainer
-        onClick={() => setIsCreateTagOverlayVisible(true)}
+        onClick={() => {
+          setIsCreateTagOverlayVisible(true);
+          onClose(); // 关闭 plus button overlay
+        }}
       >
         <StyledFiTag />
         <StyledPlusButtonOptionText>Create New Tag</StyledPlusButtonOptionText>
@@ -988,6 +933,12 @@ const Sidebar: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPlusButtonOverlayVisible, setIsPlusButtonOverlayVisible] = useState(false);
+  
+  // 将子组件的状态提升到这里
+  const [isCreateRoomOverlayVisible, setIsCreateRoomOverlayVisible] = useState(false);
+  const [isJoinRoomsOverlayVisible, setIsJoinRoomsOverlayVisible] = useState(false);
+  const [isCreateTagOverlayVisible, setIsCreateTagOverlayVisible] = useState(false);
 
   const [tagsPagination, setTagsPagination] = useState({
     pageSize: 10,
@@ -1078,9 +1029,6 @@ const Sidebar: React.FC = () => {
       }));
     }
   };
-
-  const [isPlusButtonOverlayVisible, setIsPlusButtonOverlayVisible] =
-    useState(false);
 
   useEffect(() => {
     if (activeTab === "myRooms") {
@@ -1218,27 +1166,56 @@ const Sidebar: React.FC = () => {
       <LineSeparator />
 
       <SearchContainer>
-        <SearchIcon />
-        <SearchInput
-          placeholder={
-            activeTab === "myRooms" ? "Search in MY ROOMS" : "Search in MY TAGS"
-          }
-          value={activeTab === "myRooms" ? roomSearch : tagSearch}
-          onChange={
-            activeTab === "myRooms"
-              ? (e) => setRoomSearch(e.target.value)
-              : (e) => setTagSearch(e.target.value)
-          }
-        />
+        <SearchWrapper>
+          <SearchIcon />
 
-        <StyledPlusContainer onClick={() => setIsPlusButtonOverlayVisible(true)}>
-          <StyledPlus/>
-        </StyledPlusContainer>
+          <LabeledInputWithCount
+            variant="withIcon"
+            placeholder={
+              activeTab === "myRooms" ? "Search in MY ROOMS" : "Search in MY TAGS"
+            }
+            value={activeTab === "myRooms" ? roomSearch : tagSearch}
+            onChange={
+              activeTab === "myRooms"
+                ? (e) => setRoomSearch(e.target.value)
+                : (e) => setTagSearch(e.target.value)
+            }
+            type="text"
+            showCount={false}
+          />
+        </SearchWrapper>
+
+        <PlusButton onClick={() => setIsPlusButtonOverlayVisible(true)}>
+        </PlusButton>
       </SearchContainer>
+
       {isPlusButtonOverlayVisible && (
         <PlusButtonOverlay
           onClose={() => setIsPlusButtonOverlayVisible(false)}
           userInfo={userInfo}
+          onTagCreated={refreshTags}
+          isCreateRoomOverlayVisible={isCreateRoomOverlayVisible}
+          setIsCreateRoomOverlayVisible={setIsCreateRoomOverlayVisible}
+          isJoinRoomsOverlayVisible={isJoinRoomsOverlayVisible}
+          setIsJoinRoomsOverlayVisible={setIsJoinRoomsOverlayVisible}
+          isCreateTagOverlayVisible={isCreateTagOverlayVisible}
+          setIsCreateTagOverlayVisible={setIsCreateTagOverlayVisible}
+        />
+      )}
+
+      {/* 子组件独立渲染 */}
+      {isCreateRoomOverlayVisible && (
+        <CreateRoomComponent
+          onClose={() => setIsCreateRoomOverlayVisible(false)}
+          fromSidebar={true}
+        />
+      )}
+      {isJoinRoomsOverlayVisible && userInfo && (
+        <JoinRooms onClose={() => setIsJoinRoomsOverlayVisible(false)} />
+      )}
+      {isCreateTagOverlayVisible && (
+        <CreateNewTag
+          onClose={() => setIsCreateTagOverlayVisible(false)}
           onTagCreated={refreshTags}
         />
       )}

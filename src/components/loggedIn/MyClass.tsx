@@ -11,15 +11,13 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useJoinRoom } from "./useJoinRoom";
 import { RoomInfoResponse } from "./CreateRoomComponent";
-import { TiPlus } from "react-icons/ti";
+import PlusButton from "../PlusButton";
+import Button from "../button";
+import LabeledInputWithCount from "../Input";
+import CloseButton from "../CloseButton";
 
 interface RoomContainerProps {
   $isEditMode: boolean;
-}
-
-interface EditButtonProps {
-  $isEditMode: boolean;
-  $isLoading?: boolean;
 }
 
 interface PageButtonProps {
@@ -39,11 +37,11 @@ const Container = styled.div`
 const TopContainer = styled.div`
   display: flex;
   width: 100%;
-  min-height: 12vh;
   align-items: center;
   justify-content: ;
   position: relative;
   padding: 1.5rem 2rem;
+  height: 2.5rem;
   
   @media (max-width: 800px) {
     padding: 1rem;
@@ -63,17 +61,14 @@ const ButtonContainer = styled.div`
   position: fixed;
   display: flex;
   align-items: center;
-  right: 5rem;
-  top: 9.5rem;
-  width: auto;
+  right: 1.5rem;
+  // top: 9.5rem;
+  gap: 0.8rem;
+  height: 2.5rem;
   z-index: 1000;
-  gap: 1rem;
-
-  @media (max-width: 1000px) {
-    right: 1.5rem;
-  }
+  max-width: calc(100vw - 3rem); // 防止超出屏幕
+  overflow: hidden;
 `;
-
 const Title = styled.p`
   font-family: 'Roboto', sans-serif;
   font-weight: 700;
@@ -106,47 +101,6 @@ const Tag = styled(FiTag)`
 
   @media (max-width: 500px) {
     font-size: 1.7rem;
-  }
-`;
-
-const StyledPlusContainer = styled.div`
-  background-color: #d9d9d9;
-  width: 3rem;
-  height: 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  flex-shrink: 0;
-  cursor: pointer;
-
-  &:hover {
-    background-color: #c9c9c9;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-  }
-
-  @media (max-width: 600px) {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-`;
-
-const StyledPlus = styled(TiPlus)`
-  color: #016532;
-  font-size: 1.6rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    color: #014a24;
-    transform: scale(1.1);
-  }
-
-  @media (max-width: 600px) {
-    font-size: 1.4rem;
   }
 `;
 
@@ -284,38 +238,6 @@ const RoomDescription = styled.span`
   margin: 0;
   @media (max-width: 600px) {
     font-size: 0.7rem;
-  }
-`;
-
-const EditButton = styled.button<EditButtonProps>`
-  padding: 0.5rem 1rem;
-  background-color: ${(props) => (props.$isEditMode ? "#016532" : "#000")};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: ${(props) => (props.$isLoading ? "not-allowed" : "pointer")};
-  opacity: ${(props) => (props.$isLoading ? "0.7" : "1")};
-  font-size: 0.9rem;
-  white-space: nowrap;
-
-  &:hover {
-    background-color: ${(props) => (props.$isEditMode ? "#015528" : "#333")};
-  }
-`;
-
-const CancelButton = styled.button<{ $isLoading?: boolean }>`
-  padding: 0.5rem 1rem;
-  background-color: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: ${(props) => (props.$isLoading ? "not-allowed" : "pointer")};
-  opacity: ${(props) => (props.$isLoading ? "0.7" : "1")};
-  font-size: 0.9rem;
-  white-space: nowrap;
-
-  &:hover {
-    background-color: #5a6268;
   }
 `;
 
@@ -463,27 +385,6 @@ const ErrorModal = styled(Modal)`
   padding: 2rem;
 `;
 
-const CloseButton = styled.button`
-  position: absolute;
-  top: 0.5rem;
-  right: 0.5rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  outline: none;
-
-  &:hover {
-    opacity: 0.7;
-  }
-  &:focus {
-    outline: none;
-  }
-`;
-
 const ErrorCloseButton = styled.button`
   margin-top: 1.5rem;
   padding: 0.5rem 2rem;
@@ -504,69 +405,25 @@ const StyledCross = styled(RxCross2)`
 `;
 
 const SearchContainer = styled.div`
-  display: flex;
-  align-items: center;
+  padding: 1.5rem 2rem;
+  background: #white;
+  // border-bottom: 1px solid #e9ecef;
   position: relative;
-  background-color: white;
-  padding: 0.8rem 1rem;
-  border-radius: 8px;
-  border: 1px solid #d1d5db;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  width: 400px;
-  max-width: 100%;
-  flex-shrink: 0;
-
-  &:focus-within {
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-    border-color: #016532;
-    transform: translateY(-1px);
-  }
-
-  @media (max-width: 1000px) {
-    width: 240px;
-  }
-
-  @media (max-width: 800px) {
-    width: 200px;
-  }
-
-  @media (max-width: 600px) {
-    width: 100%;
-    max-width: 300px;
-    padding: 0.7rem 0.8rem;
-  }
+`;
+const SearchWrapper = styled.div`
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
 `;
 
 const SearchIcon = styled(CiSearch)`
-  font-size: 1.4rem;
-  color: #6b7280;
-  margin-right: 0.75rem;
-  flex-shrink: 0;
-
-  @media (max-width: 600px) {
-    font-size: 1.2rem;
-    margin-right: 0.5rem;
-  }
-`;
-
-const SearchInput = styled.input`
-  border: none;
-  outline: none;
-  font-size: 1rem;
-  color: #374151;
-  background: transparent;
-  width: 100%;
-  flex: 1;
-  min-width: 0;
-
-  &::placeholder {
-    color: #9ca3af;
-  }
-
-  @media (max-width: 600px) {
-    font-size: 0.9rem;
-  }
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  color: #6c757d;
+  z-index: 1;
 `;
 
 const RoomList = styled.ul`
@@ -652,22 +509,6 @@ const Checkbox = styled.input.attrs({ type: "checkbox" })`
   }
 `;
 
-const AddButton = styled.button`
-  border: none;
-  padding: 0.5rem 2rem;
-  display: block;
-  margin: 0 auto;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  background-color: #016532;
-  color: white;
-
-  &:hover {
-    background-color: #014a24;
-  }
-`;
-
 const ErrorMessage = styled.p`
   color: red;
   text-align: center;
@@ -684,6 +525,18 @@ const NoRoomsMessage = styled.p`
 
   @media (max-width: 500px) {
     font-size: 0.8rem;
+  }
+`;
+
+const OverlayButtonContainer = styled.div`
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 2rem;
+  justify-content: center;
+  
+  @media (max-width: 500px) {
+    flex-direction: column;
+    gap: 0.5rem;
   }
 `;
 
@@ -804,13 +657,19 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
           <StyledCross size={20} />
         </CloseButton>
         <SearchContainer>
+          <SearchWrapper>
           <SearchIcon />
-          <SearchInput
-            placeholder="Search in MY ROOMS"
-            value={roomSearch}
-            onChange={(e) => setRoomSearch(e.target.value)}
-            disabled={isProcessing}
-          />
+            <LabeledInputWithCount
+                  variant="withIcon"
+                  value={roomSearch}
+                  onChange={(e) => setRoomSearch(e.target.value)}
+                  disabled={isProcessing}
+                  placeholder="Search in MY ROOMS"
+                  type="text"
+                  showCount={false} // 搜索框通常不需要字数统计
+
+            />
+            </SearchWrapper>
         </SearchContainer>
         <RoomList>
           {isLoading ? (
@@ -847,9 +706,12 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
             <ErrorMessage>Processing your request...</ErrorMessage>
           )}
         </RoomList>
-        <AddButton onClick={handleAddRooms} disabled={isProcessing}>
-          {isProcessing ? "Adding..." : "Add"}
-        </AddButton>
+        <OverlayButtonContainer>
+          <Button onClick={handleAddRooms} disabled={isProcessing}>
+            {isProcessing ? "Adding..." : "Add"}
+          </Button>
+        </OverlayButtonContainer>
+        
       </Modal>
     </Overlay>
   );
@@ -1165,46 +1027,41 @@ const MyClass: React.FC<MyClassProps> = ({
       <TopContainer>
         <Tag />
         <Title>{title}</Title>
-
+        <PlusButton onClick={() => setIsAddRoomVisible(true)}>
+        </PlusButton>
         {/* 将按钮移到顶部 */}
         <ButtonContainer>
-          <StyledPlusContainer onClick={() => setIsAddRoomVisible(true)}>
-            <StyledPlus/>
-          </StyledPlusContainer>
-          {isEditMode ? (
-            // 编辑模式下显示提交和取消按钮
-            <>
-              <CancelButton
-                onClick={() => {
-                  // 退出编辑模式，清除选择
-                  setSelectedRoomsToRemove({});
-                  setIsEditMode(false);
-                }}
-                $isLoading={isLoading}
-                disabled={isLoading}
-              >
-                CANCEL
-              </CancelButton>
-              <EditButton
-                onClick={toggleEditMode}
-                $isEditMode={isEditMode}
-                $isLoading={isLoading}
-                disabled={isLoading}
-              >
-                {isLoading ? "PROCESSING..." : "SUBMIT"}
-              </EditButton>
-            </>
-          ) : (
-            // 非编辑模式下只显示编辑按钮
-            <EditButton
+
+        {isEditMode ? (
+          <>
+            <Button
+              variant="cancel"
+              onClick={() => {
+                setSelectedRoomsToRemove({});
+                setIsEditMode(false);
+              }}
+              $isLoading={isLoading}
+            >
+              Cancel
+            </Button>
+
+            <Button
               onClick={toggleEditMode}
               $isEditMode={isEditMode}
               $isLoading={isLoading}
-              disabled={isLoading}
             >
-              EDIT
-            </EditButton>
-          )}
+              {isLoading ? "Processing..." : "Submit"}
+            </Button>
+          </>
+        ) : (
+          <Button
+            onClick={toggleEditMode}
+            $isEditMode={isEditMode}
+            $isLoading={isLoading}
+          >
+            Edit
+          </Button>
+        )}
         </ButtonContainer>
 
         {isAddRoomVisible && (

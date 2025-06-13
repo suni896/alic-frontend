@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
 import { CiSearch } from "react-icons/ci";
-import { RxCross2 } from "react-icons/rx";
 import { MdLock, MdPublic, MdGroup, MdDescription } from "react-icons/md";
 import { BiLoaderAlt } from "react-icons/bi";
 import styled, { css, keyframes } from "styled-components";
@@ -8,6 +7,10 @@ import axios from "axios";
 import apiClient from "../loggedOut/apiClient";
 import { useNavigate } from "react-router-dom";
 import { useJoinRoom, RoomGroup } from "./useJoinRoom";
+import CloseButton from "../CloseButton";
+import Button from "../button";
+import LabeledInputWithCount from "../Input";
+import ModalHeader from "../Header";
 
 // Animations
 const fadeIn = keyframes`
@@ -52,65 +55,13 @@ const Container = styled.div`
   animation: ${slideIn} 0.3s ease-out;
   display: flex;
   flex-direction: column;
+  padding: 2.5rem;
 
   @media (max-width: 700px) {
     width: 95%;
     height: 90vh;
     border-radius: 12px;
   }
-`;
-
-const Header = styled.div`
-  background: #016532;
-  color: white;
-  padding: 1.5rem 2rem;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  box-shadow: 0 2px 10px rgba(1, 101, 50, 0.2);
-`;
-
-const HeaderTitle = styled.h2`
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-
-  @media (max-width: 500px) {
-    font-size: 1.2rem;
-  }
-`;
-
-const CloseButton = styled.button`
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: none;
-  border: none;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0.5rem;
-  border-radius: 50%;
-  transition: all 0.2s ease;
-  outline: none;
-
-  &:hover {
-    background-color: rgba(255, 255, 255, 0.1);
-    transform: scale(1.1);
-  }
-
-  &:focus {
-    outline: none;
-  }
-`;
-
-const StyledCross = styled(RxCross2)`
-  color: white;
-  font-size: 1.2rem;
 `;
 
 const ContentArea = styled.div`
@@ -140,28 +91,6 @@ const SearchIcon = styled(CiSearch)`
   font-size: 1.5rem;
   color: #6c757d;
   z-index: 1;
-`;
-
-const SearchInput = styled.input`
-  width: 100%;
-  height: 48px;
-  padding: 0 1rem 0 3rem;
-  font-size: 1rem;
-  border: 2px solid #e9ecef;
-  border-radius: 24px;
-  background: white;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-
-  &:focus {
-    outline: none;
-    border-color: #016532;
-    box-shadow: 0 0 0 3px rgba(1, 101, 50, 0.1);
-  }
-
-  &::placeholder {
-    color: #adb5bd;
-  }
 `;
 
 const RoomListContainer = styled.div`
@@ -366,27 +295,6 @@ const Modal = styled.div`
   animation: ${slideIn} 0.2s ease-out;
 `;
 
-const ModalCloseButton = styled.button`
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: #f8f9fa;
-  border: none;
-  border-radius: 50%;
-  width: 32px;
-  height: 32px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #e9ecef;
-    transform: scale(1.1);
-  }
-`;
-
 const PasswordTitle = styled.label`
   display: block;
   font-weight: 600;
@@ -413,36 +321,6 @@ const ButtonContainer = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 0.75rem;
-`;
-
-const SubmitButton = styled.button`
-  padding: 0.75rem 1.5rem;
-  background: #016532;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #014d26;
-  }
-`;
-
-const CancelButton = styled.button`
-  padding: 0.75rem 1.5rem;
-  background: #6c757d;
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-
-  &:hover {
-    background: #5a6268;
-  }
 `;
 
 const ErrorMessage = styled.div`
@@ -527,6 +405,7 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
     redirectPath,
     setRedirectPath,
     handlePasswordSubmit,
+    isPasswordEmpty,
   } = useJoinRoom();
 
   useEffect(() => {
@@ -601,9 +480,8 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
     }
   };
 
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setRoomSearch(query);
+  const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setRoomSearch(e.target.value);
   };
 
   // Debounced search effect
@@ -630,27 +508,22 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
   return (
     <OverlayContainer>
       <Container ref={containerRef}>
-        <Header>
-          <HeaderTitle>
-            <MdGroup />
-            Join Rooms
-          </HeaderTitle>
-          <CloseButton onClick={onClose}>
-            <StyledCross />
-          </CloseButton>
-        </Header>
+        <ModalHeader icon={MdGroup} title="Join Rooms" onClose={onClose} />
 
         <ContentArea>
-          <SearchContainer>
-            <SearchWrapper>
-              <SearchIcon />
-              <SearchInput
-                placeholder="Search rooms by name or description..."
-                value={roomSearch}
-                onChange={handleSearch}
-              />
-            </SearchWrapper>
-          </SearchContainer>
+        <SearchContainer>
+          <SearchWrapper>
+            <SearchIcon />
+            <LabeledInputWithCount
+              variant="withIcon"
+              value={roomSearch}
+              onChange={handleSearch}
+              placeholder="Search rooms by name or description..."
+              type="text"
+              showCount={false} // 搜索框通常不需要字数统计
+            />
+          </SearchWrapper>
+        </SearchContainer>
 
           <RoomListContainer>
             {error && <ErrorContainer>{error}</ErrorContainer>}
@@ -724,9 +597,8 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
           <Overlay>
             {showPasswordModal && (
               <Modal>
-                <ModalCloseButton onClick={() => setShowPasswordModal(false)}>
-                  <StyledCross size={16} />
-                </ModalCloseButton>
+                <CloseButton onClick={() => setShowPasswordModal(false)}>
+                </CloseButton>
                 <PasswordTitle>Enter Room Password</PasswordTitle>
                 <PasswordInput
                   type="password"
@@ -740,12 +612,13 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
                   }}
                 />
                 <ButtonContainer>
-                  <CancelButton onClick={() => setShowPasswordModal(false)}>
+                  <Button variant="cancel" onClick={() => setShowPasswordModal(false)}>
                     Cancel
-                  </CancelButton>
-                  <SubmitButton onClick={handlePasswordSubmit}>
+                  </Button>
+
+                  <Button variant="primary" onClick={handlePasswordSubmit} disabled={isPasswordEmpty}>
                     Join Room
-                  </SubmitButton>
+                  </Button>
                 </ButtonContainer>
               </Modal>
             )}
