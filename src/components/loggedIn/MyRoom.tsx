@@ -10,6 +10,7 @@ import { useUser } from "./UserContext";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
+import { useInputTracking } from "../../hooks/useInputTracking";
 
 interface MyRoomProps {
   title?: string;
@@ -326,6 +327,38 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const isInitialMount = useRef(true);
+  
+  // 恢复防重复输入埋点追踪
+  const lastTypingEvent = useRef<{
+    content: string;
+    timestamp: number;
+  }>({ content: '', timestamp: 0 });
+  
+  // 使用埋点Hook
+  const { handleTyping, handleBlur, handleSend: trackSend, handleMessageReceived } = useInputTracking(groupId);
+
+  // 存储用户信息到本地存储，便于埋点使用
+  useEffect(() => {
+    if (userInfo && userInfo.userId) {
+      // 保存用户ID到多个位置，确保埋点能够获取
+      try {
+        localStorage.setItem('userId', String(userInfo.userId));
+        sessionStorage.setItem('userId', String(userInfo.userId));
+        // 同时在window对象上设置，便于调试
+        (window as any).userInfo = userInfo;
+      } catch (e) {
+        console.error('保存用户信息失败', e);
+      }
+    }
+  }, [userInfo]);
+
+  // 开发调试信息
+  useEffect(() => {
+    console.log('🏠 聊天室组件已加载', { groupId, userId: userInfo?.userId });
+    return () => {
+      console.log('🏠 聊天室组件已卸载', { groupId });
+    };
+  }, [groupId, userInfo]);
 
   const fetchBotInfo = async (botId: number): Promise<Bot> => {
     if (botsCache.has(botId)) {
@@ -522,6 +555,15 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             client.subscribe(`/topic/chat/${groupId}`, (message) => {
               console.log("Received message:", message.body);
               const receivedMessage = JSON.parse(message.body) as Message;
+              
+              // 只有接收到的消息不是自己发送的，才触发接收消息埋点
+              if (receivedMessage.senderId !== userInfo?.userId) {
+                handleMessageReceived(
+                  receivedMessage.content, 
+                  receivedMessage.senderId
+                );
+              }
+              
               Promise.all([
                 receivedMessage.senderType === "CHATBOT"
                   ? fetchBotInfo(receivedMessage.senderId).then((botInfo) => {
@@ -573,7 +615,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     } catch (error) {
       console.error("WebSocket connection error:", error);
     }
-  }, [groupId]);
+  }, [groupId, handleMessageReceived, userInfo?.userId]);
 
   useEffect(() => {
     if (!isInitialMount.current) {
@@ -625,6 +667,17 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
   const sendMessage = () => {
     if (inputMessage.trim() && stompClientRef.current && userInfo?.userId) {
+      // 调试日志
+      console.log('💬 即将发送消息:', {
+        content: inputMessage,
+        groupId,
+        userId: userInfo.userId,
+        botId: selectedBot || 0
+      });
+      
+      // 发送前触发埋点 - 只触发一次trackSend，防止重复
+      trackSend(inputMessage);
+      
       const message = {
         groupId: groupId,
         senderId: userInfo.userId,
@@ -639,7 +692,15 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         {},
         JSON.stringify(message)
       );
+      
+      console.log('✅ 消息已发送');
       setInputMessage("");
+    } else {
+      console.log('❌ 消息发送失败:', { 
+        hasContent: !!inputMessage.trim(), 
+        hasClient: !!stompClientRef.current, 
+        hasUser: !!userInfo?.userId 
+      });
     }
   };
 
@@ -794,8 +855,38 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         <MessageInput
           placeholder="Type your message..."
           value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+          onChange={(e) => {
+            setInputMessage(e.target.value);
+            
+            // 恢复输入事件的埋点，但添加强化的防重复机制
+            const now = Date.now();
+            const content = e.target.value;
+            
+            // 只有内容变化超过2个字符，或距离上次埋点超过3秒，才触发新的埋点
+            if (
+              content.trim() && 
+              (Math.abs(content.length - lastTypingEvent.current.content.length) > 2 || 
+              now - lastTypingEvent.current.timestamp > 3000)
+            ) {
+              // 记录本次输入事件
+              lastTypingEvent.current = {
+                content: content,
+                timestamp: now
+              };
+              
+              // 触发输入埋点
+              handleTyping(content);
+            }
+          }}
+          onBlur={() => {
+            // 保持blur事件埋点的移除
+          }}
+          onKeyPress={(e) => {
+            if (e.key === "Enter") {
+              console.log('⌨️ 按下回车键发送消息');
+              sendMessage();
+            }
+          }}
         />
         <BotIcon
           src={botIcon}
