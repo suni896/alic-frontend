@@ -692,7 +692,7 @@ const PageButton = styled.button<{ $active?: boolean }>`
   border-radius: 0.375rem;
   padding: 0.4rem 0.6rem;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: 500;
   transition: all 0.2s ease;
   box-shadow: ${(props) =>

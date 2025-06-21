@@ -1,7 +1,9 @@
 import axios from "axios";
+import { API_BASE_URL, API_TIMEOUT } from "../../config/apiConfig";
 
 const apiClient = axios.create({
-  baseURL: "https://112.74.92.135:443",
+  baseURL: API_BASE_URL,
+  timeout: API_TIMEOUT,
   withCredentials: true,
 });
 

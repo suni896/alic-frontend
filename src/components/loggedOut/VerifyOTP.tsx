@@ -6,8 +6,7 @@ import axios from "axios";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import Layout from "./Layout";
-
-axios.defaults.baseURL = "https://112.74.92.135:443";
+import apiClient from "./apiClient";
 
 const ConfirmationContainer = styled.div`
   display: flex;
@@ -178,7 +177,7 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
 
   const handleVerifyOTP = async (values: FormValues) => {
     try {
-      const response = await axios.post("/auth/verify_code", {
+      const response = await apiClient.post("/auth/verify_code", {
         email: values.email,
         verifiCode: values.otp,
         type: type === "register" ? "1" : "3", // 1: Register, 3: Reset Password
@@ -234,7 +233,7 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
               userEmail: email,
             };
 
-      const response = await axios.post("/auth/sendmail", requestBody);
+      const response = await apiClient.post("/auth/sendmail", requestBody);
 
       if (response.data.code === 200) {
         alert("A new verification code has been sent to your email.");

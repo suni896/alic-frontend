@@ -3,10 +3,9 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import ContainerLayout from "./ContainerLayout";
-
-axios.defaults.baseURL = "https://112.74.92.135:443";
+import axios from "axios";
+import apiClient from "./apiClient";
 
 const SigninForm = styled.form`
   display: flex;
@@ -189,7 +188,7 @@ const Register: React.FC<{ setEmail: (email: string) => void }> = ({
     validationSchema,
     onSubmit: async (values) => {
       try {
-        const response = await axios.post("/auth/sendmail", {
+        const response = await apiClient.post("/auth/sendmail", {
           userEmail: values.email,
           userName: values.username,
           password: values.password,

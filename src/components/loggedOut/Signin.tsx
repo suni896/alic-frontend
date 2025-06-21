@@ -9,8 +9,6 @@ import apiClient from "./apiClient";
 import { useUser } from "../loggedIn/UserContext";
 import { useState } from "react";
 
-axios.defaults.baseURL = "https://112.74.92.135:443";
-
 const ErrorToast = styled.div`
   position: fixed;
   top: 20px;

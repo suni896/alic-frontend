@@ -3,11 +3,10 @@ import styled from "styled-components";
 import ContainerLayout from "./ContainerLayout";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import apiClient from "./apiClient";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import Layout from "./Layout";
-
-axios.defaults.baseURL = "https://112.74.92.135:443";
 
 const ConfirmationContainer = styled.div`
   display: flex;
@@ -145,7 +144,7 @@ const VerifyOTPReset: React.FC<VerifyOTPResetProps> = ({
 
   const handleVerifyOTP = async (values: FormValues) => {
     try {
-      const response = await axios.post("/auth/verify_code", {
+      const response = await apiClient.post("/auth/verify_code", {
         email: values.email,
         verifiCode: values.otp,
         type: "3", // Reset Password
@@ -195,7 +194,7 @@ const VerifyOTPReset: React.FC<VerifyOTPResetProps> = ({
         userEmail: email,
       };
 
-      const response = await axios.post("/auth/sendmail", requestBody);
+      const response = await apiClient.post("/auth/sendmail", requestBody);
 
       if (response.data.code === 200) {
         alert("A new verification code has been sent to your email.");

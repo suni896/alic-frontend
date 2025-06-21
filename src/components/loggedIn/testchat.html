@@ -252,7 +252,9 @@
         function connect() {
             updateConnectionStatus("connecting");
             
-            socket = new SockJS('https://112.74.92.135/ws');
+            // 注意：在实际项目中，这个URL应该从配置文件中获取
+            // 例如：const wsUrl = config.WS_URL;
+            socket = new SockJS('https://112.74.92.135/ws'); // 应该使用配置文件中的 WS_URL
             stompClient = Stomp.over(socket);
 
             const headers = {

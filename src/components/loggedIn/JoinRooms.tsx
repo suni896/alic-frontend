@@ -518,7 +518,7 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
               variant="withIcon"
               value={roomSearch}
               onChange={handleSearch}
-              placeholder="Search rooms by name or description..."
+              placeholder="Search rooms"
               type="text"
               showCount={false} // 搜索框通常不需要字数统计
             />

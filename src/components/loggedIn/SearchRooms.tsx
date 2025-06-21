@@ -313,7 +313,7 @@ const SearchRooms: React.FC = () => {
                   variant="withIcon"
                   value={searchKeyword}
                   onChange={handleSearchChange}
-                  placeholder="Search rooms by name or description..."
+                  placeholder="Search rooms"
                   type="text"
                   showCount={false} // 搜索框通常不需要字数统计
                 />

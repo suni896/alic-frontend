@@ -3,11 +3,9 @@ import ContainerLayout from "./ContainerLayout";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import styled from "styled-components";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import VerifyOTP from "./VerifyOTP";
-
-axios.defaults.baseURL = "https://112.74.92.135:443";
+import apiClient from "./apiClient";
 
 const ResetPasswordForm = styled.form`
   display: flex;
@@ -158,7 +156,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
       if (step === 1) {
         // Step 1: Send reset email
         try {
-          const response = await axios.post("/auth/sendmail", {
+          const response = await apiClient.post("/auth/sendmail", {
             userEmail: values.email,
             type: "3", // Reset Password
           });
@@ -194,7 +192,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
 
     if (token) {
       try {
-        const response = await axios.post("/auth/reset", {
+        const response = await apiClient.post("/auth/reset", {
           newPassword: newPassword,
           token: token,
           type: "3",

@@ -8,15 +8,11 @@ import {
 } from "react-icons/io";
 import { MdGroup, MdLock, MdPublic } from "react-icons/md";
 import { FiUsers } from "react-icons/fi";
-import axios from "axios";
 import apiClient from "../loggedOut/apiClient";
 import { useParams } from "react-router-dom";
 import { useRoomContext } from "./RoomContext";
 import Button from "../button";
 import ModalHeader from "../Header";
-
-
-axios.defaults.baseURL = "https://112.74.92.135:443";
 
 const Overlay = styled.div`
   position: fixed;
@@ -1207,7 +1203,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                       <MdPublic />
                       Public
                     </RadioTitle>
-                    <RadioDescription>Show on main page</RadioDescription>
+                    <RadioDescription>Display on public pages</RadioDescription>
                   </RadioContent>
                 </RadioCard>
 
@@ -1232,7 +1228,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                       <MdLock />
                       Private
                     </RadioTitle>
-                    <RadioDescription>Need room password</RadioDescription>
+                    <RadioDescription>Password required to join</RadioDescription>
                   </RadioContent>
                 </RadioCard>
               </RadioGroup>

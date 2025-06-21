@@ -10,6 +10,7 @@ import { useUser } from "./UserContext";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
+import { WS_URL } from "../../config/apiConfig";
 
 interface MyRoomProps {
   title?: string;
@@ -505,7 +506,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     if (!groupId) return;
 
     // 创建新的连接
-    const socket = new SockJS(`https://112.74.92.135/ws`);
+    const socket = new SockJS(WS_URL);
     const client = Stomp.over(socket);
     stompClientRef.current = client;
     clientCache.set(groupId, client);
