@@ -10,6 +10,7 @@ import { useUser } from "./UserContext";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
+import { API_BASE_URL } from "../../../config";
 
 interface MyRoomProps {
   title?: string;
@@ -18,7 +19,6 @@ interface MyRoomProps {
   onClose?: () => void;
   onBotSelect?: (botName: string, botId: number) => void;
 }
-
 
 interface Bot {
   botId: number;
@@ -505,7 +505,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     if (!groupId) return;
 
     // 创建新的连接
-    const socket = new SockJS(`https://112.74.92.135/ws`);
+    const socket = new SockJS(`${API_BASE_URL}/ws`);
     const client = Stomp.over(socket);
     stompClientRef.current = client;
     clientCache.set(groupId, client);
@@ -685,7 +685,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const MessageContainer = styled.div<{ $isOwnMessage: boolean }>`
     margin-bottom: 1rem;
     padding: 1rem;
-    background-color: ${props => props.$isOwnMessage ? "#dcf8c6" : "white"};
+    background-color: ${(props) => (props.$isOwnMessage ? "#dcf8c6" : "white")};
     border-radius: 8px;
     display: flex;
     align-items: flex-start;
@@ -722,7 +722,10 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           </div>
         )}
         {messages.map((msg) => (
-          <MessageContainer key={msg.infoId} $isOwnMessage={msg.senderId === userInfo?.userId}>
+          <MessageContainer
+            key={msg.infoId}
+            $isOwnMessage={msg.senderId === userInfo?.userId}
+          >
             <Avatar
               src={
                 msg.senderType === "CHATBOT"
@@ -732,7 +735,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               alt="User portrait"
             />
             <MessageContent>
-              <UserName>{msg.senderId === userInfo?.userId ? "You" : `${msg.name}`}</UserName>
+              <UserName>
+                {msg.senderId === userInfo?.userId ? "You" : `${msg.name}`}
+              </UserName>
               <MessageText>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}

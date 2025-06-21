@@ -6,8 +6,9 @@ import axios from "axios";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import Layout from "./Layout";
+import { API_BASE_URL } from "../../../config";
 
-axios.defaults.baseURL = "https://112.74.92.135:443";
+axios.defaults.baseURL = API_BASE_URL;
 
 const ConfirmationContainer = styled.div`
   display: flex;

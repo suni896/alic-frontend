@@ -1,6 +1,7 @@
 import axios from "axios";
 import styled from "styled-components";
 import { useState } from "react";
+import { API_BASE_URL } from "../../../config";
 
 const Button = styled.button`
   padding: 10px 20px;
@@ -39,7 +40,7 @@ interface UserInformation {
 
 // Create API client with enhanced debugging
 const apiClient = axios.create({
-  baseURL: "https://112.74.92.135:443",
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -160,7 +161,7 @@ const Test = () => {
         "APPROACH 2: Setting cookie manually via document.cookie"
       );
       // Try to set the cookie manually
-      document.cookie = `JWT_TOKEN=${bearerToken}; path=/; domain=112.74.92.135`;
+      document.cookie = `JWT_TOKEN=${bearerToken}; path=/; domain=${API_BASE_URL}`;
       addDebugMessage(`Current cookies: ${document.cookie}`);
 
       const cookieResponse = await apiClient.get("/v1/user/get_user_info");

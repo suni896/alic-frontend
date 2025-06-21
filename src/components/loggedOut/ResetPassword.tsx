@@ -6,8 +6,9 @@ import styled from "styled-components";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import VerifyOTP from "./VerifyOTP";
+import { API_BASE_URL } from "../../../config";
 
-axios.defaults.baseURL = "https://112.74.92.135:443";
+axios.defaults.baseURL = API_BASE_URL;
 
 const ResetPasswordForm = styled.form`
   display: flex;

@@ -14,9 +14,9 @@ import { useParams } from "react-router-dom";
 import { useRoomContext } from "./RoomContext";
 import Button from "../button";
 import ModalHeader from "../Header";
+import { API_BASE_URL } from "../../../config";
 
-
-axios.defaults.baseURL = "https://112.74.92.135:443";
+axios.defaults.baseURL = API_BASE_URL;
 
 const Overlay = styled.div`
   position: fixed;
@@ -57,7 +57,7 @@ const Modal = styled.div`
   overflow-x: visible;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   animation: slideIn 0.3s ease-out;
-  
+
   @keyframes slideIn {
     from {
       transform: translateY(-20px);
@@ -93,7 +93,7 @@ const InputGroup = styled.div`
 `;
 
 const Label = styled.label`
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   font-weight: 500;
   font-size: 0.875rem;
   color: #374151;
@@ -106,7 +106,7 @@ interface InputProps {
 
 const Input = styled.input<InputProps>`
   font-size: 1rem;
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   padding: 0.875rem 1rem;
   border: 2px solid ${(props) => (props.hasError ? "#ef4444" : "#e5e7eb")};
   border-radius: 12px;
@@ -119,8 +119,9 @@ const Input = styled.input<InputProps>`
   &:focus {
     border-color: ${(props) => (props.hasError ? "#ef4444" : "#016532")};
     background-color: white;
-    box-shadow: 0 0 0 3px ${(props) => 
-      props.hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
+    box-shadow: 0 0 0 3px
+      ${(props) =>
+        props.hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
   }
 
   &::placeholder {
@@ -141,7 +142,7 @@ const Input = styled.input<InputProps>`
 
 const Textarea = styled.textarea<InputProps>`
   font-size: 1rem;
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   padding: 0.875rem 1rem;
   border: 2px solid ${(props) => (props.hasError ? "#ef4444" : "#e5e7eb")};
   border-radius: 12px;
@@ -156,8 +157,9 @@ const Textarea = styled.textarea<InputProps>`
   &:focus {
     border-color: ${(props) => (props.hasError ? "#ef4444" : "#016532")};
     background-color: white;
-    box-shadow: 0 0 0 3px ${(props) => 
-      props.hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
+    box-shadow: 0 0 0 3px
+      ${(props) =>
+        props.hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
   }
 
   &::placeholder {
@@ -179,11 +181,11 @@ const Textarea = styled.textarea<InputProps>`
 const ErrorMessage = styled.div`
   color: #ef4444;
   font-size: 0.875rem;
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  
+
   &::before {
     content: "⚠";
     font-size: 0.75rem;
@@ -206,16 +208,16 @@ const RadioCard = styled.label<{ checked: boolean; disabled?: boolean }>`
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  border: 2px solid ${(props) => props.checked ? "#016532" : "#e5e7eb"};
+  border: 2px solid ${(props) => (props.checked ? "#016532" : "#e5e7eb")};
   border-radius: 12px;
-  background-color: ${(props) => props.checked ? "#f0fdf4" : "#f9fafb"};
-  cursor: ${(props) => props.disabled ? "not-allowed" : "pointer"};
+  background-color: ${(props) => (props.checked ? "#f0fdf4" : "#f9fafb")};
+  cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
   transition: all 0.2s ease;
-  opacity: ${(props) => props.disabled ? 0.6 : 1};
+  opacity: ${(props) => (props.disabled ? 0.6 : 1)};
 
   &:hover:not(:disabled) {
-    border-color: ${(props) => props.checked ? "#016532" : "#9ca3af"};
-    background-color: ${(props) => props.checked ? "#f0fdf4" : "#f3f4f6"};
+    border-color: ${(props) => (props.checked ? "#016532" : "#9ca3af")};
+    background-color: ${(props) => (props.checked ? "#f0fdf4" : "#f3f4f6")};
   }
 
   input {
@@ -226,9 +228,9 @@ const RadioCard = styled.label<{ checked: boolean; disabled?: boolean }>`
 const RadioIcon = styled.div<{ checked: boolean }>`
   width: 1.25rem;
   height: 1.25rem;
-  border: 2px solid ${(props) => props.checked ? "#016532" : "#d1d5db"};
+  border: 2px solid ${(props) => (props.checked ? "#016532" : "#d1d5db")};
   border-radius: 50%;
-  background-color: ${(props) => props.checked ? "#016532" : "transparent"};
+  background-color: ${(props) => (props.checked ? "#016532" : "transparent")};
   position: relative;
   transition: all 0.2s ease;
 
@@ -242,7 +244,7 @@ const RadioIcon = styled.div<{ checked: boolean }>`
     background-color: white;
     border-radius: 50%;
     transform: translate(-50%, -50%);
-    opacity: ${(props) => props.checked ? 1 : 0};
+    opacity: ${(props) => (props.checked ? 1 : 0)};
     transition: opacity 0.2s ease;
   }
 `;
@@ -258,14 +260,14 @@ const RadioTitle = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   font-weight: 600;
   font-size: 0.875rem;
   color: #1f2937;
 `;
 
 const RadioDescription = styled.div`
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   font-size: 0.75rem;
   color: #6b7280;
 `;
@@ -294,7 +296,7 @@ const CheckboxInput = styled.input`
 `;
 
 const CheckboxLabel = styled.label`
-  font-family: 'Roboto', sans-serif;
+  font-family: "Roboto", sans-serif;
   font-weight: 500;
   font-size: 0.875rem;
   color: #374151;
@@ -397,7 +399,7 @@ const SmallInput = styled(Input)<InputProps>`
     font-size: 0.75rem;
     padding: 0.4rem 0.6rem;
   }
-  
+
   @media (max-width: 600px) {
     font-size: 0.7rem;
   }
@@ -415,7 +417,7 @@ const SmallTextarea = styled(Textarea)<InputProps>`
     padding: 0.4rem 0.6rem;
     min-height: 50px;
   }
-  
+
   @media (max-width: 600px) {
     font-size: 0.7rem;
     min-height: 45px;
@@ -452,7 +454,7 @@ const ToggleSwitch = styled.label`
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  
+
   input {
     display: none;
   }
@@ -529,13 +531,12 @@ const ButtonContainer = styled.div`
   gap: 0.75rem;
   margin-top: 2rem;
   justify-content: center;
-  
+
   @media (max-width: 500px) {
     flex-direction: column;
     gap: 0.5rem;
   }
 `;
-
 
 const validationSchema = (showAssistants: boolean) =>
   Yup.object().shape({
@@ -760,7 +761,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
     } catch (error: any) {
       console.error("Error creating group:", error);
       alert(`Error: ${error.response?.data?.message || error.message}`);
-    }finally {
+    } finally {
       setIsSubmitting(false);
     }
   };
@@ -1147,7 +1148,11 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   return (
     <Overlay>
       <Modal ref={modalRef}>
-        <ModalHeader icon={MdGroup} title={effectiveIsModify ? "Edit Room" : "Create New Room"} onClose={onClose} />
+        <ModalHeader
+          icon={MdGroup}
+          title={effectiveIsModify ? "Edit Room" : "Create New Room"}
+          onClose={onClose}
+        />
         <FormikProvider value={formik}>
           <Form onSubmit={formik.handleSubmit}>
             <InputGroup>
@@ -1177,17 +1182,23 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 disabled={shouldCheckRole && userRole !== "ADMIN"}
-                hasError={!!(formik.touched.roomDescription && formik.errors.roomDescription)}
+                hasError={
+                  !!(
+                    formik.touched.roomDescription &&
+                    formik.errors.roomDescription
+                  )
+                }
               />
-              {formik.touched.roomDescription && formik.errors.roomDescription && (
-                <ErrorMessage>{formik.errors.roomDescription}</ErrorMessage>
-              )}
+              {formik.touched.roomDescription &&
+                formik.errors.roomDescription && (
+                  <ErrorMessage>{formik.errors.roomDescription}</ErrorMessage>
+                )}
             </InputGroup>
 
             <InputGroup>
               <Label>Group Type</Label>
               <RadioGroup>
-                <RadioCard 
+                <RadioCard
                   checked={formik.values.roomType === "1"}
                   disabled={effectiveIsModify}
                 >
@@ -1211,7 +1222,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   </RadioContent>
                 </RadioCard>
 
-                <RadioCard 
+                <RadioCard
                   checked={formik.values.roomType === "0"}
                   disabled={effectiveIsModify}
                 >
@@ -1248,7 +1259,9 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   value={formik.values.password}
-                  hasError={!!(formik.touched.password && formik.errors.password)}
+                  hasError={
+                    !!(formik.touched.password && formik.errors.password)
+                  }
                 />
                 {formik.touched.password && formik.errors.password && (
                   <ErrorMessage>{formik.errors.password}</ErrorMessage>
@@ -1305,12 +1318,15 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               value={bot.name}
                               onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
-                              hasError={!!(
-                                formik.touched.bots?.[index]?.name &&
-                                formik.errors.bots?.[index] &&
-                                typeof formik.errors.bots[index] === "object" &&
-                                (formik.errors.bots[index] as any).name
-                              )}
+                              hasError={
+                                !!(
+                                  formik.touched.bots?.[index]?.name &&
+                                  formik.errors.bots?.[index] &&
+                                  typeof formik.errors.bots[index] ===
+                                    "object" &&
+                                  (formik.errors.bots[index] as any).name
+                                )
+                              }
                             />
                             {formik.touched.bots?.[index]?.name &&
                               formik.errors.bots?.[index] &&
@@ -1328,12 +1344,15 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               value={bot.prompt}
                               onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
-                              hasError={!!(
-                                formik.touched.bots?.[index]?.prompt &&
-                                formik.errors.bots?.[index] &&
-                                typeof formik.errors.bots[index] === "object" &&
-                                (formik.errors.bots[index] as any).prompt
-                              )}
+                              hasError={
+                                !!(
+                                  formik.touched.bots?.[index]?.prompt &&
+                                  formik.errors.bots?.[index] &&
+                                  typeof formik.errors.bots[index] ===
+                                    "object" &&
+                                  (formik.errors.bots[index] as any).prompt
+                                )
+                              }
                             />
                             {formik.touched.bots?.[index]?.prompt &&
                               formik.errors.bots?.[index] &&
@@ -1383,12 +1402,15 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               onBlur={formik.handleBlur}
                               min={1}
                               max={20}
-                              hasError={!!(
-                                formik.touched.bots?.[index]?.context &&
-                                formik.errors.bots?.[index] &&
-                                typeof formik.errors.bots[index] === "object" &&
-                                (formik.errors.bots[index] as any).context
-                              )}
+                              hasError={
+                                !!(
+                                  formik.touched.bots?.[index]?.context &&
+                                  formik.errors.bots?.[index] &&
+                                  typeof formik.errors.bots[index] ===
+                                    "object" &&
+                                  (formik.errors.bots[index] as any).context
+                                )
+                              }
                             />
                             {formik.touched.bots?.[index]?.context &&
                               formik.errors.bots?.[index] &&
@@ -1401,7 +1423,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                           </SmallInputContainer>
                         </AddAssistantRow>
                       ))}
-                      
+
                       <AddIcon
                         onClick={() =>
                           arrayHelpers.push({
@@ -1429,21 +1451,22 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
 
             {(!effectiveIsModify || userRole === "ADMIN") && (
               <ButtonContainer>
-                <Button variant="cancel" onClick={onClose} disabled={isSubmitting}>
-                    Cancel
+                <Button
+                  variant="cancel"
+                  onClick={onClose}
+                  disabled={isSubmitting}
+                >
+                  Cancel
                 </Button>
                 <Button variant="primary" disabled={isSubmitting}>
                   {effectiveIsModify ? "Update Room" : "Create Room"}
                 </Button>
 
-               
                 {/* <Button variant="primary" onClick={handleCreateTag} disabled={isSubmitting || !tagName.trim()}>
                   {isSubmitting && <LoadingSpinner />}
                   {isSubmitting ? "Creating..." : "Create Tag"}
                 </Button> */}
               </ButtonContainer>
-
-              
             )}
           </Form>
         </FormikProvider>
