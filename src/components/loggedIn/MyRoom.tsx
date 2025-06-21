@@ -325,7 +325,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [hasNoMoreMessages, setHasNoMoreMessages] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const isInitialMount = useRef(true);
+  const isInitialMount = useRef(false);
 
   const fetchBotInfo = async (botId: number): Promise<Bot> => {
     if (botsCache.has(botId)) {
