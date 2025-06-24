@@ -1,5 +1,5 @@
-import { useRef, useCallback } from 'react';
-import sensors from '../utils/tracker';
+import { useRef, useCallback, useState, useEffect } from 'react';
+import sensors, { flushEvents } from '../utils/tracker';
 
 // TrackingData接口使用与SpringBoot服务器匹配的结构
 interface TrackingData {
@@ -16,28 +16,43 @@ interface TrackingData {
   platform: string;
   device_type: string;
   module: string;
+  event_fingerprint: string;
+  // 新增字段，标记是增加还是删除操作
+  input_action: 'add' | 'delete';
+  // 新增字段，记录最大长度
+  max_length?: number;
 }
 
 // 定义允许的埋点事件名称，仅这些事件会被发送
 const ALLOWED_EVENTS = [
-  // 移除不需要的埋点事件
+  // 仅保留打字事件埋点
   'chat_input_typing',
+  // 其他事件均已移除
   // 'chat_input_blur',
-  'chat_input_before_send',
-  'chat_input_sent',
-  'chat_message_received'
+  // 'chat_input_before_send',
+  // 'chat_input_sent',
+  // 'chat_message_received'
 ];
 
 // 调试开关 - 设置为true以查看埋点日志
 const DEBUG_MODE = true;
 
-// 定义防抖时间间隔（毫秒）- 大幅增加时间间隔，确保不会重复
+// 修改防抖时间间隔（毫秒）- 增加和删除操作使用不同的时间
 const DEBOUNCE_TIME = {
-  chat_input_typing: 3000,    // 类型事件防抖，3秒内只允许一次相同内容
-  chat_input_blur: 1000,      // 虽然已移除但保留配置以备将来使用
+  chat_input_typing_add: 2000,     // 增加内容时等待更长时间，只保留最终状态
+  chat_input_typing_delete: 500,  // 删除操作更快记录
+  chat_input_blur: 1000,          // 虽然已移除但保留配置以备将来使用
   chat_input_before_send: 500,
   chat_input_sent: 500,
   chat_message_received: 500
+};
+
+// 生成事件指纹，用于更精确的去重
+const generateEventFingerprint = (eventName: string, content: string, inputAction: 'add' | 'delete', roomId?: number): string => {
+  // 提取内容的前30个字符作为指纹的一部分
+  const contentDigest = content.substring(0, 30);
+  // 组合事件名、内容摘要、操作类型和房间ID生成唯一指纹
+  return `${eventName}_${contentDigest}_${inputAction}_${roomId || 0}`;
 };
 
 // 全局记录上次发送的事件，用于防止重复
@@ -45,33 +60,36 @@ const lastEvents: Record<string, {
   content: string;
   timestamp: number;
   count: number;  // 追踪尝试次数
+  fingerprint: string; // 添加指纹字段
+  length: number; // 记录内容长度
 }> = {};
 
 // 检查是否重复事件 - 防止短时间内相同事件重复发送
-const isDuplicateEvent = (eventName: string, content: string): boolean => {
+const isDuplicateEvent = (eventName: string, content: string, inputAction: 'add' | 'delete', roomId?: number): boolean => {
   const now = Date.now();
-  // 确保生成唯一键
-  const key = `${eventName}_${content.substring(0, 20)}_${now % 10000}`;
+  // 生成事件指纹
+  const fingerprint = generateEventFingerprint(eventName, content, inputAction, roomId);
   
   // 首先检查是否有任何类型事件的重复发送（全局限制）
   const allContentKeys = Object.keys(lastEvents).filter(k => 
-    k.includes(content.substring(0, 20)) && 
+    lastEvents[k].fingerprint === fingerprint && 
     now - lastEvents[k].timestamp < 500
   );
   
   if (allContentKeys.length > 0) {
     // 有任何事件类型最近500ms内发送过相同内容
     if (DEBUG_MODE) {
-      console.log(`🛑 全局重复检测: 相同内容 "${content.substring(0, 20)}..." 在500ms内已发送过`);
+      console.log(`🛑 全局重复检测: 相同指纹 "${fingerprint}" 在500ms内已发送过`);
     }
     return true;
   }
   
   // 检查是否存在相同事件类型的重复
+  const eventWithAction = `${eventName}_${inputAction}`;
   const sameEventKeys = Object.keys(lastEvents).filter(k => 
-    k.startsWith(eventName) && 
-    lastEvents[k].content === content && 
-    now - lastEvents[k].timestamp < DEBOUNCE_TIME[eventName as keyof typeof DEBOUNCE_TIME]
+    k.startsWith(eventWithAction) && 
+    lastEvents[k].fingerprint === fingerprint &&
+    now - lastEvents[k].timestamp < DEBOUNCE_TIME[`chat_input_typing_${inputAction}` as keyof typeof DEBOUNCE_TIME]
   );
   
   if (sameEventKeys.length > 0) {
@@ -81,18 +99,27 @@ const isDuplicateEvent = (eventName: string, content: string): boolean => {
     });
     
     if (DEBUG_MODE) {
-      console.log(`🔄 忽略第${lastEvents[sameEventKeys[0]].count}次重复事件: ${eventName}，距上次发送仅 ${now - lastEvents[sameEventKeys[0]].timestamp}ms`);
+      console.log(`🔄 忽略第${lastEvents[sameEventKeys[0]].count}次重复事件: ${eventName}(${inputAction})，距上次发送仅 ${now - lastEvents[sameEventKeys[0]].timestamp}ms`);
     }
     return true;
   }
   
+  // 生成唯一键，加入操作类型
+  const key = `${eventName}_${inputAction}_${now}`;
+  
   // 记录本次事件
-  lastEvents[key] = { content, timestamp: now, count: 1 };
+  lastEvents[key] = { 
+    content, 
+    timestamp: now, 
+    count: 1,
+    fingerprint,
+    length: content.length
+  };
   
   // 清理过期事件记录
   setTimeout(() => {
     delete lastEvents[key];
-  }, 5000);
+  }, 10000); // 延长保留时间到10秒，增强防重复能力
   
   return false;
 };
@@ -168,6 +195,8 @@ const logTracking = (eventName: string, data: TrackingData) => {
   console.group(`📊 埋点事件: ${eventName}`);
   console.log(`📝 内容: ${data.content.substring(0, 50)}${data.content.length > 50 ? '...' : ''}`);
   console.log(`📏 长度: ${data.input_length}`);
+  console.log(`🧩 操作: ${data.input_action === 'add' ? '增加内容' : '删除内容'}`);
+  if (data.max_length) console.log(`📏 最大长度: ${data.max_length}`);
   console.log(`🏠 页面: ${data.page}`);
   console.log(`🕒 时间: ${new Date(data.timestamp).toLocaleTimeString()}`);
   console.log(`👤 用户ID: ${data.distinct_id}`);
@@ -180,9 +209,59 @@ export const useInputTracking = (roomId?: number) => {
   
   // 记录已触发事件，避免重复
   const eventTracked = useRef<{[key: string]: boolean}>({});
+  // 记录组件级别的最后事件时间
+  const lastEventTime = useRef<{[key: string]: number}>({});
+  // 记录上一次输入的内容长度，用于比较是增加还是删除
+  const lastInputLength = useRef<number>(0);
+  // 记录当前输入会话中的最大内容长度
+  const maxInputLength = useRef<number>(0);
+  // 记录最后一次输入的内容
+  const lastInputContent = useRef<string>('');
+  // 记录是否有待发送的增加类型事件
+  const hasPendingAddEvent = useRef<boolean>(false);
+  // 记录本次会话的状态，用于记录减少操作
+  const sessionState = useRef<{
+    maxContent: string;
+    wasReduced: boolean;
+    lastReducedContent: string;
+  }>({
+    maxContent: '',
+    wasReduced: false,
+    lastReducedContent: ''
+  });
 
-  const getTrackingData = useCallback((content: string, eventName: string): TrackingData => {
+  // 清理函数 - 在组件卸载时发送最后的状态
+  useEffect(() => {
+    return () => {
+      // 如果有未发送的内容且长度大于0，发送最终状态
+      if (lastInputContent.current.trim().length > 0) {
+        // 发送最终状态的埋点数据
+        if (DEBUG_MODE) {
+          console.log('🏁 组件卸载，发送最终输入状态');
+        }
+        
+        // 触发最终状态埋点，使用特殊的input_action标识符
+        const finalData = getTrackingData(
+          lastInputContent.current,
+          'chat_input_typing',
+          'add'
+        );
+        
+        // 添加最大长度信息
+        finalData.max_length = maxInputLength.current;
+        
+        sensors.track('chat_input_typing', finalData);
+        flushEvents(); // 立即尝试发送队列中的事件
+      }
+    };
+  }, [roomId]);
+
+  const getTrackingData = useCallback((content: string, eventName: string, inputAction: 'add' | 'delete'): TrackingData => {
     const userId = getUserId();
+    const timestamp = Date.now();
+    
+    // 生成事件指纹
+    const fingerprint = generateEventFingerprint(eventName, content, inputAction, roomId);
     
     return {
       // 关键字段，与SpringBoot @RequestBody Map<String, Object> payload 匹配
@@ -193,93 +272,200 @@ export const useInputTracking = (roomId?: number) => {
       content,
       input_length: content.length,
       page: window.location.pathname,
-      timestamp: Date.now(),
+      timestamp,
       room_id: roomId,
       platform: 'web',
       device_type: 'browser',
-      module: 'chat'
+      module: 'chat',
+      // 添加指纹用于跟踪和去重
+      event_fingerprint: fingerprint,
+      // 添加操作类型标记
+      input_action: inputAction,
+      // 添加最大长度信息（如果是删除操作或最终状态）
+      max_length: inputAction === 'delete' || eventName === 'chat_input_before_send' ? maxInputLength.current : undefined
     };
   }, [roomId]);
 
   // 通用的埋点发送函数，集中处理重复检查
-  const trackEvent = useCallback((eventName: string, content: string) => {
+  const trackEvent = useCallback((eventName: string, content: string, inputAction: 'add' | 'delete') => {
     // 检查是否为允许的事件
     if (!ALLOWED_EVENTS.includes(eventName)) {
       if (DEBUG_MODE) console.log(`🚫 不跟踪事件: ${eventName}`);
       return;
     }
     
-    // 防止重复发送同一事件
-    if (isDuplicateEvent(eventName, content)) {
+    // 组件级别的节流控制
+    const now = Date.now();
+    const lastTime = lastEventTime.current[`${eventName}_${inputAction}`] || 0;
+    // 根据操作类型选择不同的节流时间
+    const minInterval = inputAction === 'add' ? 2000 : 500;
+    
+    if (now - lastTime < minInterval) {
+      if (DEBUG_MODE) console.log(`⏱️ 组件级节流: ${eventName}(${inputAction}) 事件间隔过短 (${now - lastTime}ms < ${minInterval}ms)`);
       return;
     }
     
-    const data = getTrackingData(content, eventName);
+    // 防止重复发送同一事件
+    if (isDuplicateEvent(eventName, content, inputAction, roomId)) {
+      return;
+    }
+    
+    // 更新最后事件时间
+    lastEventTime.current[`${eventName}_${inputAction}`] = now;
+    
+    const data = getTrackingData(content, eventName, inputAction);
+    
+    if (DEBUG_MODE) {
+      console.log(`📤 准备发送事件: ${eventName}(${inputAction}), 指纹: ${data.event_fingerprint}`);
+    }
+    
     sensors.track(eventName, data);
     logTracking(eventName, data);
-  }, [getTrackingData]);
 
-  // 恢复typing处理函数的功能
+    // 新增：每次添加埋点时直接在控制台显示队列中的所有事件
+    if (DEBUG_MODE && (sensors as any).debug) {
+      (sensors as any).debug.dumpQueue();
+    }
+  }, [getTrackingData, roomId]);
+
+  // 修改typing处理函数，区分增加和删除操作，实现新的埋点规则
   const handleTyping = useCallback((content: string) => {
-    if (!content.trim()) return;
+    if (!content.trim()) {
+      lastInputLength.current = 0;
+      maxInputLength.current = 0;
+      lastInputContent.current = '';
+      sessionState.current = {
+        maxContent: '',
+        wasReduced: false,
+        lastReducedContent: ''
+      };
+      return;
+    }
     
-    if (timerRef.current) clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      trackEvent('chat_input_typing', content);
-    }, DEBOUNCE_TIME.chat_input_typing);
+    // 保存当前内容用于组件卸载时发送
+    lastInputContent.current = content;
+    
+    // 比较当前内容长度与上一次长度，判断是增加还是删除
+    const currentLength = content.length;
+    const previousLength = lastInputLength.current;
+    const inputAction: 'add' | 'delete' = currentLength >= previousLength ? 'add' : 'delete';
+    
+    // 更新上一次输入长度
+    lastInputLength.current = currentLength;
+    
+    // 取消之前的定时器
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    
+    // 新规则实现：
+    if (inputAction === 'add') {
+      // 如果是增加操作
+      
+      // 更新本次会话的最大长度
+      if (currentLength > maxInputLength.current) {
+        maxInputLength.current = currentLength;
+        sessionState.current.maxContent = content;
+      }
+      
+      // 标记有待发送的增加事件
+      hasPendingAddEvent.current = true;
+      
+      // 内容一直增加，不立即发送埋点，等待网页关闭或发送消息时才记录
+      // 或者等待一段无操作时间后发送最新状态
+      timerRef.current = setTimeout(() => {
+        if (hasPendingAddEvent.current) {
+          trackEvent('chat_input_typing', content, 'add');
+          hasPendingAddEvent.current = false;
+        }
+      }, DEBOUNCE_TIME.chat_input_typing_add);
+      
+    } else {
+      // 如果是删除操作
+      
+      // 检查是否需要记录删除操作
+      // 只有当删除到小于最大长度的一定比例时才记录
+      const deletionThreshold = maxInputLength.current * 0.5; // 例如，删除到最大长度的50%以下才记录
+      
+      if (currentLength < deletionThreshold && !sessionState.current.wasReduced) {
+        // 首次触发大幅度删除操作，记录删除事件
+        sessionState.current.wasReduced = true;
+        sessionState.current.lastReducedContent = content;
+        
+        // 立即发送删除事件
+        trackEvent('chat_input_typing', content, 'delete');
+      } else if (sessionState.current.wasReduced && currentLength < lastInputLength.current) {
+        // 已经处于删除状态，继续删除，更新最后的删除内容
+        sessionState.current.lastReducedContent = content;
+        
+        // 不频繁发送删除事件，使用节流
+        if (timerRef.current) clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
+          trackEvent('chat_input_typing', content, 'delete');
+        }, DEBOUNCE_TIME.chat_input_typing_delete);
+      }
+      
+      // 如果从删除状态恢复增加，重置删除状态
+      if (sessionState.current.wasReduced && currentLength > previousLength) {
+        sessionState.current.wasReduced = false;
+      }
+    }
   }, [trackEvent]);
 
-  // 保持blur处理函数的移除
-  const handleBlur = useCallback((content: string) => {
-    // 不再发送blur事件，直接返回
-    return;
-  }, []);
-
-  const handleBeforeSend = useCallback((content: string) => {
-    if (!content.trim()) return;
-    trackEvent('chat_input_before_send', content);
-  }, [trackEvent]);
-
+  // 发送消息的处理函数 - 增加发送前记录最终状态
   const handleSend = useCallback((content: string) => {
     if (!content.trim()) return;
     
-    handleBeforeSend(content);
-    trackEvent('chat_input_sent', content);
+    // 发送前记录最终输入状态
+    if (lastInputContent.current.trim().length > 0) {
+      // 创建最终状态的数据
+      const finalData = getTrackingData(
+        lastInputContent.current,
+        'chat_input_typing',
+        'add'
+      );
+      
+      // 添加最大长度信息
+      finalData.max_length = maxInputLength.current;
+      
+      if (DEBUG_MODE) {
+        console.log('📨 发送消息前，记录最终输入状态');
+        console.log(`📏 最大长度: ${maxInputLength.current}`);
+      }
+      
+      sensors.track('chat_input_typing', finalData);
+    }
+    
+    // 重置状态，为下一次输入做准备
+    lastInputLength.current = 0;
+    maxInputLength.current = 0;
+    lastInputContent.current = '';
+    hasPendingAddEvent.current = false;
+    sessionState.current = {
+      maxContent: '',
+      wasReduced: false,
+      lastReducedContent: ''
+    };
     
     if (DEBUG_MODE) {
-      console.log('🚀 消息已发送并埋点完成:', content.substring(0, 30));
+      console.log('🚫 发送消息埋点已禁用:', content.substring(0, 30));
     }
-  }, [trackEvent, handleBeforeSend]);
+    // 不再触发发送消息埋点事件
+  }, [getTrackingData]);
 
-  // 添加一个用于接收消息的埋点方法
+  // 消息接收处理函数 - 已禁用埋点，但保留函数接口以确保兼容性
   const handleMessageReceived = useCallback((content: string, senderId: number) => {
     if (!content.trim()) return;
     
-    // 这里需要特殊处理，因为需要添加sender_id
-    // 检查是否为允许的事件
-    const eventName = 'chat_message_received';
-    if (!ALLOWED_EVENTS.includes(eventName)) {
-      if (DEBUG_MODE) console.log(`🚫 不跟踪事件: ${eventName}`);
-      return;
+    if (DEBUG_MODE) {
+      console.log('🚫 接收消息埋点已禁用:', content.substring(0, 30));
     }
-    
-    // 防止重复发送同一事件
-    if (isDuplicateEvent(eventName, `${content}_${senderId}`)) {
-      return;
-    }
-    
-    const data = {
-      ...getTrackingData(content, eventName),
-      sender_id: senderId
-    };
-    sensors.track(eventName, data);
-    logTracking(eventName, data);
-  }, [getTrackingData]);
+    // 不再触发埋点事件
+  }, []);
 
   return {
     handleTyping,
-    handleBlur,
-    handleBeforeSend,
     handleSend,
     handleMessageReceived
   };

@@ -11,6 +11,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import { useInputTracking } from "../../hooks/useInputTracking";
+import sensors, { eventQueue } from "../../utils/tracker";
 
 interface MyRoomProps {
   title?: string;
@@ -328,14 +329,8 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const isInitialMount = useRef(true);
   
-  // 恢复防重复输入埋点追踪
-  const lastTypingEvent = useRef<{
-    content: string;
-    timestamp: number;
-  }>({ content: '', timestamp: 0 });
-  
-  // 使用埋点Hook
-  const { handleTyping, handleBlur, handleSend: trackSend, handleMessageReceived } = useInputTracking(groupId);
+  // 使用埋点Hook - 已更新埋点规则
+  const { handleTyping, handleSend: trackSend, handleMessageReceived } = useInputTracking(groupId);
 
   // 存储用户信息到本地存储，便于埋点使用
   useEffect(() => {
@@ -675,7 +670,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         botId: selectedBot || 0
       });
       
-      // 发送前触发埋点 - 只触发一次trackSend，防止重复
+      // 发送消息前记录最终输入状态
       trackSend(inputMessage);
       
       const message = {
@@ -832,6 +827,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           </MessageContainer>
         ))}
       </RenderedChatContainer>
+      
       {hasNewMessage && (
         <div
           style={{
@@ -851,6 +847,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           新消息 ▼
         </div>
       )}
+      
       <SendMessageContainer>
         <MessageInput
           placeholder="Type your message..."
@@ -858,28 +855,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           onChange={(e) => {
             setInputMessage(e.target.value);
             
-            // 恢复输入事件的埋点，但添加强化的防重复机制
-            const now = Date.now();
-            const content = e.target.value;
-            
-            // 只有内容变化超过2个字符，或距离上次埋点超过3秒，才触发新的埋点
-            if (
-              content.trim() && 
-              (Math.abs(content.length - lastTypingEvent.current.content.length) > 2 || 
-              now - lastTypingEvent.current.timestamp > 3000)
-            ) {
-              // 记录本次输入事件
-              lastTypingEvent.current = {
-                content: content,
-                timestamp: now
-              };
-              
-              // 触发输入埋点
-              handleTyping(content);
-            }
-          }}
-          onBlur={() => {
-            // 保持blur事件埋点的移除
+            // 使用更新后的埋点规则处理输入事件
+            // 无论是增加还是删除都会触发，但规则逻辑在hook内部处理
+            handleTyping(e.target.value);
           }}
           onKeyPress={(e) => {
             if (e.key === "Enter") {
