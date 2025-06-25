@@ -39,8 +39,8 @@ const DEBUG_MODE = true;
 
 // 修改防抖时间间隔（毫秒）- 增加和删除操作使用不同的时间
 const DEBOUNCE_TIME = {
-  chat_input_typing_add: 2000,     // 增加内容时等待更长时间，只保留最终状态
-  chat_input_typing_delete: 500,  // 删除操作更快记录
+  chat_input_typing_add: 3000,     // 增加内容时等待更长时间，只保留最终状态
+  chat_input_typing_delete: 1000,  // 删除操作更快记录
   chat_input_blur: 1000,          // 虽然已移除但保留配置以备将来使用
   chat_input_before_send: 500,
   chat_input_sent: 500,
@@ -204,6 +204,55 @@ const logTracking = (eventName: string, data: TrackingData) => {
   console.groupEnd();
 };
 
+// 检查内容是否满足记录条件（至少两个中文字符或两个英文单词）
+const isContentEligible = (content: string): boolean => {
+  if (!content || !content.trim()) return false;
+  
+  // 检查中文字符数量
+  const chineseChars = content.match(/[\u4e00-\u9fa5]/g);
+  if (chineseChars && chineseChars.length > 2) {
+    return true;
+  }
+  
+  // 检查英文单词数量
+  const englishWords = content.trim().split(/\s+/).filter(word => /[a-zA-Z]/.test(word));
+  if (englishWords.length > 2) {
+    return true;
+  }
+  
+  // 检查总字符数，也可以作为补充条件
+  if (content.length > 10) {
+    return true;
+  }
+  
+  return false;
+};
+
+// 检查两个内容之间的差异是否足够大
+const isChangeSufficient = (oldContent: string, newContent: string): boolean => {
+  if (!oldContent || !newContent) return true; // 如果任一内容为空，视为变化足够
+  
+  // 计算字符差异
+  const diff = Math.abs(newContent.length - oldContent.length);
+  if (diff >= 5) return true; // 如果字符差异大于等于5，视为变化足够
+  
+  // 检查中文字符差异
+  const oldChineseChars = oldContent.match(/[\u4e00-\u9fa5]/g) || [];
+  const newChineseChars = newContent.match(/[\u4e00-\u9fa5]/g) || [];
+  if (Math.abs(oldChineseChars.length - newChineseChars.length) >= 2) {
+    return true;
+  }
+  
+  // 检查英文单词差异
+  const oldEnglishWords = oldContent.trim().split(/\s+/).filter(word => /[a-zA-Z]/.test(word));
+  const newEnglishWords = newContent.trim().split(/\s+/).filter(word => /[a-zA-Z]/.test(word));
+  if (Math.abs(oldEnglishWords.length - newEnglishWords.length) >= 2) {
+    return true;
+  }
+  
+  return false;
+};
+
 export const useInputTracking = (roomId?: number) => {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
@@ -217,6 +266,8 @@ export const useInputTracking = (roomId?: number) => {
   const maxInputLength = useRef<number>(0);
   // 记录最后一次输入的内容
   const lastInputContent = useRef<string>('');
+  // 记录最后一次记录的内容，用于比较变化
+  const lastRecordedContent = useRef<string>('');
   // 记录是否有待发送的增加类型事件
   const hasPendingAddEvent = useRef<boolean>(false);
   // 记录本次会话的状态，用于记录减少操作
@@ -294,11 +345,23 @@ export const useInputTracking = (roomId?: number) => {
       return;
     }
     
+    // 检查内容是否满足记录条件
+    if (!isContentEligible(content)) {
+      if (DEBUG_MODE) console.log(`🚫 内容过短，不记录埋点: ${content.substring(0, 20)}`);
+      return;
+    }
+    
+    // 检查与上次记录的内容相比，变化是否足够大
+    if (!isChangeSufficient(lastRecordedContent.current, content)) {
+      if (DEBUG_MODE) console.log(`🚫 内容变化不够大，不记录埋点: 上次内容长度${lastRecordedContent.current.length}，当前内容长度${content.length}`);
+      return;
+    }
+    
     // 组件级别的节流控制
     const now = Date.now();
     const lastTime = lastEventTime.current[`${eventName}_${inputAction}`] || 0;
     // 根据操作类型选择不同的节流时间
-    const minInterval = inputAction === 'add' ? 2000 : 500;
+    const minInterval = inputAction === 'add' ? 3000 : 1000;
     
     if (now - lastTime < minInterval) {
       if (DEBUG_MODE) console.log(`⏱️ 组件级节流: ${eventName}(${inputAction}) 事件间隔过短 (${now - lastTime}ms < ${minInterval}ms)`);
@@ -310,8 +373,9 @@ export const useInputTracking = (roomId?: number) => {
       return;
     }
     
-    // 更新最后事件时间
+    // 更新最后事件时间和记录的内容
     lastEventTime.current[`${eventName}_${inputAction}`] = now;
+    lastRecordedContent.current = content;
     
     const data = getTrackingData(content, eventName, inputAction);
     
@@ -382,29 +446,18 @@ export const useInputTracking = (roomId?: number) => {
       }, DEBOUNCE_TIME.chat_input_typing_add);
       
     } else {
-      // 如果是删除操作
+      // 如果是删除操作 - 移除50%阈值条件
       
-      // 检查是否需要记录删除操作
-      // 只有当删除到小于最大长度的一定比例时才记录
-      const deletionThreshold = maxInputLength.current * 0.5; // 例如，删除到最大长度的50%以下才记录
+      // 更新最后删除的内容
+      sessionState.current.lastReducedContent = content;
       
-      if (currentLength < deletionThreshold && !sessionState.current.wasReduced) {
-        // 首次触发大幅度删除操作，记录删除事件
+      // 标记已处于删除状态
+      if (!sessionState.current.wasReduced) {
         sessionState.current.wasReduced = true;
-        sessionState.current.lastReducedContent = content;
-        
-        // 立即发送删除事件
-        trackEvent('chat_input_typing', content, 'delete');
-      } else if (sessionState.current.wasReduced && currentLength < lastInputLength.current) {
-        // 已经处于删除状态，继续删除，更新最后的删除内容
-        sessionState.current.lastReducedContent = content;
-        
-        // 不频繁发送删除事件，使用节流
-        if (timerRef.current) clearTimeout(timerRef.current);
-        timerRef.current = setTimeout(() => {
-          trackEvent('chat_input_typing', content, 'delete');
-        }, DEBOUNCE_TIME.chat_input_typing_delete);
       }
+      
+      // 立即发送删除事件，无需检查阈值
+      trackEvent('chat_input_typing', content, 'delete');
       
       // 如果从删除状态恢复增加，重置删除状态
       if (sessionState.current.wasReduced && currentLength > previousLength) {

@@ -39,9 +39,138 @@ const ALLOWED_EVENTS = [
 ];
 ```
 
+## 最新埋点规则 (2023年11月更新)
+
+系统实现了完全优化的埋点规则，具体如下：
+
+1. **内容增加操作**:
+   - 当用户持续增加输入内容时，系统会记录但不立即发送埋点数据
+   - 只在以下情况发送埋点数据:
+     - 用户停止输入一段时间后(3秒)
+     - 用户发送消息前
+     - 用户关闭网页前
+
+2. **内容删除操作**:
+   - 当用户删除内容时，系统会立即记录删除操作
+   - 删除操作会包含当前内容和最大长度信息，便于分析用户输入行为
+   - 无需达到任何删除量阈值，任何长度的删除操作都会被记录
+   - 删除操作使用1000ms的时间间隔控制，避免过于频繁的记录
+
+3. **内容长度要求**:
+   - 系统只记录有意义的输入内容，必须满足以下条件之一：
+     - 超过2个中文字符
+     - 超过2个英文单词
+     - 总字符数超过10个
+   - 不满足条件的短内容不会被记录，减少无效数据
+
+4. **内容变化差异要求**:
+   - 系统会对比上次记录的内容和当前内容的差异
+   - 只有满足以下条件之一时才会记录新的埋点：
+     - 中文字符数量差异 ≥ 2
+     - 英文单词数量差异 ≥ 2
+     - 总字符长度差异 ≥ 5
+   - 变化不够大的内容不会被重复记录，避免冗余数据
+
+5. **特殊状态记录**:
+   - 系统会记录用户输入过程中的最大内容长度(`max_length`)
+   - 使用`input_action`字段区分增加操作(`add`)和删除操作(`delete`)
+
+## 内容长度判断逻辑
+
+系统使用以下逻辑判断内容是否满足记录条件：
+
+```typescript
+// 检查内容是否满足记录条件（至少两个中文字符或两个英文单词）
+const isContentEligible = (content: string): boolean => {
+  if (!content || !content.trim()) return false;
+  
+  // 检查中文字符数量
+  const chineseChars = content.match(/[\u4e00-\u9fa5]/g);
+  if (chineseChars && chineseChars.length > 2) {
+    return true;
+  }
+  
+  // 检查英文单词数量
+  const englishWords = content.trim().split(/\s+/).filter(word => /[a-zA-Z]/.test(word));
+  if (englishWords.length > 2) {
+    return true;
+  }
+  
+  // 检查总字符数，也可以作为补充条件
+  if (content.length > 10) {
+    return true;
+  }
+  
+  return false;
+};
+```
+
+## 内容变化差异判断逻辑
+
+系统使用以下逻辑判断内容变化是否足够大：
+
+```typescript
+// 检查两个内容之间的差异是否足够大
+const isChangeSufficient = (oldContent: string, newContent: string): boolean => {
+  if (!oldContent || !newContent) return true; // 如果任一内容为空，视为变化足够
+  
+  // 计算字符差异
+  const diff = Math.abs(newContent.length - oldContent.length);
+  if (diff >= 5) return true; // 如果字符差异大于等于5，视为变化足够
+  
+  // 检查中文字符差异
+  const oldChineseChars = oldContent.match(/[\u4e00-\u9fa5]/g) || [];
+  const newChineseChars = newContent.match(/[\u4e00-\u9fa5]/g) || [];
+  if (Math.abs(oldChineseChars.length - newChineseChars.length) >= 2) {
+    return true;
+  }
+  
+  // 检查英文单词差异
+  const oldEnglishWords = oldContent.trim().split(/\s+/).filter(word => /[a-zA-Z]/.test(word));
+  const newEnglishWords = newContent.trim().split(/\s+/).filter(word => /[a-zA-Z]/.test(word));
+  if (Math.abs(oldEnglishWords.length - newEnglishWords.length) >= 2) {
+    return true;
+  }
+  
+  return false;
+};
+```
+
+## 埋点触发详情
+
+1. **输入框输入文字时**：
+   - 在 `MyRoom.tsx` 中，当用户在消息输入框中输入文字时，会调用 `handleTyping()` 函数
+   - 对于增加操作，系统会等待用户停止输入后再记录
+   - 对于删除操作，系统会立即记录任何删除行为，无需阈值条件
+   - 所有操作都必须满足内容长度要求和变化差异要求
+
+2. **发送消息前记录最终状态**：
+   ```tsx
+   const handleSend = useCallback((content: string) => {
+     if (!content.trim()) return;
+     
+     // 发送前记录最终输入状态
+     if (lastInputContent.current.trim().length > 0) {
+       const finalData = getTrackingData(
+         lastInputContent.current,
+         'chat_input_typing',
+         'add'
+       );
+       
+       // 添加最大长度信息
+       finalData.max_length = maxInputLength.current;
+       
+       sensors.track('chat_input_typing', finalData);
+     }
+     
+     // 重置状态...
+   }, [getTrackingData]);
+   ```
+
 3. **重复检测**：
    - 系统有多层重复检测机制，确保相同内容的埋点不会在短时间内重复发送
    - 包括全局级重复检测和事件级重复检测
+   - 增加了内容变化差异检测，确保只有变化足够大的内容才会被记录
 
 ## 埋点加入队列的条件
 
@@ -51,25 +180,21 @@ const ALLOWED_EVENTS = [
    - 只有 `chat_input_typing` 事件在 `ALLOWED_EVENTS` 列表中
    - 其他事件类型会被自动忽略
 
-2. **通过时间间隔节流检查**：
-   - 相同类型的事件至少间隔 2 秒才能再次加入队列
-   - 代码：
-   ```tsx
-   const now = Date.now();
-   const lastTime = lastEventTime.current[eventName] || 0;
-   const minInterval = eventName === 'chat_input_typing' ? 2000 : 500;
-   
-   if (now - lastTime < minInterval) {
-     if (DEBUG_MODE) console.log(`⏱️ 组件级节流: ${eventName} 事件间隔过短...`);
-     return;
-   }
-   ```
+2. **内容必须满足长度要求**：
+   - 通过 `isContentEligible()` 函数验证内容是否有效
+   - 内容太短会被忽略，控制台会显示相应日志
 
-3. **通过重复事件检查**：
-   - 使用事件内容和房间ID等生成唯一指纹，避免重复事件
-   - 防止相同内容在短时间内多次发送
+3. **内容变化必须足够大**：
+   - 通过 `isChangeSufficient()` 函数验证与上次记录的内容相比，变化是否足够大
+   - 变化不够大的内容会被忽略，控制台会显示相应日志
 
-4. **事件成功添加后**：
+4. **通过时间间隔节流检查**：
+   - 相同类型的事件至少间隔指定时间才能再次加入队列
+   - 增加操作: 3000ms
+   - 删除操作: 1000ms
+
+5. **事件成功添加后**：
+   - 更新 `lastRecordedContent.current` 为当前内容，用于后续变化比较
    - 调用 `sensors.track(eventName, data)` 将事件加入队列
    - 记录事件的时间戳和指纹，用于后续重复检测
    - 每次添加埋点时，会自动在控制台显示当前队列中的所有事件（通过添加的 `dumpQueue` 功能）
@@ -131,8 +256,8 @@ const BATCH_CONFIG = {
 
 // 增加和删除操作使用不同的防抖时间
 const DEBOUNCE_TIME = {
-  chat_input_typing_add: 3000,     // 增加内容时等待更长时间，只保留最终状态
-  chat_input_typing_delete: 1000,  // 删除操作更快记录
+  chat_input_typing_add: 3000,     // 增加内容时等待3秒，只保留最终状态
+  chat_input_typing_delete: 1000,  // 删除操作1000ms内记录
 };
 ```
 
@@ -145,6 +270,8 @@ const DEBOUNCE_TIME = {
 - 重试情况
 - 去重过滤 
 - 操作类型(增加/删除)和最大长度信息
+- 内容长度检查信息
+- 内容变化差异检查信息
 
 
 ## 埋点接口CORS配置指南
@@ -167,3 +294,4 @@ const DEBOUNCE_TIME = {
 
 ```java
 @CrossOrigin(origins = "http://localhost:5173", allowedHeaders = "*", allowCredentials = "true")
+```
