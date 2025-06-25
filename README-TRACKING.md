@@ -71,7 +71,20 @@ const ALLOWED_EVENTS = [
      - 总字符长度差异 ≥ 5
    - 变化不够大的内容不会被重复记录，避免冗余数据
 
-5. **特殊状态记录**:
+5. **智能内容包含关系检测**:
+   - 系统会检查当前记录的数据与队列中最后一条数据的内容关系
+   - 对于增加操作：如果存在包含关系，则替换队列中的最后一条数据，只保留最新的数据
+   - 对于删除操作：
+     - 如果新内容包含旧内容，则替换最后一条数据（这种情况很少见）
+     - 如果旧内容包含新内容，则保留两条记录，因为这表示删除了部分内容
+   - 这种智能判断确保了在删除操作时不会丢失重要的历史记录
+
+6. **消息发送触发批量埋点**:
+   - 当用户点击发送消息按钮时，系统会将队列中的所有埋点数据一次性发送出去
+   - 这确保埋点数据能够及时被服务器接收，并与用户的实际操作关联起来
+   - 避免了频繁发送埋点数据的性能开销，同时保证数据的完整性
+
+7. **特殊状态记录**:
    - 系统会记录用户输入过程中的最大内容长度(`max_length`)
    - 使用`input_action`字段区分增加操作(`add`)和删除操作(`delete`)
 
@@ -172,6 +185,75 @@ const isChangeSufficient = (oldContent: string, newContent: string): boolean => 
    - 包括全局级重复检测和事件级重复检测
    - 增加了内容变化差异检测，确保只有变化足够大的内容才会被记录
 
+## 智能内容包含关系判断逻辑
+
+系统使用以下逻辑判断内容包含关系，并针对不同操作类型采取不同策略：
+
+```typescript
+// 新增规则：检查当前记录的数据是否包含队列中最后一条数据
+if (eventQueue.length > 0 && data.content && eventQueue[eventQueue.length - 1].content) {
+  const lastEvent = eventQueue[eventQueue.length - 1];
+  const newContent = data.content;
+  const lastContent = lastEvent.content;
+  
+  // 检查操作类型
+  const isDeleteOperation = data.input_action === 'delete';
+  
+  // 内容包含关系检测
+  const newContainsLast = newContent.includes(lastContent);
+  const lastContainsNew = lastContent.includes(newContent);
+  
+  // 处理包含关系逻辑
+  if (newContainsLast || lastContainsNew) {
+    // 对于删除操作，只有当新内容包含旧内容时才替换
+    // 如果旧内容包含新内容，说明删除了部分内容，应该保留两条记录
+    if (isDeleteOperation && !newContainsLast && lastContainsNew) {
+      if (DEBUG_MODE) {
+        console.log(`🔄 删除操作: 旧内容(${lastContent.length}字符)包含新内容(${newContent.length}字符)，保留两条记录`);
+        console.log(`🔍 旧内容: ${lastContent.substring(0, 30)}${lastContent.length > 30 ? '...' : ''}`);
+        console.log(`🔍 新内容: ${newContent.substring(0, 30)}${newContent.length > 30 ? '...' : ''}`);
+      }
+      // 不做任何替换，保留两条记录
+    } else {
+      // 对于增加操作或新内容包含旧内容的删除操作，替换最后一条数据
+      if (DEBUG_MODE) {
+        if (newContainsLast) {
+          console.log(`🔄 新内容(${newContent.length}字符)包含旧内容(${lastContent.length}字符)，替换最后事件`);
+        } else {
+          console.log(`🔄 旧内容(${lastContent.length}字符)包含新内容(${newContent.length}字符)，替换最后事件`);
+        }
+        console.log(`🔍 旧内容: ${lastContent.substring(0, 30)}${lastContent.length > 30 ? '...' : ''}`);
+        console.log(`🔍 新内容: ${newContent.substring(0, 30)}${newContent.length > 30 ? '...' : ''}`);
+      }
+      
+      // 删除队列中的最后一条数据
+      eventQueue.pop();
+    }
+  }
+}
+
+// 添加新事件到队列
+eventQueue.push(data);
+```
+
+这种智能判断逻辑确保了：
+
+1. 对于增加操作，如果新内容包含旧内容，只保留最新的完整版本
+2. 对于删除操作，如果用户删除了部分内容（旧内容包含新内容），会保留两条记录，记录删除的历史
+3. 只有在删除操作且新内容包含旧内容的罕见情况下才会替换旧记录
+
+## 消息发送触发批量埋点机制
+
+当用户点击发送消息按钮时，系统会将队列中的所有埋点数据一次性发送出去：
+
+```typescript
+// 发送消息前，将埋点队列中的所有埋点数据一次性发送出去
+if (eventQueue && eventQueue.length > 0) {
+  console.log(`🚀 发送消息触发埋点批量发送: 队列长度 ${eventQueue.length}`);
+  flushEvents(); // 调用flushEvents函数发送所有队列中的埋点数据
+}
+```
+
 ## 埋点加入队列的条件
 
 当埋点事件通过上述触发条件后，会加入埋点队列，具体条件包括：
@@ -188,22 +270,37 @@ const isChangeSufficient = (oldContent: string, newContent: string): boolean => 
    - 通过 `isChangeSufficient()` 函数验证与上次记录的内容相比，变化是否足够大
    - 变化不够大的内容会被忽略，控制台会显示相应日志
 
-4. **通过时间间隔节流检查**：
+4. **内容包含关系检查**：
+   - 通过 `isContentContained()` 函数检查新内容是否与队列中最后一条数据存在包含关系
+   - 如果存在包含关系，则删除队列中的最后一条数据，只保留最新的数据
+
+5. **通过时间间隔节流检查**：
    - 相同类型的事件至少间隔指定时间才能再次加入队列
    - 增加操作: 3000ms
    - 删除操作: 1000ms
 
-5. **事件成功添加后**：
+6. **事件成功添加后**：
    - 更新 `lastRecordedContent.current` 为当前内容，用于后续变化比较
    - 调用 `sensors.track(eventName, data)` 将事件加入队列
    - 记录事件的时间戳和指纹，用于后续重复检测
    - 每次添加埋点时，会自动在控制台显示当前队列中的所有事件（通过添加的 `dumpQueue` 功能）
+   - 立即触发队列发送，确保数据及时被服务器接收
 
 ## 埋点队列发送到后端的条件
 
 埋点队列中的事件会在以下情况下发送到后端的 `/api/track` 接口：
 
-1. **队列达到最大容量时**：
+1. **消息发送时批量发送**：
+   - 当用户点击发送消息按钮时，系统会将队列中的所有埋点数据一次性发送出去
+   ```typescript
+   // 发送消息前，将埋点队列中的所有埋点数据一次性发送出去
+   if (eventQueue && eventQueue.length > 0) {
+     console.log(`🚀 发送消息触发埋点批量发送: 队列长度 ${eventQueue.length}`);
+     flushEvents(); // 调用flushEvents函数发送所有队列中的埋点数据
+   }
+   ```
+
+2. **队列达到最大容量时**：
    - 当队列中的事件数量达到 `BATCH_CONFIG.MAX_BATCH_SIZE`（10条）时自动发送
    ```tsx
    if (eventQueue.length >= BATCH_CONFIG.MAX_BATCH_SIZE) {
@@ -214,7 +311,7 @@ const isChangeSufficient = (oldContent: string, newContent: string): boolean => 
    }
    ```
 
-2. **定时发送机制**：
+3. **定时发送机制**：
    - 即使队列未满，也会每隔 `BATCH_CONFIG.FLUSH_INTERVAL_MS`（180000毫秒，即3分钟）触发一次发送
    ```tsx
    flushTimerId = setTimeout(() => {
@@ -225,7 +322,7 @@ const isChangeSufficient = (oldContent: string, newContent: string): boolean => 
    }, BATCH_CONFIG.FLUSH_INTERVAL_MS);
    ```
 
-3. **页面卸载前**：
+4. **页面卸载前**：
    - 当用户关闭页面或离开应用时，会尝试发送队列中的所有未发送事件
    ```tsx
    window.addEventListener('beforeunload', () => {
@@ -238,7 +335,7 @@ const isChangeSufficient = (oldContent: string, newContent: string): boolean => 
    });
    ```
 
-4. **发送失败的重试机制**：
+5. **发送失败的重试机制**：
    - 如果埋点发送失败，会加入失败队列，并在一定时间后（`BATCH_CONFIG.RETRY_INTERVAL_MS`，5秒）尝试重新发送
    - 最多重试 `BATCH_CONFIG.MAX_RETRY_ATTEMPTS`（3次）次
 
@@ -272,6 +369,8 @@ const DEBOUNCE_TIME = {
 - 操作类型(增加/删除)和最大长度信息
 - 内容长度检查信息
 - 内容变化差异检查信息
+- 内容包含关系检查信息
+- 消息发送触发批量埋点信息
 
 
 ## 埋点接口CORS配置指南

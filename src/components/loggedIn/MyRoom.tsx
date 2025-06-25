@@ -11,7 +11,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import { useInputTracking } from "../../hooks/useInputTracking";
-import sensors, { eventQueue } from "../../utils/tracker";
+import sensors, { eventQueue, flushEvents } from "../../utils/tracker";
 
 interface MyRoomProps {
   title?: string;
@@ -672,6 +672,19 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       
       // 发送消息前记录最终输入状态
       trackSend(inputMessage);
+      
+      // 发送消息前，将埋点队列中的所有埋点数据一次性发送出去
+      if (eventQueue && eventQueue.length > 0) {
+        console.log(`🚀 发送消息触发埋点批量发送: 队列长度 ${eventQueue.length}`);
+        
+        // 在发送前打印完整队列内容
+        if ((sensors as any).debug?.dumpQueue) {
+          console.log('📊 发送消息前的埋点队列内容:');
+          (sensors as any).debug.dumpQueue();
+        }
+        
+        flushEvents(); // 调用flushEvents函数发送所有队列中的埋点数据
+      }
       
       const message = {
         groupId: groupId,

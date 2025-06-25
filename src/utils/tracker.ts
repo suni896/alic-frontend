@@ -16,6 +16,15 @@ declare module 'sa-sdk-javascript' {
   }
 }
 
+// 导出带有debug属性的sensors类型
+export interface SensorsWithDebug {
+  track: typeof sensors.track;
+  init: typeof sensors.init;
+  registerPage: typeof sensors.registerPage;
+  debug?: SensorsDebug;
+  [key: string]: any;
+}
+
 // 是否开启调试模式
 const DEBUG_MODE = true;
 
@@ -132,6 +141,8 @@ const isDuplicateInQueue = (data: any): boolean => {
   return hasDuplicate;
 };
 
+// 这里原来有一个isContentContained函数，现在我们直接使用includes方法进行检查
+
 // 添加事件到队列
 const queueEvent = (data: any) => {
   // 增强的重复检测
@@ -139,10 +150,56 @@ const queueEvent = (data: any) => {
     return;
   }
   
+  // 新增规则：检查当前记录的数据是否包含队列中最后一条数据
+  if (eventQueue.length > 0 && data.content && eventQueue[eventQueue.length - 1].content) {
+    const lastEvent = eventQueue[eventQueue.length - 1];
+    const newContent = data.content;
+    const lastContent = lastEvent.content;
+    
+    // 检查操作类型
+    const isDeleteOperation = data.input_action === 'delete';
+    
+    // 内容包含关系检测
+    const newContainsLast = newContent.includes(lastContent);
+    const lastContainsNew = lastContent.includes(newContent);
+    
+    // 处理包含关系逻辑
+    if (newContainsLast || lastContainsNew) {
+      // 对于删除操作，只有当新内容包含旧内容时才替换
+      // 如果旧内容包含新内容，说明删除了部分内容，应该保留两条记录
+      if (isDeleteOperation && !newContainsLast && lastContainsNew) {
+        if (DEBUG_MODE) {
+          console.log(`🔄 删除操作: 旧内容(${lastContent.length}字符)包含新内容(${newContent.length}字符)，保留两条记录`);
+          console.log(`🔍 旧内容: ${lastContent.substring(0, 30)}${lastContent.length > 30 ? '...' : ''}`);
+          console.log(`🔍 新内容: ${newContent.substring(0, 30)}${newContent.length > 30 ? '...' : ''}`);
+        }
+        // 不做任何替换，保留两条记录
+      } else {
+        // 对于增加操作或新内容包含旧内容的删除操作，替换最后一条数据
+        if (DEBUG_MODE) {
+          if (newContainsLast) {
+            console.log(`🔄 新内容(${newContent.length}字符)包含旧内容(${lastContent.length}字符)，替换最后事件`);
+          } else {
+            console.log(`🔄 旧内容(${lastContent.length}字符)包含新内容(${newContent.length}字符)，替换最后事件`);
+          }
+          console.log(`🔍 旧内容: ${lastContent.substring(0, 30)}${lastContent.length > 30 ? '...' : ''}`);
+          console.log(`🔍 新内容: ${newContent.substring(0, 30)}${newContent.length > 30 ? '...' : ''}`);
+        }
+        
+        // 删除队列中的最后一条数据
+        eventQueue.pop();
+      }
+    }
+  }
+  
+  // 添加新事件到队列
   eventQueue.push(data);
   
   if (DEBUG_MODE) {
     console.log(`📦 事件已加入队列: ${data.event}，队列长度: ${eventQueue.length}`);
+    
+    // 自动显示完整队列数据，方便调试
+    autoDumpQueue();
   }
   
   // 如果队列达到最大批量大小，立即触发发送
@@ -236,6 +293,11 @@ const flushEvents = () => {
     flushTimerId = null;
   }
   
+  if (DEBUG_MODE) {
+    console.log(`📤 准备发送批量事件前，队列内容:`);
+    autoDumpQueue();
+  }
+  
   const eventsToSend = [...eventQueue];
   eventQueue.length = 0; // 清空队列
   
@@ -247,6 +309,10 @@ const flushEvents = () => {
   
   // 重新启动定时器处理新事件
   startFlushTimer();
+  
+  if (DEBUG_MODE) {
+    console.log(`📤 批量事件发送后，队列已清空`);
+  }
 };
 
 // 向服务器发送批量事件
@@ -487,11 +553,21 @@ const sendSingleEvent = (data: any): Promise<boolean> => {
   }
 };
 
+// 自动打印埋点队列数据
+const autoDumpQueue = () => {
+  if (DEBUG_MODE && (sensors as any).debug?.dumpQueue) {
+    console.log('🔄 埋点队列数据已更新，自动打印队列内容:');
+    (sensors as any).debug.dumpQueue();
+  }
+};
+
 // 定义自定义传输适配器
 const customSendData = (data: any) => {
   try {
     // 将事件加入队列，而不是立即发送
     queueEvent(data);
+    
+    // 不在这里立即发送，而是等待显式调用flushEvents
     return Promise.resolve(true);
   } catch (e) {
     console.error('埋点数据处理错误:', e);
@@ -575,27 +651,62 @@ try {
         console.log(`🧪 测试埋点: ${eventName}`, data);
         sensors.track(eventName, data);
       },
-      // 新增：打印当前队列内容
+      // 新增：打印当前队列内容 - 显示完整数据
       dumpQueue: () => {
         console.group('🔍 当前埋点队列内容');
         console.log(`队列长度: ${eventQueue.length}`);
         
         if (eventQueue.length > 0) {
+          // 首先用表格显示基本信息
           console.table(eventQueue.map(item => ({
             event: item.event,
-            content: item.content?.substring(0, 20) || '无内容',
+            content_length: item.content?.length || 0,
             timestamp: new Date(item._track_time || item.timestamp || Date.now()).toLocaleTimeString(),
+            input_action: item.input_action || 'unknown',
             fingerprint: getEventFingerprint(item)
           })));
+          
+          // 然后详细打印每个事件的完整内容
+          console.group('📄 埋点队列详细数据:');
+          eventQueue.forEach((item, index) => {
+            console.group(`事件 #${index + 1}: ${item.event} (${item.input_action || 'unknown'})`);
+            
+            // 使用格式化的方式显示内容
+            if (item.content) {
+              console.log('📝 完整内容:');
+              console.log('%c' + item.content, 'background: #f0f0f0; padding: 5px; border-radius: 3px; max-width: 100%; word-break: break-all; white-space: pre-wrap;');
+            } else {
+              console.log('📝 内容: 无');
+            }
+            
+            // 显示其他重要属性
+            console.group('📊 事件属性:');
+            console.log('🔹 操作类型:', item.input_action || 'unknown');
+            console.log('🔹 内容长度:', item.content?.length || 0);
+            console.log('🔹 最大长度:', item.max_length || 'N/A');
+            console.log('🔹 时间戳:', new Date(item._track_time || item.timestamp || Date.now()).toLocaleString());
+            console.log('🔹 指纹:', getEventFingerprint(item));
+            console.groupEnd();
+            
+            // 显示完整事件数据
+            console.group('🧩 完整事件数据:');
+            console.log(item);
+            console.groupEnd();
+            
+            console.groupEnd();
+          });
+          console.groupEnd();
         } else {
           console.log('队列为空');
         }
         
         if (failedBatches.length > 0) {
-          console.log(`失败批次: ${failedBatches.length}`);
+          console.group('⚠️ 失败批次信息:');
+          console.log(`失败批次总数: ${failedBatches.length}`);
           failedBatches.forEach((batch, index) => {
-            console.log(`批次 #${index+1}: ${batch.data.length}个事件, 尝试次数: ${batch.attempts}`);
+            console.log(`批次 #${index+1}: ${batch.data.length}个事件, 尝试次数: ${batch.attempts}, 最后尝试时间: ${new Date(batch.lastAttempt).toLocaleString()}`);
           });
+          console.groupEnd();
         }
         
         console.groupEnd();
