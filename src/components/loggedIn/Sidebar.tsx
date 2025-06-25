@@ -1120,6 +1120,12 @@ const Sidebar: React.FC = () => {
     fetchTags();
   }, [fetchTags]);
 
+  // Add truncateText function
+  const truncateText = (text: string, maxLength: number = 50): string => {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  };
+
   return (
     <SidebarContainer>
       <ProfileSection>
@@ -1256,7 +1262,7 @@ const Sidebar: React.FC = () => {
                         <GroupIcon />
                         <RoomDescContainer>
                           <RoomTitle>{room.groupName}</RoomTitle>
-                          <RoomDesc>{room.groupDescription}</RoomDesc>
+                          <RoomDesc>{truncateText(room.groupDescription, 40)}</RoomDesc>
                         </RoomDescContainer>
                       </RoomContainer>
                     ))
