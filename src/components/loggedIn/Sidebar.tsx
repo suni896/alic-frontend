@@ -25,7 +25,9 @@ import LabeledInputWithCount from "../Input";
 import PlusButton from "../PlusButton";
 
 const SidebarContainer = styled.div`
-  width: 23%;
+  width: 280px;
+  max-width: 320px; /* Fixed maximum width for consistency */
+  min-width: 280px; /* Minimum width to prevent too narrow display */
   height: calc(100vh - 60px);
   background-color: #ffffff;
   padding: 2rem 0rem 1.5rem 1rem;
@@ -215,6 +217,9 @@ const SearchContainer = styled.div`
   padding: 0 1rem;
   justify-content: flex-start;
   margin-left: -10px;
+  width: 250px;
+  max-width: 320px; /* Fixed maximum width for consistency */
+  min-width: 250px; /* Minimum width to prevent too narrow display */ 
 
 `;
 
@@ -245,7 +250,9 @@ const ToggleContainer = styled.div`
   padding: 0.25rem;
   margin: 1rem 0 0.5rem 0;
   gap: 0.2rem;
-  width: 84%;
+  width: 250px;
+  max-width: 320px; /* Fixed maximum width for consistency */
+  min-width: 250px; /* Minimum width to prevent too narrow display */
   background-color: #f1f5f9;
   border-radius: 0.5rem;
   border: 1px solid #e2e8f0;
@@ -321,8 +328,26 @@ const RoomList = styled.ul`
   background-color: #f8fafc;
   border-radius: 0.5rem;
   border: 1px solid #e2e8f0;
-  width: 84%;
+  // width: 100%;
+  width: 250px;
+  max-width: 320px; /* Fixed maximum width for consistency */
+  min-width: 250px; /* Minimum width to prevent too narrow display */
   max-height: 50vh;
+
+  @media (max-width: 900px) {
+    max-width: 280px;
+    min-width: 240px;
+  }
+
+  @media (max-width: 600px) {
+    max-width: 240px;
+    min-width: 200px;
+  }
+
+  @media (max-width: 400px) {
+    max-width: 200px;
+    min-width: 180px;
+  }
 `;
 
 const RoomContainer = styled.div<{ $isActive?: boolean }>`
@@ -336,7 +361,7 @@ const RoomContainer = styled.div<{ $isActive?: boolean }>`
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   transition: all 0.2s ease;
   cursor: pointer;
-
+  width: 90%;
   ${({ $isActive }) =>
     $isActive &&
     `
@@ -376,9 +401,18 @@ const RoomDescContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  width: 100%;
+  width: calc(100% - 2rem); /* Fixed width accounting for icon space */
   min-width: 0;
   gap: 0.25rem;
+  flex: 1;
+
+  @media (max-width: 700px) {
+    width: calc(100% - 1.5rem);
+  }
+  
+  @media (max-width: 400px) {
+    width: calc(100% - 1.2rem);
+  }
 `;
 
 const RoomTitle = styled.p`
@@ -389,9 +423,10 @@ const RoomTitle = styled.p`
   margin: 0;
   cursor: pointer;
   width: 100%;
-  word-wrap: break-word;
-  word-break: break-word;
-  overflow-wrap: break-word;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   line-height: 1.3;
   transition: color 0.2s ease;
 
@@ -414,6 +449,7 @@ const RoomDesc = styled.p`
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
+  max-width: 100%;
 
   @media (max-width: 500px) {
     font-size: 0.65rem;
@@ -673,11 +709,28 @@ const PaginationContainer = styled.div`
   background-color: white;
   position: sticky;
   bottom: 0;
-  width: 84%;
+  width: 250px;
+  max-width: 320px; /* Match RoomList width */
+  min-width: 250px; /* Match RoomList width */
   margin-top: auto;
   border-top: 1px solid #e2e8f0;
   border-radius: 0 0 0.5rem 0.5rem;
   box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+
+  @media (max-width: 900px) {
+    max-width: 280px;
+    min-width: 240px;
+  }
+
+  @media (max-width: 600px) {
+    max-width: 240px;
+    min-width: 200px;
+  }
+
+  @media (max-width: 400px) {
+    max-width: 200px;
+    min-width: 180px;
+  }
 
   @media (max-width: 800px) {
     gap: 0.3rem;
@@ -1120,12 +1173,6 @@ const Sidebar: React.FC = () => {
     fetchTags();
   }, [fetchTags]);
 
-  // Add truncateText function
-  const truncateText = (text: string, maxLength: number = 50): string => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
-  };
-
   return (
     <SidebarContainer>
       <ProfileSection>
@@ -1262,7 +1309,7 @@ const Sidebar: React.FC = () => {
                         <GroupIcon />
                         <RoomDescContainer>
                           <RoomTitle>{room.groupName}</RoomTitle>
-                          <RoomDesc>{truncateText(room.groupDescription, 40)}</RoomDesc>
+                          <RoomDesc>{room.groupDescription}</RoomDesc>
                         </RoomDescContainer>
                       </RoomContainer>
                     ))
