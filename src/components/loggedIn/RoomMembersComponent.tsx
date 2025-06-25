@@ -496,9 +496,9 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
                       <Username>
                         <UserNameText>{member.userName}</UserNameText>
                         {member.groupMemberType === "ADMIN" ? (
-                          <AdminLabel>(ADMIN)</AdminLabel>
+                          <AdminLabel>admin</AdminLabel>
                         ) : (
-                          <MemberLabel>(member)</MemberLabel>
+                          <MemberLabel>member</MemberLabel>
                         )}
                       </Username>
                     </MemberInfo>

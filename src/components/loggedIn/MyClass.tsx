@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FiTag } from "react-icons/fi";
 import { AiOutlineMinusCircle } from "react-icons/ai";
-import { MdGroup } from "react-icons/md";
 import styled from "styled-components";
 import { CiSearch } from "react-icons/ci";
-import { RxCross2 } from "react-icons/rx";
 import { useLocation, useParams } from "react-router-dom";
 import apiClient from "../loggedOut/apiClient";
 import axios from "axios";
@@ -14,7 +12,7 @@ import { RoomInfoResponse } from "./CreateRoomComponent";
 import PlusButton from "../PlusButton";
 import Button from "../button";
 import LabeledInputWithCount from "../Input";
-import CloseButton from "../CloseButton";
+import ModalHeader from "../Header";
 
 interface RoomContainerProps {
   $isEditMode: boolean;
@@ -165,25 +163,6 @@ const RoomContainer = styled.div<RoomContainerProps>`
 
   @media (max-width: 600px) {
     padding: 0.6rem;
-  }
-`;
-
-const GroupIcon = styled(MdGroup)`
-  color: #016532;
-  font-size: 1.2rem;
-  margin-right: 0.75rem;
-  margin-top: 0.1rem;
-  flex-shrink: 0;
-
-  @media (max-width: 700px) {
-    margin-right: 0.5rem;
-    font-size: 1rem;
-    margin-top: 0.05rem;
-  }
-  @media (max-width: 400px) {
-    margin-right: 0.3rem;
-    font-size: 0.9rem;
-    margin-top: 0.05rem;
   }
 `;
 
@@ -350,7 +329,7 @@ const Modal = styled.div`
   background: white;
   border: none;
   border-radius: 16px;
-  padding: 2rem;
+  padding: 2.5rem;
   width: 28%;
   max-width: 500px;
   min-width: 320px;
@@ -397,11 +376,6 @@ const ErrorCloseButton = styled.button`
   &:hover {
     background-color: #014a24;
   }
-`;
-
-const StyledCross = styled(RxCross2)`
-  color: #888;
-  font-size: 2rem;
 `;
 
 const SearchContainer = styled.div`
@@ -540,6 +514,11 @@ const OverlayButtonContainer = styled.div`
   }
 `;
 
+const TagIcon = styled(FiTag)`
+  color: #white;
+  font-size: 1.5rem;
+`;
+
 interface AddRoomProps {
   onClose: () => void;
   onAddRooms: (selectedRoomIds: number[]) => void;
@@ -653,9 +632,7 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
   return (
     <Overlay>
       <Modal ref={modalRef}>
-        <CloseButton onClick={onClose} disabled={isProcessing}>
-          <StyledCross size={20} />
-        </CloseButton>
+      <ModalHeader icon={TagIcon} title="Add Room to Tag" onClose={onClose} />
         <SearchContainer>
           <SearchWrapper>
           <SearchIcon />
@@ -1096,7 +1073,6 @@ const MyClass: React.FC<MyClassProps> = ({
                 $isEditMode={isEditMode}
                 onClick={() => handleRoomClick(room.groupId)}
               >
-                <GroupIcon />
                 <RoomContent>
                   <RoomTitle>{room.groupName}</RoomTitle>
                   <RoomAdmin>Admin: {room.groupAdmin}</RoomAdmin>

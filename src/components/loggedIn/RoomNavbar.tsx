@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { IoEllipsisHorizontal, IoSettingsOutline } from "react-icons/io5";
-import { MdOutlineArrowBack, MdOutlineIosShare } from "react-icons/md";
+import { MdOutlineIosShare, MdKeyboardArrowLeft } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { styled } from "styled-components";
 import CreateRoomComponent, { RoomInfoResponse } from "./CreateRoomComponent";
@@ -25,9 +25,9 @@ const Container = styled.div`
   z-index: 1000;
 `;
 
-const BackArrow = styled(MdOutlineArrowBack)`
+const BackArrow = styled(MdKeyboardArrowLeft)`
   color: white;
-  font-size: 1.5rem;
+  font-size: 2rem;
   margin-right: 1rem;
   cursor: pointer;
 `;

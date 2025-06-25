@@ -1218,7 +1218,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                       <MdPublic />
                       Public
                     </RadioTitle>
-                    <RadioDescription>Show on main page</RadioDescription>
+                    <RadioDescription>Display on Public Pages</RadioDescription>
                   </RadioContent>
                 </RadioCard>
 
@@ -1243,7 +1243,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                       <MdLock />
                       Private
                     </RadioTitle>
-                    <RadioDescription>Need room password</RadioDescription>
+                    <RadioDescription>Password Required to Join</RadioDescription>
                   </RadioContent>
                 </RadioCard>
               </RadioGroup>
