@@ -40,6 +40,7 @@ const StyledTextArea = styled.textarea<{ hasError?: boolean }>`
 
   &::placeholder {
     color: #9ca3af;
+    font-size: 0.8rem;
   }
 
   @media (max-width: 500px) {
@@ -77,6 +78,8 @@ const ModalInput = styled.input<ModalInputProps>`
 
   &::placeholder {
     color: #9ca3af;
+    font-size: 0.8rem;
+    
   }
 
   @media (max-width: 500px) {

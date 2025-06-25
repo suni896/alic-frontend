@@ -1,7 +1,8 @@
 import React from "react";
 import styled from "styled-components";
 import  Button  from "./button"; // 引入你自己的 Button 组件
-import CloseButton from "./CloseButton";
+import ModalHeader from "./Header";
+import { MdWarning} from "react-icons/md";
 
 interface ConfirmationModalProps {
   isOpen: boolean;
@@ -19,7 +20,7 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onConfirm,
   title,
   message,
-  confirmText = "Yes",
+  confirmText = "Confirm",
   cancelText = "Cancel",
 }) => {
   if (!isOpen) return null;
@@ -27,10 +28,11 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   return (
     <Overlay onClick={onClose} style={{ zIndex: 3000 }}>
       <Container onClick={(e) => e.stopPropagation()}>
-        <CloseButton onClick={onClose}>
-        </CloseButton>
-
-        <Title>{title}</Title>
+      <ModalHeader
+          icon={MdWarning}
+          title={title}
+          onClose={onClose}
+        />
         <Message>{message}</Message>
 
         <ButtonContainer>
@@ -58,30 +60,36 @@ const Overlay = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
+  border: none;
+  border-radius: 20px;
+  padding: 2.5rem;
 `;
 
 const Container = styled.div`
   background: white;
-  padding: 2rem;
   border-radius: 16px;
-  width: 90%;
-  max-width: 400px;
+  width: 500px;
+  min-width: 300px;
+  max-width: 500px;
+  height: 250px;
+  min-height: 200px;
+  max-height: 300px;
   position: relative;
-`;
-
-const Title = styled.h3`
-  margin-top: 0;
-  font-size: 1.25rem;
+  border-radius: 20px;
+  padding: 2.5rem;
 `;
 
 const Message = styled.p`
   color: #555;
+  font-size: 1.5rem;
+  margin-top: 3.5rem;
+  margin-left: 1rem;
 `;
 
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: 4.5rem;
   justify-content: center;
 `;

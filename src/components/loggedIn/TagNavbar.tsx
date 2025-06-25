@@ -54,7 +54,7 @@ const BackArrow = styled(MdKeyboardArrowLeft)`
 
 const Title = styled.h1`
   color: white;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-family: "Roboto", sans-serif;
   font-weight: 400;
   margin: 0;

@@ -724,7 +724,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         {messages.map((msg) => (
           <MessageContainer
             key={msg.infoId}
-            $isOwnMessage={msg.senderId === userInfo?.userId}
+            $isOwnMessage={msg.senderType === "USER" && msg.senderId === userInfo?.userId}
           >
             <Avatar
               src={
