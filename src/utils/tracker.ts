@@ -145,8 +145,21 @@ const isDuplicateInQueue = (data: any): boolean => {
 
 // 添加事件到队列
 const queueEvent = (data: any) => {
+  // 记录每次尝试加入队列的内容
+  if (DEBUG_MODE && data.content) {
+    console.group('🔍 尝试加入队列的内容');
+    console.log('事件类型:', data.event);
+    console.log('内容:', data.content);
+    console.log('内容长度:', data.content.length);
+    console.log('操作类型:', data.input_action || 'unknown');
+    console.groupEnd();
+  }
+  
   // 增强的重复检测
   if (isDuplicateInQueue(data)) {
+    if (DEBUG_MODE) {
+      console.log(`🚫 内容被重复检测过滤: "${data.content?.substring(0, 30)}${data.content?.length > 30 ? '...' : ''}"`);
+    }
     return;
   }
   
