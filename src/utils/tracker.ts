@@ -1,4 +1,5 @@
 import sensors from 'sa-sdk-javascript';
+import config from './trackConfig';
 
 // 声明扩展接口
 interface SensorsDebug {
@@ -25,8 +26,8 @@ export interface SensorsWithDebug {
   [key: string]: any;
 }
 
-// 是否开启调试模式
-const DEBUG_MODE = true;
+// 从配置文件获取调试模式设置
+const DEBUG_MODE = config.DEBUG.ENABLED;
 
 // 增强从各种来源获取用户ID的函数
 const detectUserId = (): string => {
@@ -34,21 +35,21 @@ const detectUserId = (): string => {
     // 1. 从localStorage尝试获取
     const localId = localStorage.getItem('userId') || localStorage.getItem('user_id');
     if (localId) {
-      console.log('📋 从localStorage获取userId:', localId);
+      if (config.DEBUG.CONSOLE_LOG) console.log('📋 从localStorage获取userId:', localId);
       return localId;
     }
     
     // 2. 从sessionStorage尝试获取
     const sessionId = sessionStorage.getItem('userId') || sessionStorage.getItem('user_id');
     if (sessionId) {
-      console.log('📋 从sessionStorage获取userId:', sessionId);
+      if (config.DEBUG.CONSOLE_LOG) console.log('📋 从sessionStorage获取userId:', sessionId);
       return sessionId;
     }
     
     // 3. 从jwtToken获取
     const jwtToken = localStorage.getItem('jwtToken') || sessionStorage.getItem('jwtToken');
     if (jwtToken) {
-      console.log('📋 尝试从JWT获取userId');
+      if (config.DEBUG.CONSOLE_LOG) console.log('📋 尝试从JWT获取userId');
       try {
         const base64Url = jwtToken.split('.')[1];
         const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
@@ -59,25 +60,25 @@ const detectUserId = (): string => {
         const payload = JSON.parse(jsonPayload);
         const id = payload.userId || payload.sub;
         if (id) {
-          console.log('📋 从JWT成功解析userId:', id);
+          if (config.DEBUG.CONSOLE_LOG) console.log('📋 从JWT成功解析userId:', id);
           return id;
         }
       } catch (e) {
-        console.warn('无法解析JWT', e);
+        if (config.DEBUG.CONSOLE_LOG) console.warn('无法解析JWT', e);
       }
     }
     
     // 4. 从全局变量获取
     if ((window as any).userInfo?.userId) {
       const id = (window as any).userInfo.userId;
-      console.log('📋 从window.userInfo获取userId:', id);
+      if (config.DEBUG.CONSOLE_LOG) console.log('📋 从window.userInfo获取userId:', id);
       return id;
     }
     
-    console.warn('⚠️ 无法获取有效的userId，使用anonymous');
+    if (config.DEBUG.CONSOLE_LOG) console.warn('⚠️ 无法获取有效的userId，使用anonymous');
     return 'anonymous';
   } catch (e) {
-    console.error('获取userId时出错:', e);
+    if (config.DEBUG.CONSOLE_LOG) console.error('获取userId时出错:', e);
     return 'anonymous';
   }
 };
@@ -86,23 +87,11 @@ const detectUserId = (): string => {
 const sentEventsWithContent = new Map();
 let lastSendTime = 0;
 
-// 限制每个事件在特定时间窗口内只能发送一次
-const EVENT_THROTTLE_MS = {
-  'chat_input_typing': 2000,  // 输入事件节流2秒
-  // 以下事件均已移除
-  // 'chat_input_blur': 1000,
-  // 'chat_input_before_send': 1000,
-  // 'chat_input_sent': 1000,
-  // 'chat_message_received': 1000
-};
+// 从配置文件获取事件节流配置
+const EVENT_THROTTLE_MS = config.THROTTLE;
 
-// 批量处理和定时上传相关配置
-const BATCH_CONFIG = {
-  MAX_BATCH_SIZE: 10,       // 最大批量事件数量
-  FLUSH_INTERVAL_MS: 180000, // 强制发送间隔，3分钟
-  MAX_RETRY_ATTEMPTS: 3,    // 最大重试次数
-  RETRY_INTERVAL_MS: 5000,  // 重试间隔，5秒
-};
+// 从配置文件获取批量处理配置
+const BATCH_CONFIG = config.BATCH;
 
 // 事件队列和状态
 const eventQueue: any[] = [];
@@ -146,25 +135,31 @@ const isDuplicateInQueue = (data: any): boolean => {
 // 添加事件到队列
 const queueEvent = (data: any) => {
   // 记录每次尝试加入队列的内容
-  if (DEBUG_MODE && data.content) {
+  if (DEBUG_MODE && config.DEBUG.VERBOSE && data.content) {
     console.group('🔍 尝试加入队列的内容');
     console.log('事件类型:', data.event);
-    console.log('内容:', data.content);
-    console.log('内容长度:', data.content.length);
-    console.log('操作类型:', data.input_action || 'unknown');
+    if (config.DEBUG.SHOW_CONTENT_DETAILS) {
+      console.log('内容:', data.content);
+    }
+    if (config.DEBUG.SHOW_LENGTH_INFO) {
+      console.log('内容长度:', data.content.length);
+    }
+    if (config.DEBUG.SHOW_ACTION_TYPE) {
+      console.log('操作类型:', data.input_action || 'unknown');
+    }
     console.groupEnd();
   }
   
-  // 增强的重复检测
-  if (isDuplicateInQueue(data)) {
-    if (DEBUG_MODE) {
-      console.log(`🚫 内容被重复检测过滤: "${data.content?.substring(0, 30)}${data.content?.length > 30 ? '...' : ''}"`);
+      // 增强的重复检测
+    if (isDuplicateInQueue(data)) {
+      if (DEBUG_MODE && config.DEBUG.VERBOSE && config.DEBUG.SHOW_CONTENT_DETAILS) {
+        console.log(`🚫 内容被重复检测过滤: "${data.content?.substring(0, 30)}${data.content?.length > 30 ? '...' : ''}"`);
+      }
+      return;
     }
-    return;
-  }
   
   // 新增规则：检查当前记录的数据是否包含队列中最后一条数据
-  if (eventQueue.length > 0 && data.content && eventQueue[eventQueue.length - 1].content) {
+  if (config.FEATURES.CONTENT_CONTAIN_CHECK && eventQueue.length > 0 && data.content && eventQueue[eventQueue.length - 1].content) {
     const lastEvent = eventQueue[eventQueue.length - 1];
     const newContent = data.content;
     const lastContent = lastEvent.content;
@@ -181,22 +176,36 @@ const queueEvent = (data: any) => {
       // 对于删除操作，只有当新内容包含旧内容时才替换
       // 如果旧内容包含新内容，说明删除了部分内容，应该保留两条记录
       if (isDeleteOperation && !newContainsLast && lastContainsNew) {
-        if (DEBUG_MODE) {
+              if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+        if (config.DEBUG.SHOW_LENGTH_INFO) {
           console.log(`🔄 删除操作: 旧内容(${lastContent.length}字符)包含新内容(${newContent.length}字符)，保留两条记录`);
+        } else {
+          console.log(`🔄 删除操作: 内容存在包含关系，保留两条记录`);
+        }
+        
+        if (config.DEBUG.SHOW_CONTENT_DETAILS) {
           console.log(`🔍 旧内容: ${lastContent.substring(0, 30)}${lastContent.length > 30 ? '...' : ''}`);
           console.log(`🔍 新内容: ${newContent.substring(0, 30)}${newContent.length > 30 ? '...' : ''}`);
         }
+      }
         // 不做任何替换，保留两条记录
       } else {
         // 对于增加操作或新内容包含旧内容的删除操作，替换最后一条数据
-        if (DEBUG_MODE) {
-          if (newContainsLast) {
-            console.log(`🔄 新内容(${newContent.length}字符)包含旧内容(${lastContent.length}字符)，替换最后事件`);
+        if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+          if (config.DEBUG.SHOW_LENGTH_INFO) {
+            if (newContainsLast) {
+              console.log(`🔄 新内容(${newContent.length}字符)包含旧内容(${lastContent.length}字符)，替换最后事件`);
+            } else {
+              console.log(`🔄 旧内容(${lastContent.length}字符)包含新内容(${newContent.length}字符)，替换最后事件`);
+            }
           } else {
-            console.log(`🔄 旧内容(${lastContent.length}字符)包含新内容(${newContent.length}字符)，替换最后事件`);
+            console.log(`🔄 内容存在包含关系，替换最后事件`);
           }
-          console.log(`🔍 旧内容: ${lastContent.substring(0, 30)}${lastContent.length > 30 ? '...' : ''}`);
-          console.log(`🔍 新内容: ${newContent.substring(0, 30)}${newContent.length > 30 ? '...' : ''}`);
+          
+          if (config.DEBUG.SHOW_CONTENT_DETAILS) {
+            console.log(`🔍 旧内容: ${lastContent.substring(0, 30)}${lastContent.length > 30 ? '...' : ''}`);
+            console.log(`🔍 新内容: ${newContent.substring(0, 30)}${newContent.length > 30 ? '...' : ''}`);
+          }
         }
         
         // 删除队列中的最后一条数据
@@ -378,7 +387,7 @@ const sendBatchToServer = (events: any[], isRetry = false): Promise<boolean> => 
   
   return new Promise((resolve) => {
     const xhr = new XMLHttpRequest();
-    xhr.open('POST', 'http://localhost:8080/api/track/batch', true);
+    xhr.open('POST', config.SERVER.BATCH_TRACK_URL, true);
     xhr.setRequestHeader('Content-Type', 'application/json');
     xhr.setRequestHeader('Accept', 'application/json');
     
@@ -532,7 +541,7 @@ const sendSingleEvent = (data: any): Promise<boolean> => {
     // 使用XMLHttpRequest代替fetch，避免复杂的CORS问题
     return new Promise((resolve) => {
       const xhr = new XMLHttpRequest();
-      xhr.open('POST', 'http://localhost:8080/api/track', true);
+      xhr.open('POST', config.SERVER.TRACK_URL, true);
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.setRequestHeader('Accept', 'application/json');
       
@@ -568,7 +577,7 @@ const sendSingleEvent = (data: any): Promise<boolean> => {
 
 // 自动打印埋点队列数据
 const autoDumpQueue = () => {
-  if (DEBUG_MODE && (sensors as any).debug?.dumpQueue) {
+  if (DEBUG_MODE && config.FEATURES.AUTO_DUMP_QUEUE && (sensors as any).debug?.dumpQueue) {
     console.log('🔄 埋点队列数据已更新，自动打印队列内容:');
     (sensors as any).debug.dumpQueue();
   }
@@ -588,174 +597,220 @@ const customSendData = (data: any) => {
   }
 };
 
-// 初始化埋点SDK
-console.log('🔧 正在初始化埋点SDK...');
+// 创建空函数，用于禁用埋点时替代实际函数
+const noop = () => {};
+
+// 定义一个空的刷新函数和空队列，用于禁用埋点时
+const emptyFlushEvents = noop;
+const emptyEventQueue: any[] = [];
+
+// 检查埋点功能是否启用 - 最高级别控制
+const isTrackingEnabled = config.FEATURES.ENABLED;
+
+// 只有在埋点功能启用时才打印日志
+if (isTrackingEnabled && config.DEBUG.CONSOLE_LOG) {
+  console.log('🔧 正在初始化埋点SDK...');
+}
 
 try {
-  sensors.init({
-    server_url: 'http://localhost:8080/api/track',
-    show_log: DEBUG_MODE,     // 开发阶段打印日志
-    heatmap: {},              // 可选，点击/页面热图
-    is_track_single_page: true, // 单页应用模式
-    use_client_time: true,    // 使用客户端时间
-
-    // 完全自定义发送方式，以解决Content-Type问题
-    send_type: 'none',        // 禁用默认发送
-    callback_timeout: 5000,
-    debug_mode: DEBUG_MODE ? 2 : 0, // 设置为2可以在控制台看到更多信息
+  // 如果埋点功能被禁用，则使用空函数替代，不进行任何初始化
+  if (!isTrackingEnabled) {
+    // 替换所有埋点相关函数为空函数
+    sensors.track = noop;
+    sensors.init = noop;
+    sensors.registerPage = noop;
     
-    // 禁用所有自动埋点，只保留手动埋点
-    // 这样可以避免生成$pageview, $WebClick, $WebStay等事件
-    auto_track: false,
-    heatmap_url: ''  // 禁用热图
-  });
+    // 不执行任何初始化代码
+  } else {
+    // 埋点功能已启用，正常初始化
+    sensors.init({
+      server_url: config.SERVER.TRACK_URL,
+      show_log: DEBUG_MODE,     // 开发阶段打印日志
+      heatmap: {},              // 可选，点击/页面热图
+      is_track_single_page: true, // 单页应用模式
+      use_client_time: true,    // 使用客户端时间
+  
+      // 完全自定义发送方式，以解决Content-Type问题
+      send_type: 'none',        // 禁用默认发送
+      callback_timeout: config.SERVER.TIMEOUT_MS,
+      debug_mode: DEBUG_MODE ? 2 : 0, // 设置为2可以在控制台看到更多信息
+      
+      // 禁用所有自动埋点，只保留手动埋点
+      // 这样可以避免生成$pageview, $WebClick, $WebStay等事件
+      auto_track: false,
+      heatmap_url: ''  // 禁用热图
+    });
+  }
 
-  // 重写埋点发送函数
-  const originalTrack = sensors.track;
-  sensors.track = function(event: string, properties?: Record<string, any>) {
-    // 过滤掉自动生成的事件
-    if (event.startsWith('$') || event === 'test_connection') {
-      if (DEBUG_MODE) {
-        console.log(`🚫 忽略系统事件: ${event}`);
+  // 只有在埋点功能启用时才重写埋点发送函数
+  if (isTrackingEnabled) {
+    const originalTrack = sensors.track;
+    sensors.track = function(event: string, properties?: Record<string, any>) {
+      // 过滤掉自动生成的事件
+      if (event.startsWith('$') || event === 'test_connection') {
+        if (DEBUG_MODE) {
+          console.log(`🚫 忽略系统事件: ${event}`);
+        }
+        return; // 不处理以$开头的系统事件和测试事件
       }
-      return; // 不处理以$开头的系统事件和测试事件
-    }
+      
+      if (DEBUG_MODE) {
+        console.group('📊 埋点事件:', event);
+        console.log('属性:', properties);
+        console.groupEnd();
+      }
+      
+      // 调用原始track，但不会发送
+      originalTrack.call(sensors, event, properties);
+      
+      // 使用自定义方法发送
+      const data = {
+        event,
+        ...properties,
+        _track_time: Date.now()
+      };
+      
+      customSendData(data);
+    };
+  }
+
+  // 只有在埋点功能启用时才执行后续操作
+  if (isTrackingEnabled) {
+    // 设置自定义属性
+    sensors.registerPage({
+      environment: process.env.NODE_ENV || 'development',
+      app_version: '1.0.0',
+      page_type: 'chat'
+    });
+  
+    // 不再自动跟踪页面浏览
+    // sensors.quick('autoTrack');
     
     if (DEBUG_MODE) {
-      console.group('📊 埋点事件:', event);
-      console.log('属性:', properties);
-      console.groupEnd();
-    }
-    
-    // 调用原始track，但不会发送
-    originalTrack.call(sensors, event, properties);
-    
-    // 使用自定义方法发送
-    const data = {
-      event,
-      ...properties,
-      _track_time: Date.now()
-    };
-    
-    customSendData(data);
-  };
-
-  // 设置自定义属性
-  sensors.registerPage({
-    environment: process.env.NODE_ENV || 'development',
-    app_version: '1.0.0',
-    page_type: 'chat'
-  });
-
-  // 不再自动跟踪页面浏览
-  // sensors.quick('autoTrack');
-  
-  if (DEBUG_MODE) {
-    console.log('✅ 埋点SDK初始化成功');
-    
-    // 埋点SDK自定义扩展方法
-    (sensors as any).debug = {
-      // 输出所有事件
-      logEvents: () => {
-        console.log('🔍 所有已发送事件:', (sensors as any).getPreLoginInfo?.() || '无事件');
-      },
-      // 测试埋点方法
-      testTrack: (eventName: string, data: Record<string, any>) => {
-        console.log(`🧪 测试埋点: ${eventName}`, data);
-        sensors.track(eventName, data);
-      },
-      // 新增：打印当前队列内容 - 显示完整数据
-      dumpQueue: () => {
-        console.group('🔍 当前埋点队列内容');
-        console.log(`队列长度: ${eventQueue.length}`);
-        
-        if (eventQueue.length > 0) {
-          // 首先用表格显示基本信息
-          console.table(eventQueue.map(item => ({
-            event: item.event,
-            content_length: item.content?.length || 0,
-            timestamp: new Date(item._track_time || item.timestamp || Date.now()).toLocaleTimeString(),
-            input_action: item.input_action || 'unknown',
-            fingerprint: getEventFingerprint(item)
-          })));
+      console.log('✅ 埋点SDK初始化成功');
+      
+      // 埋点SDK自定义扩展方法
+      (sensors as any).debug = {
+        // 输出所有事件
+        logEvents: () => {
+          console.log('🔍 所有已发送事件:', (sensors as any).getPreLoginInfo?.() || '无事件');
+        },
+        // 测试埋点方法
+        testTrack: (eventName: string, data: Record<string, any>) => {
+          console.log(`🧪 测试埋点: ${eventName}`, data);
+          sensors.track(eventName, data);
+        },
+        // 新增：打印当前队列内容 - 显示完整数据
+        dumpQueue: () => {
+          console.group('🔍 当前埋点队列内容');
+          console.log(`队列长度: ${eventQueue.length}`);
           
-          // 然后详细打印每个事件的完整内容
-          console.group('📄 埋点队列详细数据:');
-          eventQueue.forEach((item, index) => {
-            console.group(`事件 #${index + 1}: ${item.event} (${item.input_action || 'unknown'})`);
+          if (eventQueue.length > 0) {
+            // 首先用表格显示基本信息
+            console.table(eventQueue.map(item => ({
+              event: item.event,
+              content_length: item.content?.length || 0,
+              timestamp: new Date(item._track_time || item.timestamp || Date.now()).toLocaleTimeString(),
+              input_action: item.input_action || 'unknown',
+              fingerprint: getEventFingerprint(item)
+            })));
             
-            // 使用格式化的方式显示内容
-            if (item.content) {
-              console.log('📝 完整内容:');
-              console.log('%c' + item.content, 'background: #f0f0f0; padding: 5px; border-radius: 3px; max-width: 100%; word-break: break-all; white-space: pre-wrap;');
-            } else {
-              console.log('📝 内容: 无');
-            }
-            
-            // 显示其他重要属性
-            console.group('📊 事件属性:');
-            console.log('🔹 操作类型:', item.input_action || 'unknown');
-            console.log('🔹 内容长度:', item.content?.length || 0);
-            console.log('🔹 最大长度:', item.max_length || 'N/A');
-            console.log('🔹 时间戳:', new Date(item._track_time || item.timestamp || Date.now()).toLocaleString());
-            console.log('🔹 指纹:', getEventFingerprint(item));
+            // 然后详细打印每个事件的完整内容
+            console.group('📄 埋点队列详细数据:');
+            eventQueue.forEach((item, index) => {
+              console.group(`事件 #${index + 1}: ${item.event} (${item.input_action || 'unknown'})`);
+              
+              // 使用格式化的方式显示内容
+              if (item.content) {
+                console.log('📝 完整内容:');
+                console.log('%c' + item.content, 'background: #f0f0f0; padding: 5px; border-radius: 3px; max-width: 100%; word-break: break-all; white-space: pre-wrap;');
+              } else {
+                console.log('📝 内容: 无');
+              }
+              
+              // 显示其他重要属性
+              console.group('📊 事件属性:');
+              console.log('🔹 操作类型:', item.input_action || 'unknown');
+              console.log('🔹 内容长度:', item.content?.length || 0);
+              console.log('🔹 最大长度:', item.max_length || 'N/A');
+              console.log('🔹 时间戳:', new Date(item._track_time || item.timestamp || Date.now()).toLocaleString());
+              console.log('🔹 指纹:', getEventFingerprint(item));
+              console.groupEnd();
+              
+              // 显示完整事件数据
+              console.group('🧩 完整事件数据:');
+              console.log(item);
+              console.groupEnd();
+              
+              console.groupEnd();
+            });
             console.groupEnd();
-            
-            // 显示完整事件数据
-            console.group('🧩 完整事件数据:');
-            console.log(item);
+          } else {
+            console.log('队列为空');
+          }
+          
+          if (failedBatches.length > 0) {
+            console.group('⚠️ 失败批次信息:');
+            console.log(`失败批次总数: ${failedBatches.length}`);
+            failedBatches.forEach((batch, index) => {
+              console.log(`批次 #${index+1}: ${batch.data.length}个事件, 尝试次数: ${batch.attempts}, 最后尝试时间: ${new Date(batch.lastAttempt).toLocaleString()}`);
+            });
             console.groupEnd();
-            
-            console.groupEnd();
-          });
+          }
+          
           console.groupEnd();
-        } else {
-          console.log('队列为空');
+          return eventQueue.length;
+        },
+        // 新增：清空当前队列
+        clearQueue: () => {
+          const count = eventQueue.length;
+          eventQueue.length = 0;
+          console.log(`🧹 已清空埋点队列，共移除${count}个事件`);
+          return count;
         }
-        
-        if (failedBatches.length > 0) {
-          console.group('⚠️ 失败批次信息:');
-          console.log(`失败批次总数: ${failedBatches.length}`);
-          failedBatches.forEach((batch, index) => {
-            console.log(`批次 #${index+1}: ${batch.data.length}个事件, 尝试次数: ${batch.attempts}, 最后尝试时间: ${new Date(batch.lastAttempt).toLocaleString()}`);
-          });
-          console.groupEnd();
-        }
-        
-        console.groupEnd();
-        return eventQueue.length;
-      },
-      // 新增：清空当前队列
-      clearQueue: () => {
-        const count = eventQueue.length;
-        eventQueue.length = 0;
-        console.log(`🧹 已清空埋点队列，共移除${count}个事件`);
-        return count;
-      }
-    };
-    
-    // 移除自动测试连接代码
-    // setTimeout(() => {
-    //   sensors.track('test_connection', {
-    //     message: 'Testing connection to SpringBoot endpoint',
-    //     timestamp: Date.now()
-    //   });
-    // }, 2000);
-  }
-  
-  // 页面卸载前尝试发送所有队列中的事件
-  window.addEventListener('beforeunload', () => {
-    if (eventQueue.length > 0) {
-      if (DEBUG_MODE) {
-        console.log(`🏁 页面即将卸载，发送剩余的 ${eventQueue.length} 个事件`);
-      }
-      // 同步发送，不使用异步
-      navigator.sendBeacon('http://localhost:8080/api/track/batch', JSON.stringify(eventQueue));
+      };
     }
-  });
+    
+    // 页面卸载前尝试发送所有队列中的事件
+    window.addEventListener('beforeunload', () => {
+      if (eventQueue.length > 0) {
+        if (DEBUG_MODE) {
+          console.log(`🏁 页面即将卸载，发送剩余的 ${eventQueue.length} 个事件`);
+        }
+        // 同步发送，不使用异步
+        navigator.sendBeacon(config.SERVER.BATCH_TRACK_URL, JSON.stringify(eventQueue));
+      }
+    });
+  }
 } catch (error) {
-  console.error('❌ 埋点SDK初始化失败:', error);
+  // 只有在埋点功能启用时才打印错误
+  if (isTrackingEnabled && config.DEBUG.CONSOLE_LOG) {
+    console.error('❌ 埋点SDK初始化失败:', error);
+  }
+}
+
+// 根据埋点功能是否启用，选择导出的对象
+const exportFlushEvents = isTrackingEnabled ? flushEvents : emptyFlushEvents;
+const exportEventQueue = isTrackingEnabled ? eventQueue : emptyEventQueue;
+
+// 如果埋点功能被禁用，替换所有可能的埋点日志
+if (!isTrackingEnabled) {
+  // 禁用所有埋点相关日志
+  const originalConsoleLog = console.log.bind(console);
+  console.log = function(...args: any[]) {
+    // 检查是否包含埋点相关关键词
+    const logStr = args.join(' ');
+    if (typeof logStr === 'string' && 
+        (logStr.includes('埋点') || 
+         logStr.includes('track') || 
+         logStr.includes('sensor') || 
+         logStr.includes('event') ||
+         logStr.includes('队列'))) {
+      return; // 不输出埋点相关日志
+    }
+    originalConsoleLog(...args);
+  };
 }
 
 export default sensors;
-export { flushEvents, eventQueue };  // 导出队列和刷新函数，可以在特定时刻手动触发发送 
+export { exportFlushEvents as flushEvents, exportEventQueue as eventQueue };  // 导出队列和刷新函数，可以在特定时刻手动触发发送

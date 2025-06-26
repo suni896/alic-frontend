@@ -1,5 +1,53 @@
 ## 埋点数据分析
 
+### 埋点配置文件
+
+埋点系统现在使用集中式配置文件 `src/utils/trackConfig.ts` 管理所有埋点相关的配置项。通过这个配置文件，可以方便地控制埋点功能的开启/关闭、调试信息的显示、埋点服务器地址等。
+
+主要配置项包括：
+
+```typescript
+// 调试模式配置
+export const DEBUG_CONFIG = {
+  // 是否开启调试模式
+  ENABLED: true,
+  // 是否在控制台打印埋点信息
+  CONSOLE_LOG: true,
+  // 是否显示详细日志
+  VERBOSE: true,
+  // 是否在控制台显示队列内容
+  SHOW_QUEUE: true,
+  // 是否在控制台显示发送结果
+  SHOW_SEND_RESULT: true,
+};
+
+// 埋点功能开关
+export const FEATURE_CONFIG = {
+  // 是否启用埋点功能
+  ENABLED: true,
+  // 是否启用内容包含关系检测
+  CONTENT_CONTAIN_CHECK: true,
+  // 是否启用内容长度检查
+  CONTENT_LENGTH_CHECK: true,
+  // 是否启用内容变化差异检查
+  CONTENT_DIFF_CHECK: true,
+  // 是否启用自动打印队列
+  AUTO_DUMP_QUEUE: true,
+  // 是否在发送消息时触发批量埋点
+  SEND_MESSAGE_TRIGGER: true,
+};
+
+// 服务器配置
+export const SERVER_CONFIG = {
+  // 埋点接口地址
+  TRACK_URL: "http://localhost:8080/api/track",
+  // 批量埋点接口地址
+  BATCH_TRACK_URL: "http://localhost:8080/api/track/batch",
+  // 请求超时时间（毫秒）
+  TIMEOUT_MS: 5000,
+};
+```
+
 ### 埋点系统中的 `distinct_id` 字段用于唯一标识用户，这是一个重要的字段，有以下几点需要注意：
 
 ### 1. 数据结构要求
@@ -41,7 +89,7 @@ const ALLOWED_EVENTS = [
 
 ## 最新埋点规则 (2023年11月更新)
 
-系统实现了完全优化的埋点规则，具体如下：
+系统实现了完全优化的埋点规则，现在可以通过配置文件灵活控制这些规则的开启/关闭。具体如下：
 
 1. **内容增加操作**:
    - 当用户持续增加输入内容时，系统会记录但不立即发送埋点数据
@@ -62,6 +110,7 @@ const ALLOWED_EVENTS = [
      - 超过2个英文单词
      - 总字符数超过10个
    - 不满足条件的短内容不会被记录，减少无效数据
+   - 可通过配置文件中的 `CONTENT_LENGTH_CHECK` 开关控制此功能，阈值可在 `CONTENT_CHECK_CONFIG` 中调整
 
 4. **内容变化差异要求**:
    - 系统会对比上次记录的内容和当前内容的差异
@@ -70,6 +119,7 @@ const ALLOWED_EVENTS = [
      - 英文单词数量差异 ≥ 2
      - 总字符长度差异 ≥ 5
    - 变化不够大的内容不会被重复记录，避免冗余数据
+   - 可通过配置文件中的 `CONTENT_DIFF_CHECK` 开关控制此功能，差异阈值可在 `CONTENT_CHECK_CONFIG` 中调整
 
 5. **智能内容包含关系检测**:
    - 系统会检查当前记录的数据与队列中最后一条数据的内容关系
@@ -78,11 +128,13 @@ const ALLOWED_EVENTS = [
      - 如果新内容包含旧内容，则替换最后一条数据（这种情况很少见）
      - 如果旧内容包含新内容，则保留两条记录，因为这表示删除了部分内容
    - 这种智能判断确保了在删除操作时不会丢失重要的历史记录
+   - 可通过配置文件中的 `CONTENT_CONTAIN_CHECK` 开关控制此功能
 
 6. **消息发送触发批量埋点**:
    - 当用户点击发送消息按钮时，系统会将队列中的所有埋点数据一次性发送出去
    - 这确保埋点数据能够及时被服务器接收，并与用户的实际操作关联起来
    - 避免了频繁发送埋点数据的性能开销，同时保证数据的完整性
+   - 可通过配置文件中的 `SEND_MESSAGE_TRIGGER` 开关控制此功能
 
 7. **特殊状态记录**:
    - 系统会记录用户输入过程中的最大内容长度(`max_length`)
@@ -191,7 +243,7 @@ const isChangeSufficient = (oldContent: string, newContent: string): boolean => 
 
 ```typescript
 // 新增规则：检查当前记录的数据是否包含队列中最后一条数据
-if (eventQueue.length > 0 && data.content && eventQueue[eventQueue.length - 1].content) {
+if (config.FEATURES.CONTENT_CONTAIN_CHECK && eventQueue.length > 0 && data.content && eventQueue[eventQueue.length - 1].content) {
   const lastEvent = eventQueue[eventQueue.length - 1];
   const newContent = data.content;
   const lastContent = lastEvent.content;
@@ -208,7 +260,7 @@ if (eventQueue.length > 0 && data.content && eventQueue[eventQueue.length - 1].c
     // 对于删除操作，只有当新内容包含旧内容时才替换
     // 如果旧内容包含新内容，说明删除了部分内容，应该保留两条记录
     if (isDeleteOperation && !newContainsLast && lastContainsNew) {
-      if (DEBUG_MODE) {
+      if (DEBUG_MODE && config.DEBUG.VERBOSE) {
         console.log(`🔄 删除操作: 旧内容(${lastContent.length}字符)包含新内容(${newContent.length}字符)，保留两条记录`);
         console.log(`🔍 旧内容: ${lastContent.substring(0, 30)}${lastContent.length > 30 ? '...' : ''}`);
         console.log(`🔍 新内容: ${newContent.substring(0, 30)}${newContent.length > 30 ? '...' : ''}`);
@@ -216,7 +268,7 @@ if (eventQueue.length > 0 && data.content && eventQueue[eventQueue.length - 1].c
       // 不做任何替换，保留两条记录
     } else {
       // 对于增加操作或新内容包含旧内容的删除操作，替换最后一条数据
-      if (DEBUG_MODE) {
+      if (DEBUG_MODE && config.DEBUG.VERBOSE) {
         if (newContainsLast) {
           console.log(`🔄 新内容(${newContent.length}字符)包含旧内容(${lastContent.length}字符)，替换最后事件`);
         } else {
@@ -248,8 +300,8 @@ eventQueue.push(data);
 
 ```typescript
 // 发送消息前，将埋点队列中的所有埋点数据一次性发送出去
-if (eventQueue && eventQueue.length > 0) {
-  console.log(`🚀 发送消息触发埋点批量发送: 队列长度 ${eventQueue.length}`);
+if (config.FEATURES.SEND_MESSAGE_TRIGGER && eventQueue && eventQueue.length > 0) {
+  if (config.DEBUG.CONSOLE_LOG) console.log(`🚀 发送消息触发埋点批量发送: 队列长度 ${eventQueue.length}`);
   flushEvents(); // 调用flushEvents函数发送所有队列中的埋点数据
 }
 ```
@@ -326,11 +378,11 @@ if (eventQueue && eventQueue.length > 0) {
    - 当用户关闭页面或离开应用时，会尝试发送队列中的所有未发送事件
    ```tsx
    window.addEventListener('beforeunload', () => {
-     if (eventQueue.length > 0) {
+     if (config.FEATURES.ENABLED && eventQueue.length > 0) {
        if (DEBUG_MODE) {
          console.log(`🏁 页面即将卸载，发送剩余的 ${eventQueue.length} 个事件`);
        }
-       navigator.sendBeacon('http://localhost:8080/api/track/batch', JSON.stringify(eventQueue));
+       navigator.sendBeacon(config.SERVER.BATCH_TRACK_URL, JSON.stringify(eventQueue));
      }
    });
    ```
@@ -341,26 +393,35 @@ if (eventQueue && eventQueue.length > 0) {
 
 ## 配置项
 
-埋点系统的主要配置参数：
+埋点系统的主要配置参数现在统一放在 `src/utils/trackConfig.ts` 文件中管理：
 
 ```typescript
-const BATCH_CONFIG = {
-   MAX_BATCH_SIZE: 10, // 最大批量事件数量
-   FLUSH_INTERVAL_MS: 180000, // 强制发送间隔，3分钟
-   MAX_RETRY_ATTEMPTS: 3, // 最大重试次数
-   RETRY_INTERVAL_MS: 5000, // 重试间隔，5秒
+// 批量处理和定时上传相关配置
+export const BATCH_CONFIG = {
+  // 最大批量事件数量
+  MAX_BATCH_SIZE: 10,
+  // 强制发送间隔，3分钟 (180000ms)
+  FLUSH_INTERVAL_MS: 180000,
+  // 最大重试次数
+  MAX_RETRY_ATTEMPTS: 3,
+  // 重试间隔，5秒
+  RETRY_INTERVAL_MS: 5000,
 };
 
-// 增加和删除操作使用不同的防抖时间
-const DEBOUNCE_TIME = {
-  chat_input_typing_add: 3000,     // 增加内容时等待3秒，只保留最终状态
-  chat_input_typing_delete: 1000,  // 删除操作1000ms内记录
+// 防抖时间配置
+export const DEBOUNCE_CONFIG = {
+  // 增加内容时等待3秒，只保留最终状态
+  chat_input_typing_add: 3000,
+  // 删除操作1000ms内记录
+  chat_input_typing_delete: 1000,
 };
 ```
 
 ## 调试模式
 
-设置`DEBUG_MODE = true`可以在控制台看到详细的埋点日志，包括：
+在配置文件中设置`DEBUG_CONFIG.ENABLED = true`可以在控制台看到详细的埋点日志。通过配置`DEBUG_CONFIG.CONSOLE_LOG`和`DEBUG_CONFIG.VERBOSE`可以控制日志的详细程度。
+
+调试日志包括：
 
 - 事件进入队列
 - 批量发送
@@ -371,6 +432,23 @@ const DEBOUNCE_TIME = {
 - 内容变化差异检查信息
 - 内容包含关系检查信息
 - 消息发送触发批量埋点信息
+
+配置示例：
+```typescript
+// 调试模式配置
+export const DEBUG_CONFIG = {
+  // 是否开启调试模式
+  ENABLED: true,
+  // 是否在控制台打印埋点信息
+  CONSOLE_LOG: true,
+  // 是否显示详细日志
+  VERBOSE: true,
+  // 是否在控制台显示队列内容
+  SHOW_QUEUE: true,
+  // 是否在控制台显示发送结果
+  SHOW_SEND_RESULT: true,
+};
+```
 
 
 ## 埋点接口CORS配置指南

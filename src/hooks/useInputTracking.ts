@@ -1,5 +1,9 @@
 import { useRef, useCallback, useState, useEffect } from 'react';
 import sensors, { flushEvents } from '../utils/tracker';
+import config from '../utils/trackConfig';
+
+// 检查埋点功能是否启用 - 最高级别控制
+const isTrackingEnabled = config.FEATURES.ENABLED;
 
 // TrackingData接口使用与SpringBoot服务器匹配的结构
 interface TrackingData {
@@ -23,24 +27,16 @@ interface TrackingData {
   max_length?: number;
 }
 
-// 定义允许的埋点事件名称，仅这些事件会被发送
-const ALLOWED_EVENTS = [
-  // 仅保留打字事件埋点
-  'chat_input_typing',
-  // 其他事件均已移除
-  // 'chat_input_blur',
-  // 'chat_input_before_send',
-  // 'chat_input_sent',
-  // 'chat_message_received'
-];
+// 从配置文件获取允许的埋点事件名称
+const ALLOWED_EVENTS = config.ALLOWED_EVENTS;
 
-// 调试开关 - 设置为true以查看埋点日志
-const DEBUG_MODE = true;
+// 从配置文件获取调试开关
+const DEBUG_MODE = config.DEBUG.ENABLED;
 
-// 修改防抖时间间隔（毫秒）- 增加和删除操作使用不同的时间
+// 从配置文件获取防抖时间间隔
 const DEBOUNCE_TIME = {
-  chat_input_typing_add: 3000,     // 增加内容时等待更长时间，只保留最终状态
-  chat_input_typing_delete: 1000,  // 删除操作更快记录
+  chat_input_typing_add: config.DEBOUNCE.chat_input_typing_add,     // 增加内容时等待更长时间，只保留最终状态
+  chat_input_typing_delete: config.DEBOUNCE.chat_input_typing_delete,  // 删除操作更快记录
   chat_input_blur: 1000,          // 虽然已移除但保留配置以备将来使用
   chat_input_before_send: 500,
   chat_input_sent: 500,
@@ -55,7 +51,7 @@ const generateEventFingerprint = (eventName: string, content: string, inputActio
   return `${eventName}_${contentDigest}_${inputAction}_${roomId || 0}`;
 };
 
-// 全局记录上次发送的事件，用于防止重复
+  // 全局记录上次发送的事件，用于防止重复
 const lastEvents: Record<string, {
   content: string;
   timestamp: number;
@@ -63,6 +59,13 @@ const lastEvents: Record<string, {
   fingerprint: string; // 添加指纹字段
   length: number; // 记录内容长度
 }> = {};
+
+// 检查是否为拼音输入法状态（包含未完成的拼音）
+const isPinyinInput = (content: string): boolean => {
+  // 检查是否包含拼音输入法特征
+  const hasPinyinMarkers = /[a-z]+['`]?$/i.test(content); // 以小写字母结尾可能是拼音
+  return hasPinyinMarkers;
+};
 
 // 检查是否重复事件 - 防止短时间内相同事件重复发送
 const isDuplicateEvent = (eventName: string, content: string, inputAction: 'add' | 'delete', roomId?: number): boolean => {
@@ -184,7 +187,8 @@ const getUserId = (): string => {
 
 // 埋点日志函数
 const logTracking = (eventName: string, data: TrackingData) => {
-  if (!DEBUG_MODE) return;
+  // 如果调试模式关闭或不显示日志，则直接返回
+  if (!DEBUG_MODE || !config.DEBUG.CONSOLE_LOG) return;
   
   // 检查是否为允许的事件
   if (!ALLOWED_EVENTS.includes(eventName)) {
@@ -193,14 +197,36 @@ const logTracking = (eventName: string, data: TrackingData) => {
   }
   
   console.group(`📊 埋点事件: ${eventName}`);
-  console.log(`📝 内容: ${data.content.substring(0, 50)}${data.content.length > 50 ? '...' : ''}`);
-  console.log(`📏 长度: ${data.input_length}`);
-  console.log(`🧩 操作: ${data.input_action === 'add' ? '增加内容' : '删除内容'}`);
-  if (data.max_length) console.log(`📏 最大长度: ${data.max_length}`);
+  
+  // 根据配置决定是否显示内容详情
+  if (config.DEBUG.SHOW_CONTENT_DETAILS) {
+    console.log(`📝 内容: ${data.content.substring(0, 50)}${data.content.length > 50 ? '...' : ''}`);
+  }
+  
+  // 根据配置决定是否显示长度信息
+  if (config.DEBUG.SHOW_LENGTH_INFO) {
+    console.log(`📏 长度: ${data.input_length}`);
+    if (data.max_length) console.log(`📏 最大长度: ${data.max_length}`);
+  }
+  
+  // 根据配置决定是否显示操作类型
+  if (config.DEBUG.SHOW_ACTION_TYPE) {
+    console.log(`🧩 操作: ${data.input_action === 'add' ? '增加内容' : '删除内容'}`);
+  }
+  
   console.log(`🏠 页面: ${data.page}`);
-  console.log(`🕒 时间: ${new Date(data.timestamp).toLocaleTimeString()}`);
-  console.log(`👤 用户ID: ${data.distinct_id}`);
-  if (data.room_id) console.log(`🔑 房间ID: ${data.room_id}`);
+  
+  // 根据配置决定是否显示时间信息
+  if (config.DEBUG.SHOW_TIME_INFO) {
+    console.log(`🕒 时间: ${new Date(data.timestamp).toLocaleTimeString()}`);
+  }
+  
+  // 根据配置决定是否显示ID信息
+  if (config.DEBUG.SHOW_IDS) {
+    console.log(`👤 用户ID: ${data.distinct_id}`);
+    if (data.room_id) console.log(`🔑 房间ID: ${data.room_id}`);
+  }
+  
   console.groupEnd();
 };
 
@@ -284,10 +310,15 @@ export const useInputTracking = (roomId?: number) => {
   // 清理函数 - 在组件卸载时发送最后的状态
   useEffect(() => {
     return () => {
+      // 如果埋点功能被禁用，直接返回
+      if (!isTrackingEnabled) {
+        return;
+      }
+      
       // 如果有未发送的内容且长度大于0，发送最终状态
       if (lastInputContent.current.trim().length > 0) {
         // 发送最终状态的埋点数据
-        if (DEBUG_MODE) {
+        if (DEBUG_MODE && config.DEBUG.CONSOLE_LOG) {
           console.log('🏁 组件卸载，发送最终输入状态');
         }
         
@@ -339,32 +370,49 @@ export const useInputTracking = (roomId?: number) => {
 
   // 通用的埋点发送函数，集中处理重复检查
   const trackEvent = useCallback((eventName: string, content: string, inputAction: 'add' | 'delete') => {
+    // 如果埋点功能被禁用，直接返回
+    if (!isTrackingEnabled) {
+      return;
+    }
+    
     // 检查是否为允许的事件
     if (!ALLOWED_EVENTS.includes(eventName)) {
       if (DEBUG_MODE) console.log(`🚫 不跟踪事件: ${eventName}`);
       return;
     }
     
-    // 检查内容是否满足记录条件
-    if (!isContentEligible(content)) {
-      if (DEBUG_MODE) console.log(`🚫 内容过短，不记录埋点: ${content.substring(0, 20)}`);
-      return;
+      // 检查内容是否满足记录条件
+  if (config.FEATURES.CONTENT_LENGTH_CHECK && !isContentEligible(content)) {
+    if (DEBUG_MODE && config.DEBUG.VERBOSE && config.DEBUG.SHOW_CONTENT_DIFF_NOTICE) {
+      if (config.DEBUG.SHOW_CONTENT_DETAILS) {
+        console.log(`🚫 内容过短，不记录埋点: ${content.substring(0, 20)}`);
+      } else {
+        console.log(`🚫 内容过短，不记录埋点`);
+      }
     }
-    
-    // 检查与上次记录的内容相比，变化是否足够大
-    if (!isChangeSufficient(lastRecordedContent.current, content)) {
-      if (DEBUG_MODE) console.log(`🚫 内容变化不够大，不记录埋点: 上次内容长度${lastRecordedContent.current.length}，当前内容长度${content.length}`);
-      return;
+    return;
+  }
+  
+  // 检查与上次记录的内容相比，变化是否足够大
+  if (config.FEATURES.CONTENT_DIFF_CHECK && !isChangeSufficient(lastRecordedContent.current, content)) {
+    if (DEBUG_MODE && config.DEBUG.VERBOSE && config.DEBUG.SHOW_CONTENT_DIFF_NOTICE) {
+      if (config.DEBUG.SHOW_LENGTH_INFO) {
+        console.log(`🚫 内容变化不够大，不记录埋点: 上次内容长度${lastRecordedContent.current.length}，当前内容长度${content.length}`);
+      } else {
+        console.log(`🚫 内容变化不够大，不记录埋点`);
+      }
     }
+    return;
+  }
     
     // 组件级别的节流控制
     const now = Date.now();
     const lastTime = lastEventTime.current[`${eventName}_${inputAction}`] || 0;
     // 根据操作类型选择不同的节流时间
-    const minInterval = inputAction === 'add' ? 3000 : 1000;
+    const minInterval = inputAction === 'add' ? DEBOUNCE_TIME.chat_input_typing_add : DEBOUNCE_TIME.chat_input_typing_delete;
     
     if (now - lastTime < minInterval) {
-      if (DEBUG_MODE) console.log(`⏱️ 组件级节流: ${eventName}(${inputAction}) 事件间隔过短 (${now - lastTime}ms < ${minInterval}ms)`);
+      if (DEBUG_MODE && config.DEBUG.VERBOSE) console.log(`⏱️ 组件级节流: ${eventName}(${inputAction}) 事件间隔过短 (${now - lastTime}ms < ${minInterval}ms)`);
       return;
     }
     
@@ -379,15 +427,19 @@ export const useInputTracking = (roomId?: number) => {
     
     const data = getTrackingData(content, eventName, inputAction);
     
-    if (DEBUG_MODE) {
-      console.log(`📤 准备发送事件: ${eventName}(${inputAction}), 指纹: ${data.event_fingerprint}`);
+    if (DEBUG_MODE && config.DEBUG.CONSOLE_LOG && config.DEBUG.VERBOSE) {
+      let message = `📤 准备发送事件: ${eventName}(${inputAction})`;
+      if (config.DEBUG.SHOW_CONTENT_DETAILS) {
+        message += `, 指纹: ${data.event_fingerprint}`;
+      }
+      console.log(message);
     }
     
     sensors.track(eventName, data);
     logTracking(eventName, data);
 
     // 新增：每次添加埋点时直接在控制台显示队列中的所有事件
-    if (DEBUG_MODE && (sensors as any).debug) {
+    if (DEBUG_MODE && config.FEATURES.AUTO_DUMP_QUEUE && (sensors as any).debug) {
       (sensors as any).debug.dumpQueue();
     }
   }, [getTrackingData, roomId]);
@@ -470,7 +522,12 @@ export const useInputTracking = (roomId?: number) => {
   const handleSend = useCallback((content: string) => {
     if (!content.trim()) return;
     
-    // 发送前记录最终输入状态
+    // 如果埋点功能被禁用，直接返回
+    if (!isTrackingEnabled) {
+      return;
+    }
+    
+    // 发送前记录最终输入状态并触发批量埋点发送
     if (lastInputContent.current.trim().length > 0) {
       // 创建最终状态的数据
       const finalData = getTrackingData(
@@ -482,12 +539,18 @@ export const useInputTracking = (roomId?: number) => {
       // 添加最大长度信息
       finalData.max_length = maxInputLength.current;
       
-      if (DEBUG_MODE) {
+      if (DEBUG_MODE && config.DEBUG.CONSOLE_LOG) {
         console.log('📨 发送消息前，记录最终输入状态');
         console.log(`📏 最大长度: ${maxInputLength.current}`);
       }
       
       sensors.track('chat_input_typing', finalData);
+      
+      // 消息发送时触发批量埋点发送
+      if (config.FEATURES.SEND_MESSAGE_TRIGGER) {
+        if (DEBUG_MODE && config.DEBUG.CONSOLE_LOG) console.log('🚀 发送消息触发批量埋点发送');
+        flushEvents();
+      }
     }
     
     // 重置状态，为下一次输入做准备
