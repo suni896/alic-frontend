@@ -516,13 +516,13 @@ const RemoveIcon = styled(IoIosRemoveCircleOutline)`
 
 const AddIconContainer = styled.div`
   display: grid;
-  grid-template-columns: 32px 1fr 1.3fr 70px 60px;
+  grid-template-columns: 30px 1.2fr 1.8fr 65px 55px;
   gap: 0.6rem;
   margin-top: 1rem;
   align-items: center;
 
   @media (max-width: 800px) {
-    grid-template-columns: 28px 1fr 1fr 60px 50px;
+    grid-template-columns: 26px 1fr 1.2fr 55px 45px;
     gap: 0.4rem;
   }
 `;
@@ -551,6 +551,61 @@ const AddIcon = styled(IoIosAddCircleOutline)`
   @media (max-width: 400px) {
     font-size: 1rem;
     height: 2rem;
+  }
+`;
+
+// Structured mode components
+const StructuredHeaderRow = styled.div`
+  display: grid;
+  grid-template-columns: 30px 1fr 2fr;
+  gap: 0.8rem;
+  padding: 0.75rem 0;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid #cbd5e1;
+  align-items: center;
+
+  @media (max-width: 800px) {
+    grid-template-columns: 26px 1fr 1.5fr;
+    gap: 0.6rem;
+  }
+`;
+
+const StructuredAssistantRow = styled.div`
+  display: grid;
+  grid-template-columns: 30px 1fr 2fr;
+  gap: 0.8rem;
+  align-items: flex-start;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e2e8f0;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #f1f5f9;
+    border-radius: 8px;
+    margin: 0 -0.5rem;
+    padding: 0.75rem 0.5rem;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  @media (max-width: 800px) {
+    grid-template-columns: 26px 1fr 1.5fr;
+    gap: 0.6rem;
+  }
+`;
+
+const StructuredAddIconContainer = styled.div`
+  display: grid;
+  grid-template-columns: 30px 1fr 2fr;
+  gap: 0.8rem;
+  margin-top: 1rem;
+  align-items: center;
+
+  @media (max-width: 800px) {
+    grid-template-columns: 26px 1fr 1.5fr;
+    gap: 0.6rem;
   }
 `;
 
@@ -660,6 +715,7 @@ interface CreateGroupPayload {
   groupName: string;
   groupDescription: string;
   groupType: number;
+  groupMode: string;
   password?: string;
   chatBotVOList: ChatBotVO[];
 }
@@ -681,6 +737,7 @@ export interface RoomInfoResponse {
     groupDescription: string;
     groupType: number;
     password?: string;
+    groupMode?: string; // Add chatMode to the interface
     // Include both possible field names for the bot list
     chatBotVOList?: Array<{
       botId: number;
@@ -741,7 +798,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
     showAssistantsEnabled: boolean
   ) => {
     const groupTypeValue = parseInt(values.roomType, 10);
-
+    const groupModeValue = values.chatMode
     // Transform bots into ChatBotVO array
     const chatBotVOList: ChatBotVO[] = showAssistantsEnabled
       ? values.bots.map((bot: FormBot) => ({
@@ -759,6 +816,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       groupName: values.roomName,
       groupDescription: values.roomDescription,
       groupType: groupTypeValue,
+      groupMode: groupModeValue,
       ...(groupTypeValue === 0 ? { password: values.password } : {}),
       chatBotVOList,
     };
@@ -780,6 +838,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       roomName: "",
       roomDescription: "",
       roomType: "1",
+      chatMode: "free", // Add new field for chat mode
       password: "",
       bots: [
         {
@@ -796,6 +855,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
     onSubmit: async (values) => {
       console.log("Form Submitted", values);
       console.log("roomType value:", values.roomType);
+      console.log("chatMode value:", values.chatMode);
       console.log(
         "Bot status summary:",
         values.bots.map((bot) => ({
@@ -983,7 +1043,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
         // Verify the update by fetching the updated data
         try {
           const verifyResponse = await apiClient.get(
-            `/v1/group/get_group_info?groupId=${currentGroupId}`
+            `/v2/group/get_group_info?groupId=${currentGroupId}`
           );
           console.log("Verification response:", verifyResponse.data);
         } catch (verifyError) {
@@ -1054,7 +1114,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
               ? parseInt(currentGroupId, 10)
               : currentGroupId;
 
-          const url = `/v1/group/get_group_info?groupId=${groupIdParam}`;
+          const url = `/v2/group/get_group_info?groupId=${groupIdParam}`;
 
           try {
             const response = await apiClient.get<RoomInfoResponse>(url);
@@ -1101,6 +1161,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                 roomDescription: roomData.groupDescription || "",
                 roomType: roomData.groupType.toString(),
                 password: roomData.password || "",
+                chatMode: roomData.groupMode || "free", // Default to free chat mode
                 bots: isAdmin ? formattedBots : [], // Only include bots if admin
               });
             } else {
@@ -1259,6 +1320,53 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
               </RadioGroup>
             </InputGroup>
 
+            <InputGroup>
+              <Label>Chat Mode</Label>
+              <RadioGroup>
+                <RadioCard
+                  checked={formik.values.chatMode === "free"}
+                  disabled={effectiveIsModify}
+                >
+                  <input
+                    type="radio"
+                    name="chatMode"
+                    value="free"
+                    checked={formik.values.chatMode === "free"}
+                    onChange={formik.handleChange}
+                    disabled={effectiveIsModify}
+                  />
+                  <RadioIcon checked={formik.values.chatMode === "free"} />
+                  <RadioContent>
+                    <RadioTitle>
+                      Free Chat Mode
+                    </RadioTitle>
+                    <RadioDescription>Open conversation with full features</RadioDescription>
+                  </RadioContent>
+                </RadioCard>
+
+                <RadioCard
+                  checked={formik.values.chatMode === "structured"}
+                  disabled={effectiveIsModify}
+                >
+                  <input
+                    type="radio"
+                    name="chatMode"
+                    value="structured"
+                    checked={formik.values.chatMode === "structured"}
+                    onChange={formik.handleChange}
+                    disabled={effectiveIsModify}
+                  />
+                  <RadioIcon checked={formik.values.chatMode === "structured"} />
+                  <RadioContent>
+                    <RadioTitle>
+                      Structured Chat Mode
+                    </RadioTitle>
+                    <RadioDescription>Guided conversation with predefined structure</RadioDescription>
+                  </RadioContent>
+                </RadioCard>
+              </RadioGroup>
+            </InputGroup>
+
             {formik.values.roomType === "0" && (
               <InputGroup>
                 <Label htmlFor="password">Password</Label>
@@ -1304,149 +1412,241 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   name="bots"
                   render={(arrayHelpers) => (
                     <>
-                      <HeaderRow>
-                        <CenteredColumnHeader></CenteredColumnHeader>
-                        <ColumnHeader>Assistant Name</ColumnHeader>
-                        <ColumnHeader>Prompt</ColumnHeader>
-                        <ColumnHeader>Admin Only</ColumnHeader>
-                        <ColumnHeader>Context</ColumnHeader>
-                      </HeaderRow>
+                      {formik.values.chatMode === "structured" ? (
+                        // Structured Chat Mode Layout
+                        <>
+                          <StructuredHeaderRow>
+                            <CenteredColumnHeader></CenteredColumnHeader>
+                            <ColumnHeader>Assistant Name</ColumnHeader>
+                            <ColumnHeader>Prompt</ColumnHeader>
+                          </StructuredHeaderRow>
 
-                      {formik.values.bots.map((bot, index) => (
-                        <AddAssistantRow key={index}>
-                          <RemoveIcon
-                            onClick={() => {
-                              if (formik.values.bots.length > 1) {
-                                arrayHelpers.remove(index);
-                              }
-                            }}
-                          />
-                          <SmallInputContainer>
-                            <SmallInput
-                              name={`bots[${index}].name`}
-                              placeholder="Assistant Name"
-                              value={bot.name}
-                              onChange={(e) => handleBotFieldChange(e, index)}
-                              onBlur={formik.handleBlur}
-                              hasError={
-                                !!(
-                                  formik.touched.bots?.[index]?.name &&
-                                  formik.errors.bots?.[index] &&
-                                  typeof formik.errors.bots[index] ===
-                                    "object" &&
-                                  (formik.errors.bots[index] as any).name
-                                )
-                              }
-                            />
-                            {formik.touched.bots?.[index]?.name &&
-                              formik.errors.bots?.[index] &&
-                              typeof formik.errors.bots[index] === "object" &&
-                              (formik.errors.bots[index] as any).name && (
-                                <BotFieldErrorMessage>
-                                  {(formik.errors.bots[index] as any).name}
-                                </BotFieldErrorMessage>
-                              )}
-                          </SmallInputContainer>
-                          <SmallTextareaContainer>
-                            <AutoResizeTextarea
-                              name={`bots[${index}].prompt`}
-                              placeholder="Prompt"
-                              value={bot.prompt}
-                              onChange={(e) => handleBotFieldChange(e, index)}
-                              onBlur={formik.handleBlur}
-                              hasError={
-                                !!(
-                                  formik.touched.bots?.[index]?.prompt &&
-                                  formik.errors.bots?.[index] &&
-                                  typeof formik.errors.bots[index] ===
-                                    "object" &&
-                                  (formik.errors.bots[index] as any).prompt
-                                )
-                              }
-                            />
-                            {formik.touched.bots?.[index]?.prompt &&
-                              formik.errors.bots?.[index] &&
-                              typeof formik.errors.bots[index] === "object" &&
-                              (formik.errors.bots[index] as any).prompt && (
-                                <BotFieldErrorMessage>
-                                  {(formik.errors.bots[index] as any).prompt}
-                                </BotFieldErrorMessage>
-                              )}
-                          </SmallTextareaContainer>
-                          <ToggleSwitchContainer>
-                            <ToggleSwitch>
-                              <input
-                                type="checkbox"
-                                name={`bots[${index}].adminOnly`}
-                                checked={bot.adminOnly}
-                                onChange={(e) => {
-                                  const isChecked = e.target.checked;
-                                  formik.setFieldValue(
-                                    `bots[${index}].adminOnly`,
-                                    isChecked
-                                  );
-                                  if (bot.botId && bot.status === "unchanged") {
-                                    const updatedBots = [...formik.values.bots];
-                                    updatedBots[index] = {
-                                      ...updatedBots[index],
-                                      adminOnly: isChecked,
-                                      status: "modified",
-                                    };
-                                    formik.setFieldValue("bots", updatedBots);
-                                    console.log(
-                                      `Bot at index ${index} marked as modified (adminOnly: ${isChecked})`
-                                    );
+                          {formik.values.bots.map((bot, index) => (
+                            <StructuredAssistantRow key={index}>
+                              <RemoveIcon
+                                onClick={() => {
+                                  if (formik.values.bots.length > 1) {
+                                    arrayHelpers.remove(index);
                                   }
                                 }}
                               />
-                              <span></span>
-                            </ToggleSwitch>
-                          </ToggleSwitchContainer>
-                          <SmallInputContainer>
-                            <SmallInput
-                              type="number"
-                              name={`bots[${index}].context`}
-                              placeholder="Context"
-                              value={bot.context}
-                              onChange={(e) => handleBotFieldChange(e, index)}
-                              onBlur={formik.handleBlur}
-                              min={1}
-                              max={20}
-                              hasError={
-                                !!(
-                                  formik.touched.bots?.[index]?.context &&
+                              <SmallInputContainer>
+                                <SmallInput
+                                  name={`bots[${index}].name`}
+                                  placeholder="Assistant Name"
+                                  value={bot.name}
+                                  onChange={(e) => handleBotFieldChange(e, index)}
+                                  onBlur={formik.handleBlur}
+                                  hasError={
+                                    !!(
+                                      formik.touched.bots?.[index]?.name &&
+                                      formik.errors.bots?.[index] &&
+                                      typeof formik.errors.bots[index] ===
+                                        "object" &&
+                                      (formik.errors.bots[index] as any).name
+                                    )
+                                  }
+                                />
+                                {formik.touched.bots?.[index]?.name &&
                                   formik.errors.bots?.[index] &&
-                                  typeof formik.errors.bots[index] ===
-                                    "object" &&
-                                  (formik.errors.bots[index] as any).context
-                                )
+                                  typeof formik.errors.bots[index] === "object" &&
+                                  (formik.errors.bots[index] as any).name && (
+                                    <BotFieldErrorMessage>
+                                      {(formik.errors.bots[index] as any).name}
+                                    </BotFieldErrorMessage>
+                                  )}
+                              </SmallInputContainer>
+                              <SmallTextareaContainer>
+                                <AutoResizeTextarea
+                                  name={`bots[${index}].prompt`}
+                                  placeholder="Prompt"
+                                  value={bot.prompt}
+                                  onChange={(e) => handleBotFieldChange(e, index)}
+                                  onBlur={formik.handleBlur}
+                                  hasError={
+                                    !!(
+                                      formik.touched.bots?.[index]?.prompt &&
+                                      formik.errors.bots?.[index] &&
+                                      typeof formik.errors.bots[index] ===
+                                        "object" &&
+                                      (formik.errors.bots[index] as any).prompt
+                                    )
+                                  }
+                                />
+                                {formik.touched.bots?.[index]?.prompt &&
+                                  formik.errors.bots?.[index] &&
+                                  typeof formik.errors.bots[index] === "object" &&
+                                  (formik.errors.bots[index] as any).prompt && (
+                                    <BotFieldErrorMessage>
+                                      {(formik.errors.bots[index] as any).prompt}
+                                    </BotFieldErrorMessage>
+                                  )}
+                              </SmallTextareaContainer>
+                            </StructuredAssistantRow>
+                          ))}
+
+                          <StructuredAddIconContainer>
+                            <AddIcon
+                              onClick={() =>
+                                arrayHelpers.push({
+                                  name: "",
+                                  prompt: "",
+                                  context: 1,
+                                  adminOnly: false,
+                                  status: "new",
+                                })
                               }
                             />
-                            {formik.touched.bots?.[index]?.context &&
-                              formik.errors.bots?.[index] &&
-                              typeof formik.errors.bots[index] === "object" &&
-                              (formik.errors.bots[index] as any).context && (
-                                <BotFieldErrorMessage>
-                                  {(formik.errors.bots[index] as any).context}
-                                </BotFieldErrorMessage>
-                              )}
-                          </SmallInputContainer>
-                        </AddAssistantRow>
-                      ))}
+                          </StructuredAddIconContainer>
+                        </>
+                      ) : (
+                        // Free Chat Mode Layout (Original)
+                        <>
+                          <HeaderRow>
+                            <CenteredColumnHeader></CenteredColumnHeader>
+                            <ColumnHeader>Assistant Name</ColumnHeader>
+                            <ColumnHeader>Prompt</ColumnHeader>
+                            <ColumnHeader>Admin Only</ColumnHeader>
+                            <ColumnHeader>Context</ColumnHeader>
+                          </HeaderRow>
 
-                      <AddIconContainer>
-                        <AddIcon
-                          onClick={() =>
-                            arrayHelpers.push({
-                              name: "",
-                              prompt: "",
-                              context: 1,
-                              adminOnly: false,
-                              status: "new",
-                            })
-                          }
-                        />
-                      </AddIconContainer>
+                          {formik.values.bots.map((bot, index) => (
+                            <AddAssistantRow key={index}>
+                              <RemoveIcon
+                                onClick={() => {
+                                  if (formik.values.bots.length > 1) {
+                                    arrayHelpers.remove(index);
+                                  }
+                                }}
+                              />
+                              <SmallInputContainer>
+                                <SmallInput
+                                  name={`bots[${index}].name`}
+                                  placeholder="Assistant Name"
+                                  value={bot.name}
+                                  onChange={(e) => handleBotFieldChange(e, index)}
+                                  onBlur={formik.handleBlur}
+                                  hasError={
+                                    !!(
+                                      formik.touched.bots?.[index]?.name &&
+                                      formik.errors.bots?.[index] &&
+                                      typeof formik.errors.bots[index] ===
+                                        "object" &&
+                                      (formik.errors.bots[index] as any).name
+                                    )
+                                  }
+                                />
+                                {formik.touched.bots?.[index]?.name &&
+                                  formik.errors.bots?.[index] &&
+                                  typeof formik.errors.bots[index] === "object" &&
+                                  (formik.errors.bots[index] as any).name && (
+                                    <BotFieldErrorMessage>
+                                      {(formik.errors.bots[index] as any).name}
+                                    </BotFieldErrorMessage>
+                                  )}
+                              </SmallInputContainer>
+                              <SmallTextareaContainer>
+                                <AutoResizeTextarea
+                                  name={`bots[${index}].prompt`}
+                                  placeholder="Prompt"
+                                  value={bot.prompt}
+                                  onChange={(e) => handleBotFieldChange(e, index)}
+                                  onBlur={formik.handleBlur}
+                                  hasError={
+                                    !!(
+                                      formik.touched.bots?.[index]?.prompt &&
+                                      formik.errors.bots?.[index] &&
+                                      typeof formik.errors.bots[index] ===
+                                        "object" &&
+                                      (formik.errors.bots[index] as any).prompt
+                                    )
+                                  }
+                                />
+                                {formik.touched.bots?.[index]?.prompt &&
+                                  formik.errors.bots?.[index] &&
+                                  typeof formik.errors.bots[index] === "object" &&
+                                  (formik.errors.bots[index] as any).prompt && (
+                                    <BotFieldErrorMessage>
+                                      {(formik.errors.bots[index] as any).prompt}
+                                    </BotFieldErrorMessage>
+                                  )}
+                              </SmallTextareaContainer>
+                              <ToggleSwitchContainer>
+                                <ToggleSwitch>
+                                  <input
+                                    type="checkbox"
+                                    name={`bots[${index}].adminOnly`}
+                                    checked={bot.adminOnly}
+                                    onChange={(e) => {
+                                      const isChecked = e.target.checked;
+                                      formik.setFieldValue(
+                                        `bots[${index}].adminOnly`,
+                                        isChecked
+                                      );
+                                      if (bot.botId && bot.status === "unchanged") {
+                                        const updatedBots = [...formik.values.bots];
+                                        updatedBots[index] = {
+                                          ...updatedBots[index],
+                                          adminOnly: isChecked,
+                                          status: "modified",
+                                        };
+                                        formik.setFieldValue("bots", updatedBots);
+                                        console.log(
+                                          `Bot at index ${index} marked as modified (adminOnly: ${isChecked})`
+                                        );
+                                      }
+                                    }}
+                                  />
+                                  <span></span>
+                                </ToggleSwitch>
+                              </ToggleSwitchContainer>
+                              <SmallInputContainer>
+                                <SmallInput
+                                  type="number"
+                                  name={`bots[${index}].context`}
+                                  placeholder="Context"
+                                  value={bot.context}
+                                  onChange={(e) => handleBotFieldChange(e, index)}
+                                  onBlur={formik.handleBlur}
+                                  min={1}
+                                  max={20}
+                                  hasError={
+                                    !!(
+                                      formik.touched.bots?.[index]?.context &&
+                                      formik.errors.bots?.[index] &&
+                                      typeof formik.errors.bots[index] ===
+                                        "object" &&
+                                      (formik.errors.bots[index] as any).context
+                                    )
+                                  }
+                                />
+                                {formik.touched.bots?.[index]?.context &&
+                                  formik.errors.bots?.[index] &&
+                                  typeof formik.errors.bots[index] === "object" &&
+                                  (formik.errors.bots[index] as any).context && (
+                                    <BotFieldErrorMessage>
+                                      {(formik.errors.bots[index] as any).context}
+                                    </BotFieldErrorMessage>
+                                  )}
+                              </SmallInputContainer>
+                            </AddAssistantRow>
+                          ))}
+
+                          <AddIconContainer>
+                            <AddIcon
+                              onClick={() =>
+                                arrayHelpers.push({
+                                  name: "",
+                                  prompt: "",
+                                  context: 1,
+                                  adminOnly: false,
+                                  status: "new",
+                                })
+                              }
+                            />
+                          </AddIconContainer>
+                        </>
+                      )}
                     </>
                   )}
                 />

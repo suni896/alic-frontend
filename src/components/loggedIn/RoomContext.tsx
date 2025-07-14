@@ -53,6 +53,7 @@ interface CreateRoomRequest {
   groupName: string;
   groupDescription: string;
   groupType: number;
+  groupMode: string;
   password?: string;
   chatBotVOList: ChatBotVO[];
 }
@@ -168,7 +169,7 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const addRoom = async (createRoomRequest: CreateRoomRequest) => {
     const response = await apiClient.post(
-      "/v1/group/create_new_group",
+      "/v2/group/create_new_group",
       createRoomRequest
     );
 

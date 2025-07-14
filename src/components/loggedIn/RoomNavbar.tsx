@@ -165,7 +165,7 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
       try {
         const roleResponse = await fetchUserRole(groupId);
         setUserRole(roleResponse); // Store the role
-        const url = `/v1/group/get_group_info?groupId=${groupId}`;
+        const url = `/v2/group/get_group_info?groupId=${groupId}`;
 
         try {
           const response = await apiClient.get<RoomInfoResponse>(url);

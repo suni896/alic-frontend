@@ -43,6 +43,11 @@ interface Message {
   senderType: string;
   name: string;
   portrait: string;
+  mentionList?: Array<{
+    mentionName: string;
+    mentionId: number;
+    mentionType: String;
+  }>;
 }
 
 const Container = styled.div`
@@ -92,14 +97,23 @@ const SendMessageContainer = styled.div`
   position: relative;
 `;
 
-const MessageInput = styled.input`
-  background-color: white;
+const MessageInput = styled.input<{ $disabled?: boolean }>`
+  background-color: ${(props) => (props.$disabled ? "#f5f5f5" : "white")};
   width: 78%;
   height: 100%;
-  border: 1px solid #d3d3d3;
+  border: ${(props) => (props.$disabled ? "1px solid #ccc" : "1px solid #d3d3d3")};
   border-radius: 8px;
-  color: black;
+  color: ${(props) => (props.$disabled ? "#999" : "black")};
   padding: 0 1rem;
+  cursor: ${(props) => (props.$disabled ? "not-allowed" : "text")};
+
+  &:focus {
+    outline: ${(props) => (props.$disabled ? "none" : "2px solid #016532")};
+  }
+
+  &::placeholder {
+    color: ${(props) => (props.$disabled ? "#ccc" : "#999")};
+  }
 `;
 
 const LoadingSpinner = styled.div`
@@ -326,6 +340,23 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const isInitialMount = useRef(false);
+  const [groupMode, setGroupMode] = useState<string>("free"); // Add state for group mode
+  const [isAdmin, setIsAdmin] = useState(false); // Add state for admin status
+  const [canSendMessage, setCanSendMessage] = useState(true); // Add state for message sending permission
+
+  // Function to process message content with mentions
+  const processMessageWithMentions = (message: Message): Message => {
+    if (message.mentionList && message.mentionList.length > 0) {
+      // Convert mentionList to @mentions
+      const mentions = message.mentionList.map(mention => `@${mention.mentionName}`).join(' ');
+      
+      return {
+        ...message,
+        content: `${message.content} ${mentions}`
+      };
+    }
+    return message;
+  };
 
   const fetchBotInfo = async (botId: number): Promise<Bot> => {
     if (botsCache.has(botId)) {
@@ -402,7 +433,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     const prevMessages = messages.length;
     setIsLoading(true);
     try {
-      const response = await apiClient.post(`/v1/chat/getHistoryMsg`, {
+      const response = await apiClient.post(`/v2/chat/getHistoryMsg`, {
         groupId: groupId,
         lastMsgId: loadMore ? messages[0]?.infoId : -1,
         pageSize: 20,
@@ -410,7 +441,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
       const newMessages = response.data.data as Message[];
       setHasNoMoreMessages(newMessages.length < 20);
-      await Promise.all(
+      const processedMessages = await Promise.all(
         newMessages.map(async (msg) => {
           if (msg.senderType === "CHATBOT") {
             const botInfo = await fetchBotInfo(msg.senderId);
@@ -421,11 +452,14 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             msg.name = userInfo.userName;
             msg.portrait = userInfo.userPortrait;
           }
+          // Process mentions for each message
+          const processedMsg = processMessageWithMentions(msg);
+          return processedMsg;
         })
       );
 
       setMessages((prev) => {
-        const merged = [...newMessages, ...prev]
+        const merged = [...processedMessages, ...prev]
           .filter((v, i, a) => a.findIndex((t) => t.infoId === v.infoId) === i)
           .sort((a, b) => a.infoId - b.infoId);
 
@@ -532,29 +566,33 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                       receivedMessage.name = userInfo.userName;
                       receivedMessage.portrait = userInfo.userPortrait;
                     }),
-              ]);
-              setMessages((prev) => {
-                const newMessages = [...prev, receivedMessage].sort(
-                  (a, b) => a.infoId - b.infoId
-                );
+              ]).then(() => {
+                // Process mentions after user/bot info is set
+                const processedMessage = processMessageWithMentions(receivedMessage);
+                
+                setMessages((prev) => {
+                  const newMessages = [...prev, processedMessage].sort(
+                    (a, b) => a.infoId - b.infoId
+                  );
 
-                requestAnimationFrame(() => {
-                  if (chatContainerRef.current) {
-                    const { scrollTop, scrollHeight, clientHeight } =
-                      chatContainerRef.current;
-                    const isNearBottom =
-                      scrollHeight - (scrollTop + clientHeight) < 200;
+                  requestAnimationFrame(() => {
+                    if (chatContainerRef.current) {
+                      const { scrollTop, scrollHeight, clientHeight } =
+                        chatContainerRef.current;
+                      const isNearBottom =
+                        scrollHeight - (scrollTop + clientHeight) < 200;
 
-                    if (isNearBottom) {
-                      chatContainerRef.current.scrollTop = scrollHeight;
-                      setHasNewMessage(false);
-                    } else {
-                      setHasNewMessage(true);
+                      if (isNearBottom) {
+                        chatContainerRef.current.scrollTop = scrollHeight;
+                        setHasNewMessage(false);
+                      } else {
+                        setHasNewMessage(true);
+                      }
                     }
-                  }
-                });
+                  });
 
-                return newMessages;
+                  return newMessages;
+                });
               });
             });
 
@@ -590,14 +628,34 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           );
           if (response.data.code === 200) {
             membersCache.set(Number(groupId), response.data.data);
+            // Check admin status after fetching members
+            setIsAdmin(checkIfAdmin());
           }
         } catch (error) {
           console.error("Error fetching group members:", error);
         }
       };
 
+      // 获取群组信息以获取groupMode
+      const fetchGroupInfo = async () => {
+        try {
+          const response = await apiClient.get(
+            `/v2/group/get_group_info?groupId=${groupId}`
+          );
+          if (response.data.code === 200 && response.data.data) {
+            const groupInfo = response.data.data;
+            setGroupMode(groupInfo.groupMode || "free");
+          }
+        } catch (error) {
+          console.error("Error fetching group info:", error);
+          // Default to free mode if fetch fails
+          setGroupMode("free");
+        }
+      };
+
       if (groupId) {
         fetchMembers();
+        fetchGroupInfo();
         manageWebSocketConnection();
         fetchMessageHistory(false);
       }
@@ -623,7 +681,64 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     };
   }, [groupId, manageWebSocketConnection]);
 
+  // Check message sending permission when relevant state changes
+  useEffect(() => {
+    checkCanSendMessage();
+  }, [groupMode, isAdmin, messages, userInfo?.userId]);
+
+  // Function to check if user is admin
+  const checkIfAdmin = (): boolean => {
+    if (!groupId || !userInfo?.userId) return false;
+    try {
+      const members = membersCache.get(Number(groupId));
+      return (
+        members?.some(
+          (m) => m.userId === userInfo.userId && m.groupMemberType === "ADMIN"
+        ) ?? false
+      );
+    } catch (error) {
+      console.error("Error accessing membersCache:", error);
+      return false;
+    }
+  };
+
+  // Function to check if user can send message in structured mode
+  const checkCanSendMessage = () => {
+    // 非structured模式: 总是允许发送
+    if (groupMode !== "structured") {
+      setCanSendMessage(true);
+      return;
+    }
+
+    // structured模式 + 管理员 + 无历史消息: 允许发送
+    if (isAdmin && messages.length === 0) {
+      setCanSendMessage(true);
+      return;
+    }
+
+    // structured模式 + 有历史消息: 只有在最新消息的mentionList中包含当前用户时才允许发送
+    if (messages.length > 0) {
+      // Get the latest message
+      const latestMessage = messages[messages.length - 1];
+      
+      // Check if user is mentioned in the latest message
+      const isUserMentioned = latestMessage.mentionList?.some(
+        (mention) => (mention.mentionId === userInfo?.userId && mention.mentionType === "user")
+      );
+
+      setCanSendMessage(isUserMentioned || false);
+      return;
+    }
+
+    // Default case: structured mode with no admin and no messages - not allowed
+    setCanSendMessage(false);
+  };
+
   const sendMessage = () => {
+    if (!canSendMessage) {
+      return; // Don't send if not allowed
+    }
+    
     if (inputMessage.trim() && stompClientRef.current && userInfo?.userId) {
       const message = {
         groupId: groupId,
@@ -635,7 +750,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       };
       setSelectedBot(null);
       stompClientRef.current.send(
-        `/app/chat/${groupId}`,
+        `/app/chat/groupMode=${groupMode}/groupId=${groupId}`,
         {},
         JSON.stringify(message)
       );
@@ -643,7 +758,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     }
   };
 
-  const prevScrollHeight = useRef(0);
+  const prevScrollHeight = useRef(0); 
   const [selectedBot, setSelectedBot] = useState<number | null>(null);
 
   const handleBotSelect = (botName: string, botId: number) => {
@@ -797,17 +912,23 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       )}
       <SendMessageContainer>
         <MessageInput
-          placeholder="Type your message..."
+          placeholder={canSendMessage ? "Type your message..." : "You can only reply when mentioned"}
           value={inputMessage}
           onChange={(e) => setInputMessage(e.target.value)}
           onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+          disabled={!canSendMessage}
+          $disabled={!canSendMessage}
         />
-        <BotIcon
-          src={botIcon}
-          alt="Bot Icon"
-          onClick={() => setIsBotClicked(!isBotClicked)}
-        />
-        {isBotClicked && (
+        {/* Only show Bot Icon when groupMode is not "structured" */}
+        {groupMode !== "structured" && (
+          <BotIcon
+            src={botIcon}
+            alt="Bot Icon"
+            onClick={() => setIsBotClicked(!isBotClicked)}
+          />
+        )}
+        {/* Only show BotListPopUp when groupMode is not "structured" and isBotClicked is true */}
+        {groupMode !== "structured" && isBotClicked && (
           <BotListPopUp
             onClose={() => setIsBotClicked(false)}
             groupId={groupId}
