@@ -9,5 +9,8 @@ export default defineConfig({
   plugins: [react()],
   define: {
     global: "window",
+    "process.env": {
+      VITE_API_BASE_URL: process.env.VITE_API_BASE_URL,
+    },
   },
 });

@@ -282,6 +282,7 @@ const ButtonContainer = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
+  height: 40px;
 `;
 
 const RemoveIcon = styled(AiOutlineMinusCircle)<{ isSelected: boolean }>`
@@ -460,7 +461,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
   const getButtonText = () => {
     if (isExiting) return "Processing...";
     if (userRole === "ADMIN") {
-      return isRemoveMode ? "Finish" : "Remove Members";
+      return isRemoveMode ? "Finish" : "Edit";
     }
     return "Exit Group";
   };
@@ -496,9 +497,9 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
                       <Username>
                         <UserNameText>{member.userName}</UserNameText>
                         {member.groupMemberType === "ADMIN" ? (
-                          <AdminLabel>(ADMIN)</AdminLabel>
+                          <AdminLabel>admin</AdminLabel>
                         ) : (
-                          <MemberLabel>(member)</MemberLabel>
+                          <MemberLabel>member</MemberLabel>
                         )}
                       </Username>
                     </MemberInfo>
@@ -533,10 +534,10 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
           onConfirm={handleExitGroup}
           title={
             userRole === "ADMIN" && isRemoveMode
-              ? "Confirm to remove selected members"
-              : "Confirm to exit chat group"
+              ? "Confirm to Remove Selected Members"
+              : "Confirm to Exit Chat Group"
           }
-          message="Caution: cannot be withdrawn"
+          message="Caution: This action cannot be undone."
         />
       )}
     </>

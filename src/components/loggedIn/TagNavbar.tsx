@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { MdOutlineArrowBack } from "react-icons/md";
+import { MdKeyboardArrowLeft } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { styled } from "styled-components";
 import apiClient from "../loggedOut/apiClient";
@@ -44,9 +44,9 @@ const Container = styled.div`
   z-index: 1000;
 `;
 
-const BackArrow = styled(MdOutlineArrowBack)`
+const BackArrow = styled(MdKeyboardArrowLeft)`
   color: white;
-  font-size: 1.5rem;
+  font-size: 2rem;
   margin-right: 1rem;
   cursor: pointer;
 `;
@@ -54,7 +54,7 @@ const BackArrow = styled(MdOutlineArrowBack)`
 
 const Title = styled.h1`
   color: white;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-family: "Roboto", sans-serif;
   font-weight: 400;
   margin: 0;

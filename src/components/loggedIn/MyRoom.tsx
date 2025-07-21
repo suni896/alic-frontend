@@ -12,6 +12,7 @@ import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import { useInputTracking } from "../../hooks/useInputTracking";
 import sensors, { eventQueue, flushEvents } from "../../utils/tracker";
+import { API_BASE_URL } from "../../../config";
 
 interface MyRoomProps {
   title?: string;
@@ -20,7 +21,6 @@ interface MyRoomProps {
   onClose?: () => void;
   onBotSelect?: (botName: string, botId: number) => void;
 }
-
 
 interface Bot {
   botId: number;
@@ -327,9 +327,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [hasNoMoreMessages, setHasNoMoreMessages] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const isInitialMount = useRef(true);
-  
-  // 使用埋点Hook - 已更新埋点规则
+  const isInitialMount = useRef(false);
+
+    // 使用埋点Hook - 已更新埋点规则
   const { handleTyping, handleSend: trackSend, handleMessageReceived } = useInputTracking(groupId);
 
   // 存储用户信息到本地存储，便于埋点使用
@@ -533,7 +533,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     if (!groupId) return;
 
     // 创建新的连接
-    const socket = new SockJS(`https://112.74.92.135/ws`);
+    const socket = new SockJS(`${API_BASE_URL}/ws`);
     const client = Stomp.over(socket);
     stompClientRef.current = client;
     clientCache.set(groupId, client);
@@ -550,15 +550,15 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             client.subscribe(`/topic/chat/${groupId}`, (message) => {
               console.log("Received message:", message.body);
               const receivedMessage = JSON.parse(message.body) as Message;
-              
+
               // 只有接收到的消息不是自己发送的，才触发接收消息埋点
               if (receivedMessage.senderId !== userInfo?.userId) {
                 handleMessageReceived(
-                  receivedMessage.content, 
+                  receivedMessage.content,
                   receivedMessage.senderId
                 );
               }
-              
+
               Promise.all([
                 receivedMessage.senderType === "CHATBOT"
                   ? fetchBotInfo(receivedMessage.senderId).then((botInfo) => {
@@ -669,23 +669,23 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         userId: userInfo.userId,
         botId: selectedBot || 0
       });
-      
+
       // 发送消息前记录最终输入状态
       trackSend(inputMessage);
-      
+
       // 发送消息前，将埋点队列中的所有埋点数据一次性发送出去
       if (eventQueue && eventQueue.length > 0) {
         console.log(`🚀 发送消息触发埋点批量发送: 队列长度 ${eventQueue.length}`);
-        
+
         // 在发送前打印完整队列内容
         if ((sensors as any).debug?.dumpQueue) {
           console.log('📊 发送消息前的埋点队列内容:');
           (sensors as any).debug.dumpQueue();
         }
-        
+
         flushEvents(); // 调用flushEvents函数发送所有队列中的埋点数据
       }
-      
+
       const message = {
         groupId: groupId,
         senderId: userInfo.userId,
@@ -700,14 +700,14 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         {},
         JSON.stringify(message)
       );
-      
+
       console.log('✅ 消息已发送');
       setInputMessage("");
     } else {
-      console.log('❌ 消息发送失败:', { 
-        hasContent: !!inputMessage.trim(), 
-        hasClient: !!stompClientRef.current, 
-        hasUser: !!userInfo?.userId 
+      console.log('❌ 消息发送失败:', {
+        hasContent: !!inputMessage.trim(),
+        hasClient: !!stompClientRef.current,
+        hasUser: !!userInfo?.userId
       });
     }
   };
@@ -754,7 +754,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const MessageContainer = styled.div<{ $isOwnMessage: boolean }>`
     margin-bottom: 1rem;
     padding: 1rem;
-    background-color: ${props => props.$isOwnMessage ? "#dcf8c6" : "white"};
+    background-color: ${(props) => (props.$isOwnMessage ? "#dcf8c6" : "white")};
     border-radius: 8px;
     display: flex;
     align-items: flex-start;
@@ -791,7 +791,10 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           </div>
         )}
         {messages.map((msg) => (
-          <MessageContainer key={msg.infoId} $isOwnMessage={msg.senderId === userInfo?.userId}>
+          <MessageContainer
+            key={msg.infoId}
+            $isOwnMessage={msg.senderType === "USER" && msg.senderId === userInfo?.userId}
+          >
             <Avatar
               src={
                 msg.senderType === "CHATBOT"
@@ -801,7 +804,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               alt="User portrait"
             />
             <MessageContent>
-              <UserName>{msg.senderId === userInfo?.userId ? "You" : `${msg.name}`}</UserName>
+              <UserName>
+                {msg.senderId === userInfo?.userId ? "You" : `${msg.name}`}
+              </UserName>
               <MessageText>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
@@ -840,7 +845,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           </MessageContainer>
         ))}
       </RenderedChatContainer>
-      
+
       {hasNewMessage && (
         <div
           style={{
@@ -860,14 +865,14 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           新消息 ▼
         </div>
       )}
-      
+
       <SendMessageContainer>
         <MessageInput
           placeholder="Type your message..."
           value={inputMessage}
           onChange={(e) => {
             setInputMessage(e.target.value);
-            
+
             // 使用更新后的埋点规则处理输入事件
             // 无论是增加还是删除都会触发，但规则逻辑在hook内部处理
             handleTyping(e.target.value);

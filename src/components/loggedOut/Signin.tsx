@@ -8,8 +8,9 @@ import axios from "axios";
 import apiClient from "./apiClient";
 import { useUser } from "../loggedIn/UserContext";
 import { useState } from "react";
+import { API_BASE_URL } from "../../../config";
 
-axios.defaults.baseURL = "https://112.74.92.135:443";
+axios.defaults.baseURL = API_BASE_URL;
 
 const ErrorToast = styled.div`
   position: fixed;
