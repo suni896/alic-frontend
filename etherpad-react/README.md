@@ -1,69 +1,129 @@
-# React + TypeScript + Vite
+# Etherpad Integration for Chat Room
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project integrates Etherpad collaborative editor with the chat room interface, allowing users to collaborate on documents while chatting.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- Slide-out drawer interface for Etherpad editor
+- Room-specific document sharing (each chat room has its own document)
+- Consistent UI styling with the main application
+- Environment-aware configuration
+- Responsive design
 
-## Expanding the ESLint configuration
+## Architecture
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+The integration consists of several key components:
 
-```js
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### 1. Configuration (`etherpadConfig.ts`)
 
-      // Remove tseslint.configs.recommended and replace with this
-      ...tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      ...tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      ...tseslint.configs.stylisticTypeChecked,
+The configuration file manages environment-specific settings:
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
+```typescript
+// Environment configuration
+const ENV = {
+  development: {
+    ETHERPAD_URL: 'http://localhost:9001',
   },
-])
+  production: {
+    ETHERPAD_URL: 'https://etherpad.example.com',
+  },
+};
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### 2. Etherpad Component (`EtherpadComponent.tsx`)
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+A React component that embeds the Etherpad editor in an iframe:
 
-export default tseslint.config([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```typescript
+const EtherpadComponent: React.FC<EtherpadProps> = ({
+  roomId,
+  width = '100%',
+  height = '100%',
+  showControls = true,
+}) => {
+  // Generates pad ID based on room ID
+  const padId = roomId ? `${ETHERPAD_CONFIG.PAD_PREFIX}${roomId}` : 'shared-notes';
+  
+  // ...
+}
 ```
+
+### 3. Drawer Component (`EtherpadDrawer.tsx`)
+
+A slide-out drawer that contains the Etherpad component:
+
+```typescript
+const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
+  roomId,
+  isOpen,
+  onClose
+}) => {
+  // ...
+}
+```
+
+### 4. Button Component (`EtherpadDrawerWithButton`)
+
+A floating button that triggers the drawer:
+
+```typescript
+export const EtherpadDrawerWithButton: React.FC<{ roomId?: number }> = ({ roomId }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  // ...
+}
+```
+
+## Setup Requirements
+
+1. Etherpad Lite server running (default: `http://localhost:9001`)
+2. React application with styled-components
+3. React Icons library for UI elements
+
+## Usage
+
+To add the Etherpad integration to a chat room:
+
+```tsx
+import { EtherpadDrawerWithButton } from "./EtherpadDrawer";
+
+const ChatRoom = ({ roomId }) => {
+  return (
+    <div>
+      <EtherpadDrawerWithButton roomId={roomId} />
+      {/* Other chat room components */}
+    </div>
+  );
+};
+```
+
+## Configuration Options
+
+The Etherpad integration can be configured through the `etherpadConfig.ts` file:
+
+- `SERVER_URL`: URL of the Etherpad server
+- `PAD_PREFIX`: Prefix for pad IDs (default: 'room-')
+- Various display settings (controls, chat, line numbers, etc.)
+
+## Styling
+
+The components use styled-components and maintain the same visual language as the main application. The primary color (`#016532`) is used for the button, matching the application's color scheme.
+
+## Browser Compatibility
+
+The integration works in all modern browsers that support:
+- CSS transitions
+- Flexbox layout
+- iframes with cross-origin communication
+
+## Security Considerations
+
+- Ensure the Etherpad server has proper authentication if needed
+- Consider CORS settings when deploying to production
+- Use HTTPS for both the main application and Etherpad server in production
+
+## Future Improvements
+
+- Add user authentication to Etherpad sessions
+- Implement real-time user presence indicators
+- Add document export functionality
+- Support for mobile view with responsive drawer width

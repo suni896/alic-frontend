@@ -11,6 +11,7 @@ import { useUser } from "./UserContext";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
+import { EtherpadDrawerWithButton } from "./EtherpadDrawer";
 
 interface MyRoomProps {
   title?: string;
@@ -566,6 +567,9 @@ const MyRoom: React.FC<MyRoomProps> = ({
 
   return (
     <Container>
+      {/* 添加 EtherpadDrawerWithButton 组件 */}
+      <EtherpadDrawerWithButton roomId={groupId} />
+      
       <RenderedChatContainer ref={chatContainerRef} onScroll={handleScroll}>
         {hasNoMoreMessages && (
           <div style={{ textAlign: "center", padding: "5px", color: "#666" }}>
