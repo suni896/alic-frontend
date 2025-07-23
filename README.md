@@ -10,7 +10,9 @@ Currently, two official plugins are available:
 ## Expanding the ESLint configuration
 
 ## command
-npm run dev
+当你运行 npm run dev 时，应用会加载 .env.development 文件中的配置；
+当你运行 npm run build 时，应用会加载 .env.production 文件中的配置。
+
 rd -r -force node_modules/.vite
 stop:ctrl+c
 
@@ -58,3 +60,7 @@ export default tseslint.config({
   },
 })
 ```
+
+# handle the problem config
+del .env.production
+"VITE_API_BASE_URL=https://chat.alic-dev.xyz" | Out-File -Encoding utf8 -FilePath .env.production -NoNewline   
