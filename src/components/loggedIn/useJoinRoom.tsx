@@ -35,7 +35,7 @@ export function useJoinRoom() {
       setIsProcessing(true);
       try {
         const response = await apiClient.post<JoinGroupResponse>(
-          "/v1/group/add_group_member",
+          "/v2/group/add_group_member",
           {
             groupId,
             joinMemberID: userInfo?.userId,

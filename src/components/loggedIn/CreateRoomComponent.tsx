@@ -376,6 +376,14 @@ const SmallInput = styled(Input)<InputProps>`
     text-align: center;
   }
 
+  /* Disabled state for manager bots */
+  &:disabled {
+    background-color: #f3f4f6;
+    color: #9ca3af;
+    cursor: not-allowed;
+    border-color: #d1d5db;
+  }
+
   @media (max-width: 800px) {
     font-size: 0.75rem;
     padding: 0.4rem 0.5rem;
@@ -681,12 +689,59 @@ const validationSchema = (showAssistants: boolean) =>
                 ),
               prompt: Yup.string()
                 .required("Prompt is required")
-                .max(400, "Prompt cannot exceed 400 characters"),
+                .max(1000, "Prompt cannot exceed 1000 characters"),
               context: Yup.number()
-                .required("Context is required")
-                .min(1, "Minimum value is 1")
-                .max(20, "Maximum value is 20"),
-              adminOnly: Yup.boolean(),
+                .nullable()
+                .test(
+                  "skip-validation-for-structured",
+                  "Context is required",
+                  function (value) {
+                    const { from } = this;
+                    if (!from || !from[1] || !from[1].value) return true;
+                    
+                    // Get the chatMode from the root form values
+                    const rootFormValues = from[1].value;
+                    const chatMode = rootFormValues.chatMode;
+                    
+                    // console.log("Context validation - chatMode:", chatMode, "value:", value);
+                    
+                    if (chatMode === "structured") {
+                      console.log("Skipping context validation for structured mode");
+                      return true; // Skip validation for structured mode
+                    }
+                    
+                    if (value === undefined || value === null) {
+                      return this.createError({ message: "Context is required" });
+                    }
+                    
+                    const numValue = Number(value);
+                    if (isNaN(numValue) || numValue < 1) {
+                      return this.createError({ message: "Minimum value is 1" });
+                    }
+                    
+                    if (numValue > 20) {
+                      return this.createError({ message: "Maximum value is 20" });
+                    }
+                    
+                    return true;
+                  }
+                ),
+              adminOnly: Yup.boolean()
+                .test(
+                  "skip-validation-for-structured-admin",
+                  "Admin only is required",
+                  function () {
+                    const { from } = this;
+                    if (!from || !from[1] || !from[1].value) return true;
+                    
+                    const chatMode = from[1].value.chatMode;
+                    if (chatMode === "structured") {
+                      return true; // Skip validation for structured mode
+                    }
+                    
+                    return true; // adminOnly is boolean, so it's always valid
+                  }
+                ),
             })
           )
           .min(1, "Add at least one assistant")
@@ -745,6 +800,7 @@ export interface RoomInfoResponse {
       botPrompt: string;
       botContext: number;
       accessType: number;
+      botType: string;
     }>;
     chatBots?: Array<{
       botId: number;
@@ -752,6 +808,7 @@ export interface RoomInfoResponse {
       botPrompt: string;
       botContext: number;
       accessType: number;
+      botType: string;
     }>;
   };
 }
@@ -759,6 +816,7 @@ export interface RoomInfoResponse {
 // Extend the FormBot interface to include status and botId
 interface FormBotWithStatus extends FormBot {
   botId?: number; // Only present for existing bots
+  botType?: string; // Add botType field from API response
   status: "new" | "modified" | "unchanged"; // Track status for edit operations
 }
 
@@ -778,6 +836,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       botPrompt: string;
       botContext: number;
       accessType: number;
+      botType: string;
     }>
   >([]);
   const { groupId: urlGroupId } = useParams<{ groupId: string }>();
@@ -969,7 +1028,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
 
       // Separate bots based on their status
       const addedBots = values.bots
-        .filter((bot: FormBotWithStatus) => bot.status === "new")
+        .filter((bot: FormBotWithStatus) => bot.status === "new" && bot.botType !== "MANAGER")
         .map((bot: FormBotWithStatus) => ({
           accessType: bot.adminOnly ? 0 : 1,
           botContext:
@@ -982,22 +1041,23 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
 
       // Find deleted bots by comparing original bots with current bots
       const currentBotIds = values.bots
-        .filter((bot: FormBotWithStatus) => bot.botId)
+        .filter((bot: FormBotWithStatus) => bot.botId && bot.botType !== "MANAGER")
         .map((bot: FormBotWithStatus) => bot.botId);
 
-      // Calculate which bots were deleted (for debugging)
+      // Calculate which bots were deleted (for debugging) - exclude manager bots
       const deletedBotIds = originalBots
-        .filter((bot) => !currentBotIds.includes(bot.botId))
+        .filter((bot) => !currentBotIds.includes(bot.botId) && bot.botType !== "MANAGER")
         .map((bot) => bot.botId);
 
       console.log("Deleted bot IDs:", deletedBotIds);
 
       // For API, we need ALL existing bots that haven't been deleted in modifyChatBotVOS
-      // This includes both modified and unchanged bots
+      // This includes both modified and unchanged bots, but excludes manager bots
       const existingBots = values.bots
         .filter(
           (bot: FormBotWithStatus) =>
             bot.botId &&
+            bot.botType !== "MANAGER" &&
             (bot.status === "modified" || bot.status === "unchanged")
         )
         .map((bot: FormBotWithStatus) => ({
@@ -1033,7 +1093,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       console.log("Edit request payload:", requestPayload);
 
       const response = await apiClient.post(
-        "/v1/group/edit_group_info",
+        "/v2/group/edit_group_info",
         requestPayload
       );
 
@@ -1138,6 +1198,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   context: bot.botContext,
                   adminOnly: bot.accessType === 0,
                   botId: bot.botId,
+                  botType: bot.botType,
                   status: "unchanged",
                 }));
 
@@ -1425,9 +1486,13 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                             <StructuredAssistantRow key={index}>
                               <RemoveIcon
                                 onClick={() => {
-                                  if (formik.values.bots.length > 1) {
+                                  if (formik.values.bots.length > 1 && bot.botType !== "MANAGER") {
                                     arrayHelpers.remove(index);
                                   }
+                                }}
+                                style={{
+                                  color: bot.botType === "MANAGER" ? "#d1d5db" : "#ef4444",
+                                  cursor: bot.botType === "MANAGER" ? "not-allowed" : "pointer",
                                 }}
                               />
                               <SmallInputContainer>
@@ -1437,6 +1502,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                                   value={bot.name}
                                   onChange={(e) => handleBotFieldChange(e, index)}
                                   onBlur={formik.handleBlur}
+                                  disabled={bot.botType === "MANAGER" || (effectiveIsModify && !!bot.botId)}
                                   hasError={
                                     !!(
                                       formik.touched.bots?.[index]?.name &&
@@ -1463,6 +1529,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                                   value={bot.prompt}
                                   onChange={(e) => handleBotFieldChange(e, index)}
                                   onBlur={formik.handleBlur}
+                                  disabled={bot.botType === "MANAGER"}
                                   hasError={
                                     !!(
                                       formik.touched.bots?.[index]?.prompt &&
@@ -1514,9 +1581,13 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                             <AddAssistantRow key={index}>
                               <RemoveIcon
                                 onClick={() => {
-                                  if (formik.values.bots.length > 1) {
+                                  if (formik.values.bots.length > 1 && bot.botType !== "MANAGER") {
                                     arrayHelpers.remove(index);
                                   }
+                                }}
+                                style={{
+                                  color: bot.botType === "MANAGER" ? "#d1d5db" : "#ef4444",
+                                  cursor: bot.botType === "MANAGER" ? "not-allowed" : "pointer",
                                 }}
                               />
                               <SmallInputContainer>
@@ -1526,6 +1597,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                                   value={bot.name}
                                   onChange={(e) => handleBotFieldChange(e, index)}
                                   onBlur={formik.handleBlur}
+                                  disabled={bot.botType === "MANAGER" || (effectiveIsModify && !!bot.botId)}
                                   hasError={
                                     !!(
                                       formik.touched.bots?.[index]?.name &&
@@ -1552,6 +1624,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                                   value={bot.prompt}
                                   onChange={(e) => handleBotFieldChange(e, index)}
                                   onBlur={formik.handleBlur}
+                                  disabled={bot.botType === "MANAGER"}
                                   hasError={
                                     !!(
                                       formik.touched.bots?.[index]?.prompt &&
@@ -1577,7 +1650,9 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                                     type="checkbox"
                                     name={`bots[${index}].adminOnly`}
                                     checked={bot.adminOnly}
+                                    disabled={bot.botType === "MANAGER"}
                                     onChange={(e) => {
+                                      if (bot.botType === "MANAGER") return; // Prevent changes for manager bots
                                       const isChecked = e.target.checked;
                                       formik.setFieldValue(
                                         `bots[${index}].adminOnly`,
@@ -1597,7 +1672,10 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                                       }
                                     }}
                                   />
-                                  <span></span>
+                                  <span style={{
+                                    opacity: bot.botType === "MANAGER" ? 0.5 : 1,
+                                    cursor: bot.botType === "MANAGER" ? "not-allowed" : "pointer",
+                                  }}></span>
                                 </ToggleSwitch>
                               </ToggleSwitchContainer>
                               <SmallInputContainer>
@@ -1610,6 +1688,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                                   onBlur={formik.handleBlur}
                                   min={1}
                                   max={20}
+                                  disabled={bot.botType === "MANAGER"}
                                   hasError={
                                     !!(
                                       formik.touched.bots?.[index]?.context &&
@@ -1670,7 +1749,11 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                 >
                   Cancel
                 </Button>
-                <Button variant="primary" disabled={isSubmitting}>
+                <Button 
+                  variant="primary" 
+                  // type="submit"
+                  disabled={isSubmitting}
+                >
                   {effectiveIsModify ? "Update Room" : "Create Room"}
                 </Button>
               </ButtonContainer>

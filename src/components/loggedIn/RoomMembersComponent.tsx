@@ -396,7 +396,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
         console.log("admin");
         // Remove selected members
         for (const memberId of selectedMembers) {
-          await apiClient.post("/v1/group/remove_group_member", {
+          await apiClient.post("/v2/group/remove_group_member", {
             groupId: Number(groupId),
             removeMemberId: memberId,
           });
@@ -415,7 +415,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
         setSelectedMembers([]);
       } else {
         // Exit group for self
-        const response = await apiClient.post("/v1/group/remove_group_member", {
+        const response = await apiClient.post("/v2/group/remove_group_member", {
           groupId: Number(groupId),
           removeMemberId: userInfo?.userId,
         });

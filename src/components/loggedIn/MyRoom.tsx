@@ -723,7 +723,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       
       // Check if user is mentioned in the latest message
       const isUserMentioned = latestMessage.mentionList?.some(
-        (mention) => (mention.mentionId === userInfo?.userId && mention.mentionType === "user")
+        (mention) => (mention.mentionId === userInfo?.userId && mention.mentionType === "USER")
       );
 
       setCanSendMessage(isUserMentioned || false);
