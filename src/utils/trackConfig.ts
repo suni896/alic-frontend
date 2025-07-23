@@ -66,8 +66,8 @@ export const CONTENT_CHECK_CONFIG = {
 
 // 服务器配置
 export const SERVER_CONFIG = {
-    TRACK_URL: "http://localhost:8080/api/track",
-    BATCH_TRACK_URL: "http://localhost:8080/api/track/batch",
+    TRACK_URL: `${import.meta.env.VITE_API_TRACK_URL || "http://localhost:8080"}/api/track`,
+    BATCH_TRACK_URL: `${import.meta.env.VITE_API_TRACK_URL || "http://localhost:8080"}/api/track/batch`,
     TIMEOUT_MS: 5000,
 };
 
