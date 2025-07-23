@@ -16,6 +16,9 @@ stop:ctrl+c
 
 https://112.74.92.135/swagger-ui/index.html#/group-controller
 
+netstat -ano | findstr :5173
+taskkill /F /PID 23360
+
 If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
 
 - Configure the top-level `parserOptions` property like this:
