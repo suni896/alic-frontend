@@ -1,4 +1,4 @@
-import { useRef, useCallback, useState, useEffect } from 'react';
+import { useRef, useCallback, useEffect } from 'react';
 import sensors, { flushEvents } from '../utils/tracker';
 import config from '../utils/trackConfig';
 
@@ -61,11 +61,12 @@ const lastEvents: Record<string, {
 }> = {};
 
 // 检查是否为拼音输入法状态（包含未完成的拼音）
-const isPinyinInput = (content: string): boolean => {
-  // 检查是否包含拼音输入法特征
-  const hasPinyinMarkers = /[a-z]+['`]?$/i.test(content); // 以小写字母结尾可能是拼音
-  return hasPinyinMarkers;
-};
+// 当前未使用，保留供将来可能的功能
+// const isPinyinInput = (content: string): boolean => {
+//   // 检查是否包含拼音输入法特征
+//   const hasPinyinMarkers = /[a-z]+['`]?$/i.test(content); // 以小写字母结尾可能是拼音
+//   return hasPinyinMarkers;
+// };
 
 // 检查是否重复事件 - 防止短时间内相同事件重复发送
 const isDuplicateEvent = (eventName: string, content: string, inputAction: 'add' | 'delete', roomId?: number): boolean => {
@@ -283,7 +284,7 @@ export const useInputTracking = (roomId?: number) => {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   
   // 记录已触发事件，避免重复
-  const eventTracked = useRef<{[key: string]: boolean}>({});
+  // const eventTracked = useRef<{[key: string]: boolean}>({});
   // 记录组件级别的最后事件时间
   const lastEventTime = useRef<{[key: string]: number}>({});
   // 记录上一次输入的内容长度，用于比较是增加还是删除
@@ -570,15 +571,13 @@ export const useInputTracking = (roomId?: number) => {
     // 不再触发发送消息埋点事件
   }, [getTrackingData]);
 
-  // 消息接收处理函数 - 已禁用埋点，但保留函数接口以确保兼容性
-  const handleMessageReceived = useCallback((content: string, senderId: number) => {
-    if (!content.trim()) return;
+  // 处理接收到新消息的事件
+  const handleMessageReceived = useCallback((content: string, _senderId?: number) => {
+    if (!isTrackingEnabled) return;
     
-    if (DEBUG_MODE) {
-      console.log('🚫 接收消息埋点已禁用:', content.substring(0, 30));
-    }
-    // 不再触发埋点事件
-  }, []);
+    // 消息接收事件不需要内容检查
+    trackEvent('chat_message_received', content, 'add');
+  }, [trackEvent]);
 
   return {
     handleTyping,

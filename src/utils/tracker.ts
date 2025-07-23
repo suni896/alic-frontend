@@ -102,7 +102,7 @@ const failedBatches: Array<{ data: any[], attempts: number, lastAttempt: number 
 // 增强的重复检测 - 使用事件内容的哈希值进行比较
 const getEventFingerprint = (data: any): string => {
   try {
-    const { event, content, _track_time, timestamp } = data;
+    const { event, content } = data;
     // 提取关键字段生成指纹
     const keyFields = {
       event,
