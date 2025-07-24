@@ -1,9 +1,8 @@
-import React, { useState, useEffect, useRef } from "react";
-import { membersCache, GroupMember } from "./RoomMembersComponent";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import { membersCache } from "./RoomMembersComponent";
 import SockJS from "sockjs-client";
 import Stomp from "stompjs";
 import styled from "styled-components";
-import { useLocation } from "react-router-dom";
 import { LuSend, LuX } from "react-icons/lu";
 import botIcon from "../../assets/chat-gpt.png";
 import apiClient from "../loggedOut/apiClient";
@@ -12,6 +11,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import { EtherpadDrawerWithButton } from "./EtherpadDrawer";
+import { API_BASE_URL } from "../../../config";
 
 interface MyRoomProps {
   title?: string;
@@ -21,20 +21,17 @@ interface MyRoomProps {
   onBotSelect?: (botName: string, botId: number) => void;
 }
 
-interface LocationState {
-  title?: string;
-  desc?: string;
-  groupId?: string;
-  adminId?: string;
-  adminName?: string;
-  memberCount?: number;
-  groupType?: string;
-}
-
 interface Bot {
   botId: number;
   botName: string;
   accessType: number;
+}
+
+interface User {
+  userId: number;
+  userName: string;
+  userPortrait: string;
+  userEmail: string;
 }
 
 interface Message {
@@ -45,12 +42,14 @@ interface Message {
   msgType: number;
   createTime: string;
   senderType: string;
+  name: string;
+  portrait: string;
 }
 
 const Container = styled.div`
   background: white;
   width: 100%;
-  margin-top: 72px;
+  margin-top: 60px;
   padding: 20px;
   box-sizing: border-box;
 `;
@@ -130,6 +129,9 @@ const Avatar = styled.img`
   border-radius: 50%;
   margin-right: 12px;
   object-fit: cover;
+  flex-shrink: 0;
+  align-self: flex-start;
+  margin-top: 2px;
 
   @media (max-width: 1000px) {
     width: 30px;
@@ -308,11 +310,13 @@ const BotListPopUp: React.FC<MyRoomProps> = ({
   );
 };
 
-const MyRoom: React.FC<MyRoomProps> = ({
-  title: propTitle = "Default Title",
-  desc: propDesc = "No description available.",
-  groupId,
-}) => {
+const botsCache = new Map<number, Bot>();
+
+const clientCache = new Map<number, Stomp.Client | null>();
+
+const usersCache = new Map<number, User>();
+
+const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [hasNewMessage, setHasNewMessage] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { userInfo } = useUser();
@@ -322,21 +326,80 @@ const MyRoom: React.FC<MyRoomProps> = ({
   const [hasNoMoreMessages, setHasNoMoreMessages] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const isInitialMount = useRef(true);
+  const isInitialMount = useRef(false);
 
-  const cookie = document.cookie;
-  const token = localStorage.getItem("jwtToken");
+  const fetchBotInfo = async (botId: number): Promise<Bot> => {
+    if (botsCache.has(botId)) {
+      return botsCache.get(botId)!;
+    }
 
-  console.log("MyRoom enter groupId:", groupId);
+    try {
+      setIsLoading(true);
+      const response = await apiClient.get(
+        `/v1/group/get_group_chat_bot_info?botId=${botId}`
+      );
+      if (response.data.code === 200) {
+        botsCache.set(botId, response.data.data);
+        return response.data.data;
+      }
+    } catch (error) {
+      console.error("Error fetching bots:", error);
+    } finally {
+      setIsLoading(false);
+    }
+    return {
+      botId,
+      botName: `Bot ${botId}`,
+      accessType: 0,
+    };
+  };
+
+  const fetchUserInfo = async (userId: number): Promise<User> => {
+    if (usersCache.has(userId)) {
+      return usersCache.get(userId)!;
+    }
+
+    try {
+      const response = await apiClient.get(
+        `/v1/user/get_user_info_in_group?userId=${userId}`
+      );
+      if (response.data.code === 200) {
+        usersCache.set(userId, response.data.data);
+        return response.data.data;
+      }
+    } catch (error) {
+      console.error("Error fetching group members:", error);
+    }
+    return {
+      userId,
+      userName: `User ${userId}`,
+      userPortrait: "/default-avatar.png",
+      userEmail: "",
+    };
+  };
+
+  useEffect(() => {
+    const fetchBots = async () => {
+      try {
+        setIsLoading(true);
+        const response = await apiClient.get(
+          `/v1/group/get_group_chat_bot_list?groupId=${groupId}`
+        );
+        if (response.data.code === 200) {
+          // response.data.data.forEach((bot: Bot) => {
+          //   botsCache.set(bot.botId, bot.botName);
+          // });
+        }
+      } catch (error) {
+        console.error("Error fetching bots:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchBots();
+  }, [groupId]);
 
   const fetchMessageHistory = async (loadMore = false) => {
-    console.log(
-      "fetchMessageHistory enter:",
-      loadMore,
-      hasNoMoreMessages,
-      isLoading
-    );
-    // if (hasNoMoreMessages || isLoading) return;
     const prevMessages = messages.length;
     setIsLoading(true);
     try {
@@ -348,6 +411,19 @@ const MyRoom: React.FC<MyRoomProps> = ({
 
       const newMessages = response.data.data as Message[];
       setHasNoMoreMessages(newMessages.length < 20);
+      await Promise.all(
+        newMessages.map(async (msg) => {
+          if (msg.senderType === "CHATBOT") {
+            const botInfo = await fetchBotInfo(msg.senderId);
+            msg.name = botInfo.botName;
+            msg.portrait = botIcon;
+          } else {
+            const userInfo = await fetchUserInfo(msg.senderId);
+            msg.name = userInfo.userName;
+            msg.portrait = userInfo.userPortrait;
+          }
+        })
+      );
 
       setMessages((prev) => {
         const merged = [...newMessages, ...prev]
@@ -394,49 +470,70 @@ const MyRoom: React.FC<MyRoomProps> = ({
     }
   }, [messages, initialLoading]);
 
-  useEffect(() => {
-    if (!isInitialMount.current) {
-      setMessages([]);
-      setPageNum(1);
-      setIsLoading(false);
-      setHasNoMoreMessages(false);
-      setSelectedBot(null);
+  const connectionStatusRef = useRef<{
+    currentGroupId: number | null;
+    connectionPromise: Promise<void> | null;
+  }>({ currentGroupId: null, connectionPromise: null });
 
-      const fetchMembers = async () => {
-        try {
-          const response = await apiClient.get(
-            `/v1/group/get_group_member_list?groupId=${groupId}`
-          );
-          if (response.data.code === 200) {
-            membersCache.set(Number(groupId), response.data.data);
-          }
-        } catch (error) {
-          console.error("Error fetching group members:", error);
-        }
-      };
+  const manageWebSocketConnection = useCallback(async () => {
+    // 如果正在连接相同房间，直接返回
+    if (connectionStatusRef.current.currentGroupId === groupId) {
+      return;
+    }
 
-      if (groupId) fetchMembers();
+    if (groupId && clientCache.has(groupId)) {
+      const cachedClient = clientCache.get(groupId);
+      if (cachedClient !== undefined) {
+        stompClientRef.current = cachedClient;
+      }
+      return;
+    }
 
-      const connectWebSocket = () => {
-        if (stompClientRef.current && stompClientRef.current.connected) {
-          stompClientRef.current.disconnect(() => {
-            console.log("Disconnected previous WebSocket connection");
-          });
-          stompClientRef.current = null;
-        }
+    // 断开之前的连接
+    if (stompClientRef.current?.connected) {
+      stompClientRef.current.disconnect(() => {
+        console.log("Disconnected from previous connection");
+      });
+      console.log(
+        `Disconnected from previous room: ${connectionStatusRef.current.currentGroupId}`
+      );
+    }
 
-        const socket = new SockJS(`https://112.74.92.135/ws`);
-        const client = Stomp.over(socket);
+    // 更新连接状态
+    connectionStatusRef.current.currentGroupId = groupId ?? null;
 
+    // 如果没有groupId，停止连接
+    if (!groupId) return;
+
+    // 创建新的连接
+    const socket = new SockJS(`${API_BASE_URL}/ws`);
+    const client = Stomp.over(socket);
+    stompClientRef.current = client;
+    clientCache.set(groupId, client);
+
+    // 创建连接Promise
+    connectionStatusRef.current.connectionPromise = new Promise(
+      (resolve, reject) => {
         client.connect(
           {
-            cookie: cookie,
-            Authorization: `Bearer ${token}`,
+            cookie: document.cookie,
+            Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
           },
           () => {
             client.subscribe(`/topic/chat/${groupId}`, (message) => {
               console.log("Received message:", message.body);
               const receivedMessage = JSON.parse(message.body) as Message;
+              Promise.all([
+                receivedMessage.senderType === "CHATBOT"
+                  ? fetchBotInfo(receivedMessage.senderId).then((botInfo) => {
+                      receivedMessage.name = botInfo.botName;
+                      receivedMessage.portrait = botIcon;
+                    })
+                  : fetchUserInfo(receivedMessage.senderId).then((userInfo) => {
+                      receivedMessage.name = userInfo.userName;
+                      receivedMessage.portrait = userInfo.userPortrait;
+                    }),
+              ]);
               setMessages((prev) => {
                 const newMessages = [...prev, receivedMessage].sort(
                   (a, b) => a.infoId - b.infoId
@@ -448,14 +545,6 @@ const MyRoom: React.FC<MyRoomProps> = ({
                       chatContainerRef.current;
                     const isNearBottom =
                       scrollHeight - (scrollTop + clientHeight) < 200;
-                    console.log(
-                      "scrollHeight:",
-                      scrollHeight,
-                      "scrollTop:",
-                      scrollTop,
-                      "clientHeight:",
-                      clientHeight
-                    );
 
                     if (isNearBottom) {
                       chatContainerRef.current.scrollTop = scrollHeight;
@@ -469,31 +558,71 @@ const MyRoom: React.FC<MyRoomProps> = ({
                 return newMessages;
               });
             });
+
+            resolve();
+          },
+          (error) => {
+            console.error(`Connection failed for room ${groupId}:`, error);
+            reject(error);
           }
         );
+      }
+    );
 
-        stompClientRef.current = client;
+    try {
+      connectionStatusRef.current.connectionPromise;
+    } catch (error) {
+      console.error("WebSocket connection error:", error);
+    }
+  }, [groupId]);
 
-        return () => {
-          if (client && client.connected) {
-            client.disconnect(() => {
-              console.log("Cleanup: WebSocket disconnected");
-              stompClientRef.current = null;
-            });
+  useEffect(() => {
+    if (!isInitialMount.current) {
+      setMessages([]);
+      setIsLoading(false);
+      setHasNoMoreMessages(false);
+      setSelectedBot(null);
+
+      // 获取群组成员
+      const fetchMembers = async () => {
+        try {
+          const response = await apiClient.get(
+            `/v1/group/get_group_member_list?groupId=${groupId}`
+          );
+          if (response.data.code === 200) {
+            membersCache.set(Number(groupId), response.data.data);
           }
-        };
+        } catch (error) {
+          console.error("Error fetching group members:", error);
+        }
       };
 
       if (groupId) {
-        connectWebSocket();
+        fetchMembers();
+        manageWebSocketConnection();
         fetchMessageHistory(false);
       }
     } else {
       isInitialMount.current = false;
     }
 
-    return () => {};
-  }, [groupId]);
+    // 清理函数
+    return () => {
+      if (stompClientRef.current?.connected) {
+        stompClientRef.current.disconnect(() => {
+          console.log("Disconnected successfully");
+          if (groupId) {
+            clientCache.delete(groupId);
+          }
+        });
+        console.log("Cleanup: WebSocket disconnected");
+      }
+      connectionStatusRef.current = {
+        currentGroupId: null,
+        connectionPromise: null,
+      };
+    };
+  }, [groupId, manageWebSocketConnection]);
 
   const sendMessage = () => {
     if (inputMessage.trim() && stompClientRef.current && userInfo?.userId) {
@@ -516,7 +645,6 @@ const MyRoom: React.FC<MyRoomProps> = ({
   };
 
   const prevScrollHeight = useRef(0);
-  const [pageNum, setPageNum] = useState(1);
   const [selectedBot, setSelectedBot] = useState<number | null>(null);
 
   const handleBotSelect = (botName: string, botId: number) => {
@@ -526,18 +654,8 @@ const MyRoom: React.FC<MyRoomProps> = ({
     setIsBotClicked(false);
   };
 
-  const location = useLocation();
-  const state = location.state as LocationState | undefined;
   const [isBotClicked, setIsBotClicked] = useState(false);
 
-  const title = state?.title || propTitle;
-  const desc = state?.desc || propDesc;
-
-  useEffect(() => {
-    console.log(title, desc);
-  }, [title, desc]);
-
-  // 修改滚动事件处理
   const handleScroll = () => {
     const container = chatContainerRef.current;
     if (container) {
@@ -565,11 +683,42 @@ const MyRoom: React.FC<MyRoomProps> = ({
     }
   };
 
+  const MessageContainer = styled.div<{ $isOwnMessage: boolean }>`
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background-color: ${(props) => (props.$isOwnMessage ? "#dcf8c6" : "white")};
+    border-radius: 8px;
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  `;
+
+  const MessageContent = styled.div`
+    flex: 1;
+    min-width: 0;
+  `;
+
+  const UserName = styled.div`
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #1a202c;
+    margin-bottom: 0.25rem;
+    line-height: 1.2;
+  `;
+
+  const TimeStamp = styled.div`
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.5rem;
+    line-height: 1;
+  `;
+
   return (
     <Container>
       {/* 添加 EtherpadDrawerWithButton 组件 */}
       <EtherpadDrawerWithButton roomId={groupId} />
-      
+
       <RenderedChatContainer ref={chatContainerRef} onScroll={handleScroll}>
         {hasNoMoreMessages && (
           <div style={{ textAlign: "center", padding: "5px", color: "#666" }}>
@@ -577,45 +726,22 @@ const MyRoom: React.FC<MyRoomProps> = ({
           </div>
         )}
         {messages.map((msg) => (
-          <div
+          <MessageContainer
             key={msg.infoId}
-            style={{
-              marginBottom: "1rem",
-              padding: "1rem",
-              backgroundColor:
-                msg.senderId === userInfo?.userId ? "#dcf8c6" : "white",
-              borderRadius: "8px",
-              display: "flex",
-              alignItems: "center",
-              gap: "1rem",
-            }}
+            $isOwnMessage={msg.senderType === "USER" && msg.senderId === userInfo?.userId}
           >
             <Avatar
               src={
                 msg.senderType === "CHATBOT"
                   ? botIcon
-                  : `data:image/png;base64, ${
-                      msg.senderId === userInfo?.userId
-                        ? userInfo.userPortrait
-                        : membersCache
-                            .get(Number(groupId))
-                            ?.find((m) => m.userId === msg.senderId)
-                            ?.userPortrait || "/default-avatar.png"
-                    }`
+                  : `data:image/png;base64, ${msg.portrait}`
               }
               alt="User portrait"
             />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontWeight: 500 }}>
-                {msg.senderType === "CHATBOT"
-                  ? `Bot ${msg.senderId}`
-                  : msg.senderId === userInfo?.userId
-                  ? "You"
-                  : `User ${msg.senderId}`}
-              </div>
-              {/* <MessageText
-                dangerouslySetInnerHTML={{ __html: marked(msg.content) }}
-              /> */}
+            <MessageContent>
+              <UserName>
+                {msg.senderId === userInfo?.userId ? "You" : `${msg.name}`}
+              </UserName>
               <MessageText>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
@@ -640,13 +766,7 @@ const MyRoom: React.FC<MyRoomProps> = ({
                   {msg.content}
                 </ReactMarkdown>
               </MessageText>
-              <div
-                style={{
-                  fontSize: "0.8rem",
-                  color: "#666",
-                  marginTop: "0.5rem",
-                }}
-              >
+              <TimeStamp>
                 {new Date(msg.createTime).toLocaleString("zh-CN", {
                   year: "numeric",
                   month: "2-digit",
@@ -655,9 +775,9 @@ const MyRoom: React.FC<MyRoomProps> = ({
                   minute: "2-digit",
                   second: "2-digit",
                 })}
-              </div>
-            </div>
-          </div>
+              </TimeStamp>
+            </MessageContent>
+          </MessageContainer>
         ))}
       </RenderedChatContainer>
       {hasNewMessage && (

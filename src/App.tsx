@@ -1,4 +1,4 @@
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import RegisterPage from "./pages/RegisterPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SearchRoomsPage from "./pages/SearchRoomsPage";
@@ -12,8 +12,6 @@ import { UserProvider } from "./components/loggedIn/UserContext";
 import { RoomProvider } from "./components/loggedIn/RoomContext";
 
 const Debugger: React.FC = () => {
-  const location = useLocation();
-  console.log("Current location:", location.pathname);
   return null;
 };
 

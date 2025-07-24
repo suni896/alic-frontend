@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { IoEllipsisHorizontal, IoSettingsOutline } from "react-icons/io5";
-import { MdOutlineArrowBack, MdOutlineIosShare } from "react-icons/md";
+import { MdOutlineIosShare, MdKeyboardArrowLeft } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { styled } from "styled-components";
 import CreateRoomComponent, { RoomInfoResponse } from "./CreateRoomComponent";
@@ -17,7 +17,7 @@ const Container = styled.div`
   top: 0;
   left: 0;
   width: 100%;
-  height: 72px;
+  height: 60px;
   background-color: #016532;
   display: flex;
   align-items: center;
@@ -25,15 +25,16 @@ const Container = styled.div`
   z-index: 1000;
 `;
 
-const BackArrow = styled(MdOutlineArrowBack)`
+const BackArrow = styled(MdKeyboardArrowLeft)`
   color: white;
   font-size: 2rem;
   margin-right: 1rem;
+  cursor: pointer;
 `;
 
 const Title = styled.h1`
   color: white;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-family: "Roboto", sans-serif;
   font-weight: 400;
   margin: 0;
@@ -124,20 +125,17 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
   const [isRoomMembersVisible, setIsRoomMembersVisible] = useState(false);
   const [tagData, setTagData] = useState<TagData[]>([]);
   const [roomData, setRoomData] = useState<RoomInfoResponse | null>(null);
-  const [userRole, setUserRole] = useState<string>("MEMBER");
+  const [, setUserRole] = useState<string>("MEMBER");
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTagData = async () => {
       if (groupId) {
         try {
-          console.log("Fetching tags for groupId:", groupId);
           const response = await apiClient.get(
             `/v1/tag/get_tag_binded_group_list?groupId=${groupId}`
           );
-          console.log("API Response:", response.data);
           if (response.data.code === 200) {
-            console.log("Tags data:", response.data.data);
             setTagData(response.data.data);
           }
         } catch (error) {
@@ -196,11 +194,6 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
       fetchRoomInfo(groupId);
     }
   }, [groupId]);
-
-  // Add this to debug render
-  useEffect(() => {
-    console.log("Current tagData state:", tagData);
-  }, [tagData]);
 
   return (
     <Container>

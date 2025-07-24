@@ -4,108 +4,134 @@ import styled from "styled-components";
 import CreateRoomComponent from "./CreateRoomComponent"; // Modal Component
 import { useRoomContext } from "./RoomContext";
 import { useNavigate } from "react-router-dom";
+import { useJoinRoom } from "./useJoinRoom";
+import LabeledInputWithCount from "../Input";
 
 const Container = styled.div`
   background: white;
   width: 100%;
-  margin-top: 72px;
+  margin-top: 60px;
 `;
 
 const TopContainer = styled.div`
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2vh 4vw;
   width: 100%;
   height: 12vh;
-  align-items: center;
-  justify-content: center;
+  box-sizing: border-box;
+
+  @media (max-width: 800px) {
+    padding: 2vh 2vw;
+  }
+
+  @media (max-width: 600px) {
+    flex-direction: column;
+    height: auto;
+    gap: 1rem;
+    padding: 2vh 1rem;
+  }
 `;
 
 const Title = styled.h1`
-  font-family: Roboto;
-  font-weight: 800;
-  font-size: 2.5rem;
+  font-family: 'Roboto', sans-serif;
+  font-weight: 700;
+  font-size: 2rem;
+  letter-spacing: 0.5px;
+  color: #222;
 
   @media (max-width: 800px) {
-    font-size: 2rem;
-    font-weight: 700;
+    font-size: 1.8rem;
   }
 
   @media (max-width: 500px) {
-    font-size: 1.7rem;
+    font-size: 1.5rem;
   }
 `;
 
 const SearchContainer = styled.div`
-  position: fixed;
-  display: flex;
-  align-items: center;
-  right: 5rem;
-  top: 9.5rem;
-  width: auto;
-  z-index: 1000;
-
-  @media (max-width: 1000px) {
-    right: 1.5rem;
-  }
+  padding: 1.5rem 2rem;
+  background: #white;
+  // border-bottom: 1px solid #e9ecef;
+  position: relative;
+`;
+const SearchWrapper = styled.div`
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
 `;
 
 const SearchIcon = styled(CiSearch)`
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
   font-size: 1.5rem;
-  margin-left: 0.5rem;
-  color: black;
+  color: #6c757d;
+  z-index: 1;
 `;
 
-const SearchInput = styled.input`
-  padding: 5% 1%;
-  font-size: 1rem;
-  border: 1px solid #b7b7b7;
-  color: #757575;
-  background: white;
-  border-radius: 6px;
-  outline: #016532;
-  cursor: pointer;
-
-  &:focus {
-    border-color: #333;
-  }
-
-  font-size: 80%;
-`;
 
 const SearchRoomsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
   gap: 2rem 4rem;
-  padding: 2rem;
+  padding: 2rem 4rem;
   box-sizing: border-box;
-  margin-left: auto;
-  margin-right: auto;
+  max-width: 1400px;
+  margin: 0 auto;
   justify-content: flex-start;
+
+  @media (max-width: 1200px) {
+    gap: 2rem 3rem;
+    padding: 2rem 3rem;
+  }
 
   @media (max-width: 1000px) {
     gap: 2rem;
   }
+
+  @media (max-width: 800px) {
+    padding: 2rem;
+  }
+
   @media (max-width: 600px) {
     gap: 2rem 0.8rem;
-    padding: 2rem 1rem;
+    padding: 1.5rem 1rem;
   }
 `;
 
 const RoomContainer = styled.div`
-  width: 45%;
-  border-radius: 6px;
-  border: solid #d9d9d9;
-  padding: 1rem;
-  box-sizing: border-box;
-
   display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
   align-items: flex-start;
-  gap: 0.3rem;
+  width: 40%;
+  padding: 0.75rem;
+  background-color: white;
+  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+    border-color: #016532;
+  }
 
   @media (max-width: 600px) {
-    padding: 1rem 0.5rem;
+    width: 100%;
+    padding: 0.6rem;
   }
+`;
+const RoomDescContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+  gap: 0.25rem;
 `;
 
 const RoomTitle = styled.h2`
@@ -140,8 +166,19 @@ const RoomDescription = styled.span`
   font-family: Roboto;
   font-weight: 400;
   margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  max-height: 1.4em; /* 1 line * 1.4 line-height */
+  word-break: break-word;
+  
   @media (max-width: 600px) {
     font-size: 0.7rem;
+    -webkit-line-clamp: 1;
+    max-height: 1.4em; /* 1 line on mobile */
   }
 `;
 
@@ -191,79 +228,48 @@ interface PageButtonProps {
   active?: boolean;
 }
 
-interface Room {
-  groupId: number;
-  groupName: string;
-  groupDescription: string;
-  groupType: number;
-  adminId: number;
-  adminName: string;
-  memberCount: number;
-}
+const LoadingContainer = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-family: 'Roboto', sans-serif;
+  width: 100%;
+  grid-column: 1 / -1;
+`;
 
-const getPageNumbers = (currentPage: number, totalPages: number) => {
-  if (totalPages <= 6) {
-    return Array.from({ length: totalPages }, (_, i) => i + 1);
-  }
-
-  let pages = [];
-
-  pages.push(1);
-
-  if (currentPage <= 3) {
-    pages.push(2, 3, 4);
-    pages.push("...");
-    pages.push(totalPages);
-  } else if (currentPage >= totalPages - 2) {
-    pages.push("...");
-    pages.push(totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-  } else {
-    pages.push("...");
-    pages.push(currentPage - 1, currentPage, currentPage + 1);
-    pages.push("...");
-    pages.push(totalPages);
-  }
-
-  return pages;
-};
-
-const roomsCache = new Map<string, Map<number, Room[]>>();
+const EmptyState = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  color: #6b7280;
+  font-family: 'Roboto', sans-serif;
+  width: 100%;
+  grid-column: 1 / -1;
+`;
 
 const SearchRooms: React.FC = () => {
   const { mainAreaRooms, mainAreaRoomsPagination, setMainAreaRoomListRequest } =
     useRoomContext();
   const [currentPage, setCurrentPage] = useState(1);
-  const [roomsPerPage, setRoomsPerPage] = useState(8);
+  const [roomsPerPage] = useState(8);
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
   const roomRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
-  // useEffect(() => {
-  //   const calculateRoomsPerPage = () => {
-  //     if (roomRef.current) {
-  //       const roomHeight = roomRef.current.offsetHeight;
-  //       const containerHeight = window.innerHeight * 0.65;
-  //       const verticalGap = 32;
+  const { handleJoinClick, redirectPath, setRedirectPath } = useJoinRoom();
 
-  //       const rowHeight = roomHeight + verticalGap;
-  //       const rowsPerPage = Math.floor(containerHeight / rowHeight);
-
-  //       const calculatedRoomsPerPage = rowsPerPage * 2;
-
-  //       setRoomsPerPage(calculatedRoomsPerPage || 8);
-  //       setRoomsPerPage(8);
-  //     }
-  //   };
-
-  // calculateRoomsPerPage();
-
-  //   window.addEventListener("resize", calculateRoomsPerPage);
-  //   return () => {
-  //     window.removeEventListener("resize", calculateRoomsPerPage);
-  //   };
-  // }, []);
+  useEffect(() => {
+    if (redirectPath) {
+      navigate(redirectPath);
+      setRedirectPath(null);
+    }
+  }, [redirectPath, navigate, setRedirectPath]);
 
   useEffect(() => {
     fetchRooms();
@@ -287,7 +293,7 @@ const SearchRooms: React.FC = () => {
     );
     setMainAreaRoomListRequest({
       keyword: searchKeyword,
-      groupDemonTypeEnum: "JOINEDROOM",
+      groupDemonTypeEnum: "PUBLICROOM",
       pageRequestVO: {
         pageSize: mainAreaRoomsPagination.pageSize,
         pageNum: clampedPage,
@@ -295,16 +301,14 @@ const SearchRooms: React.FC = () => {
     });
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const value = e.target.value;
     if (value.length <= 100) {
       setSearchKeyword(value);
       setCurrentPage(1); // Reset to first page when search changes
     }
   };
-
-  const navigate = useNavigate();
-
+  
   return (
     <>
       {isCreateRoomOpen && (
@@ -314,42 +318,39 @@ const SearchRooms: React.FC = () => {
         <TopContainer>
           <Title>Public Chat Rooms</Title>
           <SearchContainer>
-            <SearchInput
-              placeholder="Search Public Rooms"
-              value={searchKeyword}
-              onChange={handleSearchChange}
-            />
-            <SearchIcon />
+            <SearchWrapper>
+              <SearchIcon />
+                <LabeledInputWithCount
+                  variant="withIcon"
+                  value={searchKeyword}
+                  onChange={handleSearchChange}
+                  placeholder="Search rooms by name or description..."
+                  type="text"
+                  showCount={false} // 搜索框通常不需要字数统计
+                />
+            </SearchWrapper>
           </SearchContainer>
         </TopContainer>
         <SearchRoomsContainer>
           {loading ? (
-            <div>Loading...</div>
+            <LoadingContainer>Loading...</LoadingContainer>
           ) : mainAreaRooms.length === 0 ? (
-            <div>No rooms found</div>
+            <EmptyState>No rooms found</EmptyState>
           ) : (
             mainAreaRooms.map((room, index) => (
               <RoomContainer
                 key={room.groupId}
-                onClick={() => {
-                  console.log("/my-room-${room.groupId.toString()}");
-                  navigate(`/my-room/${room.groupId.toString()}`, {
-                    state: {
-                      title: room.groupName,
-                      desc: room.groupDescription,
-                      groupId: room.groupId,
-                      adminId: room.adminId,
-                      adminName: room.adminName,
-                      memberCount: room.memberCount,
-                      groupType: room.groupType,
-                    },
-                  });
-                }}
+                onClick={() => handleJoinClick(room.groupId, room.groupType)}
                 ref={index === 0 ? roomRef : null}
               >
-                <RoomTitle>{room.groupName}</RoomTitle>
-                <RoomAdmin>Admin: {room.adminName}</RoomAdmin>
-                <RoomDescription>{room.groupDescription}</RoomDescription>
+
+                <RoomDescContainer>
+                  <RoomTitle>{room.groupName}</RoomTitle>
+                  <RoomAdmin>Admin: {room.adminName}</RoomAdmin>
+                  {room.groupDescription && (
+                    <RoomDescription>{room.groupDescription}</RoomDescription>
+                  )}
+                </RoomDescContainer>
               </RoomContainer>
             ))
           )}

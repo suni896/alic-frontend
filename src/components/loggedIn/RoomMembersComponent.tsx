@@ -4,9 +4,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { styled } from "styled-components";
 import apiClient from "../loggedOut/apiClient";
 import { useUser } from "./UserContext";
-import { RxCross2 } from "react-icons/rx";
 import { AiOutlineMinusCircle } from "react-icons/ai";
 import { fetchUserRole } from "./fetchUserRole";
+import Button from "../button";
+import ConfirmationModal from "../ConfirmationModal";
 
 const Overlay = styled.div`
   position: fixed;
@@ -23,6 +24,9 @@ const Overlay = styled.div`
 const MembersListContainer = styled.div`
   height: 100%;
   width: 20%;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+  
   @media (max-width: 1000px) {
     width: 22%;
   }
@@ -39,13 +43,27 @@ const TitleContainer = styled.div`
   align-items: center;
   width: 100%;
   height: 10%;
-  background-color: #016532;
+  background: linear-gradient(135deg, #016532 0%, #014a24 100%);
+  box-shadow: 0 2px 10px rgba(1, 101, 50, 0.3);
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+  }
 `;
 
 const MembersLogo = styled(MdPeopleAlt)`
   color: white;
   font-size: clamp(1.5rem, 5vw, 2rem);
   margin-left: 1rem;
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+  
   @media (max-width: 1000px) {
     margin-left: 2%;
   }
@@ -54,7 +72,10 @@ const MembersLogo = styled(MdPeopleAlt)`
 const Title = styled.p`
   color: white;
   font-size: 1.2rem;
+  font-weight: 600;
   margin-left: 5%;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  letter-spacing: 0.5px;
 
   @media (max-width: 1000px) {
     font-size: 1rem;
@@ -66,61 +87,95 @@ const Title = styled.p`
 
 const BottomContainer = styled.div`
   width: 100%;
-  height: 100%;
+  height: 90%;
   background-color: white;
   display: flex;
   flex-direction: column;
   align-items: center;
+  position: relative;
 `;
 
 const ListContainer = styled.div`
-  width: 90%;
+  width: 95%;
   height: auto;
-  max-height: 40%;
-  margin-top: 3vh;
+  max-height: 70%;
+  margin-top: 2rem;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 2vh;
+  gap: 0.75rem;
   overflow-y: auto;
-`;
-
-const LineSeparator = styled.hr`
-  margin: 2vh;
-  width: 90%;
-`;
-
-const ExitGroupButton = styled.button`
-  border: 1px solid #b2beb5;
-  border-radius: 6px;
-  background-color: white;
-  color: #fc5600;
-  margin-top: 1vh;
-  @media (max-width: 1000px) {
-    width: 85%;
-    font-size: 0.8rem;
+  padding: 0 0.5rem;
+  
+  /* Custom scrollbar */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  
+  &::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 3px;
+    
+    &:hover {
+      background: #a8a8a8;
+    }
   }
 `;
 
+const LineSeparator = styled.hr`
+  margin: 1.5rem 0;
+  width: 90%;
+  border: none;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+`;
+
+
 const CloseArrow = styled(MdOutlineKeyboardDoubleArrowRight)`
-  font-size: 2.5rem;
+  font-size: 1.5rem;
   position: fixed;
   bottom: 4vh;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    color: #374151;
+    transform: translateX(4px);
+  }
 `;
 
 const MemberContainer = styled.div`
   display: flex;
-  width: 100%;
+  width: 90%;
   align-items: center;
   justify-content: space-between;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  
+  &:hover {
+    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+    border-color: #016532;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(1, 101, 50, 0.1);
+  }
 `;
 
 const MemberInfo = styled.div`
   display: flex;
   align-items: center;
   font-size: 0.9rem;
-  margin-right: 0;
+  flex: 1;
+  min-width: 0;
+  
   @media (max-width: 900px) {
     font-size: 0.8rem;
   }
@@ -135,164 +190,120 @@ const LoadingIndicator = styled.div`
   align-items: center;
   height: 100px;
   width: 100%;
+  color: #6b7280;
+  font-family: 'Roboto', sans-serif;
+  font-size: 1rem;
 `;
 
 const Avatar = styled.img`
-  width: 40px;
-  height: 40px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   margin-right: 12px;
   object-fit: cover;
+  border: 2px solid #e2e8f0;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: #016532;
+    transform: scale(1.05);
+  }
 
   @media (max-width: 1000px) {
-    width: 30px;
-    height: 30px;
+    width: 36px;
+    height: 36px;
+    margin-right: 10px;
   }
   @media (max-width: 700px) {
-    margin-right: 5px;
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
   }
   @media (max-width: 400px) {
-    width: 23px;
-    height: 23px;
+    width: 28px;
+    height: 28px;
+    margin-right: 6px;
   }
 `;
 
-const Username = styled.p`
+const Username = styled.div`
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  flex: 1;
+`;
 
-  @media (max-width: 600px) {
-    flex-wrap: wrap;
+const UserNameText = styled.p`
+  margin: 0;
+  font-weight: 600;
+  color: #1a202c;
+  font-size: 0.9rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+  
+  @media (max-width: 900px) {
+    font-size: 0.8rem;
+  }
+  @media (max-width: 700px) {
+    font-size: 0.75rem;
   }
 `;
 
 const AdminLabel = styled.span`
-  color: red;
-  margin-left: 5px;
-
-  @media (max-width: 600px) {
-    display: block;
-    margin-left: 0;
-  }
+  color: #dc2626;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  border: 1px solid #fca5a5;
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 const MemberLabel = styled.span`
-  margin-left: 5px;
-`;
-
-const ConfirmationOverlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 3000;
-`;
-
-const ConfirmationContainer = styled.div`
-  background: white;
-  padding: 24px;
-  border-radius: 8px;
-  width: 30%;
-  min-width: 400px;
-  position: relative;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  @media (max-width: 420px) {
-    width: 60%;
-    min-width: 0;
-  }
-`;
-
-const CloseButton = styled.button`
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 4px;
-
-  &:hover {
-    opacity: 0.7;
-  }
-`;
-
-const ConfirmTitle = styled.h2`
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: black;
-  text-align: left;
-  margin-bottom: 0;
-
-  @media (max-width: 420px) {
-    font-size: 1rem;
-  }
-`;
-
-const ConfirmMessage = styled.p`
-  font-size: 1rem;
-  color: #666;
-  margin-top: 0.2vh;
-  margin-bottom: 5vh;
-  text-align: left;
-
-  @media (max-width: 420px) {
-    font-size: 0.8rem;
-  }
+  color: #6b7280;
+  font-size: 0.7rem;
+  font-weight: 500;
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  border: 1px solid #d1d5db;
+  margin-top: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 `;
 
 const ButtonContainer = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-`;
-
-const ConfirmButton = styled.button<{ variant?: "primary" | "secondary" }>`
-  padding: 8px 16px;
-  border-radius: 4px;
-  border: none;
-  cursor: pointer;
-  font-size: 14px;
-
-  ${({ variant }) =>
-    variant === "primary"
-      ? `
-    background-color: #dc3545;
-    color: white;
-    &:hover {
-      background-color: #c82333;
-    }
-    `
-      : `
-    background-color: #e9ecef;
-    color: #333;
-    &:hover {
-      background-color: #dee2e6;
-    }
-    `}
-`;
-
-const X = styled(RxCross2)`
-  color: black;
+  height: 40px;
 `;
 
 const RemoveIcon = styled(AiOutlineMinusCircle)<{ isSelected: boolean }>`
   margin-left: 8px;
   cursor: pointer;
-  font-size: 20px;
-  color: ${(props) => (props.isSelected ? "#FC5600" : "#666")};
-  transition: color 0.2s ease;
-
+  font-size: 22px;
+  color: ${(props) => (props.isSelected ? "#dc2626" : "#9ca3af")};
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+  padding: 4px;
+  border-radius: 50%;
+  
   &:hover {
-    color: ${(props) => (props.isSelected ? "#FC5600" : "#999")};
+    color: ${(props) => (props.isSelected ? "#b91c1c" : "#6b7280")};
+    background-color: ${(props) => (props.isSelected ? "#fee2e2" : "#f3f4f6")};
+    transform: scale(1.1);
   }
 
   @media (max-width: 1100px) {
-    margin-left: 0;
+    margin-left: 4px;
+    font-size: 20px;
   }
 `;
 
@@ -397,6 +408,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
         );
         if (response.data.code === 200) {
           setMembers(response.data.data);
+          membersCache.delete(Number(groupId));
         }
 
         setIsRemoveMode(false);
@@ -409,6 +421,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
         });
 
         if (response.data.code === 200) {
+          membersCache.delete(Number(groupId));
           navigate("/search-rooms");
         }
       }
@@ -448,14 +461,20 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
   const getButtonText = () => {
     if (isExiting) return "Processing...";
     if (userRole === "ADMIN") {
-      return isRemoveMode ? "Finish" : "Remove Members";
+      return isRemoveMode ? "Finish" : "Edit";
     }
     return "Exit Group";
   };
 
   return (
     <>
-      <Overlay>
+      <Overlay
+        onClick={(e) => {
+          if (e.target === e.currentTarget && !showConfirmation) {
+            onClose();
+          }
+        }}
+      >
         <MembersListContainer>
           <TitleContainer>
             <MembersLogo />
@@ -476,11 +495,11 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
                         alt={member.userName}
                       />
                       <Username>
-                        {member.userName}
+                        <UserNameText>{member.userName}</UserNameText>
                         {member.groupMemberType === "ADMIN" ? (
-                          <AdminLabel>(ADMIN)</AdminLabel>
+                          <AdminLabel>admin</AdminLabel>
                         ) : (
-                          <MemberLabel>(member)</MemberLabel>
+                          <MemberLabel>member</MemberLabel>
                         )}
                       </Username>
                     </MemberInfo>
@@ -497,41 +516,29 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
               )}
             </ListContainer>
             <LineSeparator />
-            <ExitGroupButton onClick={handleActionButton} disabled={isExiting}>
-              {getButtonText()}
-            </ExitGroupButton>
+            <ButtonContainer>
+              <Button variant="primary" onClick={handleActionButton} disabled={isExiting}>
+                {getButtonText()}
+              </Button>
+            </ButtonContainer>
+            
             <CloseArrow onClick={onClose} />
           </BottomContainer>
         </MembersListContainer>
       </Overlay>
 
       {showConfirmation && (
-        <ConfirmationOverlay onClick={() => setShowConfirmation(false)}>
-          <ConfirmationContainer onClick={(e) => e.stopPropagation()}>
-            <CloseButton onClick={() => setShowConfirmation(false)}>
-              <X size={20} />
-            </CloseButton>
-
-            <ConfirmTitle>
-              {userRole === "ADMIN" && isRemoveMode
-                ? "Confirm to remove selected members"
-                : "Confirm to exit chat group"}
-            </ConfirmTitle>
-            <ConfirmMessage>Caution: cannot be withdrawn</ConfirmMessage>
-
-            <ButtonContainer>
-              <ConfirmButton
-                variant="secondary"
-                onClick={() => setShowConfirmation(false)}
-              >
-                Cancel
-              </ConfirmButton>
-              <ConfirmButton variant="primary" onClick={handleExitGroup}>
-                Yes
-              </ConfirmButton>
-            </ButtonContainer>
-          </ConfirmationContainer>
-        </ConfirmationOverlay>
+        <ConfirmationModal
+          isOpen={showConfirmation}
+          onClose={() => setShowConfirmation(false)}
+          onConfirm={handleExitGroup}
+          title={
+            userRole === "ADMIN" && isRemoveMode
+              ? "Confirm to Remove Selected Members"
+              : "Confirm to Exit Chat Group"
+          }
+          message="Caution: This action cannot be undone."
+        />
       )}
     </>
   );

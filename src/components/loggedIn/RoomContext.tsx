@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import apiClient from "../loggedOut/apiClient";
 
-interface Room {
+interface RoomGroup {
   groupId: number;
   groupName: string;
   groupDescription: string;
@@ -17,7 +17,9 @@ interface Room {
   adminId: number;
   adminName: string;
   memberCount: number;
+  isJoined: boolean;
 }
+
 
 interface RoomListRequest {
   keyword: string;
@@ -36,7 +38,7 @@ interface RoomListResponse {
     pageNum: number;
     pages: number;
     total: number;
-    data: Room[];
+    data: RoomGroup[];
   };
 }
 
@@ -63,8 +65,8 @@ interface ChatBotVO {
 }
 
 interface RoomContextType {
-  sidebarRooms: Room[];
-  mainAreaRooms: Room[];
+  sidebarRooms: RoomGroup[];
+  mainAreaRooms: RoomGroup[];
   sidebarRoomsPagination: Pagination;
   // setSidebarRoomsPagination: Dispatch<SetStateAction<RoomListPagination>>;
   mainAreaRoomsPagination: Pagination;
@@ -79,8 +81,8 @@ const RoomContext = createContext<RoomContextType | undefined>(undefined);
 export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [sidebarRooms, setSidebarRooms] = useState<Room[]>([]);
-  const [mainAreaRooms, setMainAreaRooms] = useState<Room[]>([]);
+  const [sidebarRooms, setSidebarRooms] = useState<RoomGroup[]>([]);
+  const [mainAreaRooms, setMainAreaRooms] = useState<RoomGroup[]>([]);
   const [sidebarRoomsPagination, setSidebarRoomsPagination] =
     useState<Pagination>({
       pageSize: 10,
@@ -105,7 +107,7 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
   });
   const [mainAreaRoomListRequest, setMainAreaRoomListRequest] = useState({
     keyword: "",
-    groupDemonTypeEnum: "JOINEDROOM",
+    groupDemonTypeEnum: "PUBLICROOM",
     pageRequestVO: {
       pageSize: 8,
       pageNum: 1,
@@ -126,7 +128,6 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
       sidebarRoomListRequest
     );
 
-    console.log("fetchSidebarRooms Room API response:", response.data);
     if (response.data.code === 200) {
       const rooms = response.data.data.data;
       setSidebarRooms(rooms);
@@ -149,7 +150,6 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
       mainAreaRoomListRequest
     );
 
-    console.log("fetchMainAreaRooms Room API response:", response.data);
     if (response.data.code === 200) {
       const rooms = response.data.data.data;
       setMainAreaRooms(rooms);

@@ -5,8 +5,9 @@ import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ContainerLayout from "./ContainerLayout";
+import { API_BASE_URL } from "../../../config";
 
-axios.defaults.baseURL = "https://112.74.92.135:443";
+axios.defaults.baseURL = API_BASE_URL;
 
 const SigninForm = styled.form`
   display: flex;
@@ -100,6 +101,8 @@ const RegisterButton = styled.button<{ hasError: boolean }>`
   cursor: pointer;
   margin: 1rem auto 1.5rem auto;
   border-radius: 5px;
+  background-color: black;
+  color: white;
 
   @media (max-width: 740px) {
     width: 60%;

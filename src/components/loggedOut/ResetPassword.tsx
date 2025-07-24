@@ -6,8 +6,9 @@ import styled from "styled-components";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import VerifyOTP from "./VerifyOTP";
+import { API_BASE_URL } from "../../../config";
 
-axios.defaults.baseURL = "https://112.74.92.135:443";
+axios.defaults.baseURL = API_BASE_URL;
 
 const ResetPasswordForm = styled.form`
   display: flex;
@@ -93,6 +94,7 @@ const SubmitButton = styled.button`
   margin: 5% auto;
   border-radius: 5px;
   background-color: black;
+  color: white;
 
   @media (max-width: 740px) {
     width: 60%;
