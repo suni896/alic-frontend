@@ -8,6 +8,7 @@ import botIcon from "../../assets/chat-gpt.png";
 import apiClient from "../loggedOut/apiClient";
 import { useUser } from "./UserContext";
 import ReactMarkdown from "react-markdown";
+import remarkBreaks from "remark-breaks";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import { API_BASE_URL } from "../../../config";
@@ -90,22 +91,31 @@ const MessageText = styled.div`
 
 const SendMessageContainer = styled.div`
   display: flex;
-  align-items: center;
+  align-items: stretch;
   width: 100%;
   margin-top: 1vh;
-  height: 10vh;
+  height: auto;
+  min-height: 5em;
   position: relative;
 `;
 
-const MessageInput = styled.input<{ $disabled?: boolean }>`
+const MessageInput = styled.textarea<{ $disabled?: boolean }>`
   background-color: ${(props) => (props.$disabled ? "#f5f5f5" : "white")};
-  width: 78%;
-  height: 100%;
+  width: 92%;
+  min-height: 4.5em;
+  max-height: 4.5em;
+  height: 4.5em;
+  resize: none;
+  overflow-y: auto;
   border: ${(props) => (props.$disabled ? "1px solid #ccc" : "1px solid #d3d3d3")};
   border-radius: 8px;
   color: ${(props) => (props.$disabled ? "#999" : "black")};
-  padding: 0 1rem;
+  padding: 0.2em 1rem 1.2em 1rem;
   cursor: ${(props) => (props.$disabled ? "not-allowed" : "text")};
+  font-size: 1rem;
+  line-height: 1.5;
+  box-sizing: border-box;
+  font-family: inherit;
 
   &:focus {
     outline: ${(props) => (props.$disabled ? "none" : "2px solid #016532")};
@@ -113,6 +123,7 @@ const MessageInput = styled.input<{ $disabled?: boolean }>`
 
   &::placeholder {
     color: ${(props) => (props.$disabled ? "#ccc" : "#999")};
+    opacity: 1;
   }
 `;
 
@@ -167,14 +178,24 @@ const HeaderContent = styled.div`
 const BotIcon = styled.img`
   width: 2rem;
   height: 2rem;
-  margin-left: 4vw;
-  margin-right: 2vw;
+  margin: 0 0.5em;
   cursor: pointer;
+  display: block;
 `;
 
 const SendIcon = styled(LuSend)`
   font-size: 2rem;
   cursor: pointer;
+  margin: 0 0.5em;
+  display: block;
+`;
+
+const IconContainer = styled.div`
+  display: flex;
+  align-items: flex-end;
+  height: 100%;
+  margin-left: 0.5em;
+  gap: 0.2em;
 `;
 
 const PopupContainer = styled.div`
@@ -343,6 +364,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [groupMode, setGroupMode] = useState<string>("free"); // Add state for group mode
   const [isAdmin, setIsAdmin] = useState(false); // Add state for admin status
   const [canSendMessage, setCanSendMessage] = useState(true); // Add state for message sending permission
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
 
   // Function to process message content with mentions
   const processMessageWithMentions = (message: Message): Message => {
@@ -797,6 +819,10 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setInputMessage(e.target.value);
+  };
+
   const MessageContainer = styled.div<{ $isOwnMessage: boolean }>`
     margin-bottom: 1rem;
     padding: 1rem;
@@ -855,7 +881,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               </UserName>
               <MessageText>
                 <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
+                  remarkPlugins={[remarkGfm, remarkBreaks]}
                   rehypePlugins={[rehypeRaw]}
                   components={{
                     p: (props) => (
@@ -912,30 +938,50 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       )}
       <SendMessageContainer>
         <MessageInput
+          ref={messageInputRef}
           placeholder={canSendMessage ? "Type your message..." : "You can only reply when mentioned"}
           value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+          onChange={handleInputChange}
+          onKeyDown={e => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+              // Ctrl+Enter 或 Cmd+Enter 换行
+              e.preventDefault();
+              const { selectionStart, selectionEnd, value } = e.currentTarget;
+              setInputMessage(
+                value.slice(0, selectionStart) + "\n" + value.slice(selectionEnd)
+              );
+              setTimeout(() => {
+                if (messageInputRef.current) {
+                  messageInputRef.current.selectionStart = messageInputRef.current.selectionEnd = selectionStart + 1;
+                }
+              }, 0);
+            } else if (e.key === "Enter") {
+              // 普通回车发送
+              e.preventDefault();
+              sendMessage();
+            }
+          }}
           disabled={!canSendMessage}
           $disabled={!canSendMessage}
+          rows={4}
         />
-        {/* Only show Bot Icon when groupMode is not "structured" */}
-        {groupMode !== "structured" && (
-          <BotIcon
-            src={botIcon}
-            alt="Bot Icon"
-            onClick={() => setIsBotClicked(!isBotClicked)}
-          />
-        )}
-        {/* Only show BotListPopUp when groupMode is not "structured" and isBotClicked is true */}
-        {groupMode !== "structured" && isBotClicked && (
-          <BotListPopUp
-            onClose={() => setIsBotClicked(false)}
-            groupId={groupId}
-            onBotSelect={handleBotSelect}
-          />
-        )}
-        <SendIcon onClick={sendMessage} />
+        <IconContainer>
+          {groupMode !== "structured" && (
+            <BotIcon
+              src={botIcon}
+              alt="Bot Icon"
+              onClick={() => setIsBotClicked(!isBotClicked)}
+            />
+          )}
+          {groupMode !== "structured" && isBotClicked && (
+            <BotListPopUp
+              onClose={() => setIsBotClicked(false)}
+              groupId={groupId}
+              onBotSelect={handleBotSelect}
+            />
+          )}
+          <SendIcon onClick={sendMessage} />
+        </IconContainer>
       </SendMessageContainer>
     </Container>
   );
