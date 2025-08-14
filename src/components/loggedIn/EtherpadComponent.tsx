@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import styled from 'styled-components';
 import ETHERPAD_CONFIG from '../../utils/etherpadConfig';
 import { useUser } from './UserContext';
@@ -33,15 +33,15 @@ const EtherpadComponent: React.FC<EtherpadProps> = ({
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { userInfo } = useUser();
 
-  // 生成 Pad ID
+  // Generate Pad ID
   const padId = roomId ? `${ETHERPAD_CONFIG.PAD_PREFIX}${roomId}` : 'shared-notes';
 
-  // 生成 Etherpad URL
+  // Generate Etherpad URL
   const generateEtherpadUrl = () => {
     const baseUrl = ETHERPAD_CONFIG.SERVER_URL;
     const userName = userInfo?.userName || ETHERPAD_CONFIG.DEFAULT_SETTINGS.userName;
     
-    // 构建 URL 参数
+    // Build URL parameters
     const params = new URLSearchParams({
       showControls: String(showControls),
       showChat: String(ETHERPAD_CONFIG.DEFAULT_SETTINGS.showChat),
@@ -51,8 +51,8 @@ const EtherpadComponent: React.FC<EtherpadProps> = ({
       lang: ETHERPAD_CONFIG.DEFAULT_SETTINGS.lang,
     });
 
-    // 移除对 userColor 的引用，因为 UserInformation 类型中没有这个属性
-    // 可以使用默认颜色
+    // Remove userColor reference as it's not in UserInformation type
+    // Use default color instead
     if (ETHERPAD_CONFIG.DEFAULT_SETTINGS.userColor) {
       params.append('userColor', ETHERPAD_CONFIG.DEFAULT_SETTINGS.userColor);
     }
@@ -60,7 +60,7 @@ const EtherpadComponent: React.FC<EtherpadProps> = ({
     return `${baseUrl}/p/${padId}?${params.toString()}`;
   };
 
-  // 处理 iframe 加载完成事件
+  // Handle iframe load completion event
   const handleIframeLoad = () => {
     console.log('Etherpad iframe loaded successfully');
   };

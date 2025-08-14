@@ -52,6 +52,10 @@ const Container = styled.div`
   margin-top: 60px;
   padding: 20px;
   box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 60px);
+  overflow: hidden;
 `;
 
 const RenderedChatContainer = styled.div`
@@ -61,6 +65,7 @@ const RenderedChatContainer = styled.div`
   padding: 1rem;
   background: #f5f5f5;
   border-radius: 8px;
+  flex: 1;
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -91,6 +96,7 @@ const SendMessageContainer = styled.div`
   margin-top: 1vh;
   height: 10vh;
   position: relative;
+  flex-shrink: 0;
 `;
 
 const MessageInput = styled.input`
@@ -716,9 +722,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
   return (
     <Container>
-      {/* 添加 EtherpadDrawerWithButton 组件 */}
-      <EtherpadDrawerWithButton roomId={groupId} />
-
+      <EtherpadDrawerWithButton roomId={groupId} currentRoomId={groupId}>
       <RenderedChatContainer ref={chatContainerRef} onScroll={handleScroll}>
         {hasNoMoreMessages && (
           <div style={{ textAlign: "center", padding: "5px", color: "#666" }}>
@@ -796,7 +800,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           }}
           onClick={scrollToBottom}
         >
-          新消息 ▼
+            New Messages ▼
         </div>
       )}
       <SendMessageContainer>
@@ -820,6 +824,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         )}
         <SendIcon onClick={sendMessage} />
       </SendMessageContainer>
+      </EtherpadDrawerWithButton>
     </Container>
   );
 };

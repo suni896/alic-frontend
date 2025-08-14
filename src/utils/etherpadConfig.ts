@@ -1,31 +1,36 @@
 /**
- * Etherpad 配置文件
- * 集中管理所有 Etherpad 相关的配置项
+ * Etherpad Configuration File
+ * Centralized management of all Etherpad-related configuration items
  */
 
-// 环境配置
+// Environment configuration
 const ENV = {
   development: {
     ETHERPAD_URL: 'http://localhost:9001',
+    API_KEY: '4e4183f5467fcd0f2ee35a7c4c0b65d40a1d2a9a3d2b45d9614c938f3c243c50',
   },
   production: {
     ETHERPAD_URL: 'https://etherpad.example.com',
+    API_KEY: '4e4183f5467fcd0f2ee35a7c4c0b65d40a1d2a9a3d2b45d9614c938f3c243c50',
   },
-  // 可以添加更多环境
+  // Can add more environments
 };
 
-// 当前环境
+// Current environment
 const currentEnv = process.env.NODE_ENV || 'development';
 
-// Etherpad 配置
+// Etherpad configuration
 export const ETHERPAD_CONFIG = {
-  // 服务器 URL
+  // Server URL
   SERVER_URL: ENV[currentEnv as keyof typeof ENV]?.ETHERPAD_URL || ENV.development.ETHERPAD_URL,
   
-  // Pad ID 前缀，用于区分不同类型的 pad
+  // API Key for accessing Etherpad API
+  API_KEY: ENV[currentEnv as keyof typeof ENV]?.API_KEY || ENV.development.API_KEY,
+  
+  // Pad ID prefix, used to distinguish different types of pads
   PAD_PREFIX: 'room-',
   
-  // 默认设置
+  // Default settings
   DEFAULT_SETTINGS: {
     showControls: true,
     showChat: false,
@@ -40,7 +45,7 @@ export const ETHERPAD_CONFIG = {
     border: 0,
     borderStyle: 'solid',
     plugins: {},
-    lang: 'zh-cn',
+    lang: 'en',
   },
 };
 

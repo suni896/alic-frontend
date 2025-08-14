@@ -1,50 +1,101 @@
-# React + TypeScript + Vite
+# ALIC Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A collaborative learning platform frontend built with React and TypeScript.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+### 🌟 Main Features
+- **Real-time Chat**: Interactive messaging with AI bots and other users
+- **Room Management**: Create, join, and manage learning rooms
+- **User Authentication**: Secure login and registration system
+- **Responsive Design**: Works on desktop and mobile devices
 
-## Expanding the ESLint configuration
+### 📄 Shared Document Feature
+The platform includes a powerful shared document feature powered by Etherpad:
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+#### Basic Usage
+1. **Open Document**: Click the "Document" (Shared Document) button on the right side of the screen
+2. **Switch Modes**: 
+   - **Docked Mode**: Document panel is attached to the right side
+   - **Floating Mode**: Document becomes a movable window
 
-- Configure the top-level `parserOptions` property like this:
+#### Advanced Features
+- **Drag & Drop**: In floating mode, drag the document window by its header
+- **Resize**: 
+  - **Docked Mode**: Drag the left edge to resize horizontally
+  - **Floating Mode**: Drag any edge or corner to resize in all directions
+- **Smart Boundaries**: Window stays within screen bounds with safety margins
+- **Auto-sizing**: Optimized default sizes for different modes
 
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+#### Keyboard & Mouse Controls
+- **Header Drag Handle**: Visual indicator shows draggable area
+- **Resize Handles**: Corner indicators appear on hover
+- **Mode Toggle**: Click the maximize/minimize button to switch between modes
+- **Auto-close**: Document closes when switching rooms
+
+#### Technical Details
+- Built with Etherpad for real-time collaboration
+- Responsive design adapts to different screen sizes
+- Persistent state across room visits
+- Optimized performance with React hooks
+
+## Getting Started
+
+### Prerequisites
+- Node.js (version 16 or higher)
+- npm or yarn
+
+### Installation
+```bash
+# Clone the repository
+git clone [repository-url]
+
+# Navigate to project directory
+cd alic-frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
 
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
+### Environment Setup
+Create a `.env` file in the root directory with the following variables:
+```env
+VITE_API_BASE_URL=your_api_url
+VITE_ETHERPAD_URL=your_etherpad_url
 ```
+
+## Project Structure
+```
+src/
+├── components/           # Reusable UI components
+│   ├── loggedIn/        # Components for authenticated users
+│   │   ├── EtherpadDrawer.tsx    # Shared document component
+│   │   ├── EtherpadComponent.tsx # Etherpad integration
+│   │   └── ...
+│   └── loggedOut/       # Components for guest users
+├── pages/               # Page components
+├── utils/               # Utility functions and configurations
+└── types/               # TypeScript type definitions
+```
+
+## Contributing
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## Technologies Used
+- **React 18** - Frontend framework
+- **TypeScript** - Type safety
+- **Styled Components** - CSS-in-JS styling
+- **Vite** - Build tool and dev server
+- **Etherpad** - Collaborative document editing
+- **React Router** - Client-side routing
+- **React Markdown** - Markdown rendering
+
+## License
+This project is licensed under the MIT License - see the LICENSE file for details.
