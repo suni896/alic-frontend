@@ -1,13 +1,12 @@
 import React from "react";
 import styled from "styled-components";
 import LeftSection from "./LeftSection";
-import image1 from "../../assets/collaborativeLearning-1.png";
-import image2 from "../../assets/collaborativeLearning-2.png";
-import image3 from "../../assets/collaborativeLearning-3.png";
+import coverImage from "../../assets/cover.png";
+
 import { useEffect } from "react";
 import { useState } from "react";
 
-const images = [image1, image2, image3];
+const images = [coverImage];
 
 const Container = styled.div`
   display: flex;
