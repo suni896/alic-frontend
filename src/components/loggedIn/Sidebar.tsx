@@ -212,7 +212,7 @@ const StyledArrowDown = styled(IoIosArrowDown)`
 const SearchContainer = styled.div`
   display: flex;
   align-items: flex-start;
-  margin-top: 1.5rem;
+  margin-top: 0.8rem;
   gap: 1rem;
   padding: 0 1rem;
   justify-content: flex-start;
@@ -228,7 +228,7 @@ const SearchWrapper = styled.div`
   flex: 1;
   max-width: 1000px;
     width: 160px;
-  height: 42px;
+  height: 2.5rem;
 
   // 让里面的输入框继承这个高度
   display: flex;
@@ -329,10 +329,8 @@ const RoomList = styled.ul`
   border-radius: 0.5rem;
   border: 1px solid #e2e8f0;
   // width: 100%;
-  width: 250px;
-  max-width: 320px; /* Fixed maximum width for consistency */
-  min-width: 250px; /* Minimum width to prevent too narrow display */
-  max-height: 50vh;
+  width: 90%;
+ height: 50vh;
 
   @media (max-width: 900px) {
     max-width: 280px;
@@ -596,30 +594,24 @@ const StyledSignOutIcon = styled(PiSignOutBold)`
 
 const PlusButtonOverlayContainer = styled.div`
   position: absolute;
-  top: 23vh;
-  left: 17.8%;
-  width: 13%;
-  height: 12vh;
-  border: 1px solid #016532;
-  border-radius: 8px;
+  top: 0;
+  left: calc(100% + 0.5rem);
   background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+  width: 180px;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 0.8vh 1%;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  z-index: 3500;
+  gap: 0.5rem;
+`;
 
-  @media (max-width: 650px) {
-    left: -10%;
-    width: 305;
-  }
-
-  @media (max-width: 800px) {
-    left: 9%;
-    width: 18%;
-  }
+const PlusButtonWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 2.5rem;
 `;
 
 const PlusButtonOptionContainer = styled.div`
@@ -636,9 +628,9 @@ const PlusButtonOptionContainer = styled.div`
     background-color: #f4f4f4;
   }
 
-  &:active {
-    transform: scale(0.9);
-  }
+  // &:active {
+  //   transform: scale(0.9);
+  // }
 `;
 
 const StyledIoMdPersonAdd = styled(IoMdPersonAdd)`
@@ -709,9 +701,7 @@ const PaginationContainer = styled.div`
   background-color: white;
   position: sticky;
   bottom: 0;
-  width: 250px;
-  max-width: 320px; /* Match RoomList width */
-  min-width: 250px; /* Match RoomList width */
+  width: 90%;
   margin-top: auto;
   border-top: 1px solid #e2e8f0;
   border-radius: 0 0 0.5rem 0.5rem;
@@ -1217,7 +1207,6 @@ const Sidebar: React.FC = () => {
         )}
       </ProfileSection>
       <LineSeparator />
-
       <SearchContainer>
         <SearchWrapper>
           <SearchIcon />
@@ -1238,23 +1227,23 @@ const Sidebar: React.FC = () => {
           />
         </SearchWrapper>
 
-        <PlusButton onClick={() => setIsPlusButtonOverlayVisible(true)}>
-        </PlusButton>
+        <PlusButtonWrapper>
+          <PlusButton onClick={() => setIsPlusButtonOverlayVisible(true)} />
+          {isPlusButtonOverlayVisible && (
+            <PlusButtonOverlay
+              onClose={() => setIsPlusButtonOverlayVisible(false)}
+              userInfo={userInfo}
+              onTagCreated={refreshTags}
+              isCreateRoomOverlayVisible={isCreateRoomOverlayVisible}
+              setIsCreateRoomOverlayVisible={setIsCreateRoomOverlayVisible}
+              isJoinRoomsOverlayVisible={isJoinRoomsOverlayVisible}
+              setIsJoinRoomsOverlayVisible={setIsJoinRoomsOverlayVisible}
+              isCreateTagOverlayVisible={isCreateTagOverlayVisible}
+              setIsCreateTagOverlayVisible={setIsCreateTagOverlayVisible}
+            />
+          )}
+        </PlusButtonWrapper>
       </SearchContainer>
-
-      {isPlusButtonOverlayVisible && (
-        <PlusButtonOverlay
-          onClose={() => setIsPlusButtonOverlayVisible(false)}
-          userInfo={userInfo}
-          onTagCreated={refreshTags}
-          isCreateRoomOverlayVisible={isCreateRoomOverlayVisible}
-          setIsCreateRoomOverlayVisible={setIsCreateRoomOverlayVisible}
-          isJoinRoomsOverlayVisible={isJoinRoomsOverlayVisible}
-          setIsJoinRoomsOverlayVisible={setIsJoinRoomsOverlayVisible}
-          isCreateTagOverlayVisible={isCreateTagOverlayVisible}
-          setIsCreateTagOverlayVisible={setIsCreateTagOverlayVisible}
-        />
-      )}
 
       {/* 子组件独立渲染 */}
       {isCreateRoomOverlayVisible && (

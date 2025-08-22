@@ -9,6 +9,7 @@ import apiClient from "../loggedOut/apiClient";
 import { useUser } from "./UserContext";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
+import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import { API_BASE_URL } from "../../../config";
 
@@ -55,11 +56,12 @@ const Container = styled.div`
 
 const RenderedChatContainer = styled.div`
   width: 100%;
-  height: 73vh;
+  height: calc(100vh - 20vh - 130px - 1vh);
   overflow-y: auto;
   padding: 1rem;
   background: #f5f5f5;
   border-radius: 8px;
+  font-size: 1rem;
 
   &::-webkit-scrollbar {
     width: 8px;
@@ -81,25 +83,62 @@ const RenderedChatContainer = styled.div`
 
 const MessageText = styled.div`
   word-break: break-word;
+  font-size: 0.85rem;
 `;
 
 const SendMessageContainer = styled.div`
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   width: 100%;
   margin-top: 1vh;
-  height: 10vh;
+  height: auto;
   position: relative;
 `;
 
-const MessageInput = styled.input`
-  background-color: white;
-  width: 78%;
-  height: 100%;
-  border: 1px solid #d3d3d3;
+const MessageInputWrapper = styled.div<{ $disabled?: boolean }>`
+  border: 0.5px solid;
   border-radius: 8px;
-  color: black;
-  padding: 0 1rem;
+  width: 98%;
+  position: relative;
+  
+  border-color: ${(props) => (props.$disabled ? "#ccc" : "#d3d3d3")};
+  background-color: ${(props) => (props.$disabled ? "#f5f5f5" : "white")};
+  padding: 0.5rem 1rem 0.5rem 1rem;
+  box-sizing: border-box;
+
+  &:focus-within {
+    border-color: ${(props) => (props.$disabled ? "#ccc" : "transparent")};
+    outline: ${(props) => (props.$disabled ? 'none' : '2px solid #016532')};
+  }
+`;
+
+const MessageInput = styled.textarea<{ $disabled?: boolean }>`
+  background-color: transparent;
+  width: 100%;
+  min-height: 5.3rem;
+  max-height: 5.3rem;
+  height: 5.3rem;
+  resize: none;
+  overflow-y: auto;
+  border: none;
+  border-radius: 8px;
+  color: ${(props) => (props.$disabled ? "#999" : "black")};
+  padding: 0;
+  cursor: ${(props) => (props.$disabled ? "not-allowed" : "text")};
+  font-size: 0.85rem;
+  line-height: 1.5;
+  box-sizing: border-box;
+  font-family: inherit;
+ 
+  &:focus {
+    outline: none;
+  } 
+ 
+  &::placeholder {
+    color: ${(props) => (props.$disabled ? "#ccc" : "#999")};
+    opacity: 1;
+  }
 `;
 
 const LoadingSpinner = styled.div`
@@ -150,23 +189,53 @@ const HeaderContent = styled.div`
   align-items: center;
 `;
 
+// 创建圆形包装组件
+const IconWrapper = styled.div`
+  position: relative;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 50%;
+  background-color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease-in-out;
+  margin: 0 0.2em;
+  
+  &:hover {
+    background-color: #cccccc;
+  }
+`;
+
 const BotIcon = styled.img`
-  width: 2rem;
-  height: 2rem;
-  margin-left: 4vw;
-  margin-right: 2vw;
+  width: 1.6rem;
+  height: 1.6rem;
   cursor: pointer;
+  display: block;
 `;
 
 const SendIcon = styled(LuSend)`
-  font-size: 2rem;
+  font-size: 1.6rem;
   cursor: pointer;
+  display: block;
+`;
+ 
+const IconContainer = styled.div`
+  display: flex;
+  height: 2rem;
+  align-items: center;
+  margin-bottom: 0.4em;
+  gap: 0.2em;
+  padding: 0.2em 0.4em;
+  // background-color: #f0f9f0;
+  border-radius: 20px;
 `;
 
 const PopupContainer = styled.div`
   position: absolute;
   bottom: 100%;
-  left: 78%;
+  left: 0;
+  transform: translateX(-25%);
   width: 250px;
   max-height: 300px;
   background: white;
@@ -175,6 +244,7 @@ const PopupContainer = styled.div`
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
   z-index: 1000;
+  margin-bottom: 5px;
 `;
 
 const PopupHeader = styled.div`
@@ -326,6 +396,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const isInitialMount = useRef(false);
+  const messageInputRef = useRef<HTMLTextAreaElement>(null);
 
   const fetchBotInfo = async (botId: number): Promise<Bot> => {
     if (botsCache.has(botId)) {
@@ -682,6 +753,12 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     }
   };
 
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const textarea = e.target;
+    setInputMessage(textarea.value);
+    textarea.scrollTop = textarea.scrollHeight;
+  };
+
   const MessageContainer = styled.div<{ $isOwnMessage: boolean }>`
     margin-bottom: 1rem;
     padding: 1rem;
@@ -740,7 +817,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               </UserName>
               <MessageText>
                 <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
+                  remarkPlugins={[remarkGfm, remarkBreaks]}
                   rehypePlugins={[rehypeRaw]}
                   components={{
                     p: (props) => (
@@ -796,17 +873,13 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         </div>
       )}
       <SendMessageContainer>
-        <MessageInput
-          placeholder="Type your message..."
-          value={inputMessage}
-          onChange={(e) => setInputMessage(e.target.value)}
-          onKeyPress={(e) => e.key === "Enter" && sendMessage()}
-        />
-        <BotIcon
-          src={botIcon}
-          alt="Bot Icon"
-          onClick={() => setIsBotClicked(!isBotClicked)}
-        />
+        <IconContainer>
+        <IconWrapper onClick={() => setIsBotClicked(!isBotClicked)}>
+          <BotIcon
+            src={botIcon}
+            alt="Bot Icon"
+          />
+        </IconWrapper>
         {isBotClicked && (
           <BotListPopUp
             onClose={() => setIsBotClicked(false)}
@@ -814,7 +887,37 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             onBotSelect={handleBotSelect}
           />
         )}
-        <SendIcon onClick={sendMessage} />
+        <IconWrapper onClick={sendMessage}>
+          <SendIcon />
+        </IconWrapper>
+      </IconContainer>
+      <MessageInputWrapper>
+      <MessageInput
+        placeholder="Type your message..."
+        value={inputMessage}
+        onChange={handleInputChange}
+        onKeyDown={e => {
+          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+            // Ctrl+Enter 或 Cmd+Enter 换行
+            e.preventDefault();
+            const { selectionStart, selectionEnd, value } = e.currentTarget;
+            setInputMessage(
+              value.slice(0, selectionStart) + "\n" + value.slice(selectionEnd)
+            );
+            setTimeout(() => {
+              if (messageInputRef.current) {
+                messageInputRef.current.selectionStart = messageInputRef.current.selectionEnd = selectionStart + 1;
+              }
+            }, 0);
+          } else if (e.key === "Enter") {
+            // 普通回车发送
+            e.preventDefault();
+            sendMessage();
+          }
+        }}
+        rows={4}
+      />
+      </MessageInputWrapper>
       </SendMessageContainer>
     </Container>
   );
