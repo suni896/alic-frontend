@@ -676,6 +676,59 @@ try {
 
   // 只有在埋点功能启用时才执行后续操作
   if (isTrackingEnabled) {
+    // 全面拦截所有可能的埋点GET请求
+    
+    // 1. 拦截XMLHttpRequest
+    const originalOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method: string, url: string | URL, async?: boolean, user?: string | null, password?: string | null) {
+      const urlStr = url.toString();
+      // 只拦截GET请求到埋点端点
+      if (method.toUpperCase() === 'GET' && 
+          ((urlStr.includes('data.alicedu.net') && urlStr.includes('data=')) ||
+           (urlStr.includes('112.74.92.135') && urlStr.includes('/api/track')) ||
+           (urlStr.includes('/api/track') && urlStr.includes('data=')))) {
+        console.warn('🚫 阻止埋点XMLHttp GET请求:', method, urlStr);
+        return;
+      }
+      return originalOpen.call(this, method, url, async ?? true, user, password);
+    };
+
+    // 2. 拦截Image标签请求（sensors常用此方式发送GET请求）
+    const originalImageSrc = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
+    if (originalImageSrc && originalImageSrc.set) {
+      Object.defineProperty(HTMLImageElement.prototype, 'src', {
+        get: originalImageSrc.get,
+        set: function(value: string) {
+          // 只拦截明确的埋点请求：包含埋点域名且有data参数或track路径
+          if (value && 
+              ((value.includes('data.alicedu.net') && value.includes('data=')) ||
+               (value.includes('112.74.92.135') && value.includes('/api/track')) ||
+               (value.includes('/api/track') && value.includes('data=')))) {
+            console.warn('🚫 阻止埋点Image请求:', value);
+            return;
+          }
+          return originalImageSrc.set!.call(this, value);
+        },
+        configurable: true
+      });
+    }
+
+    // 3. 拦截fetch请求
+    const originalFetch = window.fetch;
+    window.fetch = function(input: RequestInfo | URL, init?: RequestInit) {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url;
+      const method = init?.method?.toUpperCase() || 'GET';
+      // 只拦截GET请求到明确的埋点端点
+      if (url && method === 'GET' &&
+          ((url.includes('data.alicedu.net') && url.includes('data=')) ||
+           (url.includes('112.74.92.135') && url.includes('/api/track')) ||
+           (url.includes('/api/track') && url.includes('data=')))) {
+        console.warn('🚫 阻止埋点Fetch GET请求:', url);
+        return Promise.reject(new Error('埋点GET请求被阻止'));
+      }
+      return originalFetch.call(this, input, init);
+    };
+
     // 设置自定义属性
     sensors.registerPage({
       environment: process.env.NODE_ENV || 'development',
