@@ -944,68 +944,52 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       )}
 
       <SendMessageContainer>
-        <MessageInput
-          placeholder="Type your message..."
-          value={inputMessage}
-          onChange={(e) => {
-            setInputMessage(e.target.value);
-
-            // 使用更新后的埋点规则处理输入事件
-            // 无论是增加还是删除都会触发，但规则逻辑在hook内部处理
-            handleTyping(e.target.value);
-          }}
-          onKeyPress={(e) => {
-            if (e.key === "Enter") {
-              console.log('⌨️ 按下回车键发送消息');
-              sendMessage();
-            }
-          }}
-        />
-      <IconContainer>
+        <MessageInputWrapper>
+          <MessageInput
+            ref={messageInputRef}
+            placeholder="Type your message..."
+            value={inputMessage}
+            onChange={handleInputChange}
+            onKeyDown={e => {
+              if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                // Ctrl+Enter 或 Cmd+Enter 换行
+                e.preventDefault();
+                const { selectionStart, selectionEnd, value } = e.currentTarget;
+                setInputMessage(
+                  value.slice(0, selectionStart) + "\n" + value.slice(selectionEnd)
+                );
+                setTimeout(() => {
+                  if (messageInputRef.current) {
+                    messageInputRef.current.selectionStart = messageInputRef.current.selectionEnd = selectionStart + 1;
+                  }
+                }, 0);
+              } else if (e.key === "Enter") {
+                // 普通回车发送
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
+            rows={4}
+          />
+        </MessageInputWrapper>
+        <IconContainer>
           <IconWrapper onClick={() => setIsBotClicked(!isBotClicked)}>
-              <BotIcon
-                  src={botIcon}
-                  alt="Bot Icon"
-              />
+            <BotIcon
+              src={botIcon}
+              alt="Bot Icon"
+            />
           </IconWrapper>
           {isBotClicked && (
-              <BotListPopUp
-                  onClose={() => setIsBotClicked(false)}
-                  groupId={groupId}
-                  onBotSelect={handleBotSelect}
-              />
+            <BotListPopUp
+              onClose={() => setIsBotClicked(false)}
+              groupId={groupId}
+              onBotSelect={handleBotSelect}
+            />
           )}
           <IconWrapper onClick={sendMessage}>
-              <SendIcon />
+            <SendIcon />
           </IconWrapper>
-      </IconContainer>
-      <MessageInputWrapper>
-      <MessageInput
-        placeholder="Type your message..."
-        value={inputMessage}
-        onChange={handleInputChange}
-        onKeyDown={e => {
-          if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-            // Ctrl+Enter 或 Cmd+Enter 换行
-            e.preventDefault();
-            const { selectionStart, selectionEnd, value } = e.currentTarget;
-            setInputMessage(
-              value.slice(0, selectionStart) + "\n" + value.slice(selectionEnd)
-            );
-            setTimeout(() => {
-              if (messageInputRef.current) {
-                messageInputRef.current.selectionStart = messageInputRef.current.selectionEnd = selectionStart + 1;
-              }
-            }, 0);
-          } else if (e.key === "Enter") {
-            // 普通回车发送
-            e.preventDefault();
-            sendMessage();
-          }
-        }}
-        rows={4}
-      />
-      </MessageInputWrapper>
+        </IconContainer>
       </SendMessageContainer>
     </Container>
   );
