@@ -10,7 +10,8 @@ const images = [coverImage];
 
 const Container = styled.div`
   display: flex;
-  height: 100vh;
+  height: calc(100vh - 7vh);
+  width: 100vw;
   box-sizing: border-box;
   justify-content: center;
   align-items: center;
@@ -42,6 +43,7 @@ const RightSection = styled.div`
   width: 100%;
   height: 100%;
   padding: 0.5rem 2rem;
+  
 `;
 
 const ContainerLayout = ({ children }: { children: React.ReactNode }) => {

@@ -51,16 +51,21 @@ interface Message {
 const Container = styled.div`
   background: white;
   width: 100%;
-  margin-top: 60px;
-  padding: 20px;
+  padding-top: 20px;
+  padding-left: 30px;
+  padding-right: 20px;
   box-sizing: border-box;
+  position: fixed;
+  height: calc(100vh - 7vh);
+  /* 移除 top 属性，因为 Layout 已经处理了顶部边距 */
 `;
 
 const RenderedChatContainer = styled.div`
-  width: 100%;
-  height: calc(100vh - 20vh - 130px - 1vh);
+  width: 100%-40px;
+  height: calc(100vh - 7vh - 20px - 11rem - 1vh); /* 固定高度, 页面100vh- navbar7vh - Container padding 20px - SendMessageContainer 11rem - SendMessageContainer margin 1vh*/
   overflow-y: auto;
-  padding: 1rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
   background: #f5f5f5;
   border-radius: 8px;
   font-size: 1rem;
@@ -88,13 +93,23 @@ const MessageText = styled.div`
   font-size: 0.85rem;
 `;
 
+// const SendMessageContainer = styled.div`
+//   display: flex;
+//   flex-direction: column;
+//   align-items: flex-start;
+//   width: 100%;
+//   margin-top: 1vh;
+//   position: relative;
+
+// `;
+
 const SendMessageContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   width: 100%;
+  height: 11rem; /* 固定高度 */
   margin-top: 1vh;
-  height: auto;
   position: relative;
 `;
 
@@ -189,6 +204,19 @@ const Avatar = styled.img`
 const HeaderContent = styled.div`
   display: flex;
   align-items: center;
+`;
+
+const NewMessageNotification = styled.div`
+  position: absolute;
+  right: 20px;
+  bottom: 11rem + 1vh + 6px;
+  background-color: #016532;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  z-index: 1000;
 `;
 
 // 创建圆形包装组件
@@ -642,16 +670,16 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                     }),
               ]);
               setMessages((prev) => {
-                const newMessages = [...prev, receivedMessage].sort(
-                  (a, b) => a.infoId - b.infoId
-                );
+                const newMessages = [...prev, receivedMessage]
+                  .filter((v, i, a) => a.findIndex((t) => t.infoId === v.infoId) === i)
+                  .sort((a, b) => a.infoId - b.infoId);
 
                 requestAnimationFrame(() => {
                   if (chatContainerRef.current) {
                     const { scrollTop, scrollHeight, clientHeight } =
                       chatContainerRef.current;
                     const isNearBottom =
-                      scrollHeight - (scrollTop + clientHeight) < 200;
+                      scrollHeight - (scrollTop + clientHeight) < 300;
 
                     if (isNearBottom) {
                       chatContainerRef.current.scrollTop = scrollHeight;
@@ -800,12 +828,12 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     if (container) {
       const { scrollTop } = container;
       const isNearBottom =
-        container.scrollHeight - (scrollTop + container.clientHeight) < 200;
+        container.scrollHeight - (scrollTop + container.clientHeight) < 300;
       if (!isNearBottom) {
         setHasNewMessage(false);
       }
 
-      if (scrollTop < 200 && !isLoading && !hasNoMoreMessages) {
+      if (scrollTop < 300 && !isLoading && !hasNoMoreMessages) {
         setHasNewMessage(false); // 立即关闭新消息提示
         prevScrollHeight.current = container.scrollHeight;
         setIsLoading(true);
@@ -924,23 +952,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       </RenderedChatContainer>
 
       {hasNewMessage && (
-        <div
-          style={{
-            position: "fixed",
-            bottom: "100px",
-            right: "20px",
-            backgroundColor: "#016532",
-            color: "white",
-            padding: "8px 16px",
-            borderRadius: "20px",
-            cursor: "pointer",
-            boxShadow: "0 2px 5px rgba(0,0,0,0.2)",
-            zIndex: 1000,
-          }}
-          onClick={scrollToBottom}
-        >
+        <NewMessageNotification onClick={scrollToBottom}>
           新消息 ▼
-        </div>
+        </NewMessageNotification>
       )}
 
       <SendMessageContainer>

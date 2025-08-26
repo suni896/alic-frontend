@@ -12,7 +12,7 @@ const Container = styled.div`
   top: 0;
   left: 0;
   width: 100%;
-  height: 60px;
+  height: 7vh;
   background-color: #016532;
   display: flex;
   align-items: center;

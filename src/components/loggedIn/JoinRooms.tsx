@@ -30,7 +30,7 @@ const slideIn = keyframes`
 
 const OverlayContainer = styled.div`
   position: fixed;
-  top: 0;
+  top: 7vh;
   left: 0;
   width: 100%;
   height: 100%;
@@ -47,9 +47,10 @@ const Container = styled.div`
   background: white;
   width: 90%;
   max-width: 900px;
-  height: 85vh;
+  height: 80vh;
   border-radius: 16px;
-  position: relative;
+  position: absolute;
+  top:5px;
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   animation: ${slideIn} 0.3s ease-out;

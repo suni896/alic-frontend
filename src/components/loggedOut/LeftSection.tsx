@@ -11,6 +11,7 @@ const LeftSectionContainer = styled.div<{ currentImage: string }>`
   flex: 1.15;
   height: 100%;
   position: relative;
+  center: 100%;
 
   &::before {
     content: "";

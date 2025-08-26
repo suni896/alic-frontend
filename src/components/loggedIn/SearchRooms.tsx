@@ -10,7 +10,14 @@ import LabeledInputWithCount from "../Input";
 const Container = styled.div`
   background: white;
   width: 100%;
-  margin-top: 60px;
+  // margin-left: 280px; /* 为侧边栏留出空间 */
+  padding-top: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
+  box-sizing: border-box;
+  position: relative;
+  min-height: calc(100vh - 7vh);
+  overflow-y: auto;
 `;
 
 const TopContainer = styled.div`
@@ -76,12 +83,15 @@ const SearchIcon = styled(CiSearch)`
 const SearchRoomsContainer = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 2rem 4rem;
-  padding: 2rem 4rem;
+  gap: 1rem 4rem;
+  padding: 1rem 4rem;
   box-sizing: border-box;
-  max-width: 1400px;
   margin: 0 auto;
   justify-content: flex-start;
+  min-height: 20vh;
+  overflow-y: auto;
+  width: 100%;
+  background-color: lightblue;
 
   @media (max-width: 1200px) {
     gap: 2rem 3rem;
@@ -105,7 +115,8 @@ const SearchRoomsContainer = styled.div`
 const RoomContainer = styled.div`
   display: flex;
   align-items: flex-start;
-  width: 40%;
+  width: 420px;
+  height: 70px;
   padding: 0.75rem;
   background-color: white;
   border-radius: 0.375rem;
@@ -187,10 +198,12 @@ const Footer = styled.div`
   justify-content: center;
   align-items: center;
   gap: 0.3rem;
-  position: fixed;
-  bottom: 4vh;
-  width: 80%;
+  position: relative;
+  height: 4vh;
+  width: 100%;
   background-color: white;
+  padding: 1.5rem 0;
+  margin-top: 1rem;
 `;
 
 const Ellipsis = styled.span`
@@ -254,7 +267,7 @@ const SearchRooms: React.FC = () => {
   const { mainAreaRooms, mainAreaRoomsPagination, setMainAreaRoomListRequest } =
     useRoomContext();
   const [currentPage, setCurrentPage] = useState(1);
-  const [roomsPerPage] = useState(8);
+  const [roomsPerPage] = useState(20);
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState("");
   const [loading] = useState(false);
@@ -308,7 +321,7 @@ const SearchRooms: React.FC = () => {
       setCurrentPage(1); // Reset to first page when search changes
     }
   };
-  
+
   return (
     <>
       {isCreateRoomOpen && (
@@ -320,14 +333,14 @@ const SearchRooms: React.FC = () => {
           <SearchContainer>
             <SearchWrapper>
               <SearchIcon />
-                <LabeledInputWithCount
-                  variant="withIcon"
-                  value={searchKeyword}
-                  onChange={handleSearchChange}
-                  placeholder="Search rooms by name or description..."
-                  type="text"
-                  showCount={false} // 搜索框通常不需要字数统计
-                />
+              <LabeledInputWithCount
+                variant="withIcon"
+                value={searchKeyword}
+                onChange={handleSearchChange}
+                placeholder="Search rooms by name or description..."
+                type="text"
+                showCount={false} // 搜索框通常不需要字数统计
+              />
             </SearchWrapper>
           </SearchContainer>
         </TopContainer>

@@ -21,7 +21,7 @@ axios.defaults.baseURL = API_BASE_URL;
 
 const Overlay = styled.div`
   position: fixed;
-  top: 0;
+  top: 7vh;
   left: 0;
   width: 100%;
   height: 100%;
@@ -44,7 +44,8 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
-  position: relative;
+  position: absolute;
+  top: 5px;
   width: 75%;
   max-width: 50rem;
   min-width: 320px;
@@ -53,7 +54,7 @@ const Modal = styled.div`
   border-radius: 20px;
   padding: 2.5rem;
   height: auto;
-  max-height: 90vh;
+  max-height: 80vh;
   overflow-y: auto;
   overflow-x: visible;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);

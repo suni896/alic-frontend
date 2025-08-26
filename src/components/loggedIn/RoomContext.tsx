@@ -92,7 +92,7 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   const [mainAreaRoomsPagination, setMainAreaRoomsPagination] =
     useState<Pagination>({
-      pageSize: 8,
+      pageSize: 20,
       pageNum: 1,
       pages: 1,
       total: 0,
@@ -109,7 +109,7 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
     keyword: "",
     groupDemonTypeEnum: "PUBLICROOM",
     pageRequestVO: {
-      pageSize: 8,
+      pageSize: 20,
       pageNum: 1,
     },
   });

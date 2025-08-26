@@ -28,13 +28,16 @@ const SidebarContainer = styled.div`
   width: 280px;
   max-width: 320px; /* Fixed maximum width for consistency */
   min-width: 280px; /* Minimum width to prevent too narrow display */
-  height: calc(100vh - 60px);
+  height: calc(100vh - 7vh);
   background-color: #ffffff;
-  padding: 2rem 0rem 1.5rem 1rem;
+  padding: 1rem 0rem 1.5rem 1rem;
   display: flex;
   flex-direction: column;
   border-right: 1px solid #016532;
-  margin-top: 60px;
+  position: fixed; /* 保持固定定位 */
+  left: 0; /* 固定在左侧 */
+  z-index: 100; /* 确保侧边栏在其他内容之上 */
+  top: 7vh; /* 使用top替代margin-top，与导航栏高度匹配 */
 `;
 
 const spin = keyframes`
@@ -109,7 +112,8 @@ const EmptyStateMessage = styled.p`
 const ProfileSection = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 5px;
+  margin-bottom: 1vh;
+  height: 7vh;
 `;
 
 const LineSeparator = styled.hr`
@@ -220,15 +224,15 @@ const SearchContainer = styled.div`
   width: 250px;
   max-width: 320px; /* Fixed maximum width for consistency */
   min-width: 250px; /* Minimum width to prevent too narrow display */ 
-
+  height: 5.5vh;
 `;
 
 const SearchWrapper = styled.div`
   position: relative;
   flex: 1;
   max-width: 1000px;
-    width: 160px;
-  height: 2.5rem;
+  width: 160px;
+  height: 5.5vh;
 
   // 让里面的输入框继承这个高度
   display: flex;
@@ -248,9 +252,10 @@ const ToggleContainer = styled.div`
   display: flex;
   align-items: center;
   padding: 0.25rem;
-  margin: 1rem 0 0.5rem 0;
+  margin: 0.5rem 0 0.5rem 0;
   gap: 0.2rem;
   width: 250px;
+  height: 5vh;
   max-width: 320px; /* Fixed maximum width for consistency */
   min-width: 250px; /* Minimum width to prevent too narrow display */
   background-color: #f1f5f9;
@@ -269,8 +274,7 @@ const ToggleButton = styled.button<ToggleButtonProps>`
   align-items: center;
   justify-content: center;
   flex: 1;
-  padding: 0.6rem 0.5rem;
-  height: 100%;
+  padding: 0.7rem 0.5rem;
   border: none;
   border-radius: 0.375rem;
   font-family: Roboto, sans-serif;
@@ -322,15 +326,15 @@ interface ToggleButtonProps {
 const RoomList = styled.ul`
   list-style: none;
   padding: 0.5rem;
-  flex: 1;
+  // flex: 1;
   overflow-y: auto;
-  margin: 0.5rem 0;
-  background-color: #f8fafc;
+  margin: 1vh 0;
+  background-color: #f1f5f9;
   border-radius: 0.5rem;
   border: 1px solid #e2e8f0;
   // width: 100%;
   width: 90%;
- height: 50vh;
+  height: 50vh;
 
   @media (max-width: 900px) {
     max-width: 280px;
@@ -360,6 +364,7 @@ const RoomContainer = styled.div<{ $isActive?: boolean }>`
   transition: all 0.2s ease;
   cursor: pointer;
   width: 90%;
+  height: 5vh;
   ${({ $isActive }) =>
     $isActive &&
     `
@@ -476,10 +481,10 @@ const GroupIcon = styled(MdGroup)`
 
 const ProfilePopUpContainer = styled.div`
   position: absolute;
-  top: 13vh;
-  left: 5%;
-  width: 12%;
-  height: 8vh;
+  left: 100px;
+  top: 30px;
+  width: 180px;
+  height: 60px;
   border: 1px solid #016532;
   border-radius: 8px;
   background-color: white;
@@ -490,7 +495,6 @@ const ProfilePopUpContainer = styled.div`
   padding: 1vh 1%;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
   z-index: 3500;
-  z-index: 3000;
 
   @media (max-width: 1000px) {
     font-size: 0.8rem;
@@ -611,7 +615,7 @@ const PlusButtonWrapper = styled.div`
   position: relative;
   display: flex;
   align-items: center;
-  height: 2.5rem;
+  height: 5.5vh;
 `;
 
 const PlusButtonOptionContainer = styled.div`
@@ -702,6 +706,7 @@ const PaginationContainer = styled.div`
   position: sticky;
   bottom: 0;
   width: 90%;
+  height: 3vh;
   margin-top: auto;
   border-top: 1px solid #e2e8f0;
   border-radius: 0 0 0.5rem 0.5rem;
@@ -1163,48 +1168,72 @@ const Sidebar: React.FC = () => {
     fetchTags();
   }, [fetchTags]);
 
+  // 渲染加载状态
+  const renderLoadingState = () => (
+    <LoadingContainer>
+      <LoadingSpinner />
+    </LoadingContainer>
+  );
+
+  // 渲染错误状态
+  const renderErrorState = () => (
+    <ErrorContainer>
+      <ErrorMessage>{userInfoError}</ErrorMessage>
+    </ErrorContainer>
+  );
+
+  // 渲染用户信息
+  const renderUserInfo = () => {
+    if (!userInfo) return null;
+    
+    return (
+      <>
+        <Avatar
+          src={`data:image/png;base64,${userInfo.userPortrait}`}
+          alt="User Avatar"
+        />
+        <UserInfo>
+          <UserNameContainer>
+            <UserName $textLength={userInfo.userName.toString().length}>
+              {userInfo.userName}
+            </UserName>
+            <StyledArrowDown
+              onClick={() => setIsProfileClicked(!isProfileClicked)}
+            />
+            {isProfileClicked && (
+              <ProfilePopUp
+                onClose={() => setIsProfileClicked(false)}
+                userInfo={userInfo}
+              />
+            )}
+          </UserNameContainer>
+          <UserEmail $textLength={userInfo.userEmail.toString().length}>
+            {userInfo.userEmail}
+          </UserEmail>
+        </UserInfo>
+      </>
+    );
+  };
+
+  // 渲染空状态
+  const renderEmptyState = () => (
+    <EmptyStateContainer>
+      <EmptyStateMessage>No user information available</EmptyStateMessage>
+    </EmptyStateContainer>
+  );
+
+  // 渲染 ProfileSection 内容
+  const renderProfileContent = () => {
+    if (isUserInfoLoading) return renderLoadingState();
+    if (userInfoError) return renderErrorState();
+    if (userInfo) return renderUserInfo();
+    return renderEmptyState();
+  };
+
   return (
     <SidebarContainer>
       <ProfileSection>
-        {isUserInfoLoading ? (
-          <LoadingContainer>
-            <LoadingSpinner />
-          </LoadingContainer>
-        ) : userInfoError ? (
-          <ErrorContainer>
-            <ErrorMessage>{userInfoError}</ErrorMessage>
-          </ErrorContainer>
-        ) : userInfo ? (
-          <>
-            <Avatar
-              src={`data:image/png;base64,${userInfo.userPortrait}`}
-              alt="User Avatar"
-            />
-            <UserInfo>
-              <UserNameContainer>
-                <UserName $textLength={userInfo.userName.toString().length}>
-                  {userInfo.userName}
-                </UserName>
-                <StyledArrowDown
-                  onClick={() => setIsProfileClicked(!isProfileClicked)}
-                />
-                {isProfileClicked && (
-                  <ProfilePopUp
-                    onClose={() => setIsProfileClicked(false)}
-                    userInfo={userInfo} // Pass the actual userInfo here
-                  />
-                )}
-              </UserNameContainer>
-              <UserEmail $textLength={userInfo.userEmail.toString().length}>
-                {userInfo.userEmail}
-              </UserEmail>
-            </UserInfo>
-          </>
-        ) : (
-          <EmptyStateContainer>
-            <EmptyStateMessage>No user information available</EmptyStateMessage>
-          </EmptyStateContainer>
-        )}
+        {renderProfileContent()}
       </ProfileSection>
       <LineSeparator />
       <SearchContainer>
