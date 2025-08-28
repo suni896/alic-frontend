@@ -30,7 +30,7 @@ const SidebarContainer = styled.div`
   min-width: 280px; /* Minimum width to prevent too narrow display */
   height: calc(100vh - 7vh);
   background-color: #ffffff;
-  padding: 1rem 0rem 1.5rem 1rem;
+  padding: 0rem 0rem 1rem 1rem;
   display: flex;
   flex-direction: column;
   border-right: 1px solid #016532;
@@ -112,8 +112,9 @@ const EmptyStateMessage = styled.p`
 const ProfileSection = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 1vh;
-  height: 7vh;
+  // margin-bottom: 10px;
+  height: 60px;
+  background-color: lightblue;
 `;
 
 const LineSeparator = styled.hr`
@@ -144,7 +145,7 @@ const Avatar = styled.img`
 const UserInfo = styled.div`
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  min-width: 100px;
   flex: 1;
   gap: 2px;
 `;
@@ -216,7 +217,7 @@ const StyledArrowDown = styled(IoIosArrowDown)`
 const SearchContainer = styled.div`
   display: flex;
   align-items: flex-start;
-  margin-top: 0.8rem;
+  // margin-top: 0.8rem;
   gap: 1rem;
   padding: 0 1rem;
   justify-content: flex-start;
@@ -224,7 +225,7 @@ const SearchContainer = styled.div`
   width: 250px;
   max-width: 320px; /* Fixed maximum width for consistency */
   min-width: 250px; /* Minimum width to prevent too narrow display */ 
-  height: 5.5vh;
+  height: 40px;
 `;
 
 const SearchWrapper = styled.div`
@@ -232,7 +233,7 @@ const SearchWrapper = styled.div`
   flex: 1;
   max-width: 1000px;
   width: 160px;
-  height: 5.5vh;
+  height: 40px;
 
   // 让里面的输入框继承这个高度
   display: flex;
@@ -255,9 +256,7 @@ const ToggleContainer = styled.div`
   margin: 0.5rem 0 0.5rem 0;
   gap: 0.2rem;
   width: 250px;
-  height: 5vh;
-  max-width: 320px; /* Fixed maximum width for consistency */
-  min-width: 250px; /* Minimum width to prevent too narrow display */
+  height: 40px;
   background-color: #f1f5f9;
   border-radius: 0.5rem;
   border: 1px solid #e2e8f0;
@@ -274,6 +273,7 @@ const ToggleButton = styled.button<ToggleButtonProps>`
   align-items: center;
   justify-content: center;
   flex: 1;
+  height: 90%;
   padding: 0.7rem 0.5rem;
   border: none;
   border-radius: 0.375rem;
@@ -328,13 +328,13 @@ const RoomList = styled.ul`
   padding: 0.5rem;
   // flex: 1;
   overflow-y: auto;
-  margin: 1vh 0;
+  margin: 0 0 0.5rem 0;
   background-color: #f1f5f9;
   border-radius: 0.5rem;
   border: 1px solid #e2e8f0;
   // width: 100%;
   width: 90%;
-  height: 50vh;
+  height: calc(100vh - 7vh - 190px - 90px);
 
   @media (max-width: 900px) {
     max-width: 280px;
@@ -364,7 +364,7 @@ const RoomContainer = styled.div<{ $isActive?: boolean }>`
   transition: all 0.2s ease;
   cursor: pointer;
   width: 90%;
-  height: 5vh;
+  height: calc(calc(100vh - 7vh - 190px - 90px)/12);
   ${({ $isActive }) =>
     $isActive &&
     `
@@ -615,7 +615,7 @@ const PlusButtonWrapper = styled.div`
   position: relative;
   display: flex;
   align-items: center;
-  height: 5.5vh;
+  height: 40px;
 `;
 
 const PlusButtonOptionContainer = styled.div`
@@ -702,15 +702,15 @@ const PaginationContainer = styled.div`
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 0.5rem;
-  background-color: white;
+  background-color: lightblue;
   position: sticky;
-  bottom: 0;
+  bottom: 10px;
   width: 90%;
-  height: 3vh;
+  height: 30px;
   margin-top: auto;
   border-top: 1px solid #e2e8f0;
-  border-radius: 0 0 0.5rem 0.5rem;
-  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+  // border-radius: 0 0 0.5rem 0.5rem;
+  // box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
 
   @media (max-width: 900px) {
     max-width: 280px;

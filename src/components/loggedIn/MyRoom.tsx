@@ -850,11 +850,11 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const textarea = e.target;
-    setInputMessage(textarea.value);
-    textarea.scrollTop = textarea.scrollHeight;
-  };
+  // const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  //   const textarea = e.target;
+  //   setInputMessage(textarea.value);
+  //   textarea.scrollTop = textarea.scrollHeight;
+  // };
 
   const MessageContainer = styled.div<{ $isOwnMessage: boolean }>`
     margin-bottom: 1rem;

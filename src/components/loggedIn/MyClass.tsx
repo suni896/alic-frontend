@@ -68,7 +68,7 @@ const TopContainer = styled.div`
   width: 100%;
   height: 12vh;
   box-sizing: border-box;
-  background-color: lightblue;
+  // background-color: lightblue;
 
   @media (max-width: 800px) {
     padding: 2vh 2vw;
@@ -174,7 +174,7 @@ const SearchRoomsContainer = styled.div<RoomContainerProps>`
   min-height: 20vh;
   overflow-y: auto;
   width: 100%;
-  background-color: lightblue;
+  // background-color: lightblue;
 
   @media (max-width: 1200px) {
     gap: 2rem 3rem;
