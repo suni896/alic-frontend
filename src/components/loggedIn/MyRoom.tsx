@@ -969,7 +969,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           placeholder="Type your message..."
           value={inputMessage}
           onChange={(e) => {
-            setInputMessage(e.target.value);
+            handleInputChange(e);
 
             // 使用更新后的埋点规则处理输入事件
             // 无论是增加还是删除都会触发，但规则逻辑在hook内部处理
