@@ -10,6 +10,7 @@ import { API_BASE_URL } from "../../../config";
 axios.defaults.baseURL = API_BASE_URL;
 
 const SigninForm = styled.form`
+  flex: 1;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -35,30 +36,24 @@ const Title = styled.h1`
 `;
 
 const Label = styled.label`
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-family: "Roboto", serif;
   font-weight: 400;
-  margin-bottom: 0.8vh;
+  margin-bottom: 2px;
 
   @media (max-width: 740px) {
-    font-size: 0.8rem;
-    margin-bottom: 0.1vh;
-  }
-
-  @media (max-height: 720px) {
-    margin-bottom: 0;
     font-size: 0.8rem;
   }
 `;
 
 const Input = styled.input`
   padding: 0.75rem;
-  font-size: 0.8rem;
+  font-size: 1rem;
   color: black;
+  height: 40px;
   border: 1px solid #ccc;
   border-radius: 6px;
   background-color: white;
-  margin-bottom: 1rem;
   width: 100%;
   box-sizing: border-box;
 
@@ -68,54 +63,57 @@ const Input = styled.input`
   }
 
   @media (max-width: 740px) {
-    margin-bottom: 3%;
-  }
-
-  @media (max-height: 720px) {
-    height: 8%;
+    height: 5vh;
   }
 `;
 
-const ErrorText = styled.div`
+const ErrorText = styled.p`
+  font-size: 0.8rem;
   color: #fc5600;
-  font-size: 0.7rem;
-  margin-top: -3%;
-  margin-bottom: 0.5%;
+  margin-top: 0;
+  margin-bottom: 3px;
+  min-height: 1.2em; /* 预留固定高度 */
+  // line-height: 1.2;
 
   @media (max-width: 740px) {
-    margin-bottom: 0.5%;
+    font-size: 0.7rem;
+    min-height: 1.1em;
   }
 
   @media (max-height: 720px) {
-    margin-top: -4%;
+    margin: 0;
+    min-height: 1em;
   }
 `;
 
-const RegisterButton = styled.button<{ hasError: boolean }>`
+const RegisterButton = styled.button<{ $hasError: boolean }>`
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   width: 40%;
   padding: 0.75rem;
   font-size: 1rem;
   cursor: pointer;
-  margin: 1rem auto 1.5rem auto;
+  height: 40px;
+  margin: 20px auto 0 auto;
   border-radius: 5px;
   background-color: black;
   color: white;
 
   @media (max-width: 740px) {
     width: 60%;
-    height: 5vh;
-    margin-bottom: ${({ hasError }) => (hasError ? "2%" : "1.5rem")};
+    margin-top: 10%;
+    margin-bottom: 6%;
   }
 
-  @media (max-width: 740px) and (min-height: 720px) {
-    margin: 10% auto;
-  }
   @media (max-height: 720px) {
-    height: 8%;
-    margin: 2% auto;
+    margin-bottom: 0;
+    margin-top: 0;
+  }
+
+  @media (max-width: 740px) and (min-height: 820px) {
+    height: 5vh;
+    margin-bottom: 8%;
   }
 `;
 
@@ -124,23 +122,27 @@ const BackButton = styled.button`
   align-items: center;
   justify-content: center;
   width: 60%;
-  height: 55px;
+  height: 40px;
   padding: 0.75rem;
   font-size: 1rem;
   cursor: pointer;
-  margin: 0 auto 0 auto;
+  margin: 20px auto 0 auto;
   border-radius: 5px;
   background-color: #016532;
   color: white;
 
   @media (max-width: 740px) {
     width: 80%;
-    height: 5vh;
+    font-size: 0.9rem;
+    margin-top: 15%;
   }
 
   @media (max-height: 720px) {
-    height: 8%;
-    margin: 1% auto;
+    margin-top: 8%;
+  }
+  @media (max-width: 740px) and (min-height: 820px) {
+    height: 6vh;
+    margin-top: 18%;
   }
 `;
 
@@ -242,9 +244,9 @@ const Register: React.FC<{ setEmail: (email: string) => void }> = ({
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
         />
-        {formik.touched.email && formik.errors.email && (
-          <ErrorText>{formik.errors.email}</ErrorText>
-        )}
+        <ErrorText>
+          {formik.touched.email && formik.errors.email ? formik.errors.email : ''}
+        </ErrorText>
         <Label htmlFor="username">Username</Label>
         <Input
           type="text"
@@ -255,9 +257,9 @@ const Register: React.FC<{ setEmail: (email: string) => void }> = ({
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
         />
-        {formik.touched.username && formik.errors.username && (
-          <ErrorText>{formik.errors.username}</ErrorText>
-        )}
+        <ErrorText>
+          {formik.touched.username && formik.errors.username ? formik.errors.username : ''}
+        </ErrorText>
         <Label htmlFor="password">Password</Label>
         <Input
           type="password"
@@ -268,9 +270,9 @@ const Register: React.FC<{ setEmail: (email: string) => void }> = ({
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
         />
-        {formik.touched.password && formik.errors.password && (
-          <ErrorText>{formik.errors.password}</ErrorText>
-        )}
+        <ErrorText>
+          {formik.touched.password && formik.errors.password ? formik.errors.password : ''}
+        </ErrorText>
         <Label htmlFor="confirmPassword">Confirm Password</Label>
         <Input
           type="password"
@@ -281,10 +283,10 @@ const Register: React.FC<{ setEmail: (email: string) => void }> = ({
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
         />
-        {formik.touched.confirmPassword && formik.errors.confirmPassword && (
-          <ErrorText>{formik.errors.confirmPassword}</ErrorText>
-        )}
-        <RegisterButton type="submit" hasError={!!hasErrors}>
+        <ErrorText>
+          {formik.touched.confirmPassword && formik.errors.confirmPassword ? formik.errors.confirmPassword : ''}
+        </ErrorText>
+        <RegisterButton type="submit" $hasError={!!hasErrors}>
           Register
         </RegisterButton>
         <BackButton type="button" onClick={handleBack}>

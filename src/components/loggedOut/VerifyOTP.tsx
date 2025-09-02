@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import Layout from "./Layout";
 import { API_BASE_URL } from "../../../config";
 
 axios.defaults.baseURL = API_BASE_URL;
@@ -278,7 +277,7 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
   };
 
   return (
-    <Layout>
+    // <Layout>
       <ContainerLayout>
         <ConfirmationContainer>
           <Title>Verify OTP</Title>
@@ -332,7 +331,7 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
           </Form>
         </ConfirmationContainer>
       </ContainerLayout>
-    </Layout>
+    // {/* </Layout> */}
   );
 };
 

@@ -85,13 +85,13 @@ const TopContainer = styled.div`
 const TitleContainer = styled.div`
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 10px;
 `;
 
 const PlusButtonContainer = styled.div`
-  display: flex;
-  align-items: center;
-  margin-left: auto;
+  // display: flex;
+  // align-items: center;
+  margin-left: 0px;
   height: 2.5rem;
 `;
 
@@ -99,7 +99,7 @@ const HeaderContainer = styled.div`
   display: flex;
   align-items: center;
   width: 20%;
-  justify-content: space-between;
+  // justify-content: space-between;
 `;
 
 const ButtonContainer = styled.div`

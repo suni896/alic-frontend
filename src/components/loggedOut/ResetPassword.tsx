@@ -40,7 +40,7 @@ const Label = styled.label`
   font-size: 1rem;
   font-family: "Roboto", serif;
   font-weight: 400;
-  margin-bottom: 0.8vh;
+  margin-bottom: 2px;
 
   @media (max-width: 740px) {
     font-size: 0.8rem;
@@ -51,6 +51,7 @@ const Input = styled.input`
   padding: 0.75rem;
   font-size: 1rem;
   color: black;
+  height: 40px;
   border: 1px solid #ccc;
   border-radius: 6px;
   background-color: white;
@@ -71,38 +72,42 @@ const ErrorText = styled.p`
   font-size: 0.8rem;
   color: #fc5600;
   margin-top: 0;
-  margin-bottom: 3%;
+  margin-bottom: 3px;
+  min-height: 1.2em; /* 预留固定高度 */
+  // line-height: 1.2;
 
   @media (max-width: 740px) {
     font-size: 0.7rem;
+    min-height: 1.1em;
   }
 
   @media (max-height: 720px) {
     margin: 0;
+    min-height: 1em;
   }
 `;
 
 const SubmitButton = styled.button`
   display: flex;
-  align-items: center;
   justify-content: center;
+  align-items: center;
   width: 40%;
   padding: 0.75rem;
   font-size: 1rem;
-  height: 6vh;
   cursor: pointer;
-  margin: 5% auto;
+  height: 40px;
+  margin: 20px auto 0 auto;
   border-radius: 5px;
   background-color: black;
   color: white;
 
   @media (max-width: 740px) {
     width: 60%;
-    margin-top: 15%;
+    margin-top: 10%;
     margin-bottom: 6%;
   }
 
-  @media (max-height: 720px) and (min-height: 740px) {
+  @media (max-height: 720px) {
     margin-bottom: 0;
     margin-top: 0;
   }
@@ -118,18 +123,27 @@ const BackButton = styled.button`
   align-items: center;
   justify-content: center;
   width: 60%;
-  height: 7vh;
+  height: 40px;
   padding: 0.75rem;
   font-size: 1rem;
   cursor: pointer;
-  margin: 10% auto 0 auto;
+  margin: 20px auto 0 auto;
   border-radius: 5px;
   background-color: #016532;
   color: white;
 
   @media (max-width: 740px) {
     width: 80%;
+    font-size: 0.9rem;
     margin-top: 15%;
+  }
+
+  @media (max-height: 720px) {
+    margin-top: 8%;
+  }
+  @media (max-width: 740px) and (min-height: 820px) {
+    height: 6vh;
+    margin-top: 18%;
   }
 `;
 
@@ -231,9 +245,9 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
             />
-            {formik.touched.email && formik.errors.email ? (
-              <ErrorText>{formik.errors.email}</ErrorText>
-            ) : null}
+            <ErrorText>
+              {formik.touched.email && formik.errors.email ? formik.errors.email : ''}
+            </ErrorText>
             <SubmitButton type="submit">Send Reset Email</SubmitButton>
             <BackButton type="button" onClick={() => navigate("/")}>
               Back to Sign-In

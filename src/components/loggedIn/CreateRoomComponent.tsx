@@ -103,14 +103,14 @@ const Label = styled.label`
 `;
 
 interface InputProps {
-  hasError?: boolean;
+  $hasError?: boolean;
 }
 
 const Input = styled.input<InputProps>`
   font-size: 1rem;
   font-family: "Roboto", sans-serif;
   padding: 0.875rem 1rem;
-  border: 2px solid ${(props) => (props.hasError ? "#ef4444" : "#e5e7eb")};
+  border: 2px solid ${(props) => (props.$hasError ? "#ef4444" : "#e5e7eb")};
   border-radius: 12px;
   color: #1f2937;
   background-color: #f9fafb;
@@ -119,11 +119,11 @@ const Input = styled.input<InputProps>`
   box-sizing: border-box;
 
   &:focus {
-    border-color: ${(props) => (props.hasError ? "#ef4444" : "#016532")};
+    border-color: ${(props) => (props.$hasError ? "#ef4444" : "#016532")};
     background-color: white;
     box-shadow: 0 0 0 3px
       ${(props) =>
-        props.hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
+        props.$hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
   }
 
   &::placeholder {
@@ -560,6 +560,7 @@ const ButtonContainer = styled.div`
   gap: 0.75rem;
   margin-top: 2rem;
   justify-content: center;
+  height: 50px;
 
   @media (max-width: 500px) {
     flex-direction: column;
@@ -627,7 +628,7 @@ const validationSchema = (showAssistants: boolean) =>
                 ),
               prompt: Yup.string()
                 .required("Prompt is required")
-                .max(400, "Prompt cannot exceed 400 characters"),
+                .max(2000, "Prompt cannot exceed 2000 characters"),
               context: Yup.number()
                 .required("Context is required")
                 .min(1, "Minimum value is 1")
@@ -1175,7 +1176,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 disabled={effectiveIsModify}
-                hasError={!!(formik.touched.roomName && formik.errors.roomName)}
+                $hasError={!!(formik.touched.roomName && formik.errors.roomName)}
               />
               {formik.touched.roomName && formik.errors.roomName && (
                 <ErrorMessage>{formik.errors.roomName}</ErrorMessage>
@@ -1270,7 +1271,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   value={formik.values.password}
-                  hasError={
+                  $hasError={
                     !!(formik.touched.password && formik.errors.password)
                   }
                 />
@@ -1329,7 +1330,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               value={bot.name}
                               onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
-                              hasError={
+                              $hasError={
                                 !!(
                                   formik.touched.bots?.[index]?.name &&
                                   formik.errors.bots?.[index] &&
@@ -1413,7 +1414,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               onBlur={formik.handleBlur}
                               min={1}
                               max={20}
-                              hasError={
+                              $hasError={
                                 !!(
                                   formik.touched.bots?.[index]?.context &&
                                   formik.errors.bots?.[index] &&

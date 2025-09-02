@@ -113,8 +113,9 @@ const ProfileSection = styled.div`
   display: flex;
   align-items: center;
   // margin-bottom: 10px;
+  margin-top: 10px;
   height: 60px;
-  background-color: lightblue;
+  // background-color: lightblue;
 `;
 
 const LineSeparator = styled.hr`
@@ -282,23 +283,23 @@ const ToggleButton = styled.button<ToggleButtonProps>`
   font-size: 0.8rem;
   word-wrap: break-word;
   word-break: break-word;
-  background-color: ${({ isActive }) => (isActive ? "white" : "transparent")};
-  color: ${({ isActive }) => (isActive ? "#016532" : "#64748b")};
+  background-color: ${({ $isActive }) => ($isActive ? "white" : "transparent")};
+  color: ${({ $isActive }) => ($isActive ? "#016532" : "#64748b")};
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: ${({ isActive }) =>
-    isActive ? "0 1px 3px rgba(0, 0, 0, 0.1)" : "none"};
+  box-shadow: ${({ $isActive }) =>
+    $isActive ? "0 1px 3px rgba(0, 0, 0, 0.1)" : "none"};
   outline: none;
 
   &:hover {
-    background-color: ${({ isActive }) => (isActive ? "white" : "#e2e8f0")};
-    color: ${({ isActive }) => (isActive ? "#016532" : "#374151")};
+    background-color: ${({ $isActive }) => ($isActive ? "white" : "#e2e8f0")};
+    color: ${({ $isActive }) => ($isActive ? "#016532" : "#374151")};
   }
 
   &:focus {
     outline: none;
-    box-shadow: ${({ isActive }) =>
-      isActive 
+    box-shadow: ${({ $isActive }) =>
+      $isActive 
         ? "0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 2px rgba(1, 101, 50, 0.2)" 
         : "0 0 0 2px rgba(1, 101, 50, 0.2)"};
   }
@@ -320,7 +321,7 @@ const ToggleButton = styled.button<ToggleButtonProps>`
 `;
 
 interface ToggleButtonProps {
-  isActive: boolean;
+  $isActive: boolean;
 }
 
 const RoomList = styled.ul`
@@ -481,8 +482,8 @@ const GroupIcon = styled(MdGroup)`
 
 const ProfilePopUpContainer = styled.div`
   position: absolute;
-  left: 100px;
-  top: 30px;
+  left: 90px;
+  top: 40px;
   width: 180px;
   height: 60px;
   border: 1px solid #016532;
@@ -524,19 +525,6 @@ const ModalCloseButton = styled.button`
     opacity: 0.7;
   }
 
-  @media (max-width: 1000px) {
-    right: -10%;
-  }
-  @media (max-width: 600px) {
-    top: -5%;
-    right: -12%;
-    font-size: 0.8rem;
-  }
-  @media (max-width: 500px) {
-    top: -5%;
-    right: -15%;
-    font-size: 0.8rem;
-  }
 `;
 
 const StyledProfilePopUpCross = styled(RxCross2)`
@@ -702,7 +690,7 @@ const PaginationContainer = styled.div`
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 0.5rem;
-  background-color: lightblue;
+  // background-color: lightblue;
   position: sticky;
   bottom: 10px;
   width: 90%;
@@ -1293,13 +1281,13 @@ const Sidebar: React.FC = () => {
 
       <ToggleContainer>
         <ToggleButton
-          isActive={activeTab === "myRooms"}
+          $isActive={activeTab === "myRooms"}
           onClick={() => setActiveTab("myRooms")}
         >
           MY ROOMS
         </ToggleButton>
         <ToggleButton
-          isActive={activeTab === "myTags"}
+          $isActive={activeTab === "myTags"}
           onClick={() => setActiveTab("myTags")}
         >
           MY TAGS
@@ -1353,7 +1341,6 @@ const Sidebar: React.FC = () => {
                   {sidebarRoomsPagination.pages}
                 </Ellipsis>
                 <PageButton
-                  $active={false}
                   onClick={() =>
                     handlePageChange(sidebarRoomsPagination.pageNum + 1)
                   }

@@ -19,10 +19,11 @@ const Overlay = styled.div`
   display: flex;
   justify-content: flex-end;
   z-index: 2000;
+  
 `;
 
 const MembersListContainer = styled.div`
-  height: 100%;
+  height: 100vh;
   width: 20%;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
@@ -42,7 +43,7 @@ const TitleContainer = styled.div`
   display: flex;
   align-items: center;
   width: 100%;
-  height: 10%;
+  height: 60px;
   background: linear-gradient(135deg, #016532 0%, #014a24 100%);
   box-shadow: 0 2px 10px rgba(1, 101, 50, 0.3);
   position: relative;
@@ -87,23 +88,25 @@ const Title = styled.p`
 
 const BottomContainer = styled.div`
   width: 100%;
-  height: 90%;
   background-color: white;
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
+  height: 100vh;
+  overflow-x: hidden; /* 防止水平滚动 */
+  // overflow-y: auto;   /* 保持垂直滚动 */
 `;
 
 const ListContainer = styled.div`
-  width: 95%;
-  height: auto;
-  max-height: 70%;
+  width: 90%;
+  height: 65%;
   margin-top: 2rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   overflow-y: auto;
+  overflow-x: hidden; /* 防止水平滚动 */
   padding: 0 0.5rem;
   
   /* Custom scrollbar */
@@ -283,6 +286,8 @@ const ButtonContainer = styled.div`
   justify-content: flex-end;
   gap: 12px;
   height: 40px;
+  position: fixed;
+  bottom: 10vh;
 `;
 
 const RemoveIcon = styled(AiOutlineMinusCircle)<{ isSelected: boolean }>`

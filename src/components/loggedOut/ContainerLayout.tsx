@@ -23,7 +23,7 @@ const Wrapper = styled.div`
   display: flex;
   box-sizing: border-box;
   width: 90vw;
-  height: 70vh;
+  height: 75vh;
   max-width: 1300px;
   background: white;
   border: 1px solid #016532;
@@ -43,6 +43,7 @@ const RightSection = styled.div`
   width: 100%;
   height: 100%;
   padding: 0.5rem 2rem;
+  overflow-y: auto;
   
 `;
 

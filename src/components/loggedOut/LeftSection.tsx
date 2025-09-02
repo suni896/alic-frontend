@@ -7,11 +7,10 @@ interface LeftSectionProps {
   images: string[]; // Include images array
 }
 
-const LeftSectionContainer = styled.div<{ currentImage: string }>`
+const LeftSectionContainer = styled.div<{ $currentImage: string }>`
   flex: 1.15;
   height: 100%;
   position: relative;
-  center: 100%;
 
   &::before {
     content: "";
@@ -20,10 +19,10 @@ const LeftSectionContainer = styled.div<{ currentImage: string }>`
     left: 0;
     right: 0;
     bottom: 0;
-    background-image: url(${(props) => props.currentImage});
+    background-image: url(${(props) => props.$currentImage});
     background-size: contain;
     background-repeat: no-repeat;
-    background-position: left;
+    background-position: top center; /* ⬆️ 垂直顶部 + 水平居中 */
     opacity: 0.75;
     z-index: 1;
   }
@@ -43,11 +42,11 @@ const DotsContainer = styled.div`
   z-index: 2;
 `;
 
-const Dot = styled.div<{ active: boolean }>`
+const Dot = styled.div<{ $active: boolean }>`
   width: 15px;
   height: 15px;
   border-radius: 50%;
-  background-color: ${(props) => (props.active ? "#016532" : "white")};
+  background-color: ${(props) => (props.$active ? "#016532" : "white")};
   margin: 0 5px;
 
   @media (max-width: 740px) {
@@ -61,13 +60,11 @@ const LeftSection: React.FC<LeftSectionProps> = ({
   currentIndex,
   images,
 }) => {
-  
-
   return (
-    <LeftSectionContainer currentImage={currentImage}>
+    <LeftSectionContainer $currentImage={currentImage}>
       <DotsContainer>
         {images.map((_, index: number) => (
-          <Dot key={index} active={index === currentIndex} />
+          <Dot key={index} $active={index === currentIndex} />
         ))}
       </DotsContainer>
     </LeftSectionContainer>

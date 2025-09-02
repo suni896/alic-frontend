@@ -264,7 +264,7 @@ const IconContainer = styled.div`
 const PopupContainer = styled.div`
   position: absolute;
   bottom: 100%;
-  left: 0;
+  left: 60px;
   transform: translateX(-25%);
   width: 250px;
   max-height: 300px;
@@ -850,11 +850,11 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     }
   };
 
-  // const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-  //   const textarea = e.target;
-  //   setInputMessage(textarea.value);
-  //   textarea.scrollTop = textarea.scrollHeight;
-  // };
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const textarea = e.target;
+    setInputMessage(textarea.value);
+    textarea.scrollTop = textarea.scrollHeight;
+  };
 
   const MessageContainer = styled.div<{ $isOwnMessage: boolean }>`
     margin-bottom: 1rem;

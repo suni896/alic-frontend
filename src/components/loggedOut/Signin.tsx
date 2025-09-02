@@ -46,7 +46,7 @@ const SigninForm = styled.form`
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100%;
+  height: 90%;
   align-content: center;
 `;
 
@@ -73,7 +73,7 @@ const Label = styled.label`
   font-size: 1rem;
   font-family: "Roboto", serif;
   font-weight: 400;
-  margin-bottom: 0.8vh;
+  margin-bottom: 2px;
 
   @media (max-width: 740px) {
     font-size: 0.8rem;
@@ -84,7 +84,7 @@ const Input = styled.input`
   padding: 0.75rem;
   font-size: 1rem;
   color: black;
-  height: 6vh;
+  height: 40px;
   border: 1px solid #ccc;
   border-radius: 6px;
   background-color: white;
@@ -105,14 +105,18 @@ const ErrorText = styled.p`
   font-size: 0.8rem;
   color: #fc5600;
   margin-top: 0;
-  margin-bottom: 3%;
+  margin-bottom: 3px;
+  min-height: 1.2em; /* 预留固定高度 */
+  // line-height: 1.2;
 
   @media (max-width: 740px) {
     font-size: 0.7rem;
+    min-height: 1.1em;
   }
 
   @media (max-height: 720px) {
     margin: 0;
+    min-height: 1em;
   }
 `;
 
@@ -120,6 +124,7 @@ const HelperText = styled.p`
   font-size: 0.8rem;
   color: #666;
   margin-top: 0;
+  margin-bottom: 3px;
 
   @media (max-width: 740px) {
     font-size: 0.7rem;
@@ -134,8 +139,8 @@ const SigninButton = styled.button`
   padding: 0.75rem;
   font-size: 1rem;
   cursor: pointer;
-  height: 6vh;
-  margin: 4% auto 4% auto;
+  height: 40px;
+  margin: 20px auto 0 auto;
   border-radius: 5px;
   background-color: black;
   color: white;
@@ -162,11 +167,11 @@ const RegisterButton = styled.button`
   align-items: center;
   justify-content: center;
   width: 60%;
-  height: 7vh;
+  height: 40px;
   padding: 0.75rem;
   font-size: 1rem;
   cursor: pointer;
-  margin: 10% auto 0 auto;
+  margin: 20px auto 0 auto;
   border-radius: 5px;
   background-color: #016532;
   color: white;
@@ -341,7 +346,7 @@ const Signin: React.FC = () => {
             Forgot password?
           </ForgotPassword>
           <RegisterButton type="button" onClick={handleRegister}>
-            Create an account
+            Create An Account
           </RegisterButton>
         </SigninForm>
       </ContainerLayout>

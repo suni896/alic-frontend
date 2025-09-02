@@ -4,7 +4,7 @@ import logo from "../assets/Logo.png";
 import { FaGlobe } from "react-icons/fa";
 
 interface LanguageDropdownProps {
-  show: boolean;
+  $show: boolean;
 }
 
 const Container = styled.div`
@@ -71,7 +71,7 @@ const LanguageDropdown = styled.div<LanguageDropdownProps>`
   background-color: white;
   border: 1px solid #ccc;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  display: ${(props) => (props.show ? "block" : "none")};
+  display: ${(props) => (props.$show ? "block" : "none")};
   z-index: 1001;
 
   @media (max-width: 740px) {
@@ -117,7 +117,7 @@ const Navbar = () => {
         </Title>
       </LogoContainer>
       <RightContainer>
-        <LanguageDropdown show={dropdownOpen}>
+        <LanguageDropdown $show={dropdownOpen}>
           {/* <DropdownOption onClick={closeDropdown}>简体中文</DropdownOption> */}
           <DropdownOption onClick={closeDropdown}>English</DropdownOption>
         </LanguageDropdown>

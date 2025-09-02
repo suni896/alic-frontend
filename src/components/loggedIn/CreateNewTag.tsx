@@ -99,6 +99,7 @@ const ButtonContainer = styled.div`
   gap: 0.75rem;
   margin-top: 2rem;
   justify-content: center;
+  height: 40px;
   
   @media (max-width: 500px) {
     flex-direction: column;
