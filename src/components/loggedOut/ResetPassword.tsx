@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import VerifyOTP from "./VerifyOTP";
 import { API_BASE_URL } from "../../../config";
 import { Label, Input, ErrorText, SubmitButton, BackButton, Title } from "./SharedComponents";
+import PasswordInput from "../PasswordInput";
 
 axios.defaults.baseURL = API_BASE_URL;
 
@@ -158,27 +159,27 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
           <ResetPasswordForm onSubmit={resetPasswordFormik.handleSubmit}>
             <Title>Set New Password</Title>
             <Label htmlFor="password">New Password</Label>
-            <Input
-              type="password"
+            <PasswordInput
               id="password"
               name="password"
               placeholder="Enter new password"
               value={resetPasswordFormik.values.password}
               onChange={resetPasswordFormik.handleChange}
               onBlur={resetPasswordFormik.handleBlur}
+              $hasError={resetPasswordFormik.touched.password && !!resetPasswordFormik.errors.password}
             />
             <ErrorText>
               {resetPasswordFormik.touched.password && resetPasswordFormik.errors.password ? resetPasswordFormik.errors.password : ''}
             </ErrorText>
             <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              type="password"
+            <PasswordInput
               id="confirmPassword"
               name="confirmPassword"
               placeholder="Re-enter new password"
               value={resetPasswordFormik.values.confirmPassword}
               onChange={resetPasswordFormik.handleChange}
               onBlur={resetPasswordFormik.handleBlur}
+              $hasError={resetPasswordFormik.touched.confirmPassword && !!resetPasswordFormik.errors.confirmPassword}
             />
             <ErrorText>
               {resetPasswordFormik.touched.confirmPassword && resetPasswordFormik.errors.confirmPassword ? resetPasswordFormik.errors.confirmPassword : ''}

@@ -7,6 +7,7 @@ import axios from "axios";
 import ContainerLayout from "./ContainerLayout";
 import { API_BASE_URL } from "../../../config";
 import { Label, Input, ErrorText, RegisterButton, BackButton, Title } from "./SharedComponents";
+import PasswordInput from "../PasswordInput";
 
 axios.defaults.baseURL = API_BASE_URL;
 
@@ -133,27 +134,27 @@ const Register: React.FC<{ setEmail: (email: string) => void }> = ({
           {formik.touched.username && formik.errors.username ? formik.errors.username : ''}
         </ErrorText>
         <Label htmlFor="password">Password</Label>
-        <Input
-          type="password"
+        <PasswordInput
           id="password"
           name="password"
           placeholder="Enter your password"
           value={formik.values.password}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
+          $hasError={formik.touched.password && !!formik.errors.password}
         />
         <ErrorText>
           {formik.touched.password && formik.errors.password ? formik.errors.password : ''}
         </ErrorText>
         <Label htmlFor="confirmPassword">Confirm Password</Label>
-        <Input
-          type="password"
+        <PasswordInput
           id="confirmPassword"
           name="confirmPassword"
           placeholder="Enter your password again"
           value={formik.values.confirmPassword}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
+          $hasError={formik.touched.confirmPassword && !!formik.errors.confirmPassword}
         />
         <ErrorText>
           {formik.touched.confirmPassword && formik.errors.confirmPassword ? formik.errors.confirmPassword : ''}

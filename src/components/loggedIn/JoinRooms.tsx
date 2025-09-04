@@ -12,6 +12,7 @@ import LabeledInputWithCount from "../Input";
 import ModalHeader from "../Header";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import PasswordInput from "../PasswordInput";
 
 // Animations
 const fadeIn = keyframes`
@@ -330,20 +331,10 @@ const Modal = styled.div`
   }
 `;
 
-const PasswordInput = styled.input`
+const PasswordInputContainer = styled.div`
   width: 90%;
-  padding: 0.75rem;
-  font-size: 1rem;
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  margin: 0 auto 1.5rem auto; /* 添加水平居中的 margin */
-  display: block; /* 确保作为块级元素显示 */
-  transition: border-color 0.2s ease;
-
-  &:focus {
-    outline: none;
-    border-color: #016532;
-  }
+  margin: 0 auto 1.5rem auto;
+  display: block;
 `;
 
 const ButtonContainer = styled.div`
@@ -686,22 +677,24 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
                 {/* <CloseButton onClick={() => setShowPasswordModal(false)}>
                 </CloseButton> */}
                 {/* <PasswordTitle>Enter Room Password</PasswordTitle> */}
-                <PasswordInput
-                  type="password"
-                  placeholder="Enter password"
-                  value={passwordFormik.values.password}
-                  onChange={(e) => {
-                    passwordFormik.handleChange(e);
-                    setPassword(e.target.value);
-                  }}
-                  onBlur={passwordFormik.handleBlur}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      passwordFormik.handleSubmit();
-                    }
-                  }}
-                  name="password"
-                />
+                <PasswordInputContainer>
+                  <PasswordInput
+                    placeholder="Enter password"
+                    value={passwordFormik.values.password}
+                    onChange={(e) => {
+                      passwordFormik.handleChange(e);
+                      setPassword(e.target.value);
+                    }}
+                    onBlur={passwordFormik.handleBlur}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        passwordFormik.handleSubmit();
+                      }
+                    }}
+                    name="password"
+                    $hasError={passwordFormik.touched.password && !!passwordFormik.errors.password}
+                  />
+                </PasswordInputContainer>
                 <ErrorText>{passwordFormik.touched.password && passwordFormik.errors.password }</ErrorText>
                 
                 <ButtonContainer>

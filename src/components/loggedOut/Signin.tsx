@@ -10,6 +10,7 @@ import { useUser } from "../loggedIn/UserContext";
 import { useState } from "react";
 import { API_BASE_URL } from "../../../config";
 import { Label, Input, ErrorText, SigninRegisterButton, SubmitButton, Title } from "./SharedComponents";
+import PasswordInput from "../PasswordInput";
 
 axios.defaults.baseURL = API_BASE_URL;
 
@@ -196,14 +197,14 @@ const Signin: React.FC = () => {
             <HelperText>We'll never share your email.</HelperText>
           )}
           <Label htmlFor="password">Password</Label>
-          <Input
-            type="password"
+          <PasswordInput
             id="password"
             name="password"
             placeholder="Enter your password"
             value={formik.values.password}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
+            $hasError={formik.touched.password && !!formik.errors.password}
           />
           {formik.touched.password && formik.errors.password ? (
             <ErrorText>{formik.errors.password}</ErrorText>
