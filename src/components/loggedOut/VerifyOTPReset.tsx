@@ -76,6 +76,23 @@ const SubmitButton = styled.button`
   border-radius: 5px;
   background-color: #016532;
   color: white;
+  border: none;
+  outline: none;
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:active {
+    outline: none;
+    box-shadow: none;
+  }
 `;
 
 const BackButton = styled.button`
@@ -91,6 +108,23 @@ const BackButton = styled.button`
   border-radius: 5px;
   background-color: black;
   color: white;
+  border: none;
+  outline: none;
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:active {
+    outline: none;
+    box-shadow: none;
+  }
 `;
 
 const ErrorMessage = styled.p`

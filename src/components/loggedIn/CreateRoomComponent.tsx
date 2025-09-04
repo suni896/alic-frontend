@@ -30,7 +30,7 @@ const Overlay = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2000;
+  z-index: 9999;
   animation: fadeIn 0.2s ease-out;
 
   @keyframes fadeIn {
@@ -890,6 +890,8 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       );
       if (response.data.code === 200) {
         return response.data.data; // "ADMIN" or "MEMBER"
+      }else{
+        alert(response.data.message || "Failed to fetch user role.");
       }
       return null;
     } catch (error) {
@@ -995,11 +997,12 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
         alert("Room successfully updated!");
         onClose();
       } else {
-        throw new Error(response.data.message || "Failed to update room");
+        alert(response.data.message || "Failed to update room");
       }
     } catch (error: any) {
       console.error("Error updating group:", error);
       alert(`Error: ${error.response?.data?.message || error.message}`);
+      
     }
   };
 

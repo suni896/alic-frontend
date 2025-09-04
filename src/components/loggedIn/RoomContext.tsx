@@ -8,6 +8,7 @@ import React, {
   SetStateAction,
 } from "react";
 import apiClient from "../loggedOut/apiClient";
+import axios from "axios";
 
 interface RoomGroup {
   groupId: number;
@@ -167,18 +168,34 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const addRoom = async (createRoomRequest: CreateRoomRequest) => {
-    const response = await apiClient.post(
-      "/v1/group/create_new_group",
-      createRoomRequest
-    );
-
-    if (response.data.code === 200 && response.data.data?.groupId) {
-      fetchSidebarRooms();
-      fetchMainAreaRooms();
-    } else {
-      console.error(
-        `API returned error code: ${response.data.code}, message: ${response.data.message}`
+    try {
+      const response = await apiClient.post(
+        "/v1/group/create_new_group",
+        createRoomRequest
       );
+  
+      if (response.data.code === 200 && response.data.data?.groupId) {
+        fetchSidebarRooms();
+        fetchMainAreaRooms();
+      } else {
+        alert(
+          response.data.message || "Failed to create group."
+        );
+        console.error(
+          `API returned error code: ${response.data.code}, message: ${response.data.message}`
+        );
+      }
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        console.error("Axios error:", error.response?.data || error.message);
+        alert(
+          error.response?.data?.message ||
+            "Failed to create group. Please try again."
+        );
+      } else {
+        console.error("Unexpected error:", error);
+        alert("An unexpected error occurred. Please try again.");
+      }
     }
   };
 

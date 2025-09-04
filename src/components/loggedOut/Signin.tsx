@@ -21,7 +21,7 @@ const ErrorToast = styled.div`
   color: #ff4444;
   padding: 12px 24px;
   font-size: 0.9rem;
-  z-index: 1000;
+  z-index: 1200; /* 设置比Material-UI AppBar更高的值 */
   animation: slideDown 0.3s ease-out;
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -144,6 +144,23 @@ const SigninButton = styled.button`
   border-radius: 5px;
   background-color: black;
   color: white;
+  border: none;
+  outline: none;
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:active {
+    outline: none;
+    box-shadow: none;
+  }
 
   @media (max-width: 740px) {
     width: 60%;
@@ -175,6 +192,23 @@ const RegisterButton = styled.button`
   border-radius: 5px;
   background-color: #016532;
   color: white;
+  border: none;
+  outline: none;
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:active {
+    outline: none;
+    box-shadow: none;
+  }
 
   @media (max-width: 740px) {
     width: 80%;
@@ -185,6 +219,7 @@ const RegisterButton = styled.button`
   @media (max-height: 720px) {
     margin-top: 8%;
   }
+  
   @media (max-width: 740px) and (min-height: 820px) {
     height: 6vh;
     margin-top: 18%;
@@ -251,14 +286,14 @@ const Signin: React.FC = () => {
           navigate("/search-rooms");
           console.log(response.data.code);
         } else {
-          setErrorMessage(
+          alert(
             response.data.message || "Failed to log in. Please try again."
           );
         }
       } catch (error: unknown) {
         if (axios.isAxiosError(error)) {
           console.error("Axios error:", error.response?.data || error.message);
-          setErrorMessage(
+          alert(
             error.response?.data?.message ||
               "Failed to log in. Please try again."
           );

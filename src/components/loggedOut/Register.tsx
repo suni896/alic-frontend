@@ -99,6 +99,23 @@ const RegisterButton = styled.button<{ $hasError: boolean }>`
   border-radius: 5px;
   background-color: black;
   color: white;
+  border: none;
+  outline: none;
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:active {
+    outline: none;
+    box-shadow: none;
+  }
 
   @media (max-width: 740px) {
     width: 60%;
@@ -130,6 +147,23 @@ const BackButton = styled.button`
   border-radius: 5px;
   background-color: #016532;
   color: white;
+  border: none;
+  outline: none;
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:active {
+    outline: none;
+    box-shadow: none;
+  }
 
   @media (max-width: 740px) {
     width: 80%;

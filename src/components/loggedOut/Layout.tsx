@@ -5,6 +5,7 @@ import { AppBar } from "@mui/material";
 
 const StyledAppBar = styled(AppBar)`
   flex-shrink: 0;
+  z-index: 1000; /* 明确设置AppBar的z-index */
 `;
 
 const MainContent = styled.main`

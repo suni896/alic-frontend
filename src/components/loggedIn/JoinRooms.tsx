@@ -329,12 +329,13 @@ const Modal = styled.div`
 `;
 
 const PasswordInput = styled.input`
-  width: 100%;
+  width: 90%;
   padding: 0.75rem;
   font-size: 1rem;
   border: 2px solid #e9ecef;
   border-radius: 8px;
-  margin-bottom: 1.5rem;
+  margin: 0 auto 1.5rem auto; /* 添加水平居中的 margin */
+  display: block; /* 确保作为块级元素显示 */
   transition: border-color 0.2s ease;
 
   &:focus {
