@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ContainerLayout from "./ContainerLayout";
 import { API_BASE_URL } from "../../../config";
+import { Label, Input, ErrorText, RegisterButton, BackButton, Title } from "./SharedComponents";
 
 axios.defaults.baseURL = API_BASE_URL;
 
@@ -15,169 +16,6 @@ const SigninForm = styled.form`
   flex-direction: column;
   width: 100%;
   height: 100%;
-`;
-
-const Title = styled.h1`
-  text-align: center;
-  font-size: 2rem;
-  font-family: "Roboto", serif;
-  font-weight: 700;
-  text-decoration: underline;
-  margin: 1.5% auto;
-
-  @media (max-width: 740px) {
-    font-size: 1.7rem;
-    margin: 2.5% auto;
-  }
-
-  @media (max-height: 720px) {
-    margin: 0 auto;
-  }
-`;
-
-const Label = styled.label`
-  font-size: 1rem;
-  font-family: "Roboto", serif;
-  font-weight: 400;
-  margin-bottom: 2px;
-
-  @media (max-width: 740px) {
-    font-size: 0.8rem;
-  }
-`;
-
-const Input = styled.input`
-  padding: 0.75rem;
-  font-size: 1rem;
-  color: black;
-  height: 40px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: white;
-  width: 100%;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #016532;
-  }
-
-  @media (max-width: 740px) {
-    height: 5vh;
-  }
-`;
-
-const ErrorText = styled.p`
-  font-size: 0.8rem;
-  color: #fc5600;
-  margin-top: 0;
-  margin-bottom: 3px;
-  min-height: 1.5em; /* 预留固定高度 */
-  // line-height: 1.2;
-
-  @media (max-width: 740px) {
-    font-size: 0.7rem;
-    min-height: 1.1em;
-  }
-
-  @media (max-height: 720px) {
-    margin: 0;
-    min-height: 1em;
-  }
-`;
-
-const RegisterButton = styled.button<{ $hasError: boolean }>`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 40%;
-  padding: 0.75rem;
-  font-size: 1rem;
-  cursor: pointer;
-  height: 40px;
-  margin: 20px auto 0 auto;
-  border-radius: 5px;
-  background-color: black;
-  color: white;
-  border: none;
-  outline: none;
-
-  &:focus {
-    outline: none;
-    box-shadow: none;
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: none;
-  }
-
-  &:active {
-    outline: none;
-    box-shadow: none;
-  }
-
-  @media (max-width: 740px) {
-    width: 60%;
-    margin-top: 10%;
-    margin-bottom: 6%;
-  }
-
-  @media (max-height: 720px) {
-    margin-bottom: 0;
-    margin-top: 0;
-  }
-
-  @media (max-width: 740px) and (min-height: 820px) {
-    height: 5vh;
-    margin-bottom: 8%;
-  }
-`;
-
-const BackButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 60%;
-  height: 40px;
-  padding: 0.75rem;
-  font-size: 1rem;
-  cursor: pointer;
-  margin: 20px auto 0 auto;
-  border-radius: 5px;
-  background-color: #016532;
-  color: white;
-  border: none;
-  outline: none;
-
-  &:focus {
-    outline: none;
-    box-shadow: none;
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: none;
-  }
-
-  &:active {
-    outline: none;
-    box-shadow: none;
-  }
-
-  @media (max-width: 740px) {
-    width: 80%;
-    font-size: 0.9rem;
-    margin-top: 15%;
-  }
-
-  @media (max-height: 720px) {
-    margin-top: 8%;
-  }
-  @media (max-width: 740px) and (min-height: 820px) {
-    height: 6vh;
-    margin-top: 18%;
-  }
 `;
 
 interface RegisterFormValues {
@@ -320,7 +158,11 @@ const Register: React.FC<{ setEmail: (email: string) => void }> = ({
         <ErrorText>
           {formik.touched.confirmPassword && formik.errors.confirmPassword ? formik.errors.confirmPassword : ''}
         </ErrorText>
-        <RegisterButton type="submit" $hasError={!!hasErrors}>
+        <RegisterButton
+          type="submit"
+          disabled={!formik.isValid || formik.isSubmitting}
+          $hasError={!!hasErrors}
+        >
           Register
         </RegisterButton>
         <BackButton type="button" onClick={handleBack}>

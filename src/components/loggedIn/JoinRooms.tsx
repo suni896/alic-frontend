@@ -475,7 +475,6 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
     redirectPath,
     setRedirectPath,
     handlePasswordSubmit,
-    isPasswordEmpty,
   } = useJoinRoom();
 
   const passwordFormik = useFormik<PasswordFormValues>({
