@@ -73,7 +73,7 @@ const ErrorText = styled.p`
   color: #fc5600;
   margin-top: 0;
   margin-bottom: 3px;
-  min-height: 1.2em; /* 预留固定高度 */
+  min-height: 1.5em; /* 预留固定高度 */
   // line-height: 1.2;
 
   @media (max-width: 740px) {
@@ -148,6 +148,23 @@ const BackButton = styled.button`
   border-radius: 5px;
   background-color: #016532;
   color: white;
+  border: none;
+  outline: none;
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:active {
+    outline: none;
+    box-shadow: none;
+  }
 
   @media (max-width: 740px) {
     width: 80%;
@@ -166,12 +183,28 @@ const BackButton = styled.button`
 
 interface ResetPasswordFormValues {
   email: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
 const validationSchema = Yup.object({
   email: Yup.string()
     .email("Invalid email address")
     .required("Email is required"),
+});
+
+const resetPasswordValidationSchema = Yup.object({
+  password: Yup.string()
+    .min(6, "Password must be between 6 and 20 characters")
+    .max(20, "Password must be between 6 and 20 characters")
+    .matches(
+      /^[a-zA-Z0-9!@#$%^&*()_+=[\]{}|;:'",.<>?/`~\\-]*$/,
+      "Password can only include letters, numbers, and special characters"
+    )
+    .required("Password is required"),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref("password")], "Passwords must match")
+    .required("Confirm Password is required"),
 });
 
 const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
@@ -210,41 +243,42 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
     },
   });
 
+  const resetPasswordFormik = useFormik({
+    initialValues: {
+      password: "",
+      confirmPassword: "",
+    },
+    validationSchema: resetPasswordValidationSchema,
+    onSubmit: async (values) => {
+      if (token) {
+        try {
+          const response = await axios.post("/auth/reset", {
+            newPassword: values.password,
+            token: token,
+            type: "3",
+            userEmail: formik.values.email,
+          });
+
+          if (response.data.code === 200) {
+            alert("Password reset successfully!");
+            navigate("/"); // Redirect to home
+          } else {
+            alert(response.data.message || "Failed to reset password.");
+          }
+        } catch (error) {
+          console.error("Error resetting password:", error);
+          alert("Failed to reset password. Please try again.");
+        }
+      }
+    },
+  });
+
   const handleVerifySuccess = (receivedToken: string) => {
     setToken(receivedToken);
     setStep(3); // Move to new password step
   };
 
-  const handleResetPassword = async (
-    newPassword: string,
-    confirmPassword: string
-  ) => {
-    if (newPassword !== confirmPassword) {
-      alert("Passwords do not match.");
-      return;
-    }
 
-    if (token) {
-      try {
-        const response = await axios.post("/auth/reset", {
-          newPassword: newPassword,
-          token: token,
-          type: "3",
-          userEmail: formik.values.email,
-        });
-
-        if (response.data.code === 200) {
-          alert("Password reset successfully!");
-          navigate("/"); // Redirect to home
-        } else {
-          alert(response.data.message || "Failed to reset password.");
-        }
-      } catch (error) {
-        console.error("Error resetting password:", error);
-        alert("Failed to reset password. Please try again.");
-      }
-    }
-  };
 
   return (
     <>
@@ -281,21 +315,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
       )}
       {step === 3 && (
         <ContainerLayout>
-          <ResetPasswordForm
-            onSubmit={(e) => {
-              e.preventDefault();
-              const passwordInput = (
-                e.target as HTMLFormElement
-              ).elements.namedItem("password") as HTMLInputElement;
-              const confirmPasswordInput = (
-                e.target as HTMLFormElement
-              ).elements.namedItem("confirmPassword") as HTMLInputElement;
-              handleResetPassword(
-                passwordInput.value,
-                confirmPasswordInput.value
-              );
-            }}
-          >
+          <ResetPasswordForm onSubmit={resetPasswordFormik.handleSubmit}>
             <Title>Set New Password</Title>
             <Label htmlFor="password">New Password</Label>
             <Input
@@ -303,14 +323,26 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
               id="password"
               name="password"
               placeholder="Enter new password"
+              value={resetPasswordFormik.values.password}
+              onChange={resetPasswordFormik.handleChange}
+              onBlur={resetPasswordFormik.handleBlur}
             />
+            <ErrorText>
+              {resetPasswordFormik.touched.password && resetPasswordFormik.errors.password ? resetPasswordFormik.errors.password : ''}
+            </ErrorText>
             <Label htmlFor="confirmPassword">Confirm Password</Label>
             <Input
               type="password"
               id="confirmPassword"
               name="confirmPassword"
               placeholder="Re-enter new password"
+              value={resetPasswordFormik.values.confirmPassword}
+              onChange={resetPasswordFormik.handleChange}
+              onBlur={resetPasswordFormik.handleBlur}
             />
+            <ErrorText>
+              {resetPasswordFormik.touched.confirmPassword && resetPasswordFormik.errors.confirmPassword ? resetPasswordFormik.errors.confirmPassword : ''}
+            </ErrorText>
             <SubmitButton type="submit">Submit</SubmitButton>
             <BackButton type="button" onClick={() => navigate("/")}>
               Back to Sign-In
