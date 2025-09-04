@@ -10,6 +10,8 @@ import { useJoinRoom, RoomGroup } from "./useJoinRoom";
 import Button from "../button";
 import LabeledInputWithCount from "../Input";
 import ModalHeader from "../Header";
+import { useFormik } from "formik";
+import * as Yup from "yup";
 
 // Animations
 const fadeIn = keyframes`
@@ -381,6 +383,25 @@ const ErrorModalButton = styled.button<{ $success?: boolean }>`
   }
 `;
 
+const ErrorText = styled.p`
+  font-size: 0.8rem;
+  color: #fc5600;
+  margin-top: 0;
+  margin-bottom: 3px;
+  min-height: 1.5em; /* 预留固定高度 */
+  // line-height: 1.2;
+
+  @media (max-width: 740px) {
+    font-size: 0.7rem;
+    min-height: 1.1em;
+  }
+
+  @media (max-height: 720px) {
+    margin: 0;
+    min-height: 1em;
+  }
+`;
+
 interface GroupListResponse {
   code: number;
   message: string;
@@ -396,6 +417,21 @@ interface GroupListResponse {
 interface CreateRoomComponentProps {
   onClose: () => void;
 }
+
+interface PasswordFormValues {
+  password: string;
+}
+
+const passwordValidationSchema = Yup.object({
+  password: Yup.string()
+    .min(6, "Password must be between 6 and 20 characters")
+    .max(20, "Password must be between 6 and 20 characters")
+    .matches(
+      /^[a-zA-Z0-9!@#$%^&*()_+=\[\]{}|;:'",.<>?/`~\\-]*$/,
+      "Password can only include letters, numbers, and special characters"
+    )
+    .required("Password is required"),
+});
 
 const roomsCache = new Map<string, RoomGroup[]>();
 
@@ -441,6 +477,22 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
     handlePasswordSubmit,
     isPasswordEmpty,
   } = useJoinRoom();
+
+  const passwordFormik = useFormik<PasswordFormValues>({
+    initialValues: {
+      password: "",
+    },
+    validationSchema: passwordValidationSchema,
+    onSubmit: (values) => {
+      setPassword(values.password);
+      handlePasswordSubmit();
+    },
+  });
+
+  // Sync formik password with useJoinRoom password
+  useEffect(() => {
+    passwordFormik.setFieldValue("password", password);
+  }, [password]);
 
   useEffect(() => {
     if (redirectPath) {
@@ -638,20 +690,31 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
                 <PasswordInput
                   type="password"
                   placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={passwordFormik.values.password}
+                  onChange={(e) => {
+                    passwordFormik.handleChange(e);
+                    setPassword(e.target.value);
+                  }}
+                  onBlur={passwordFormik.handleBlur}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      handlePasswordSubmit();
+                      passwordFormik.handleSubmit();
                     }
                   }}
+                  name="password"
                 />
+                <ErrorText>{passwordFormik.touched.password && passwordFormik.errors.password }</ErrorText>
+                
                 <ButtonContainer>
                   <Button variant="cancel" onClick={() => setShowPasswordModal(false)}>
                     Cancel
                   </Button>
 
-                  <Button variant="primary" onClick={handlePasswordSubmit} disabled={isPasswordEmpty}>
+                  <Button 
+                    variant="primary" 
+                    onClick={() => passwordFormik.handleSubmit()} 
+                    disabled={!passwordFormik.isValid || !passwordFormik.values.password}
+                  >
                     Join Room
                   </Button>
                 </ButtonContainer>

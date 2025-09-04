@@ -72,7 +72,7 @@ const ErrorText = styled.p`
   color: #fc5600;
   margin-top: 0;
   margin-bottom: 3px;
-  min-height: 1.2em; /* 预留固定高度 */
+  min-height: 1.5em; /* 预留固定高度 */
   // line-height: 1.2;
 
   @media (max-width: 740px) {
