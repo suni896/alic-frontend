@@ -3,7 +3,7 @@ import { membersCache } from "./RoomMembersComponent";
 import SockJS from "sockjs-client";
 import Stomp from "stompjs";
 import styled from "styled-components";
-import { LuSend, LuX } from "react-icons/lu";
+import { LuSend, LuX, LuReply, LuCopy } from "react-icons/lu";
 import botIcon from "../../assets/chat-gpt.png";
 import apiClient from "../loggedOut/apiClient";
 import { useUser } from "./UserContext";
@@ -36,6 +36,7 @@ interface User {
   userEmail: string;
 }
 
+// 更新Message接口，添加回复相关字段
 interface Message {
   infoId: number;
   groupId: number;
@@ -46,8 +47,11 @@ interface Message {
   senderType: string;
   name: string;
   portrait: string;
+  replyToMsgId?: number; // 被回复消息的ID
+  replyToMessage?: Message; // 被回复的消息对象
 }
 
+// 样式组件
 const Container = styled.div`
   background: white;
   width: 100%;
@@ -57,12 +61,11 @@ const Container = styled.div`
   box-sizing: border-box;
   position: fixed;
   height: calc(100vh - 7vh);
-  /* 移除 top 属性，因为 Layout 已经处理了顶部边距 */
 `;
 
 const RenderedChatContainer = styled.div`
   width: 100%-40px;
-  height: calc(100vh - 7vh - 20px - 11rem - 1vh); /* 固定高度, 页面100vh- navbar7vh - Container padding 20px - SendMessageContainer 11rem - SendMessageContainer margin 1vh*/
+  height: calc(100vh - 7vh - 20px - 11rem - 1vh);
   overflow-y: auto;
   padding-left: 1rem;
   padding-right: 1rem;
@@ -88,27 +91,169 @@ const RenderedChatContainer = styled.div`
   }
 `;
 
+// 消息容器 - 支持悬浮显示功能按钮
+const MessageContainer = styled.div<{ $isOwnMessage: boolean }>`
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background-color: ${(props) => (props.$isOwnMessage ? "#dcf8c6" : "white")};
+  border-radius: 8px;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  position: relative;
+  
+  &:hover .message-actions {
+    opacity: 1;
+    visibility: visible;
+  }
+`;
+
+// 消息操作按钮容器
+const MessageActions = styled.div`
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.2s ease-in-out;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+`;
+
+// 操作按钮
+const ActionButton = styled.button`
+  background: none;
+  border: none;
+  padding: 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #666;
+  transition: all 0.2s ease-in-out;
+  
+  &:hover {
+    background-color: #f0f0f0;
+    color: #333;
+  }
+  
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
+// 回复预览容器
+const ReplyPreview = styled.div`
+  background: #f8f9fa;
+  border-left: 3px solid #016532;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+  border-radius: 4px;
+  font-size: 0.85rem;
+`;
+
+const ReplyHeader = styled.div`
+  font-weight: 600;
+  color: #016532;
+  margin-bottom: 4px;
+  font-size: 0.8rem;
+`;
+
+const ReplyContent = styled.div`
+  color: #666;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 300px;
+`;
+
+// 回复输入框容器
+const ReplyInputContainer = styled.div`
+  display: flex;
+  align-items: center;
+  background: #f0f9f0;
+  padding: 0px 12px;
+  border-radius: 6px;
+  border-left: 3px solid #016532;
+  height: 2.3rem;
+`;
+
+// 复制成功提示组件
+const CopySuccessToast = styled.div<{ $show: boolean }>`
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  background-color: #4caf50;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  font-size: 14px;
+  font-weight: 500;
+  opacity: ${props => props.$show ? 1 : 0};
+  visibility: ${props => props.$show ? 'visible' : 'hidden'};
+  transform: translateY(${props => props.$show ? '0' : '-20px'});
+  transition: all 0.3s ease-in-out;
+`;
+
+const ReplyInputText = styled.span`
+  flex: 1;
+  font-size: 0.85rem;
+  color: #333;
+`;
+
+const CancelReplyButton = styled.button`
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  color: #666;
+  border-radius: 4px;
+  
+  &:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+  }
+`;
+
+const MessageContent = styled.div`
+  flex: 1;
+  min-width: 0;
+`;
+
+const UserName = styled.div`
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: #1a202c;
+  margin-bottom: 0.25rem;
+  line-height: 1.2;
+`;
+
 const MessageText = styled.div`
   word-break: break-word;
   font-size: 0.85rem;
 `;
 
-// const SendMessageContainer = styled.div`
-//   display: flex;
-//   flex-direction: column;
-//   align-items: flex-start;
-//   width: 100%;
-//   margin-top: 1vh;
-//   position: relative;
-
-// `;
+const TimeStamp = styled.div`
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0.5rem;
+  line-height: 1;
+`;
 
 const SendMessageContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   width: 100%;
-  height: 11rem; /* 固定高度 */
+  height: 11rem;
   margin-top: 1vh;
   position: relative;
 `;
@@ -130,16 +275,16 @@ const MessageInputWrapper = styled.div<{ $disabled?: boolean }>`
   }
 `;
 
-const MessageInput = styled.textarea<{ $disabled?: boolean }>`
+const MessageInput = styled.textarea<{ $disabled?: boolean; $isReplying?: boolean }>`
   background-color: transparent;
   width: 100%;
-  min-height: 5.3rem;
-  max-height: 5.3rem;
-  height: 5.3rem;
+  min-height: ${props => props.$isReplying ? '3.5rem' : '5.8rem'};
+  max-height: ${props => props.$isReplying ? '3.5rem' : '5.8rem'};
+  height: ${props => props.$isReplying ? '3.5rem' : '5.8rem'};
   resize: none;
   overflow-y: auto;
   border: none;
-  border-radius: 8px;
+  // border-radius: 8px;
   color: ${(props) => (props.$disabled ? "#999" : "black")};
   padding: 0;
   cursor: ${(props) => (props.$disabled ? "not-allowed" : "text")};
@@ -147,6 +292,7 @@ const MessageInput = styled.textarea<{ $disabled?: boolean }>`
   line-height: 1.5;
   box-sizing: border-box;
   font-family: inherit;
+  transition: all 0.2s ease-in-out;
  
   &:focus {
     outline: none;
@@ -155,26 +301,6 @@ const MessageInput = styled.textarea<{ $disabled?: boolean }>`
   &::placeholder {
     color: ${(props) => (props.$disabled ? "#ccc" : "#999")};
     opacity: 1;
-  }
-`;
-
-const LoadingSpinner = styled.div`
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #016532;
-  border-radius: 50%;
-  width: 16px;
-  height: 16px;
-  animation: spin 1s linear infinite;
-  margin-left: 8px;
-  transition: opacity 0.3s ease-in-out;
-
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
   }
 `;
 
@@ -201,6 +327,26 @@ const Avatar = styled.img`
   }
 `;
 
+const LoadingSpinner = styled.div`
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #016532;
+  border-radius: 50%;
+  width: 16px;
+  height: 16px;
+  animation: spin 1s linear infinite;
+  margin-left: 8px;
+  transition: opacity 0.3s ease-in-out;
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+`;
+
 const HeaderContent = styled.div`
   display: flex;
   align-items: center;
@@ -219,7 +365,6 @@ const NewMessageNotification = styled.div`
   z-index: 1000;
 `;
 
-// 创建圆形包装组件
 const IconWrapper = styled.div`
   position: relative;
   width: 2.2rem;
@@ -257,7 +402,6 @@ const IconContainer = styled.div`
   margin-bottom: 0.4em;
   gap: 0.2em;
   padding: 0.2em 0.4em;
-  // background-color: #f0f9f0;
   border-radius: 20px;
 `;
 
@@ -328,6 +472,7 @@ const AccessType = styled.span`
   color: #666;
 `;
 
+// Bot列表弹窗组件
 const BotListPopUp: React.FC<MyRoomProps> = ({
   onClose,
   onBotSelect,
@@ -409,13 +554,14 @@ const BotListPopUp: React.FC<MyRoomProps> = ({
   );
 };
 
+// 缓存
 const botsCache = new Map<number, Bot>();
-
 const clientCache = new Map<number, Stomp.Client | null>();
-
 const usersCache = new Map<number, User>();
 
+// 主组件
 const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
+  // 状态管理
   const [hasNewMessage, setHasNewMessage] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const { userInfo } = useUser();
@@ -427,18 +573,48 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const isInitialMount = useRef(false);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
+  const [selectedBot, setSelectedBot] = useState<number | null>(null);
+  const [isBotClicked, setIsBotClicked] = useState(false);
+  
+  // 回复功能状态
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [copySuccess, setCopySuccess] = useState<string>('');
 
-    // 使用埋点Hook - 已更新埋点规则
+  // 埋点Hook
   const { handleTyping, handleSend: trackSend, handleMessageReceived } = useInputTracking(groupId);
 
-  // 存储用户信息到本地存储，便于埋点使用
+  // 回复功能处理函数
+  const handleReplyToMessage = (message: Message) => {
+    setReplyingTo(message);
+    messageInputRef.current?.focus();
+  };
+
+  const handleCancelReply = () => {
+    setReplyingTo(null);
+  };
+
+  const handleCopyMessage = (content: string) => {
+    navigator.clipboard.writeText(content).then(() => {
+      setCopySuccess('复制成功');
+      // 2秒后自动隐藏提示
+      setTimeout(() => {
+        setCopySuccess('');
+      }, 2000);
+    }).catch(err => {
+      console.error('复制失败:', err);
+      setCopySuccess('复制失败');
+      setTimeout(() => {
+        setCopySuccess('');
+      }, 2000);
+    });
+  };
+
+  // 存储用户信息到本地存储
   useEffect(() => {
     if (userInfo && userInfo.userId) {
-      // 保存用户ID到多个位置，确保埋点能够获取
       try {
         localStorage.setItem('userId', String(userInfo.userId));
         sessionStorage.setItem('userId', String(userInfo.userId));
-        // 同时在window对象上设置，便于调试
         (window as any).userInfo = userInfo;
       } catch (e) {
         console.error('保存用户信息失败', e);
@@ -454,6 +630,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     };
   }, [groupId, userInfo]);
 
+  // 获取Bot信息
   const fetchBotInfo = async (botId: number): Promise<Bot> => {
     if (botsCache.has(botId)) {
       return botsCache.get(botId)!;
@@ -480,6 +657,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     };
   };
 
+  // 获取用户信息
   const fetchUserInfo = async (userId: number): Promise<User> => {
     if (usersCache.has(userId)) {
       return usersCache.get(userId)!;
@@ -504,27 +682,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     };
   };
 
-  useEffect(() => {
-    const fetchBots = async () => {
-      try {
-        setIsLoading(true);
-        const response = await apiClient.get(
-          `/v1/group/get_group_chat_bot_list?groupId=${groupId}`
-        );
-        if (response.data.code === 200) {
-          // response.data.data.forEach((bot: Bot) => {
-          //   botsCache.set(bot.botId, bot.botName);
-          // });
-        }
-      } catch (error) {
-        console.error("Error fetching bots:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchBots();
-  }, [groupId]);
-
+  // 获取消息历史
   const fetchMessageHistory = async (loadMore = false) => {
     const prevMessages = messages.length;
     setIsLoading(true);
@@ -537,6 +695,8 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
       const newMessages = response.data.data as Message[];
       setHasNoMoreMessages(newMessages.length < 20);
+      
+      // 处理消息的用户/Bot信息
       await Promise.all(
         newMessages.map(async (msg) => {
           if (msg.senderType === "CHATBOT") {
@@ -555,6 +715,16 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         const merged = [...newMessages, ...prev]
           .filter((v, i, a) => a.findIndex((t) => t.infoId === v.infoId) === i)
           .sort((a, b) => a.infoId - b.infoId);
+
+        // 在合并后的消息数组中处理回复关系
+        merged.forEach(msg => {
+          if (msg.replyToMsgId) {
+            const replyToMsg = merged.find(m => m.infoId === msg.replyToMsgId);
+            if (replyToMsg) {
+              msg.replyToMessage = replyToMsg;
+            }
+          }
+        });
 
         requestAnimationFrame(() => {
           if (chatContainerRef.current) {
@@ -584,25 +754,13 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     }
   };
 
-  useEffect(() => {
-    if (initialLoading && messages.length > 0) {
-      requestAnimationFrame(() => {
-        if (chatContainerRef.current) {
-          chatContainerRef.current.style.overflowY = "auto";
-          chatContainerRef.current.scrollTop =
-            chatContainerRef.current.scrollHeight;
-        }
-      });
-    }
-  }, [messages, initialLoading]);
-
+  // WebSocket连接管理
   const connectionStatusRef = useRef<{
     currentGroupId: number | null;
     connectionPromise: Promise<void> | null;
   }>({ currentGroupId: null, connectionPromise: null });
 
   const manageWebSocketConnection = useCallback(async () => {
-    // 如果正在连接相同房间，直接返回
     if (connectionStatusRef.current.currentGroupId === groupId) {
       return;
     }
@@ -615,7 +773,6 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       return;
     }
 
-    // 断开之前的连接
     if (stompClientRef.current?.connected) {
       stompClientRef.current.disconnect(() => {
         console.log("Disconnected from previous connection");
@@ -625,19 +782,15 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       );
     }
 
-    // 更新连接状态
     connectionStatusRef.current.currentGroupId = groupId ?? null;
 
-    // 如果没有groupId，停止连接
     if (!groupId) return;
 
-    // 创建新的连接
     const socket = new SockJS(`${API_BASE_URL}/ws`);
     const client = Stomp.over(socket);
     stompClientRef.current = client;
     clientCache.set(groupId, client);
 
-    // 创建连接Promise
     connectionStatusRef.current.connectionPromise = new Promise(
       (resolve, reject) => {
         client.connect(
@@ -650,7 +803,6 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               console.log("Received message:", message.body);
               const receivedMessage = JSON.parse(message.body) as Message;
 
-              // 只有接收到的消息不是自己发送的，才触发接收消息埋点
               if (receivedMessage.senderId !== userInfo?.userId) {
                 handleMessageReceived(
                   receivedMessage.content,
@@ -659,39 +811,48 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               }
 
               Promise.all([
-                receivedMessage.senderType === "CHATBOT"
-                  ? fetchBotInfo(receivedMessage.senderId).then((botInfo) => {
-                      receivedMessage.name = botInfo.botName;
-                      receivedMessage.portrait = botIcon;
-                    })
-                  : fetchUserInfo(receivedMessage.senderId).then((userInfo) => {
-                      receivedMessage.name = userInfo.userName;
-                      receivedMessage.portrait = userInfo.userPortrait;
-                    }),
-              ]);
-              setMessages((prev) => {
-                const newMessages = [...prev, receivedMessage]
-                  .filter((v, i, a) => a.findIndex((t) => t.infoId === v.infoId) === i)
-                  .sort((a, b) => a.infoId - b.infoId);
+            receivedMessage.senderType === "CHATBOT"
+              ? fetchBotInfo(receivedMessage.senderId).then((botInfo) => {
+                  receivedMessage.name = botInfo.botName;
+                  receivedMessage.portrait = botIcon;
+                })
+              : fetchUserInfo(receivedMessage.senderId).then((userInfo) => {
+                  receivedMessage.name = userInfo.userName;
+                  receivedMessage.portrait = userInfo.userPortrait;
+                }),
+          ]).then(() => {
+            setMessages((prev) => {
+              // Process replyToMsgId for the received message
+              if (receivedMessage.replyToMsgId) {
+                const replyToMsg = prev.find(m => m.infoId === receivedMessage.replyToMsgId);
+                if (replyToMsg) {
+                  receivedMessage.replyToMessage = replyToMsg;
+                }
+              }
+              
+              const newMessages = [...prev, receivedMessage]
+                .filter((v, i, a) => a.findIndex((t) => t.infoId === v.infoId) === i)
+                .sort((a, b) => a.infoId - b.infoId);
 
-                requestAnimationFrame(() => {
-                  if (chatContainerRef.current) {
-                    const { scrollTop, scrollHeight, clientHeight } =
-                      chatContainerRef.current;
-                    const isNearBottom =
-                      scrollHeight - (scrollTop + clientHeight) < 300;
+              requestAnimationFrame(() => {
+                if (chatContainerRef.current) {
+                  const { scrollTop, scrollHeight, clientHeight } =
+                    chatContainerRef.current;
+                  const isNearBottom =
+                    scrollHeight - (scrollTop + clientHeight) < 300;
 
-                    if (isNearBottom) {
-                      chatContainerRef.current.scrollTop = scrollHeight;
-                      setHasNewMessage(false);
-                    } else {
-                      setHasNewMessage(true);
-                    }
+                  if (isNearBottom) {
+                    chatContainerRef.current.scrollTop = scrollHeight;
+                    setHasNewMessage(false);
+                  } else {
+                    setHasNewMessage(true);
                   }
-                });
-
-                return newMessages;
+                }
               });
+
+              return newMessages;
+            });
+          });
             });
 
             resolve();
@@ -711,14 +872,15 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     }
   }, [groupId, handleMessageReceived, userInfo?.userId]);
 
+  // 组件初始化
   useEffect(() => {
     if (!isInitialMount.current) {
       setMessages([]);
       setIsLoading(false);
       setHasNoMoreMessages(false);
       setSelectedBot(null);
+      setReplyingTo(null);
 
-      // 获取群组成员
       const fetchMembers = async () => {
         try {
           const response = await apiClient.get(
@@ -741,7 +903,6 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       isInitialMount.current = false;
     }
 
-    // 清理函数
     return () => {
       if (stompClientRef.current?.connected) {
         stompClientRef.current.disconnect(() => {
@@ -759,30 +920,26 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     };
   }, [groupId, manageWebSocketConnection]);
 
+  // 发送消息
   const sendMessage = () => {
     if (inputMessage.trim() && stompClientRef.current && userInfo?.userId) {
-      // 调试日志
       console.log('💬 即将发送消息:', {
         content: inputMessage,
         groupId,
         userId: userInfo.userId,
-        botId: selectedBot || 0
+        botId: selectedBot || 0,
+        replyToMsgId: replyingTo?.infoId
       });
 
-      // 发送消息前记录最终输入状态
       trackSend(inputMessage);
 
-      // 发送消息前，将埋点队列中的所有埋点数据一次性发送出去
       if (eventQueue && eventQueue.length > 0) {
         console.log(`🚀 发送消息触发埋点批量发送: 队列长度 ${eventQueue.length}`);
-
-        // 在发送前打印完整队列内容
         if ((sensors as any).debug?.dumpQueue) {
           console.log('📊 发送消息前的埋点队列内容:');
           (sensors as any).debug.dumpQueue();
         }
-
-        flushEvents(); // 调用flushEvents函数发送所有队列中的埋点数据
+        flushEvents();
       }
 
       const message = {
@@ -792,8 +949,12 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         msgType: 0,
         createTime: new Date().toISOString(),
         botId: selectedBot || 0,
+        replyToMsgId: replyingTo?.infoId || null, // 添加回复消息ID
       };
+      
       setSelectedBot(null);
+      setReplyingTo(null); // 清除回复状态
+      
       stompClientRef.current.send(
         `/app/chat/${groupId}`,
         {},
@@ -812,7 +973,6 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   };
 
   const prevScrollHeight = useRef(0);
-  const [selectedBot, setSelectedBot] = useState<number | null>(null);
 
   const handleBotSelect = (botName: string, botId: number) => {
     console.log("Bot selected:", botName);
@@ -820,8 +980,6 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     setSelectedBot(botId);
     setIsBotClicked(false);
   };
-
-  const [isBotClicked, setIsBotClicked] = useState(false);
 
   const handleScroll = () => {
     const container = chatContainerRef.current;
@@ -834,7 +992,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       }
 
       if (scrollTop < 300 && !isLoading && !hasNoMoreMessages) {
-        setHasNewMessage(false); // 立即关闭新消息提示
+        setHasNewMessage(false);
         prevScrollHeight.current = container.scrollHeight;
         setIsLoading(true);
         fetchMessageHistory(true);
@@ -856,36 +1014,18 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     textarea.scrollTop = textarea.scrollHeight;
   };
 
-  const MessageContainer = styled.div<{ $isOwnMessage: boolean }>`
-    margin-bottom: 1rem;
-    padding: 1rem;
-    background-color: ${(props) => (props.$isOwnMessage ? "#dcf8c6" : "white")};
-    border-radius: 8px;
-    display: flex;
-    align-items: flex-start;
-    gap: 1rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  `;
-
-  const MessageContent = styled.div`
-    flex: 1;
-    min-width: 0;
-  `;
-
-  const UserName = styled.div`
-    font-weight: 600;
-    font-size: 0.9rem;
-    color: #1a202c;
-    margin-bottom: 0.25rem;
-    line-height: 1.2;
-  `;
-
-  const TimeStamp = styled.div`
-    font-size: 0.8rem;
-    color: #666;
-    margin-top: 0.5rem;
-    line-height: 1;
-  `;
+  // 初始化滚动
+  useEffect(() => {
+    if (initialLoading && messages.length > 0) {
+      requestAnimationFrame(() => {
+        if (chatContainerRef.current) {
+          chatContainerRef.current.style.overflowY = "auto";
+          chatContainerRef.current.scrollTop =
+            chatContainerRef.current.scrollHeight;
+        }
+      });
+    }
+  }, [messages, initialLoading]);
 
   return (
     <Container>
@@ -912,6 +1052,17 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               <UserName>
                 {msg.senderId === userInfo?.userId ? "You" : `${msg.name}`}
               </UserName>
+              
+              {/* 显示被回复消息的引用 */}
+              {msg.replyToMessage && (
+                <ReplyPreview>
+                  <ReplyHeader>
+                    Reply {msg.replyToMessage.senderId === userInfo?.userId ? "You" : msg.replyToMessage.name}
+                  </ReplyHeader>
+                  <ReplyContent>{msg.replyToMessage.content}</ReplyContent>
+                </ReplyPreview>
+              )}
+              
               <MessageText>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm, remarkBreaks]}
@@ -930,7 +1081,6 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                         }}
                       />
                     ),
-                    // 自定义其他组件的样式
                   }}
                 >
                   {msg.content}
@@ -947,6 +1097,22 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                 })}
               </TimeStamp>
             </MessageContent>
+            
+            {/* 消息操作按钮 */}
+            <MessageActions className="message-actions">
+              <ActionButton
+                onClick={() => handleReplyToMessage(msg)}
+                title="回复"
+              >
+                <LuReply />
+              </ActionButton>
+              <ActionButton
+                onClick={() => handleCopyMessage(msg.content)}
+                title="复制"
+              >
+                <LuCopy />
+              </ActionButton>
+            </MessageActions>
           </MessageContainer>
         ))}
       </RenderedChatContainer>
@@ -958,7 +1124,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       )}
 
       <SendMessageContainer>
-
+        
         <IconContainer>
           <IconWrapper onClick={() => setIsBotClicked(!isBotClicked)}>
             <BotIcon
@@ -977,41 +1143,56 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             <SendIcon />
           </IconWrapper>
         </IconContainer>
-      <MessageInputWrapper>
-      <MessageInput
-          ref={messageInputRef}
-          placeholder="Type your message..."
-          value={inputMessage}
-          onChange={(e) => {
-            handleInputChange(e);
-
-            // 使用更新后的埋点规则处理输入事件
-            // 无论是增加还是删除都会触发，但规则逻辑在hook内部处理
-            handleTyping(e.target.value);
-          }}
-          onKeyDown={e => {
-            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
-              // Ctrl+Enter 或 Cmd+Enter 换行
-              e.preventDefault();
-              const { selectionStart, selectionEnd, value } = e.currentTarget;
-              setInputMessage(
-                  value.slice(0, selectionStart) + "\n" + value.slice(selectionEnd)
-              );
-              setTimeout(() => {
-                if (messageInputRef.current) {
-                  messageInputRef.current.selectionStart = messageInputRef.current.selectionEnd = selectionStart + 1;
-                }
-              }, 0);
-            } else if (e.key === "Enter") {
-              // 普通回车发送
-              e.preventDefault();
-              sendMessage();
-            }
-          }}
-          rows={4}
-      />
+        
+        <MessageInputWrapper>
+          
+          <MessageInput
+            $disabled={isLoading}
+            $isReplying={!!replyingTo}
+            ref={messageInputRef}
+            value={inputMessage}
+            onChange={(e) => {
+              handleInputChange(e);
+              handleTyping(e.target.value);
+            }}
+            onKeyDown={e => {
+              if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                e.preventDefault();
+                const { selectionStart, selectionEnd, value } = e.currentTarget;
+                setInputMessage(
+                    value.slice(0, selectionStart) + "\n" + value.slice(selectionEnd)
+                );
+                setTimeout(() => {
+                  if (messageInputRef.current) {
+                    messageInputRef.current.selectionStart = messageInputRef.current.selectionEnd = selectionStart + 1;
+                  }
+                }, 0);
+              } else if (e.key === "Enter") {
+                e.preventDefault();
+                sendMessage();
+              }
+            }}
+            placeholder={isLoading ? "Sending..." : "Type your message..."}
+            rows={4}
+          />
+          {/* 回复预览 */}
+        {replyingTo && (
+          <ReplyInputContainer>
+            <ReplyInputText>
+              Reply {replyingTo.senderId === userInfo?.userId ? "You" : replyingTo.name}: {replyingTo.content.slice(0, 50)}{replyingTo.content.length > 50 ? '...' : ''}
+            </ReplyInputText>
+            <CancelReplyButton onClick={handleCancelReply}>
+              <LuX />
+            </CancelReplyButton>
+          </ReplyInputContainer>
+        )}
         </MessageInputWrapper>
       </SendMessageContainer>
+      
+      {/* 复制成功提示 */}
+      <CopySuccessToast $show={!!copySuccess}>
+        {copySuccess}
+      </CopySuccessToast>
     </Container>
   );
 };
