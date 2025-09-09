@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import { membersCache } from "./RoomMembersComponent";
 import SockJS from "sockjs-client";
 import Stomp from "stompjs";
-import styled from "styled-components";
+import styled, { createGlobalStyle } from "styled-components";
 import { LuSend, LuX, LuReply, LuCopy } from "react-icons/lu";
 import botIcon from "../../assets/chat-gpt.png";
 import apiClient from "../loggedOut/apiClient";
@@ -50,6 +50,21 @@ interface Message {
   replyToMsgId?: number; // 被回复消息的ID
   replyToMessage?: Message; // 被回复的消息对象
 }
+
+// 全局样式
+const GlobalStyle = createGlobalStyle`
+  .highlight-message {
+    background-color:rgba(205, 255, 219, 0.24) !important;
+    border: 1px solid #016532 !important;
+    animation: pulse 0.5s ease-in-out;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+  }
+`;
 
 // 样式组件
 const Container = styled.div`
@@ -157,6 +172,13 @@ const ReplyPreview = styled.div`
   margin-bottom: 8px;
   border-radius: 4px;
   font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s ease-in-out;
+  
+  &:hover {
+    background: #e8f5e8;
+    border-left-color: #014a28;
+  }
 `;
 
 const ReplyHeader = styled.div`
@@ -587,6 +609,26 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const handleReplyToMessage = (message: Message) => {
     setReplyingTo(message);
     messageInputRef.current?.focus();
+  };
+
+
+
+  // 跳转到指定消息
+  const scrollToMessage = (messageId: number) => {
+    const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
+    if (messageElement && chatContainerRef.current) {
+      // 高亮显示目标消息
+      messageElement.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'center' 
+      });
+      
+      // 添加临时高亮效果
+      messageElement.classList.add('highlight-message');
+      setTimeout(() => {
+        messageElement.classList.remove('highlight-message');
+      }, 2000);
+    }
   };
 
   const handleCancelReply = () => {
@@ -1029,6 +1071,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
   return (
     <Container>
+      <GlobalStyle />
       <RenderedChatContainer ref={chatContainerRef} onScroll={handleScroll}>
         {hasNoMoreMessages && (
           <div style={{ textAlign: "center", padding: "5px", color: "#666" }}>
@@ -1039,6 +1082,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           <MessageContainer
             key={msg.infoId}
             $isOwnMessage={msg.senderType === "USER" && msg.senderId === userInfo?.userId}
+            data-message-id={msg.infoId}
           >
             <Avatar
               src={
@@ -1055,7 +1099,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               
               {/* 显示被回复消息的引用 */}
               {msg.replyToMessage && (
-                <ReplyPreview>
+                <ReplyPreview onClick={() => scrollToMessage(msg.replyToMessage!.infoId)}>
                   <ReplyHeader>
                     Reply {msg.replyToMessage.senderId === userInfo?.userId ? "You" : msg.replyToMessage.name}
                   </ReplyHeader>
