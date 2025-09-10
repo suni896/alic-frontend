@@ -93,16 +93,6 @@ const MessageText = styled.div`
   font-size: 0.85rem;
 `;
 
-// const SendMessageContainer = styled.div`
-//   display: flex;
-//   flex-direction: column;
-//   align-items: flex-start;
-//   width: 100%;
-//   margin-top: 1vh;
-//   position: relative;
-
-// `;
-
 const SendMessageContainer = styled.div`
   display: flex;
   flex-direction: column;
