@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { styled } from "styled-components";
 import CreateRoomComponent, { RoomInfoResponse } from "./CreateRoomComponent";
 import RoomMembersComponent from "./RoomMembersComponent";
+import ShareGroupModal from "./ShareGroupModal";
 import apiClient from "../loggedOut/apiClient";
 
 interface TagData {
@@ -124,9 +125,10 @@ interface RoomNavbarProps {
 const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
   const [isModifyRoomInfoVisible, setIsModifyRoomInfoVisible] = useState(false);
   const [isRoomMembersVisible, setIsRoomMembersVisible] = useState(false);
+  const [isShareModalVisible, setIsShareModalVisible] = useState(false);
   const [tagData, setTagData] = useState<TagData[]>([]);
   const [roomData, setRoomData] = useState<RoomInfoResponse | null>(null);
-  const [, setUserRole] = useState<string>("MEMBER");
+  const [userRole, setUserRole] = useState<string>("MEMBER"); // 移除下划线前缀，正确使用userRole状态
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -196,6 +198,19 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
     }
   }, [groupId]);
 
+  // 添加处理分享按钮点击的函数
+  const handleShareClick = () => {
+    // 检查权限：groupType=1（公开群组）直接通过，groupType=0（私有群组）需要管理员权限
+    if (roomData?.data?.groupType === 1) {
+      setIsShareModalVisible(true);
+    } else if (roomData?.data?.groupType === 0 && userRole === "ADMIN") {
+      setIsShareModalVisible(true);
+    } else {
+      // 显示无分享权限提示
+      alert("您没有分享此群组的权限");
+    }
+  };
+
   return (
     <Container>
       <TitleContainer>
@@ -215,11 +230,17 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
             isModify={true}
           />
         )}
-        <Share />
+        <Share onClick={handleShareClick} />
         <Menu onClick={() => setIsRoomMembersVisible(true)} />
         {isRoomMembersVisible && (
           <RoomMembersComponent
             onClose={() => setIsRoomMembersVisible(false)}
+          />
+        )}
+        {isShareModalVisible && groupId && (
+          <ShareGroupModal
+            groupId={groupId}
+            onClose={() => setIsShareModalVisible(false)}
           />
         )}
       </RightContainer>
