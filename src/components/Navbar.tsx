@@ -4,7 +4,7 @@ import logo from "../assets/Logo.png";
 import { FaGlobe } from "react-icons/fa";
 
 interface LanguageDropdownProps {
-  show: boolean;
+  $show: boolean;
 }
 
 const Container = styled.div`
@@ -12,7 +12,7 @@ const Container = styled.div`
   top: 0;
   left: 0;
   width: 100%;
-  height: 72px;
+  height: 7vh;
   background-color: #016532;
   display: flex;
   align-items: center;
@@ -26,8 +26,8 @@ const LogoContainer = styled.div`
 `;
 
 const Logo = styled.img`
-  width: 60px;
-  height: 66px;
+  width: 40px;
+  height: 46px;
   margin-right: 20px;
 `;
 
@@ -53,7 +53,7 @@ const RightContainer = styled.div`
 
 const GlobeIcon = styled(FaGlobe)`
   color: white;
-  font-size: 32px;
+  font-size: 28px;
   cursor: pointer;
 
   &:hover {
@@ -71,7 +71,7 @@ const LanguageDropdown = styled.div<LanguageDropdownProps>`
   background-color: white;
   border: 1px solid #ccc;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  display: ${(props) => (props.show ? "block" : "none")};
+  display: ${(props) => (props.$show ? "block" : "none")};
   z-index: 1001;
 
   @media (max-width: 740px) {
@@ -117,8 +117,8 @@ const Navbar = () => {
         </Title>
       </LogoContainer>
       <RightContainer>
-        <LanguageDropdown show={dropdownOpen}>
-          <DropdownOption onClick={closeDropdown}>简体中文</DropdownOption>
+        <LanguageDropdown $show={dropdownOpen}>
+          {/* <DropdownOption onClick={closeDropdown}>简体中文</DropdownOption> */}
           <DropdownOption onClick={closeDropdown}>English</DropdownOption>
         </LanguageDropdown>
         <GlobeIcon onClick={toggleDropdown} />

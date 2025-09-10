@@ -5,19 +5,28 @@ import { AppBar } from "@mui/material";
 
 const StyledAppBar = styled(AppBar)`
   flex-shrink: 0;
+  z-index: 1000; /* 明确设置AppBar的z-index */
+`;
+
+const MainContent = styled.main`
+  margin-top: 7vh; /* 与 Navbar 高度匹配 */
+  height: calc(100vh - 7vh);
+  overflow-y: auto;
+  width: 100%;
 `;
 
 interface Props {
   children: React.ReactNode;
+  customNavbar?: React.ReactNode; // 添加自定义导航栏属性
 }
 
-const Layout = ({ children }: Props) => {
+const Layout = ({ children, customNavbar }: Props) => {
   return (
     <>
       <StyledAppBar color="default" position="fixed">
-        <Navbar />
-        <main>{children}</main>
+        {customNavbar || <Navbar />} {/* 使用自定义导航栏或默认导航栏 */}
       </StyledAppBar>
+      <MainContent>{children}</MainContent>
     </>
   );
 };

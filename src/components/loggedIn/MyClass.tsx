@@ -1,24 +1,25 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { FiTag } from "react-icons/fi";
-import { AiOutlinePlus, AiOutlineMinusCircle } from "react-icons/ai";
+import { AiOutlineMinusCircle } from "react-icons/ai";
 import styled from "styled-components";
 import { CiSearch } from "react-icons/ci";
-import { RxCross2 } from "react-icons/rx";
 import { useLocation, useParams } from "react-router-dom";
 import apiClient from "../loggedOut/apiClient";
 import axios from "axios";
+import { useNavigate } from "react-router-dom";
+import { useJoinRoom } from "./useJoinRoom";
+import { RoomInfoResponse } from "./CreateRoomComponent";
+import PlusButton from "../PlusButton";
+import Button from "../button";
+import LabeledInputWithCount from "../Input";
+import ModalHeader from "../Header";
 
 interface RoomContainerProps {
   $isEditMode: boolean;
 }
 
-interface EditButtonProps {
-  $isEditMode: boolean;
-  $isLoading?: boolean;
-}
-
 interface PageButtonProps {
-  $active?: boolean;
+  active?: boolean;
 }
 
 interface StyledMinusProps {
@@ -28,29 +29,110 @@ interface StyledMinusProps {
 const Container = styled.div`
   background: white;
   width: 100%;
-  margin-top: 72px;
-`;
+  // margin-left: 280px; /* 为侧边栏留出空间 */
+  padding-top: 0px;
+  padding-left: 20px;
+  padding-right: 20px;
+  box-sizing: border-box;
+  position: relative;
+  min-height: calc(100vh - 7vh);
+  overflow-y: auto;
 
+// const TopContainer = styled.div`
+//   display: flex;
+//   width: 100%;
+//   align-items: center;
+//   justify-content: ;
+//   position: relative;
+//   padding: 1.5rem 2rem;
+//   height: 2.5rem;
+  
+//   @media (max-width: 800px) {
+//     padding: 1rem;
+//     min-height: 10vh;
+//   }
+  
+//   @media (max-width: 600px) {
+//     flex-direction: column;
+//     gap: 1rem;
+//     min-height: auto;
+//     padding: 1rem 0.5rem;
+//     justify-content: center;
+//   }
+// `;
 const TopContainer = styled.div`
   display: flex;
-  gap: 1.5%;
-  width: 100%;
-  height: 10vh;
+  justify-content: space-between;
   align-items: center;
-  padding: 3vh 3%;
-`;
+  padding: 2vh 4vw;
+  width: 100%;
+  height: 12vh;
+  box-sizing: border-box;
+  // background-color: lightblue;
 
-const Title = styled.p`
-  font-family: Roboto;
-  font-weight: 600;
-  font-size: 2.2rem;
   @media (max-width: 800px) {
-    font-size: 2rem;
-    font-weight: 500;
+    padding: 2vh 2vw;
   }
 
-  @media (max-width: 500px) {
+  @media (max-width: 600px) {
+    flex-direction: column;
+    height: auto;
+    gap: 1rem;
+    padding: 2vh 1rem;
+  }
+`;
+
+const TitleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const PlusButtonContainer = styled.div`
+  // display: flex;
+  // align-items: center;
+  margin-left: 0px;
+  height: 2.5rem;
+`;
+
+const HeaderContainer = styled.div`
+  display: flex;
+  align-items: center;
+  width: 20%;
+  // justify-content: space-between;
+`;
+
+const ButtonContainer = styled.div`
+
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  height: 2.5rem;
+  overflow: hidden;
+`;
+const Title = styled.p`
+  font-family: 'Roboto', sans-serif;
+  font-weight: 700;
+  font-size: 2.5rem;
+  color: #1a202c;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  letter-spacing: -0.5px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-right: 2rem;
+  
+  @media (max-width: 800px) {
+    font-size: 2rem;
+    font-weight: 600;
+    margin-right: 1rem;
+  }
+
+  @media (max-width: 600px) {
     font-size: 1.7rem;
+    gap: 0.75rem;
+    margin-right: 0;
   }
 `;
 
@@ -63,35 +145,55 @@ const Tag = styled(FiTag)`
   }
 `;
 
-const StyledPlus = styled(AiOutlinePlus)`
-  color: #016532;
-  font-size: 2rem;
-  cursor: pointer;
-  @media (max-width: 500px) {
-    font-size: 1.7rem;
-  }
-`;
+// const SearchRoomsContainer = styled.div<RoomContainerProps>`
+//   display: grid;
+//   grid-template-columns: repeat(2, 1fr);
+//   gap: 2rem;
+//   padding: 0 2rem;
+//   margin-top: 4vh;
+//   margin-bottom: 8vh;
+//   box-sizing: border-box;
+//   position: relative;
 
+//   @media (max-width: 1000px) {
+//     gap: 1.5rem;
+//   }
+//   @media (max-width: 600px) {
+//     gap: 1rem;
+//     padding: 0 1rem;
+//   }
+// `;
 const SearchRoomsContainer = styled.div<RoomContainerProps>`
   display: flex;
-  flex-direction: ${(props) => (props.$isEditMode ? "column" : "row")};
-  flex-wrap: ${(props) => (props.$isEditMode ? "nowrap" : "wrap")};
-  min-height: 50vh;
-  gap: 2rem;
-  padding: 0 2rem;
-  margin-bottom: 8vh;
+  flex-wrap: wrap;
+  gap: 1rem 4rem;
+  padding: 1rem 4rem;
   box-sizing: border-box;
-  position: relative;
+  margin: 0 auto;
+  justify-content: flex-start;
+  min-height: 20vh;
+  overflow-y: auto;
+  width: 100%;
+  // background-color: lightblue;
+
+  @media (max-width: 1200px) {
+    gap: 2rem 3rem;
+    padding: 2rem 3rem;
+  }
 
   @media (max-width: 1000px) {
-    gap: 1.5rem;
+    gap: 2rem;
   }
+
+  @media (max-width: 800px) {
+    padding: 2rem;
+  }
+
   @media (max-width: 600px) {
-    gap: 1rem;
-    padding: 0 1rem;
+    gap: 2rem 0.8rem;
+    padding: 1.5rem 1rem;
   }
 `;
-
 const LoadingOverlay = styled.div`
   position: absolute;
   top: 0;
@@ -106,22 +208,36 @@ const LoadingOverlay = styled.div`
 `;
 
 const SearchRoomContainer = styled.div<RoomContainerProps>`
+  width: 420px;
   display: flex;
-  align-items: center;
-  width: ${(props) => (props.$isEditMode ? "55%" : "45%")};
+  flex-wrap: wrap;
   gap: 1rem;
+  box-sizing: border-box;
+  align-items: center;
 `;
 
 const RoomContainer = styled.div<RoomContainerProps>`
-  width: ${(props) => (props.$isEditMode ? "80%" : "100%")};
-  border-radius: 6px;
-  border: solid #d9d9d9;
-  padding: 1rem;
-  box-sizing: border-box;
+  width: ${(props) => (props.$isEditMode ? "calc(420px - 5.5rem)" : "420px")};
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 100px; // Fixed height for consistency
+  align-items: flex-start;
+  padding: 0.75rem;
+  height: 70px;
+  background-color: white;
+  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  cursor: pointer;
+
+  &:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+    border-color: #016532;
+  }
+
+  @media (max-width: 600px) {
+    padding: 0.6rem;
+  }
 `;
 
 const StyledMinus = styled(AiOutlineMinusCircle)<StyledMinusProps>`
@@ -129,12 +245,16 @@ const StyledMinus = styled(AiOutlineMinusCircle)<StyledMinusProps>`
   font-size: 1.5rem;
   cursor: pointer;
   flex-shrink: 0;
+  min-width: 1.5rem;
 `;
 
 const RoomContent = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.3rem;
+  align-items: flex-start;
+  width: 100%;
+  min-width: 0;
+  gap: 0.25rem;
 `;
 
 const RoomTitle = styled.h2`
@@ -143,6 +263,7 @@ const RoomTitle = styled.h2`
   font-family: Roboto;
   font-weight: 700;
   margin: 0;
+
   @media (max-width: 600px) {
     font-size: 0.8rem;
   }
@@ -171,44 +292,29 @@ const RoomDescription = styled.span`
   @media (max-width: 600px) {
     font-size: 0.7rem;
   }
-  @media (max-width: 400px) {
-    font-size: 0.6rem;
-  }
-`;
-
-const EditButton = styled.button<EditButtonProps>`
-  display: block;
-  margin: 0 auto;
-  width: 15%;
-  padding: 0.5rem;
-  background-color: ${(props) => (props.$isEditMode ? "#016532" : "#000")};
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: ${(props) => (props.$isLoading ? "not-allowed" : "pointer")};
-  opacity: ${(props) => (props.$isLoading ? "0.7" : "1")};
-
-  &:hover {
-    background-color: ${(props) => (props.$isEditMode ? "#015528" : "#333")};
-  }
-  @media (max-width: 800px) {
-    width: 25%;
-    font-size: 0.6rem;
-  }
 `;
 
 const Footer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.5rem;
-  margin-top: 4vh;
+  gap: 0.3rem;
+  position: relative;
+  height: 4vh;
+  width: 100%;
+  background-color: white;
+  padding: 1.5rem 0;
+  margin-top: 1rem;
+`;
+
+const Ellipsis = styled.span`
+  padding: 0 0.5rem;
 `;
 
 const PageButton = styled.button<PageButtonProps>`
-  background: ${(props) => (props.$active ? "black" : "white")};
-  color: ${(props) => (props.$active ? "white" : "black")};
-  border: ${(props) => (props.$active ? "1px solid #d9d9d9" : "none")};
+  background: ${(props) => (props.active ? "black" : "white")};
+  color: ${(props) => (props.active ? "white" : "black")};
+  border: ${(props) => (props.active ? "1px solid #d9d9d9" : "none")};
   border-radius: 4px;
   padding: 0.3rem 1rem;
   cursor: pointer;
@@ -232,9 +338,6 @@ const PageButton = styled.button<PageButtonProps>`
   }
 `;
 
-const Ellipsis = styled.span`
-  padding: 0 0.5rem;
-`;
 interface TagGroupItem {
   groupId: number;
   groupName: string;
@@ -246,6 +349,34 @@ interface TagGroupListResponse {
   message: string;
   data: TagGroupItem[];
 }
+
+interface TagInfoGroup {
+  groupId: number;
+  groupName: string;
+  groupAdmin: number;
+  groupDescription: string;
+}
+
+interface TagGroups {
+  pageNum: number;
+  pageSize: number;
+  pages: number;
+  total: number;
+  data: TagInfoGroup[];
+}
+
+interface TagInfoData {
+  tagId: number;
+  tagName: string;
+  tagGroups: TagGroups;
+}
+
+interface TagInfoResponse {
+  code: number;
+  message: string;
+  data: TagInfoData;
+}
+
 interface MyClassProps {
   title?: string;
   desc?: string;
@@ -259,7 +390,7 @@ interface LocationState {
 
 const Overlay = styled.div`
   position: fixed;
-  top: 0;
+  top: 7vh;
   left: 0;
   width: 100%;
   height: 100%;
@@ -272,23 +403,34 @@ const Overlay = styled.div`
 
 const Modal = styled.div`
   background: white;
-  border: 1px solid #016532;
-  border-radius: 8px;
-  padding: 1rem 1.5rem;
-  width: 20%;
+  border: none;
+  border-radius: 16px;
+  padding: 2.5rem;
+  width: 440px;
+  max-width: 500px;
+  min-width: 320px;
   position: relative;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  height: 450px;
+  display: flex;
+  flex-direction: column;
 
+  @media (max-width: 1200px) {
+    width: 35%;
+  }
   @media (max-width: 1000px) {
-    width: 30%;
+    width: 45%;
   }
   @media (max-width: 700px) {
-    width: 40%;
+    width: 55%;
   }
   @media (max-width: 600px) {
-    width: 50%;
+    width: 70%;
+    padding: 1.5rem;
   }
   @media (max-width: 400px) {
-    width: 60%;
+    width: 85%;
+    padding: 1rem;
   }
 `;
 
@@ -296,16 +438,6 @@ const ErrorModal = styled(Modal)`
   width: 25%;
   text-align: center;
   padding: 2rem;
-`;
-
-const CloseButton = styled.button`
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 1%;
-  border: none;
-  background: none;
-  cursor: pointer;
 `;
 
 const ErrorCloseButton = styled.button`
@@ -322,56 +454,74 @@ const ErrorCloseButton = styled.button`
   }
 `;
 
-const StyledCross = styled(RxCross2)`
-  color: black;
-  font-size: 1rem;
-`;
-
 const SearchContainer = styled.div`
-  display: flex;
+  padding: 1.5rem 2rem;
+  background: #white;
+  // border-bottom: 1px solid #e9ecef;
   position: relative;
-  gap: 0.5rem;
-  align-items: center;
+  height: 40px;
 `;
-
-const SearchInput = styled.input`
-  width: 95%;
-  padding: 0.6rem 0.5rem 0.6rem 3rem;
-  font-size: 1rem;
-  border: 1px solid #9f9e9e;
-  color: black;
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
-
-  @media (max-width: 500px) {
-  font-size: 0.9rem;
-  padding: 0.6rem 0.5rem 0.6rem 2.2rem;}
+const SearchWrapper = styled.div`
+  position: relative;
+  max-width: 500px;
+  margin: 0 auto;
+  height: 40px;
 `;
 
 const SearchIcon = styled(CiSearch)`
   position: absolute;
-  font-size: 2rem;
-  left: 0.5rem;
-
-  @media (max-width: 500px) {
-  font-size: 1.5rem;}
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  color: #6c757d;
+  z-index: 1;
 `;
 
 const RoomList = styled.ul`
   list-style: none;
-  padding: 0;
-  max-height: 26vh;
+  padding: 1rem;
+  height: 600px;
   overflow-y: auto;
   margin: 2vh 0;
+  background: white;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  width: 400px;
+  max-width: 100%;
+  @media (max-width: 1000px) {
+    padding: 0.8rem;
+  }
+  @media (max-width: 700px) {
+    padding: 0.5rem;
+  }
+  @media (max-width: 400px) {
+    padding: 0.3rem;
+  }
 `;
 
 const AddRoomContainer = styled.div`
   display: flex;
+  height: 15px;
   align-items: center;
-  gap: 2%;
-  padding-left: 1%;
-  margin-bottom: 1.5vh;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: #f1f5f9;
+  }
+
+  &:first-child {
+    margin-top: 0;
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 const AddRoomTitle = styled.p`
@@ -381,9 +531,14 @@ const AddRoomTitle = styled.p`
   margin: 0;
 `;
 
+const BindedRoomTitle = styled(AddRoomTitle)`
+  color: #888;
+  // font-style: italic;
+`;
+
 const Checkbox = styled.input.attrs({ type: "checkbox" })`
-  width: 20px;
-  height: 20px;
+  width: 1rem;
+  height: 1rem;
   background-color: white;
   appearance: none;
   border: 1px solid black;
@@ -407,22 +562,6 @@ const Checkbox = styled.input.attrs({ type: "checkbox" })`
   }
 `;
 
-const AddButton = styled.button`
-  border: none;
-  padding: 0.5rem 2rem;
-  display: block;
-  margin: 0 auto;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 1rem;
-  background-color: #016532;
-  color: white;
-
-  &:hover {
-    background-color: #014a24;
-  }
-`;
-
 const ErrorMessage = styled.p`
   color: red;
   text-align: center;
@@ -437,8 +576,27 @@ const NoRoomsMessage = styled.p`
   font-size: 1.1rem;
   color: #666;
 
-  @media (max-width: 500px){
-  font-size: 0.8rem;}
+  @media (max-width: 500px) {
+    font-size: 0.8rem;
+  }
+`;
+
+const OverlayButtonContainer = styled.div`
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  justify-content: center;
+  height: 40px;
+  
+  @media (max-width: 500px) {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+`;
+
+const TagIcon = styled(FiTag)`
+  color: #white;
+  font-size: 1.5rem;
 `;
 
 interface AddRoomProps {
@@ -461,6 +619,26 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
   const [tagGroups, setTagGroups] = useState<TagGroupItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Add useRef to reference the modal container
+  const modalRef = useRef<HTMLDivElement>(null);
+
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        modalRef.current &&
+        !modalRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
 
   useEffect(() => {
     fetchTagGroups();
@@ -514,11 +692,13 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
     }
   };
 
-  const handleCheckboxChange = (groupId: number) => {
-    setSelectedRooms((prev) => ({
-      ...prev,
-      [groupId]: !prev[groupId],
-    }));
+  const handleCheckboxChange = (groupId: number, isBinded: boolean) => {
+    if (!isBinded) {
+      setSelectedRooms((prev) => ({
+        ...prev,
+        [groupId]: !prev[groupId],
+      }));
+    }
   };
 
   const handleAddRooms = () => {
@@ -529,47 +709,66 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
     onAddRooms(selectedRoomIds);
   };
 
-  // Filter groups that are NOT yet bound to the tag (isBinded = false)
-  const unboundGroups = tagGroups.filter((group) => !group.isBinded);
-
   return (
     <Overlay>
-      <Modal>
-        <CloseButton onClick={onClose} disabled={isProcessing}>
-          <StyledCross />
-        </CloseButton>
+      <Modal ref={modalRef}>
+      <ModalHeader icon={TagIcon} title="Add Room to Tag" onClose={onClose} />
         <SearchContainer>
+          <SearchWrapper>
           <SearchIcon />
-          <SearchInput
-            placeholder="Search in MY ROOMS"
-            value={roomSearch}
-            onChange={(e) => setRoomSearch(e.target.value)}
-            disabled={isProcessing}
-          />
+            <LabeledInputWithCount
+                  variant="withIcon"
+                  value={roomSearch}
+                  onChange={(e) => setRoomSearch(e.target.value)}
+                  disabled={isProcessing}
+                  placeholder="Search in MY ROOMS"
+                  type="text"
+                  showCount={false} // 搜索框通常不需要字数统计
+
+            />
+            </SearchWrapper>
         </SearchContainer>
         <RoomList>
           {isLoading ? (
             <p>Loading...</p>
           ) : error ? (
             <ErrorMessage>{error}</ErrorMessage>
+          ) : tagGroups.length === 0 ? (
+            <NoRoomsMessage>No rooms found</NoRoomsMessage>
           ) : (
-            unboundGroups.map((room) => (
+            tagGroups.map((room) => (
               <AddRoomContainer key={room.groupId}>
                 <Checkbox
                   type="checkbox"
-                  checked={selectedRooms[room.groupId] || false}
-                  onChange={() => handleCheckboxChange(room.groupId)}
-                  disabled={isProcessing}
+                  checked={
+                    room.isBinded || selectedRooms[room.groupId] || false
+                  }
+                  title={room.isBinded ? "This room is already bound" : ""}
+                  onChange={() =>
+                    handleCheckboxChange(room.groupId, room.isBinded)
+                  }
+                  disabled={room.isBinded || isProcessing}
                 />
-                <AddRoomTitle>{room.groupName}</AddRoomTitle>
+                {room.isBinded ? (
+                  <BindedRoomTitle>
+                    {room.groupName} (Already bound)
+                  </BindedRoomTitle>
+                ) : (
+                  <AddRoomTitle>{room.groupName}</AddRoomTitle>
+                )}
               </AddRoomContainer>
             ))
           )}
-          {isProcessing && <ErrorMessage>Processing your request...</ErrorMessage>}
+          {isProcessing && (
+            <ErrorMessage>Processing your request...</ErrorMessage>
+          )}
         </RoomList>
-        <AddButton onClick={handleAddRooms} disabled={isProcessing}>
-          {isProcessing ? "ADDING..." : "ADD"}
-        </AddButton>
+        <OverlayButtonContainer>
+          <Button onClick={handleAddRooms} disabled={isProcessing}>
+            {isProcessing ? "Adding..." : "Add"}
+          </Button>
+        </OverlayButtonContainer>
+        
       </Modal>
     </Overlay>
   );
@@ -591,32 +790,6 @@ const ErrorPopup: React.FC<ErrorPopupProps> = ({ message, onClose }) => {
   );
 };
 
-const getPageNumbers = (currentPage: number, totalPages: number) => {
-  if (totalPages <= 6) {
-    return Array.from({ length: totalPages }, (_, i) => i + 1);
-  }
-
-  let pages = [];
-
-  pages.push(1);
-
-  if (currentPage <= 3) {
-    pages.push(2, 3, 4);
-    pages.push("...");
-    pages.push(totalPages);
-  } else if (currentPage >= totalPages - 2) {
-    pages.push("...");
-    pages.push(totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
-  } else {
-    pages.push("...");
-    pages.push(currentPage - 1, currentPage, currentPage + 1);
-    pages.push("...");
-    pages.push(totalPages);
-  }
-
-  return pages;
-};
-
 const MyClass: React.FC<MyClassProps> = ({
   title: propTitle,
   tagId: propTagId,
@@ -630,7 +803,7 @@ const MyClass: React.FC<MyClassProps> = ({
 
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isAddRoomVisible, setIsAddRoomVisible] = useState(false);
-  const [tagGroups, setTagGroups] = useState<TagGroupItem[]>([]);
+  const [tagGroups, setTagGroups] = useState<TagInfoGroup[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -639,16 +812,64 @@ const MyClass: React.FC<MyClassProps> = ({
   const [selectedRoomsToRemove, setSelectedRoomsToRemove] = useState<{
     [key: number]: boolean;
   }>({});
-  const [, setPagination] = useState({
-    pageSize: 6,
+  const [pagination, setPagination] = useState({
+    pageSize: 20,
     pageNum: 1,
     total: 0,
     pages: 0,
   });
+  const navigate = useNavigate();
+  const {
+    handleJoinClick,
+    redirectPath,
+    setRedirectPath,
+  } = useJoinRoom();
+
+  useEffect(() => {
+    if (redirectPath) {
+      navigate(redirectPath);
+      setRedirectPath(null);
+    }
+  }, [redirectPath, navigate, setRedirectPath]);
 
   useEffect(() => {
     fetchTagGroups();
   }, [tagId, currentPage, isEditMode]);
+
+  const fetchRoomInfo = async (groupId: number) => {
+    try {
+      const url = `/v1/group/get_group_info?groupId=${groupId}`;
+
+      try {
+        const response = await apiClient.get<RoomInfoResponse>(url);
+
+        if (
+          response.status === 200 &&
+          response.data.code === 200 &&
+          response.data.data
+        ) {
+          return response.data.data;
+        } else {
+          console.error(
+            "API returned successfully but with unexpected format or error code"
+          );
+        }
+      } catch (apiError) {
+        console.error("API request failed:", apiError);
+      }
+    } catch (error: any) {
+      console.error("Error message:", error.message);
+    }
+  };
+
+  const handleRoomClick = async (groupId: number) => {
+    if (isEditMode) return;
+
+    const roomDetails = await fetchRoomInfo(groupId);
+    if (roomDetails) {
+      handleJoinClick(groupId, roomDetails.groupType);
+    }
+  };
 
   const fetchTagGroups = async () => {
     if (!tagId) return;
@@ -659,32 +880,28 @@ const MyClass: React.FC<MyClassProps> = ({
     try {
       const requestData = {
         tagId: tagId,
-        keyword: undefined,
+        pageRequestVO: {
+          pageNum: currentPage,
+          pageSize: pagination.pageSize,
+        },
       };
 
       console.log("Fetching tag groups with params:", requestData);
 
-      const response = await apiClient.post<TagGroupListResponse>(
-        "/v1/tag/get_group_list_for_tag",
+      const response = await apiClient.post<TagInfoResponse>(
+        "/v1/tag/get_tag_info",
         requestData
       );
 
       console.log("Tag groups API response:", response.data);
 
       if (response.data.code === 200) {
-        setTagGroups(response.data.data);
-
-        // Update pagination based on bound groups
-        const boundGroups = response.data.data.filter(
-          (group) => group.isBinded
-        );
-        const roomsPerPage = isEditMode ? 3 : 6;
-
+        setTagGroups(response.data.data.tagGroups.data);
         setPagination({
-          pageSize: roomsPerPage,
-          pageNum: currentPage,
-          total: boundGroups.length,
-          pages: Math.ceil(boundGroups.length / roomsPerPage),
+          pageSize: response.data.data.tagGroups.pageSize,
+          pageNum: response.data.data.tagGroups.pageNum,
+          total: response.data.data.tagGroups.total,
+          pages: response.data.data.tagGroups.pages,
         });
       } else {
         setError(
@@ -712,20 +929,8 @@ const MyClass: React.FC<MyClassProps> = ({
     }
   };
 
-  const roomsPerPage = isEditMode ? 3 : 6;
-
-  // Filter for groups that are bound to the tag (isBinded = true)
-  const boundGroups = tagGroups.filter((group) => group.isBinded);
-
-  const totalPages = Math.ceil(boundGroups.length / roomsPerPage);
-
-  const currentRooms = boundGroups.slice(
-    (currentPage - 1) * roomsPerPage,
-    currentPage * roomsPerPage
-  );
-
   const handlePageChange = (page: number): void => {
-    if (page > 0 && page <= totalPages) {
+    if (page > 0 && page <= pagination.pages) {
       setCurrentPage(page);
     }
   };
@@ -877,9 +1082,51 @@ const MyClass: React.FC<MyClassProps> = ({
   return (
     <Container>
       <TopContainer>
-        <Tag />
-        <Title>CLASS {title}</Title>
-        <StyledPlus onClick={() => setIsAddRoomVisible(true)} />
+        <HeaderContainer>
+          <TitleContainer>
+            <Tag />
+            <Title>{title}</Title>
+          </TitleContainer>
+          <PlusButtonContainer>
+            <PlusButton onClick={() => setIsAddRoomVisible(true)}>
+            </PlusButton>
+          </PlusButtonContainer>
+        </HeaderContainer>
+        {/* 将按钮移到顶部 */}
+        <ButtonContainer>
+
+        {isEditMode ? (
+          <>
+            <Button
+              variant="cancel"
+              onClick={() => {
+                setSelectedRoomsToRemove({});
+                setIsEditMode(false);
+              }}
+              $isLoading={isLoading}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              onClick={toggleEditMode}
+              $isEditMode={isEditMode}
+              $isLoading={isLoading}
+            >
+              {isLoading ? "Processing..." : "Submit"}
+            </Button>
+          </>
+        ) : (
+          <Button
+            onClick={toggleEditMode}
+            $isEditMode={isEditMode}
+            $isLoading={isLoading}
+          >
+            Edit
+          </Button>
+        )}
+        </ButtonContainer>
+
         {isAddRoomVisible && (
           <AddRoomOverlay
             onAddRooms={handleAddRooms}
@@ -905,70 +1152,64 @@ const MyClass: React.FC<MyClassProps> = ({
 
         {error && <ErrorMessage>{error}</ErrorMessage>}
 
-        {currentRooms.length > 0
-          ? currentRooms.map((room) => (
-              <SearchRoomContainer key={room.groupId} $isEditMode={isEditMode}>
-                <RoomContainer $isEditMode={isEditMode}>
-                  <RoomContent>
-                    <RoomTitle>{room.groupName}</RoomTitle>
-                    {/* Note: The API response doesn't include admin name and description */}
-                    {/* We would need to fetch these details separately */}
-                    <RoomAdmin>Admin: Admin</RoomAdmin>
-                    <RoomDescription>Room from tag</RoomDescription>
-                  </RoomContent>
-                </RoomContainer>
-                {isEditMode && (
-                  <StyledMinus
-                    onClick={() => handleRemoveRoom(room.groupId)}
-                    $isSelected={selectedRoomsToRemove[room.groupId] || false}
-                  />
-                )}
-              </SearchRoomContainer>
-            ))
-          : !isLoading && (
-              <NoRoomsMessage>
-                No rooms are bound to this tag yet. Click the '+' button to add
-                rooms.
-              </NoRoomsMessage>
-            )}
-      </SearchRoomsContainer>
+        {tagGroups.length > 0 ? (
+          tagGroups.map((room) => (
+            <SearchRoomContainer key={room.groupId} $isEditMode={isEditMode}>
+              <RoomContainer
+                $isEditMode={isEditMode}
+                onClick={() => handleRoomClick(room.groupId)}
+              >
+                <RoomContent>
+                  <RoomTitle>{room.groupName}</RoomTitle>
+                  <RoomAdmin>Admin: {room.groupAdmin}</RoomAdmin>
+                  {room.groupDescription && (
+                    <RoomDescription>{room.groupDescription}</RoomDescription>
+                  )}
+                </RoomContent>
+              </RoomContainer>
+              {isEditMode && (
+                <StyledMinus
+                  onClick={() => handleRemoveRoom(room.groupId)}
+                  $isSelected={selectedRoomsToRemove[room.groupId] || false}
+                />
+              )}
+            </SearchRoomContainer>
+          ))
+        ) : !isLoading ? (
+          <NoRoomsMessage>
+            No rooms are bound to this tag yet. Click the '+' button to add
+            rooms.
+          </NoRoomsMessage>
+        ) : null}
 
-      <EditButton
-        onClick={toggleEditMode}
-        $isEditMode={isEditMode}
-        $isLoading={isLoading}
-        disabled={isLoading}
-      >
-        {isEditMode ? "SUBMIT" : "EDIT"}
-      </EditButton>
+      </SearchRoomsContainer>
       <Footer>
         <PageButton
+          onClick={() => handlePageChange(1)}
+          disabled={currentPage === 1}
+        >
+          First
+        </PageButton>
+        <PageButton
           onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1 || isLoading || boundGroups.length === 0}
+          disabled={currentPage === 1}
         >
           Previous
         </PageButton>
-        {getPageNumbers(currentPage, totalPages).map((page, index) =>
-          page === "..." ? (
-            <Ellipsis key={`ellipsis-${index}`}>...</Ellipsis>
-          ) : (
-            <PageButton
-              key={`page-${page}`}
-              $active={currentPage === page}
-              onClick={() => handlePageChange(page as number)}
-              disabled={isLoading || boundGroups.length === 0}
-            >
-              {page}
-            </PageButton>
-          )
-        )}
+        <Ellipsis>
+          Page {currentPage} of {pagination.pages}
+        </Ellipsis>
         <PageButton
           onClick={() => handlePageChange(currentPage + 1)}
-          disabled={
-            currentPage === totalPages || isLoading || boundGroups.length === 0
-          }
+          disabled={currentPage === pagination.pages}
         >
           Next
+        </PageButton>
+        <PageButton
+          onClick={() => handlePageChange(pagination.pages)}
+          disabled={currentPage === pagination.pages}
+        >
+          Last
         </PageButton>
       </Footer>
     </Container>

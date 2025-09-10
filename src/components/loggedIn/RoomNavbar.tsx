@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { IoEllipsisHorizontal, IoSettingsOutline } from "react-icons/io5";
-import { MdOutlineArrowBack, MdOutlineIosShare } from "react-icons/md";
+import { MdOutlineIosShare, MdKeyboardArrowLeft } from "react-icons/md";
 import { useNavigate } from "react-router-dom";
 import { styled } from "styled-components";
-import CreateRoomComponent from "./CreateRoomComponent";
+import CreateRoomComponent, { RoomInfoResponse } from "./CreateRoomComponent";
 import RoomMembersComponent from "./RoomMembersComponent";
 import apiClient from "../loggedOut/apiClient";
 
@@ -17,23 +17,25 @@ const Container = styled.div`
   top: 0;
   left: 0;
   width: 100%;
-  height: 72px;
+  height: 7vh;
   background-color: #016532;
   display: flex;
   align-items: center;
   justify-content: space-between;
   z-index: 1000;
+  
 `;
 
-const BackArrow = styled(MdOutlineArrowBack)`
+const BackArrow = styled(MdKeyboardArrowLeft)`
   color: white;
   font-size: 2rem;
   margin-right: 1rem;
+  cursor: pointer;
 `;
 
 const Title = styled.h1`
   color: white;
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   font-family: "Roboto", sans-serif;
   font-weight: 400;
   margin: 0;
@@ -79,36 +81,40 @@ const RightContainer = styled.div`
   margin-right: 2%;
   gap: 1rem;
 
-  @media (max-width: 500px){
-  gap: 0.4rem;}
+  @media (max-width: 500px) {
+    gap: 0.4rem;
+  }
 `;
 
 const Settings = styled(IoSettingsOutline)`
   color: white;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   cursor: pointer;
 
   @media (max-width: 500px) {
-  font-size: 1.4rem;
-  margin-left: 5px;}
+    font-size: 1.4rem;
+    margin-left: 5px;
+  }
 `;
 
 const Share = styled(MdOutlineIosShare)`
   color: white;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   cursor: pointer;
 
   @media (max-width: 500px) {
-  font-size: 1.5rem;}
+    font-size: 1.5rem;
+  }
 `;
 
 const Menu = styled(IoEllipsisHorizontal)`
   color: white;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   cursor: pointer;
 
   @media (max-width: 500px) {
-  font-size: 1.5rem;}
+    font-size: 1.5rem;
+  }
 `;
 
 interface RoomNavbarProps {
@@ -119,19 +125,18 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
   const [isModifyRoomInfoVisible, setIsModifyRoomInfoVisible] = useState(false);
   const [isRoomMembersVisible, setIsRoomMembersVisible] = useState(false);
   const [tagData, setTagData] = useState<TagData[]>([]);
+  const [roomData, setRoomData] = useState<RoomInfoResponse | null>(null);
+  const [, setUserRole] = useState<string>("MEMBER");
   const navigate = useNavigate();
 
   useEffect(() => {
     const fetchTagData = async () => {
       if (groupId) {
         try {
-          console.log("Fetching tags for groupId:", groupId);
           const response = await apiClient.get(
             `/v1/tag/get_tag_binded_group_list?groupId=${groupId}`
           );
-          console.log("API Response:", response.data);
           if (response.data.code === 200) {
-            console.log("Tags data:", response.data.data);
             setTagData(response.data.data);
           }
         } catch (error) {
@@ -142,19 +147,60 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId }) => {
       }
     };
 
-    fetchTagData();
-  }, [groupId]);
+    const fetchUserRole = async (groupId: number) => {
+      try {
+        const response = await apiClient.get(
+          `/v1/group/get_role_in_group?groupId=${groupId}`
+        );
+        if (response.data.code === 200) {
+          return response.data.data; // "ADMIN" or "MEMBER"
+        }
+        return null;
+      } catch (error) {
+        console.error("Error fetching user role:", error);
+        return null;
+      }
+    };
 
-  // Add this to debug render
-  useEffect(() => {
-    console.log("Current tagData state:", tagData);
-  }, [tagData]);
+    const fetchRoomInfo = async (groupId: number) => {
+      try {
+        const roleResponse = await fetchUserRole(groupId);
+        setUserRole(roleResponse); // Store the role
+        const url = `/v1/group/get_group_info?groupId=${groupId}`;
+
+        try {
+          const response = await apiClient.get<RoomInfoResponse>(url);
+
+          if (
+            response.status === 200 &&
+            response.data.code === 200 &&
+            response.data.data
+          ) {
+            setRoomData(response.data);
+          } else {
+            console.error(
+              "API returned successfully but with unexpected format or error code"
+            );
+          }
+        } catch (apiError) {
+          console.error("API request failed:", apiError);
+        }
+      } catch (error: any) {
+        console.error("Error message:", error.message);
+      }
+    };
+
+    fetchTagData();
+    if (groupId) {
+      fetchRoomInfo(groupId);
+    }
+  }, [groupId]);
 
   return (
     <Container>
       <TitleContainer>
         <BackArrow onClick={() => navigate("/search-rooms")} />
-        <Title>Explore Generative AI</Title>
+        <Title>{roomData?.data?.groupName}</Title>
         {tagData &&
           tagData.length > 0 &&
           tagData.map((tag) => (

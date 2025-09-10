@@ -5,9 +5,9 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import Layout from "./Layout";
+import { API_BASE_URL } from "../../../config";
 
-axios.defaults.baseURL = "https://112.74.92.135:443";
+axios.defaults.baseURL = API_BASE_URL;
 
 const ConfirmationContainer = styled.div`
   display: flex;
@@ -65,17 +65,50 @@ const CodeInput = styled.input`
 
 const SubmitButton = styled.button`
   display: flex;
-  align-items: center;
   justify-content: center;
-  width: 60%;
-  height: 55px;
+  align-items: center;
+  width: 40%;
   padding: 0.75rem;
   font-size: 1rem;
   cursor: pointer;
-  margin: 2rem auto 0 auto;
+  height: 40px;
+  margin: 20px auto 0 auto;
   border-radius: 5px;
-  background-color: #016532;
+  background-color: black;
   color: white;
+  border: none;
+  outline: none;
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:active {
+    outline: none;
+    box-shadow: none;
+  }
+
+  @media (max-width: 740px) {
+    width: 60%;
+    margin-top: 10%;
+    margin-bottom: 6%;
+  }
+
+  @media (max-height: 720px) {
+    margin-bottom: 0;
+    margin-top: 0;
+  }
+
+  @media (max-width: 740px) and (min-height: 820px) {
+    height: 5vh;
+    margin-bottom: 8%;
+  }
 `;
 
 const BackButton = styled.button`
@@ -83,14 +116,45 @@ const BackButton = styled.button`
   align-items: center;
   justify-content: center;
   width: 60%;
-  height: 55px;
+  height: 40px;
   padding: 0.75rem;
   font-size: 1rem;
   cursor: pointer;
-  margin: 1rem auto 0 auto;
+  margin: 20px auto 0 auto;
   border-radius: 5px;
-  background-color: black;
+  background-color: #016532;
   color: white;
+  border: none;
+  outline: none;
+
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:active {
+    outline: none;
+    box-shadow: none;
+  }
+
+  @media (max-width: 740px) {
+    width: 80%;
+    font-size: 0.9rem;
+    margin-top: 15%;
+  }
+
+  @media (max-height: 720px) {
+    margin-top: 8%;
+  }
+  @media (max-width: 740px) and (min-height: 820px) {
+    height: 6vh;
+    margin-top: 18%;
+  }
 `;
 
 const ErrorMessage = styled.p`
@@ -238,7 +302,7 @@ const VerifyOTPReset: React.FC<VerifyOTPResetProps> = ({
   };
 
   return (
-    <Layout>
+    // <Layout>
       <ContainerLayout>
         <ConfirmationContainer>
           <Title>Verify OTP</Title>
@@ -292,7 +356,7 @@ const VerifyOTPReset: React.FC<VerifyOTPResetProps> = ({
           </Form>
         </ConfirmationContainer>
       </ContainerLayout>
-    </Layout>
+    // </Layout>
   );
 };
 

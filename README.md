@@ -9,6 +9,23 @@ Currently, two official plugins are available:
 
 ## Expanding the ESLint configuration
 
+## command
+当你运行 npm run dev 时，应用会加载 .env.development 文件中的配置；
+当你运行 npm run build 时，应用会加载 .env.production 文件中的配置。
+npx vite preview --port 5173
+
+netstat -an | findstr ":517"
+taskkill /F /IM node.exe
+
+
+rd -r -force node_modules/.vite
+stop:ctrl+c
+
+https://112.74.92.135/swagger-ui/index.html#/group-controller
+
+netstat -ano | findstr :5173
+taskkill /F /PID 23360
+
 If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
 
 - Configure the top-level `parserOptions` property like this:
@@ -48,3 +65,7 @@ export default tseslint.config({
   },
 })
 ```
+
+# handle the problem config
+del .env.production
+"VITE_API_BASE_URL=https://chat.alic-dev.xyz" | Out-File -Encoding utf8 -FilePath .env.production -NoNewline   

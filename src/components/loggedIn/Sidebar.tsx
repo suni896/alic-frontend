@@ -1,17 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import styled, { keyframes } from "styled-components";
 import {
   IoIosArrowDown,
-  IoIosStarOutline,
   IoMdPersonAdd,
 } from "react-icons/io";
 import { FiTag } from "react-icons/fi";
 import { CiSearch } from "react-icons/ci";
-import { useNavigate } from "react-router-dom";
-import { TiPlus } from "react-icons/ti";
+import { useLocation, useNavigate } from "react-router-dom";
 import { PiSignOutBold } from "react-icons/pi";
 import { RxCross2 } from "react-icons/rx";
-import { MdPeopleAlt } from "react-icons/md";
+import { MdPeopleAlt, MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight, MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
 import CreateRoomComponent from "./CreateRoomComponent";
 import { FaTag } from "react-icons/fa";
 import JoinRooms from "./JoinRooms";
@@ -20,16 +18,26 @@ import axios from "axios";
 import apiClient from "../loggedOut/apiClient";
 import { UserInformation } from "./types";
 import { useUser } from "./UserContext";
+import { useRoomContext } from "./RoomContext";
+import { RoomGroup } from "./useJoinRoom";
+import { MdGroup } from "react-icons/md";
+import LabeledInputWithCount from "../Input";
+import PlusButton from "../PlusButton";
 
 const SidebarContainer = styled.div`
-  width: 23%;
-  height: 100vh;
+  width: 280px;
+  max-width: 320px; /* Fixed maximum width for consistency */
+  min-width: 280px; /* Minimum width to prevent too narrow display */
+  height: calc(100vh - 7vh);
   background-color: #ffffff;
-  padding: 2rem 0rem 1.5rem 1rem;
+  padding: 0rem 0rem 1rem 1rem;
   display: flex;
   flex-direction: column;
   border-right: 1px solid #016532;
-  margin-top: 72px;
+  position: fixed; /* 保持固定定位 */
+  left: 0; /* 固定在左侧 */
+  z-index: 100; /* 确保侧边栏在其他内容之上 */
+  top: 7vh; /* 使用top替代margin-top，与导航栏高度匹配 */
 `;
 
 const spin = keyframes`
@@ -62,34 +70,52 @@ const LoadingContainer = styled.div`
 
 const ErrorContainer = styled.div`
   padding: 1rem;
-  color: #dc2626;
+  color: black;
   text-align: center;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 0.5rem;
+  margin: 0.5rem 0;
 `;
 
 const ErrorMessage = styled.p`
   margin: 0;
   font-size: 0.875rem;
+  font-weight: 500;
+  color: black;
 
   @media (max-width: 600px) {
-    font-size: 0.6rem;
+    font-size: 0.75rem;
   }
 `;
 
 const EmptyStateContainer = styled.div`
-  padding: 1rem;
+  padding: 2rem 1rem;
   text-align: center;
+  background-color: #f8fafc;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  margin: 0.5rem 0;
 `;
 
 const EmptyStateMessage = styled.p`
   margin: 0;
-  color: #6b7280;
+  color: #64748b;
   font-size: 0.875rem;
+  font-weight: 500;
+
+  @media (max-width: 500px) {
+    font-size: 0.75rem;
+  }
 `;
 
 const ProfileSection = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 5px;
+  // margin-bottom: 10px;
+  margin-top: 10px;
+  height: 60px;
+  // background-color: lightblue;
 `;
 
 const LineSeparator = styled.hr`
@@ -120,7 +146,7 @@ const Avatar = styled.img`
 const UserInfo = styled.div`
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  min-width: 100px;
   flex: 1;
   gap: 2px;
 `;
@@ -191,63 +217,51 @@ const StyledArrowDown = styled(IoIosArrowDown)`
 
 const SearchContainer = styled.div`
   display: flex;
+  align-items: flex-start;
+  // margin-top: 0.8rem;
+  gap: 1rem;
+  padding: 0 1rem;
+  justify-content: flex-start;
+  margin-left: -10px;
+  width: 250px;
+  max-width: 320px; /* Fixed maximum width for consistency */
+  min-width: 250px; /* Minimum width to prevent too narrow display */ 
+  height: 40px;
+`;
+
+const SearchWrapper = styled.div`
   position: relative;
-  align-items: center;
-  margin-top: 1.5rem;
-  z-index: 0;
-`;
+  flex: 1;
+  max-width: 1000px;
+  width: 160px;
+  height: 40px;
 
-const SearchInput = styled.input`
-  width: 55%;
-  padding: 0.6rem 0.5rem 0.6rem 2rem;
-  font-size: 0.7rem;
-  border: 1px solid #9f9e9e;
-  color: black;
-  background: white;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-right: 4%;
-
-  @media (max-width: 1000px) {
-    width: 60%;
-    font-size: 0.55rem;
-    padding: 0.6rem 0rem 0.6rem 1.5rem;
-    word-break: break-word;
-    word-wrap: break-word;
-  }
-  @media (max-width: 700px) {
-    font-size: 0.4rem;
-    padding: 0.6rem 0rem 0.6rem 0.7rem;
-  }
-`;
-
-const StyledPlusContainer = styled.div`
-  background-color: #d9d9d9;
-  width: 14%;
-  height: 88%;
+  // 让里面的输入框继承这个高度
   display: flex;
-  align-items: center;
-  justify-content: center;
-
-  @media (max-width: 1000px) {
-    width: 12%;
-  }
 `;
 
-const StyledPlus = styled(TiPlus)`
-  color: #016532;
-  font-size: 1.8rem;
-  cursor: pointer;
+const SearchIcon = styled(CiSearch)`
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  color: #6c757d;
+  z-index: 1;
 `;
 
 const ToggleContainer = styled.div`
   display: flex;
   align-items: center;
-  padding: 0.4rem;
-  margin-top: 1vh;
-  gap: 0.3rem;
-  width: 84%;
-  background-color: #d9d9d9;
+  padding: 0.25rem;
+  margin: 0.5rem 0 0.5rem 0;
+  gap: 0.2rem;
+  width: 250px;
+  height: 40px;
+  background-color: #f1f5f9;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
 
   @media (max-width: 600px) {
     gap: 0rem;
@@ -260,23 +274,36 @@ const ToggleButton = styled.button<ToggleButtonProps>`
   align-items: center;
   justify-content: center;
   flex: 1;
-  padding: 0.5rem;
-  height: 100%;
+  height: 90%;
+  padding: 0.7rem 0.5rem;
   border: none;
-  border-radius: 0;
+  border-radius: 0.375rem;
   font-family: Roboto, sans-serif;
-  font-weight: 700;
+  font-weight: 600;
   font-size: 0.8rem;
   word-wrap: break-word;
   word-break: break-word;
-  background-color: ${({ isActive }) => (isActive ? "white" : "transparent")};
-  color: ${({ isActive }) => (isActive ? "#016532" : "black")};
+  background-color: ${({ $isActive }) => ($isActive ? "white" : "transparent")};
+  color: ${({ $isActive }) => ($isActive ? "#016532" : "#64748b")};
   cursor: pointer;
-  transition: background-color 0.3s, color 0.3s;
+  transition: all 0.2s ease;
+  box-shadow: ${({ $isActive }) =>
+    $isActive ? "0 1px 3px rgba(0, 0, 0, 0.1)" : "none"};
+  outline: none;
 
   &:hover {
-    background-color: ${({ isActive }) => (isActive ? "white" : "#e0e0e0")};
+    background-color: ${({ $isActive }) => ($isActive ? "white" : "#e2e8f0")};
+    color: ${({ $isActive }) => ($isActive ? "#016532" : "#374151")};
   }
+
+  &:focus {
+    outline: none;
+    box-shadow: ${({ $isActive }) =>
+      $isActive 
+        ? "0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 2px rgba(1, 101, 50, 0.2)" 
+        : "0 0 0 2px rgba(1, 101, 50, 0.2)"};
+  }
+
   @media (max-width: 900px) {
     font-size: 0.65rem;
     padding: 0.5rem 0rem;
@@ -294,33 +321,83 @@ const ToggleButton = styled.button<ToggleButtonProps>`
 `;
 
 interface ToggleButtonProps {
-  isActive: boolean;
+  $isActive: boolean;
 }
 
 const RoomList = styled.ul`
   list-style: none;
-  padding: 0;
-  max-height: 45vh;
+  padding: 0.5rem;
+  // flex: 1;
   overflow-y: auto;
+  margin: 0 0 0.5rem 0;
+  background-color: #f1f5f9;
+  border-radius: 0.5rem;
+  border: 1px solid #e2e8f0;
+  // width: 100%;
+  width: 90%;
+  height: calc(100vh - 7vh - 190px - 90px);
+
+  @media (max-width: 900px) {
+    max-width: 280px;
+    min-width: 240px;
+  }
+
+  @media (max-width: 600px) {
+    max-width: 240px;
+    min-width: 200px;
+  }
+
+  @media (max-width: 400px) {
+    max-width: 200px;
+    min-width: 180px;
+  }
 `;
 
-const RoomContainer = styled.div`
+const RoomContainer = styled.div<{ $isActive?: boolean }>`
   display: flex;
-  margin: 0;
-  margin-bottom: 12px;
+  align-items: flex-start;
+  margin: 0 0 0.5rem 0;
+  padding: 0.75rem;
+  background-color: white;
+  border-radius: 0.375rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  cursor: pointer;
+  width: 90%;
+  height: calc(calc(100vh - 7vh - 190px - 90px)/12);
+  ${({ $isActive }) =>
+    $isActive &&
+    `
+      background-color: #e6f7ff;
+      border: 2px solid #016532;
+      box-shadow: 0 0 0 2px rgba(1, 101, 50, 0.2);
+    `}
+
+  &:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
+    border-color: #016532;
+  }
+
+  &:last-child {
+    margin-bottom: 0;
+  }
 `;
 
 const Tag = styled(FiTag)`
-  color: black;
-  font-size: 1.3rem;
-  margin: 0rem 1rem 0 1rem;
+  color: #016532;
+  font-size: 1.2rem;
+  margin-right: 0.75rem;
+  flex-shrink: 0;
 
   @media (max-width: 700px) {
-    margin: 0rem 0.3rem 0 0.2rem;
+    margin-right: 0.5rem;
     font-size: 1rem;
   }
   @media (max-width: 400px) {
-    margin: 0rem 0.2rem 0 0.1rem;
+    margin-right: 0.3rem;
+    font-size: 0.9rem;
   }
 `;
 
@@ -328,72 +405,87 @@ const RoomDescContainer = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  width: 100%; /* or set a specific width like width: 200px; */
-  min-width: 0; /* Important for text truncation/wrapping */
+  width: calc(100% - 2rem); /* Fixed width accounting for icon space */
+  min-width: 0;
+  gap: 0.25rem;
+  flex: 1;
+
+  @media (max-width: 700px) {
+    width: calc(100% - 1.5rem);
+  }
+  
+  @media (max-width: 400px) {
+    width: calc(100% - 1.2rem);
+  }
 `;
 
 const RoomTitle = styled.p`
   font-size: 0.9rem;
-  font-family: Roboto;
-  color: black;
+  font-family: Roboto, sans-serif;
+  font-weight: 600;
+  color: #1f2937;
   margin: 0;
   cursor: pointer;
   width: 100%;
-  word-wrap: break-word;
-  word-break: break-word;
-  overflow-wrap: break-word;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  transition: color 0.2s ease;
+
+  &:hover {
+    color: #016532;
+  }
 
   @media (max-width: 500px) {
-    font-size: 0.6rem;
+    font-size: 0.8rem;
   }
 `;
 
 const RoomDesc = styled.p`
-  font-family: Roboto;
-  font-size: 0.8rem;
-  color: #757575;
+  font-family: Roboto, sans-serif;
+  font-size: 0.75rem;
+  color: #6b7280;
   margin: 0;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  max-width: 100%;
 
   @media (max-width: 500px) {
-    font-size: 0.5rem;
+    font-size: 0.65rem;
   }
 `;
 
-const SearchIcon = styled(CiSearch)`
-  position: absolute;
-  font-size: 1.5rem;
-  left: 0.5rem;
 
-  @media (max-width: 1000px) {
-    font-size: 1.2rem;
-    left: 0.3rem;
-  }
-  @media (max-width: 700px) {
-    font-size: 0.7rem;
-    left: 0.1rem;
-  }
-`;
-
-const Star = styled(IoIosStarOutline)`
-  color: black;
-  font-size: 1.3rem;
-  margin: 0.2rem 1rem 0 1rem;
+const GroupIcon = styled(MdGroup)`
+  color: #016532;
+  font-size: 1.2rem;
+  margin-right: 0.75rem;
+  margin-top: 0.1rem;
+  flex-shrink: 0;
 
   @media (max-width: 700px) {
-    margin: 0.2rem 0.3rem 0 0.2rem;
+    margin-right: 0.5rem;
     font-size: 1rem;
+    margin-top: 0.05rem;
   }
   @media (max-width: 400px) {
-    margin: 0.2rem 0.2rem 0 0.1rem;
+    margin-right: 0.3rem;
+    font-size: 0.9rem;
+    margin-top: 0.05rem;
   }
 `;
 
 const ProfilePopUpContainer = styled.div`
   position: absolute;
-  top: 13vh;
-  left: 5%;
-  width: 12%;
-  height: 8vh;
+  left: 90px;
+  top: 40px;
+  width: 180px;
+  height: 60px;
   border: 1px solid #016532;
   border-radius: 8px;
   background-color: white;
@@ -403,7 +495,7 @@ const ProfilePopUpContainer = styled.div`
   justify-content: space-between;
   padding: 1vh 1%;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  z-index: 3000;
+  z-index: 3500;
 
   @media (max-width: 1000px) {
     font-size: 0.8rem;
@@ -425,24 +517,14 @@ const ModalCloseButton = styled.button`
   display: flex;
   align-items: center;
   justify-content: center;
-
+  outline: none;
+  &:focus {
+    outline: none;
+  }
   &:hover {
     opacity: 0.7;
   }
 
-  @media (max-width: 1000px) {
-    right: -10%;
-  }
-  @media (max-width: 600px) {
-    top: -5%;
-    right: -12%;
-    font-size: 0.8rem;
-  }
-  @media (max-width: 500px) {
-    top: -5%;
-    right: -15%;
-    font-size: 0.8rem;
-  }
 `;
 
 const StyledProfilePopUpCross = styled(RxCross2)`
@@ -482,7 +564,8 @@ const StyledSignOutText = styled.p`
   }
 
   @media (max-width: 350px) {
-  font-size: 0.45rem; }
+    font-size: 0.45rem;
+  }
 `;
 
 const StyledSignOutIcon = styled(PiSignOutBold)`
@@ -495,36 +578,32 @@ const StyledSignOutIcon = styled(PiSignOutBold)`
     height: 1.2rem;
   }
 
-  @media (max-width: 350px){
-  width: 0.8rem;
-  height: 0.8rem;}
+  @media (max-width: 350px) {
+    width: 0.8rem;
+    height: 0.8rem;
+  }
 `;
 
 const PlusButtonOverlayContainer = styled.div`
   position: absolute;
-  top: 24vh;
-  left: 14.8%;
-  width: 13%;
-  height: 12vh;
-  border: 1px solid #016532;
-  border-radius: 8px;
+  top: 0;
+  left: calc(100% + 0.5rem);
   background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+  width: 180px;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 0.8vh 1%;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  gap: 0.5rem;
+`;
 
-  @media (max-width: 650px) {
-    left: -10%;
-    width: 305;
-  }
-
-  @media (max-width: 800px) {
-    left: 9%;
-    width: 18%;
-  }
+const PlusButtonWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 40px;
 `;
 
 const PlusButtonOptionContainer = styled.div`
@@ -534,6 +613,16 @@ const PlusButtonOptionContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 3%;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+
+  &:hover {
+    background-color: #f4f4f4;
+  }
+
+  // &:active {
+  //   transform: scale(0.9);
+  // }
 `;
 
 const StyledIoMdPersonAdd = styled(IoMdPersonAdd)`
@@ -562,6 +651,8 @@ const StyledFiTag = styled(FaTag)`
   width: 20px;
   height: 20px;
   color: #016532;
+  position: relative;
+  left: 2px;
   @media (max-width: 500px) {
     width: 16px;
     height: 16px;
@@ -593,26 +684,157 @@ const StyledPlusButtonOptionText = styled.span`
   }
 `;
 
+const PaginationContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 0.5rem;
+  // background-color: lightblue;
+  position: sticky;
+  bottom: 10px;
+  width: 90%;
+  height: 30px;
+  margin-top: auto;
+  border-top: 1px solid #e2e8f0;
+  // border-radius: 0 0 0.5rem 0.5rem;
+  // box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+
+  @media (max-width: 900px) {
+    max-width: 280px;
+    min-width: 240px;
+  }
+
+  @media (max-width: 600px) {
+    max-width: 240px;
+    min-width: 200px;
+  }
+
+  @media (max-width: 400px) {
+    max-width: 200px;
+    min-width: 180px;
+  }
+
+  @media (max-width: 800px) {
+    gap: 0.3rem;
+    padding: 0.75rem 0.5rem;
+  }
+`;
+
+const PageButton = styled.button<{ $active?: boolean }>`
+  background: ${(props) => (props.$active ? "#016532" : "white")};
+  color: ${(props) => (props.$active ? "white" : "#374151")};
+  border: 1px solid ${(props) => (props.$active ? "#016532" : "#d1d5db")};
+  border-radius: 0.375rem;
+  padding: 0.4rem 0.6rem;
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  box-shadow: ${(props) =>
+    props.$active
+      ? "0 1px 3px rgba(1, 101, 50, 0.2)"
+      : "0 1px 2px rgba(0, 0, 0, 0.05)"};
+
+  &:hover {
+    background: ${(props) => (props.$active ? "#014d28" : "#f3f4f6")};
+    border-color: ${(props) => (props.$active ? "#014d28" : "#9ca3af")};
+    transform: translateY(-1px);
+  }
+
+  &:disabled {
+    color: #9ca3af;
+    background: #f9fafb;
+    border-color: #e5e7eb;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+
+    &:hover {
+      background: #f9fafb;
+      border-color: #e5e7eb;
+      transform: none;
+    }
+  }
+
+  @media (max-width: 800px) {
+    font-size: 0.7rem;
+    padding: 0.3rem 0.5rem;
+  }
+
+  @media (max-width: 500px) {
+    font-size: 0.6rem;
+    padding: 0.25rem 0.4rem;
+  }
+`;
+
+const Ellipsis = styled.span`
+  padding: 0 0.5rem;
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 500;
+
+  @media (max-width: 500px) {
+    font-size: 0.7rem;
+    padding: 0 0.3rem;
+  }
+`;
+
 const LoadingSpinner = () => (
   <SpinnerWrapper>
     <Spinner />
   </SpinnerWrapper>
 );
 
-interface OverlayProps {
+interface ProfilePopUpProps {
   onClose: () => void;
   userInfo?: UserInformation | null;
 }
 
-const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
+interface PlusButtonOverlayProps {
+  onClose: () => void;
+  userInfo?: UserInformation | null;
+  onTagCreated?: () => void;
+  isCreateRoomOverlayVisible: boolean;
+  setIsCreateRoomOverlayVisible: (visible: boolean) => void;
+  isJoinRoomsOverlayVisible: boolean;
+  setIsJoinRoomsOverlayVisible: (visible: boolean) => void;
+  isCreateTagOverlayVisible: boolean;
+  setIsCreateTagOverlayVisible: (visible: boolean) => void;
+}
+
+const ProfilePopUp: React.FC<ProfilePopUpProps> = ({ onClose }) => {
   const navigate = useNavigate(); // Call useNavigate directly
+
+  // Add useRef to reference the popup container
+  const popupRef = React.useRef<HTMLDivElement>(null);
+
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        popupRef.current &&
+        !popupRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
 
   const handleLogout = async () => {
     try {
       const response = await apiClient.post("/v1/user/logout");
       if (response.data.code === 200) {
+        localStorage.clear();
+        document.cookie =
+          "jwtToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=None";
         alert("Successfully logged out!");
-        navigate("/"); // Use the navigate function to go to the home page
+        navigate("/");
       } else {
         alert(response.data.message || "Failed to log out");
       }
@@ -623,7 +845,7 @@ const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
   };
 
   return (
-    <ProfilePopUpContainer>
+    <ProfilePopUpContainer ref={popupRef}>
       <ModalCloseButton onClick={onClose}>
         <StyledProfilePopUpCross />
       </ModalCloseButton>
@@ -637,36 +859,68 @@ const ProfilePopUp: React.FC<OverlayProps> = ({ onClose }) => {
   );
 };
 
-const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose, userInfo }) => {
-  const [isCreateRoomOverlayVisible, setIsCreateRoomOverlayVisible] =
-    useState(false);
-  const [isJoinRoomsOverlayVisible, setIsJoinRoomsOverlayVisible] =
-    useState(false);
-  const [isCreateTagOverlayVisible, setIsCreateTagOverlayVisible] =
-    useState(false);
+const PlusButtonOverlay: React.FC<PlusButtonOverlayProps> = ({
+  onClose,
+  userInfo,
+  onTagCreated,
+  isCreateRoomOverlayVisible,
+  setIsCreateRoomOverlayVisible,
+  isJoinRoomsOverlayVisible,
+  setIsJoinRoomsOverlayVisible,
+  isCreateTagOverlayVisible,
+  setIsCreateTagOverlayVisible,
+}) => {
+  // Add useRef to reference the overlay container
+  const overlayRef = React.useRef<HTMLDivElement>(null);
+
+  // Add click outside handler
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        overlayRef.current &&
+        !overlayRef.current.contains(event.target as Node)
+      ) {
+        onClose();
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [onClose]);
 
   return (
-    <PlusButtonOverlayContainer>
+    <PlusButtonOverlayContainer ref={overlayRef}>
       <ModalCloseButton onClick={onClose}>
         <StyledProfilePopUpCross />
       </ModalCloseButton>
       <PlusButtonOptionContainer
-        onClick={() => setIsCreateRoomOverlayVisible(true)}
+        onClick={() => {
+          setIsCreateRoomOverlayVisible(true);
+          onClose(); // 关闭 plus button overlay
+        }}
       >
         <StyledIoMdPersonAdd />
-        <StyledPlusButtonOptionText>CREATE NEW ROOM</StyledPlusButtonOptionText>
+        <StyledPlusButtonOptionText>Create New Room</StyledPlusButtonOptionText>
       </PlusButtonOptionContainer>
       <PlusButtonOptionContainer
-        onClick={() => setIsJoinRoomsOverlayVisible(true)}
+        onClick={() => {
+          setIsJoinRoomsOverlayVisible(true);
+          onClose(); // 关闭 plus button overlay
+        }}
       >
         <StyledMdPeopleAlt />
-        <StyledPlusButtonOptionText>JOIN A ROOM</StyledPlusButtonOptionText>
+        <StyledPlusButtonOptionText>Join A Room</StyledPlusButtonOptionText>
       </PlusButtonOptionContainer>
       <PlusButtonOptionContainer
-        onClick={() => setIsCreateTagOverlayVisible(true)}
+        onClick={() => {
+          setIsCreateTagOverlayVisible(true);
+          onClose(); // 关闭 plus button overlay
+        }}
       >
         <StyledFiTag />
-        <StyledPlusButtonOptionText>CREATE NEW TAG</StyledPlusButtonOptionText>
+        <StyledPlusButtonOptionText>Create New Tag</StyledPlusButtonOptionText>
       </PlusButtonOptionContainer>
 
       {isCreateRoomOverlayVisible && (
@@ -679,33 +933,14 @@ const PlusButtonOverlay: React.FC<OverlayProps> = ({ onClose, userInfo }) => {
         <JoinRooms onClose={() => setIsJoinRoomsOverlayVisible(false)} />
       )}
       {isCreateTagOverlayVisible && (
-        <CreateNewTag onClose={() => setIsCreateTagOverlayVisible(false)} />
+        <CreateNewTag
+          onClose={() => setIsCreateTagOverlayVisible(false)}
+          onTagCreated={onTagCreated}
+        />
       )}
     </PlusButtonOverlayContainer>
   );
 };
-
-interface RoomGroup {
-  groupId: number;
-  groupName: string;
-  groupDescription: string;
-  groupType: number;
-  adminId: number;
-  adminName: string;
-  memberCount: number;
-}
-
-interface GroupListResponse {
-  code: number;
-  message: string;
-  data: {
-    pageSize: number;
-    pageNum: number;
-    pages: number;
-    total: number;
-    data: RoomGroup[];
-  };
-}
 
 interface Tag {
   tagId: number;
@@ -724,28 +959,112 @@ interface TagListResponse {
   };
 }
 
-const roomsCache = new Map<string, RoomGroup[]>(); // Cache keyed by search query
-const tagsCache = new Map<string, Tag[]>(); // Cache keyed by search query
-
 const Sidebar: React.FC = () => {
   const { userInfo, isUserInfoLoading, userInfoError } = useUser();
+  const { sidebarRooms, sidebarRoomsPagination, setSidebarRoomListRequest } =
+    useRoomContext();
   const [roomSearch, setRoomSearch] = useState("");
   const [tagSearch, setTagSearch] = useState("");
   const [isProfileClicked, setIsProfileClicked] = useState(false);
-  const [activeTab, setActiveTab] = useState<"myRooms" | "myTags">("myRooms");
-  const [rooms, setRooms] = useState<RoomGroup[]>([]);
   const [tags, setTags] = useState<Tag[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [pagination, setPagination] = useState({
+  const [isPlusButtonOverlayVisible, setIsPlusButtonOverlayVisible] = useState(false);
+  
+  // 将子组件的状态提升到这里
+  const [isCreateRoomOverlayVisible, setIsCreateRoomOverlayVisible] = useState(false);
+  const [isJoinRoomsOverlayVisible, setIsJoinRoomsOverlayVisible] = useState(false);
+  const [isCreateTagOverlayVisible, setIsCreateTagOverlayVisible] = useState(false);
+
+  const [tagsPagination, setTagsPagination] = useState({
     pageSize: 10,
     pageNum: 1,
     total: 0,
     pages: 0,
   });
 
-  const [isPlusButtonOverlayVisible, setIsPlusButtonOverlayVisible] =
-    useState(false);
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState<"myRooms" | "myTags">(
+    location.pathname.startsWith("/my-class/") ? "myTags" : "myRooms"
+  );
+  useEffect(() => {
+    if (location.pathname.startsWith("/my-class/")) {
+      setActiveTab("myTags");
+    } else if (location.pathname.startsWith("/my-room/")) {
+      setActiveTab("myRooms");
+    }
+  }, [location.pathname]);
+
+  const navigateToRoom = useCallback(
+    (room: RoomGroup) => {
+      navigate(`/my-room/${room.groupId.toString()}`, {
+        state: {
+          title: room.groupName,
+          desc: room.groupDescription,
+          groupId: room.groupId,
+          adminId: room.adminId,
+          adminName: room.adminName,
+          memberCount: room.memberCount,
+          groupType: room.groupType,
+          isJoined: room.isJoined,
+        },
+      });
+    },
+    [navigate]
+  );
+
+  const navigateToTag = useCallback(
+    (tag: Tag) => {
+      navigate(`/my-class/${tag.tagId.toString()}`, {
+        state: { title: tag.tagName, tagId: tag.tagId },
+      });
+    },
+    [navigate]
+  );
+
+  const [activeRoomId, setActiveRoomId] = useState<number | null>(null);
+  useEffect(() => {
+    const match = location.pathname.match(/\/my-room\/(\d+)/);
+    if (match) {
+      setActiveRoomId(parseInt(match[1], 10));
+    } else {
+      setActiveRoomId(null);
+    }
+  }, [location.pathname]);
+
+  const [activeTagId, setActiveTagId] = useState<number | null>(null);
+  useEffect(() => {
+    const match = location.pathname.match(/\/my-class\/(\d+)/);
+    if (match) {
+      setActiveTagId(parseInt(match[1], 10));
+    } else {
+      setActiveTagId(null);
+    }
+  }, [location.pathname]);
+
+  const handlePageChange = (page: number) => {
+    if (activeTab === "myRooms") {
+      const clampedPage = Math.max(
+        1,
+        Math.min(page, sidebarRoomsPagination.pages)
+      );
+      setSidebarRoomListRequest({
+        keyword: roomSearch,
+        groupDemonTypeEnum: "JOINEDROOM",
+        pageRequestVO: {
+          pageSize: sidebarRoomsPagination.pageSize,
+          pageNum: clampedPage,
+        },
+      });
+    } else {
+      const clampedPage = Math.max(1, Math.min(page, tagsPagination.pages));
+      setTagsPagination((prev) => ({
+        ...prev,
+        pageNum: clampedPage,
+      }));
+    }
+  };
 
   useEffect(() => {
     if (activeTab === "myRooms") {
@@ -753,98 +1072,35 @@ const Sidebar: React.FC = () => {
     } else {
       fetchTags();
     }
-  }, [pagination.pageNum, roomSearch, tagSearch, activeTab]);
+  }, [
+    sidebarRoomsPagination.pageNum,
+    tagsPagination.pageNum,
+    roomSearch,
+    tagSearch,
+    activeTab,
+  ]);
 
   const fetchRooms = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    // Generate cache key based on search query and pagination
-    const cacheKey = `${roomSearch}-${pagination.pageNum}`;
-
-    // Check if data is cached
-    if (roomsCache.has(cacheKey)) {
-      setRooms(roomsCache.get(cacheKey)!);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const requestData = {
-        keyword: roomSearch || undefined,
-        groupDemonTypeEnum: "JOINEDROOM",
-        pageRequestVO: {
-          pageSize: pagination.pageSize,
-          pageNum: pagination.pageNum,
-        },
-      };
-
-      console.log("Fetching rooms with params:", requestData);
-
-      const response = await apiClient.post<GroupListResponse>(
-        "/v1/group/get_group_list",
-        requestData
-      );
-
-      console.log("Room API response:", response.data);
-
-      if (response.data.code === 200) {
-        const fetchedRooms = response.data.data.data;
-        setRooms(fetchedRooms);
-        setPagination({
-          pageSize: response.data.data.pageSize,
-          pageNum: response.data.data.pageNum,
-          total: response.data.data.total,
-          pages: response.data.data.pages,
-        });
-        // Cache the fetched data
-        roomsCache.set(cacheKey, fetchedRooms);
-      } else {
-        setError(
-          `API returned error code: ${response.data.code}, message: ${response.data.message}`
-        );
-      }
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          "Axios error in fetchRooms:",
-          error.response?.data || error.message
-        );
-        setError(
-          error.response?.data?.message ||
-            "Failed to fetch rooms. Please try again."
-        );
-      } else {
-        console.error("Unexpected error in fetchRooms:", error);
-        setError(
-          "An unexpected error occurred while fetching rooms. Please try again."
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    setSidebarRoomListRequest({
+      keyword: roomSearch,
+      groupDemonTypeEnum: "JOINEDROOM",
+      pageRequestVO: {
+        pageSize: sidebarRoomsPagination.pageSize,
+        pageNum: sidebarRoomsPagination.pageNum,
+      },
+    });
   };
 
   const fetchTags = async () => {
     setIsLoading(true);
     setError(null);
 
-    // Generate cache key based on search query and pagination
-    const cacheKey = `${tagSearch}-${pagination.pageNum}`;
-
-    // Check if data is cached
-    if (tagsCache.has(cacheKey)) {
-      setTags(tagsCache.get(cacheKey)!);
-      setIsLoading(false);
-      return;
-    }
-
     try {
       const requestData = {
         keyword: tagSearch || undefined,
         pageRequestVO: {
-          pageSize: pagination.pageSize,
-          pageNum: pagination.pageNum,
+          pageSize: tagsPagination.pageSize,
+          pageNum: tagsPagination.pageNum,
         },
       };
 
@@ -860,14 +1116,12 @@ const Sidebar: React.FC = () => {
       if (response.data.code === 200) {
         const fetchedTags = response.data.data.data;
         setTags(fetchedTags);
-        setPagination({
+        setTagsPagination({
           pageSize: response.data.data.pageSize,
           pageNum: response.data.data.pageNum,
           total: response.data.data.total,
           pages: response.data.data.pages,
         });
-        // Cache the fetched data
-        tagsCache.set(cacheKey, fetchedTags);
       } else {
         setError(
           `API returned error code: ${response.data.code}, message: ${response.data.message}`
@@ -894,87 +1148,146 @@ const Sidebar: React.FC = () => {
     }
   };
 
-  const navigate = useNavigate();
+  const refreshTags = useCallback(() => {
+    setTagsPagination((prev) => ({
+      ...prev,
+      pageNum: 1,
+    }));
+    fetchTags();
+  }, [fetchTags]);
+
+  // 渲染加载状态
+  const renderLoadingState = () => (
+    <LoadingContainer>
+      <LoadingSpinner />
+    </LoadingContainer>
+  );
+
+  // 渲染错误状态
+  const renderErrorState = () => (
+    <ErrorContainer>
+      <ErrorMessage>{userInfoError}</ErrorMessage>
+    </ErrorContainer>
+  );
+
+  // 渲染用户信息
+  const renderUserInfo = () => {
+    if (!userInfo) return null;
+    
+    return (
+      <>
+        <Avatar
+          src={`data:image/png;base64,${userInfo.userPortrait}`}
+          alt="User Avatar"
+        />
+        <UserInfo>
+          <UserNameContainer>
+            <UserName $textLength={userInfo.userName.toString().length}>
+              {userInfo.userName}
+            </UserName>
+            <StyledArrowDown
+              onClick={() => setIsProfileClicked(!isProfileClicked)}
+            />
+            {isProfileClicked && (
+              <ProfilePopUp
+                onClose={() => setIsProfileClicked(false)}
+                userInfo={userInfo}
+              />
+            )}
+          </UserNameContainer>
+          <UserEmail $textLength={userInfo.userEmail.toString().length}>
+            {userInfo.userEmail}
+          </UserEmail>
+        </UserInfo>
+      </>
+    );
+  };
+
+  // 渲染空状态
+  const renderEmptyState = () => (
+    <EmptyStateContainer>
+      <EmptyStateMessage>No user information available</EmptyStateMessage>
+    </EmptyStateContainer>
+  );
+
+  // 渲染 ProfileSection 内容
+  const renderProfileContent = () => {
+    if (isUserInfoLoading) return renderLoadingState();
+    if (userInfoError) return renderErrorState();
+    if (userInfo) return renderUserInfo();
+    return renderEmptyState();
+  };
 
   return (
     <SidebarContainer>
       <ProfileSection>
-        {isUserInfoLoading ? (
-          <LoadingContainer>
-            <LoadingSpinner />
-          </LoadingContainer>
-        ) : userInfoError ? (
-          <ErrorContainer>
-            <ErrorMessage>{userInfoError}</ErrorMessage>
-          </ErrorContainer>
-        ) : userInfo ? (
-          <>
-            <Avatar
-              src={`data:image/png;base64,${userInfo.userPortrait}`}
-              alt="User Avatar"
-            />
-            <UserInfo>
-              <UserNameContainer>
-                <UserName $textLength={userInfo.userName.toString().length}>
-                  {userInfo.userName}
-                </UserName>
-                <StyledArrowDown
-                  onClick={() => setIsProfileClicked(!isProfileClicked)}
-                />
-                {isProfileClicked && (
-                  <ProfilePopUp
-                    onClose={() => setIsProfileClicked(false)}
-                    userInfo={userInfo} // Pass the actual userInfo here
-                  />
-                )}
-              </UserNameContainer>
-              <UserEmail $textLength={userInfo.userEmail.toString().length}>
-                {userInfo.userEmail}
-              </UserEmail>
-            </UserInfo>
-          </>
-        ) : (
-          <EmptyStateContainer>
-            <EmptyStateMessage>No user information available</EmptyStateMessage>
-          </EmptyStateContainer>
-        )}
+        {renderProfileContent()}
       </ProfileSection>
       <LineSeparator />
-
       <SearchContainer>
-        <SearchIcon />
-        <SearchInput
-          placeholder={
-            activeTab === "myRooms" ? "Search in MY ROOMS" : "Search in MY TAGS"
-          }
-          value={activeTab === "myRooms" ? roomSearch : tagSearch}
-          onChange={
-            activeTab === "myRooms"
-              ? (e) => setRoomSearch(e.target.value)
-              : (e) => setTagSearch(e.target.value)
-          }
-        />
+        <SearchWrapper>
+          <SearchIcon />
 
-        <StyledPlusContainer>
-          <StyledPlus onClick={() => setIsPlusButtonOverlayVisible(true)} />
-        </StyledPlusContainer>
+          <LabeledInputWithCount
+            variant="withIcon"
+            placeholder={
+              activeTab === "myRooms" ? "Search in MY ROOMS" : "Search in MY TAGS"
+            }
+            value={activeTab === "myRooms" ? roomSearch : tagSearch}
+            onChange={
+              activeTab === "myRooms"
+                ? (e) => setRoomSearch(e.target.value)
+                : (e) => setTagSearch(e.target.value)
+            }
+            type="text"
+            showCount={false}
+          />
+        </SearchWrapper>
+
+        <PlusButtonWrapper>
+          <PlusButton onClick={() => setIsPlusButtonOverlayVisible(true)} />
+          {isPlusButtonOverlayVisible && (
+            <PlusButtonOverlay
+              onClose={() => setIsPlusButtonOverlayVisible(false)}
+              userInfo={userInfo}
+              onTagCreated={refreshTags}
+              isCreateRoomOverlayVisible={isCreateRoomOverlayVisible}
+              setIsCreateRoomOverlayVisible={setIsCreateRoomOverlayVisible}
+              isJoinRoomsOverlayVisible={isJoinRoomsOverlayVisible}
+              setIsJoinRoomsOverlayVisible={setIsJoinRoomsOverlayVisible}
+              isCreateTagOverlayVisible={isCreateTagOverlayVisible}
+              setIsCreateTagOverlayVisible={setIsCreateTagOverlayVisible}
+            />
+          )}
+        </PlusButtonWrapper>
       </SearchContainer>
-      {isPlusButtonOverlayVisible && (
-        <PlusButtonOverlay
-          onClose={() => setIsPlusButtonOverlayVisible(false)}
-          userInfo={userInfo}
+
+      {/* 子组件独立渲染 */}
+      {isCreateRoomOverlayVisible && (
+        <CreateRoomComponent
+          onClose={() => setIsCreateRoomOverlayVisible(false)}
+          fromSidebar={true}
+        />
+      )}
+      {isJoinRoomsOverlayVisible && userInfo && (
+        <JoinRooms onClose={() => setIsJoinRoomsOverlayVisible(false)} />
+      )}
+      {isCreateTagOverlayVisible && (
+        <CreateNewTag
+          onClose={() => setIsCreateTagOverlayVisible(false)}
+          onTagCreated={refreshTags}
         />
       )}
 
       <ToggleContainer>
         <ToggleButton
-          isActive={activeTab === "myRooms"}
+          $isActive={activeTab === "myRooms"}
           onClick={() => setActiveTab("myRooms")}
         >
           MY ROOMS
         </ToggleButton>
         <ToggleButton
-          isActive={activeTab === "myTags"}
+          $isActive={activeTab === "myTags"}
           onClick={() => setActiveTab("myTags")}
         >
           MY TAGS
@@ -990,60 +1303,115 @@ const Sidebar: React.FC = () => {
       ) : (
         <>
           {activeTab === "myRooms" && (
-            <RoomList>
-              {rooms.length > 0
-                ? rooms.map((room) => (
-                    <RoomContainer key={room.groupId}>
-                      <Star />
-                      <RoomDescContainer>
-                        <RoomTitle
-                          key={room.groupId}
-                          onClick={() => {
-                            console.log("/my-room-${room.groupId.toString()}");
-                            navigate(`/my-room/${room.groupId.toString()}`, {
-                              state: {
-                                title: room.groupName,
-                                desc: room.groupDescription,
-                                groupId: room.groupId,
-                                adminId: room.adminId,
-                                adminName: room.adminName,
-                                memberCount: room.memberCount,
-                                groupType: room.groupType,
-                              },
-                            });
-                          }}
-                        >
-                          {room.groupName}
-                        </RoomTitle>
-                        <RoomDesc>{room.groupDescription}</RoomDesc>
-                      </RoomDescContainer>
-                    </RoomContainer>
-                  ))
-                : !isLoading && <ErrorMessage>No rooms found.</ErrorMessage>}
-            </RoomList>
+            <>
+              <RoomList>
+                {sidebarRooms.length > 0
+                  ? sidebarRooms.map((room) => (
+                      <RoomContainer
+                        key={room.groupId}
+                        onClick={() => navigateToRoom(room)}
+                        $isActive={room.groupId === activeRoomId}
+                      >
+                        <GroupIcon />
+                        <RoomDescContainer>
+                          <RoomTitle>{room.groupName}</RoomTitle>
+                          <RoomDesc>{room.groupDescription}</RoomDesc>
+                        </RoomDescContainer>
+                      </RoomContainer>
+                    ))
+                  : !isLoading && <ErrorMessage>No rooms found.</ErrorMessage>}
+              </RoomList>
+              <PaginationContainer>
+                <PageButton
+                  onClick={() => handlePageChange(1)}
+                  disabled={sidebarRoomsPagination.pageNum === 1}
+                >
+                  <MdKeyboardDoubleArrowLeft />
+                </PageButton>
+                <PageButton
+                  onClick={() =>
+                    handlePageChange(sidebarRoomsPagination.pageNum - 1)
+                  }
+                  disabled={sidebarRoomsPagination.pageNum === 1}
+                >
+                  <MdKeyboardArrowLeft />
+                </PageButton>
+                <Ellipsis>
+                  Page {sidebarRoomsPagination.pageNum} of{" "}
+                  {sidebarRoomsPagination.pages}
+                </Ellipsis>
+                <PageButton
+                  onClick={() =>
+                    handlePageChange(sidebarRoomsPagination.pageNum + 1)
+                  }
+                  disabled={
+                    sidebarRoomsPagination.pageNum ===
+                    sidebarRoomsPagination.pages
+                  }
+                >
+                  <MdKeyboardArrowRight />
+                </PageButton>
+                <PageButton
+                  onClick={() => handlePageChange(sidebarRoomsPagination.pages)}
+                  disabled={
+                    sidebarRoomsPagination.pageNum ===
+                    sidebarRoomsPagination.pages
+                  }
+                >
+                  <MdKeyboardDoubleArrowRight />
+                </PageButton>
+              </PaginationContainer>
+            </>
           )}
 
           {activeTab === "myTags" && (
-            <RoomList>
-              {tags.length > 0
-                ? tags.map((tag) => (
-                    <RoomContainer key={tag.tagId}>
-                      <Tag />
-                      <RoomDescContainer>
-                        <RoomTitle
-                          onClick={() =>
-                            navigate(`/my-class/${tag.tagId.toString()}`, {
-                              state: { title: tag.tagName, tagId: tag.tagId },
-                            })
-                          }
-                        >
-                          {tag.tagName}
-                        </RoomTitle>
-                      </RoomDescContainer>
-                    </RoomContainer>
-                  ))
-                : !isLoading && <ErrorMessage>No tags found.</ErrorMessage>}
-            </RoomList>
+            <>
+              <RoomList>
+                {tags.length > 0
+                  ? tags.map((tag) => (
+                      <RoomContainer
+                        key={tag.tagId}
+                        onClick={() => navigateToTag(tag)}
+                        $isActive={tag.tagId === activeTagId}
+                      >
+                        <Tag />
+                        <RoomDescContainer>
+                          <RoomTitle>{tag.tagName}</RoomTitle>
+                        </RoomDescContainer>
+                      </RoomContainer>
+                    ))
+                  : !isLoading && <ErrorMessage>No tags found.</ErrorMessage>}
+              </RoomList>
+              <PaginationContainer>
+                <PageButton
+                  onClick={() => handlePageChange(1)}
+                  disabled={tagsPagination.pageNum === 1}
+                >
+                  <MdKeyboardDoubleArrowLeft />
+                </PageButton>
+                <PageButton
+                  onClick={() => handlePageChange(tagsPagination.pageNum - 1)}
+                  disabled={tagsPagination.pageNum === 1}
+                >
+                  <MdKeyboardArrowLeft />
+                </PageButton>
+                <Ellipsis>
+                  Page {tagsPagination.pageNum} of {tagsPagination.pages}
+                </Ellipsis>
+                <PageButton
+                  onClick={() => handlePageChange(tagsPagination.pageNum + 1)}
+                  disabled={tagsPagination.pageNum === tagsPagination.pages}
+                >
+                  <MdKeyboardArrowRight />
+                </PageButton>
+                <PageButton
+                  onClick={() => handlePageChange(tagsPagination.pages)}
+                  disabled={tagsPagination.pageNum === tagsPagination.pages}
+                >
+                  <MdKeyboardDoubleArrowRight />
+                </PageButton>
+              </PaginationContainer>
+            </>
           )}
         </>
       )}
