@@ -9,6 +9,8 @@ import apiClient from "./apiClient";
 import { useUser } from "../loggedIn/UserContext";
 import { useState } from "react";
 import { API_BASE_URL } from "../../../config";
+import { Label, Input, ErrorText, SigninRegisterButton, SubmitButton, Title } from "./SharedComponents";
+import PasswordInput from "../PasswordInput";
 
 axios.defaults.baseURL = API_BASE_URL;
 
@@ -50,76 +52,6 @@ const SigninForm = styled.form`
   align-content: center;
 `;
 
-const Title = styled.h1`
-  text-align: center;
-  font-size: 2rem;
-  font-family: "Roboto", serif;
-  font-weight: 700;
-  text-decoration: underline;
-  margin: 2.5% auto;
-
-  @media (max-width: 740px) {
-    font-size: 1.8rem;
-    margin-bottom: 7%;
-  }
-
-  @media (max-width: 740px) and (min-height: 820px) {
-    margin-top: 5%;
-    margin-bottom: 10%;
-  }
-`;
-
-const Label = styled.label`
-  font-size: 1rem;
-  font-family: "Roboto", serif;
-  font-weight: 400;
-  margin-bottom: 2px;
-
-  @media (max-width: 740px) {
-    font-size: 0.8rem;
-  }
-`;
-
-const Input = styled.input`
-  padding: 0.75rem;
-  font-size: 1rem;
-  color: black;
-  height: 40px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: white;
-  width: 100%;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #016532;
-  }
-
-  @media (max-width: 740px) {
-    height: 5vh;
-  }
-`;
-
-const ErrorText = styled.p`
-  font-size: 0.8rem;
-  color: #fc5600;
-  margin-top: 0;
-  margin-bottom: 3px;
-  min-height: 1.2em; /* 预留固定高度 */
-  // line-height: 1.2;
-
-  @media (max-width: 740px) {
-    font-size: 0.7rem;
-    min-height: 1.1em;
-  }
-
-  @media (max-height: 720px) {
-    margin: 0;
-    min-height: 1em;
-  }
-`;
-
 const HelperText = styled.p`
   font-size: 0.8rem;
   color: #666;
@@ -128,101 +60,6 @@ const HelperText = styled.p`
 
   @media (max-width: 740px) {
     font-size: 0.7rem;
-  }
-`;
-
-const SigninButton = styled.button`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 40%;
-  padding: 0.75rem;
-  font-size: 1rem;
-  cursor: pointer;
-  height: 40px;
-  margin: 20px auto 0 auto;
-  border-radius: 5px;
-  background-color: black;
-  color: white;
-  border: none;
-  outline: none;
-
-  &:focus {
-    outline: none;
-    box-shadow: none;
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: none;
-  }
-
-  &:active {
-    outline: none;
-    box-shadow: none;
-  }
-
-  @media (max-width: 740px) {
-    width: 60%;
-    margin-top: 10%;
-    margin-bottom: 6%;
-  }
-
-  @media (max-height: 720px) {
-    margin-bottom: 0;
-    margin-top: 0;
-  }
-
-  @media (max-width: 740px) and (min-height: 820px) {
-    height: 5vh;
-    margin-bottom: 8%;
-  }
-`;
-
-const RegisterButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 60%;
-  height: 40px;
-  padding: 0.75rem;
-  font-size: 1rem;
-  cursor: pointer;
-  margin: 20px auto 0 auto;
-  border-radius: 5px;
-  background-color: #016532;
-  color: white;
-  border: none;
-  outline: none;
-
-  &:focus {
-    outline: none;
-    box-shadow: none;
-  }
-
-  &:focus-visible {
-    outline: none;
-    box-shadow: none;
-  }
-
-  &:active {
-    outline: none;
-    box-shadow: none;
-  }
-
-  @media (max-width: 740px) {
-    width: 80%;
-    font-size: 0.9rem;
-    margin-top: 15%;
-  }
-
-  @media (max-height: 720px) {
-    margin-top: 8%;
-  }
-  
-  @media (max-width: 740px) and (min-height: 820px) {
-    height: 6vh;
-    margin-top: 18%;
   }
 `;
 
@@ -360,14 +197,14 @@ const Signin: React.FC = () => {
             <HelperText>We'll never share your email.</HelperText>
           )}
           <Label htmlFor="password">Password</Label>
-          <Input
-            type="password"
+          <PasswordInput
             id="password"
             name="password"
             placeholder="Enter your password"
             value={formik.values.password}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
+            $hasError={formik.touched.password && !!formik.errors.password}
           />
           {formik.touched.password && formik.errors.password ? (
             <ErrorText>{formik.errors.password}</ErrorText>
@@ -376,13 +213,13 @@ const Signin: React.FC = () => {
               Password must be between 6 and 20 characters.
             </HelperText>
           )}
-          <SigninButton type="submit">Sign In</SigninButton>
+          <SubmitButton type="submit">Sign In</SubmitButton>
           <ForgotPassword onClick={handleResetPassword}>
             Forgot password?
           </ForgotPassword>
-          <RegisterButton type="button" onClick={handleRegister}>
+          <SigninRegisterButton type="button" onClick={handleRegister}>
             Create An Account
-          </RegisterButton>
+          </SigninRegisterButton>
         </SigninForm>
       </ContainerLayout>
     </>
