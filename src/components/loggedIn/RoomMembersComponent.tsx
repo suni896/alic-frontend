@@ -340,6 +340,8 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
   const [userRole, setUserRole] = useState<"ADMIN" | "MEMBER" | null>(null);
   const [isRemoveMode, setIsRemoveMode] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
+  const [showDisbandConfirmation, setShowDisbandConfirmation] = useState<boolean>(false);
+  const [isDisbanding, setIsDisbanding] = useState<boolean>(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -471,6 +473,32 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
     return "Exit Group";
   };
 
+  const handleDisbandGroup = async () => {
+    if (!groupId) return;
+    
+    setIsDisbanding(true);
+    try {
+      const response = await apiClient.post('/v1/group/delete_group', {
+        groupId: Number(groupId)
+      });
+      
+      if (response.data.code === 200) {
+        // 解散成功，跳转到搜索页面
+        membersCache.delete(Number(groupId));
+        navigate("/search-rooms");
+      } else {
+        console.error("Failed to disband group:", response.data.message);
+        alert(response.data.message || "Failed to disband group");
+      }
+    } catch (error: any) {
+      console.error("Error disbanding group:", error);
+      alert(error.response?.data?.message || "An error occurred while disbanding the group");
+    } finally {
+       setIsDisbanding(false);
+       setShowDisbandConfirmation(false);
+     }
+   };
+
   return (
     <>
       <Overlay
@@ -525,6 +553,15 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
               <Button variant="primary" onClick={handleActionButton} disabled={isExiting}>
                 {getButtonText()}
               </Button>
+              {userRole === "ADMIN" && (
+                 <Button 
+                   variant="cancel" 
+                   onClick={() => setShowDisbandConfirmation(true)} 
+                   disabled={isDisbanding}
+                 >
+                   {isDisbanding ? "Disbanding..." : "Disband Group"}
+                 </Button>
+               )}
             </ButtonContainer>
             
             <CloseArrow onClick={onClose} />
@@ -543,6 +580,16 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
               : "Confirm to Exit Chat Group"
           }
           message="Caution: This action cannot be undone."
+        />
+      )}
+      
+      {showDisbandConfirmation && (
+        <ConfirmationModal
+          isOpen={showDisbandConfirmation}
+          onClose={() => setShowDisbandConfirmation(false)}
+          onConfirm={handleDisbandGroup}
+          title="Confirm to Disband Group"
+          message="Warning: This will permanently delete the group and remove all members. This action cannot be undone."
         />
       )}
     </>
