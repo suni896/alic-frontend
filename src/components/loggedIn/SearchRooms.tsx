@@ -136,7 +136,7 @@ const RoomContainer = styled.div`
     padding: 0.6rem;
   }
 `;
-const RoomDescContainer = styled.div`
+const RoomContent = styled.div`
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -357,13 +357,13 @@ const SearchRooms: React.FC = () => {
                 ref={index === 0 ? roomRef : null}
               >
 
-                <RoomDescContainer>
+                <RoomContent>
                   <RoomTitle>{room.groupName}</RoomTitle>
                   <RoomAdmin>Admin: {room.adminName}</RoomAdmin>
                   {room.groupDescription && (
                     <RoomDescription>{room.groupDescription}</RoomDescription>
                   )}
-                </RoomDescContainer>
+                </RoomContent>
               </RoomContainer>
             ))
           )}
