@@ -61,7 +61,7 @@ const Overlay = styled.div`
   justify-content: center;
   align-items: center;
   border: none;
-  border-radius: 20px;
+  // border-radius: 20px;
   padding: 2.5rem;
 `;
 
@@ -81,8 +81,8 @@ const Container = styled.div`
 
 const Message = styled.p`
   color: #555;
-  font-size: 1.5rem;
-  margin-top: 3.5rem;
+  font-size: 1.2rem;
+  margin-top: 2.5rem;
   margin-left: 1rem;
 `;
 
@@ -90,6 +90,8 @@ const ButtonContainer = styled.div`
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  margin-top: 4.5rem;
+  margin-top: 3rem;
   justify-content: center;
+  height: 50px;
+
 `;

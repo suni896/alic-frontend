@@ -13,6 +13,7 @@ import PlusButton from "../PlusButton";
 import Button from "../button";
 import LabeledInputWithCount from "../Input";
 import ModalHeader from "../Header";
+import ConfirmationModal from "../ConfirmationModal";
 
 interface RoomContainerProps {
   $isEditMode: boolean;
@@ -812,6 +813,9 @@ const MyClass: React.FC<MyClassProps> = ({
   const [selectedRoomsToRemove, setSelectedRoomsToRemove] = useState<{
     [key: number]: boolean;
   }>({});
+  // 新增删除相关状态
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [pagination, setPagination] = useState({
     pageSize: 20,
     pageNum: 1,
@@ -1013,9 +1017,9 @@ const MyClass: React.FC<MyClassProps> = ({
     }
   };
 
-  const handleAddRooms = async (selectedRoomIds: number[]): Promise<void> => {
-    if (!tagId || selectedRoomIds.length === 0) {
-      console.error("Tag ID or selected room IDs are missing");
+  const handleAddRooms = async (selectedRoomIds: number[]) => {
+    if (selectedRoomIds.length === 0) {
+      setErrorPopup("Please select at least one room to add.");
       return;
     }
 
@@ -1079,6 +1083,63 @@ const MyClass: React.FC<MyClassProps> = ({
     }
   };
 
+  // 新增删除标签函数
+  const handleDeleteTag = async () => {
+    setIsDeleting(true);
+    setError(null);
+
+    try {
+      const requestData = {
+        tagId: tagId,
+      };
+
+      console.log("Deleting tag with data:", requestData);
+
+      const response = await apiClient.post(
+        "/v1/tag/delete_tag",
+        requestData
+      );
+
+      console.log("Delete tag API response:", response.data);
+
+      if (response.data.code === 200) {
+        // 删除成功，跳转到标签列表页面
+        navigate("/search-rooms");
+      } else {
+        setErrorPopup(
+          response.data.message || "Failed to delete tag. Please try again."
+        );
+      }
+    } catch (error: unknown) {
+      if (axios.isAxiosError(error)) {
+        console.error(
+          "Axios error in deleteTag:",
+          error.response?.data || error.message
+        );
+        setErrorPopup(
+          error.response?.data?.message ||
+            "Failed to delete tag. Please try again."
+        );
+      } else {
+        console.error("Unexpected error in deleteTag:", error);
+        setErrorPopup(
+          "An unexpected error occurred while deleting tag. Please try again."
+        );
+      }
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteModalOpen(false);
+    }
+  };
+
+  const handleDeleteConfirm = () => {
+    handleDeleteTag();
+  };
+
+  const handleDeleteCancel = () => {
+    setIsDeleteModalOpen(false);
+  };
+
   return (
     <Container>
       <TopContainer>
@@ -1117,13 +1178,24 @@ const MyClass: React.FC<MyClassProps> = ({
             </Button>
           </>
         ) : (
-          <Button
-            onClick={toggleEditMode}
-            $isEditMode={isEditMode}
-            $isLoading={isLoading}
-          >
-            Edit
-          </Button>
+          <>
+            <Button
+              onClick={toggleEditMode}
+              $isEditMode={isEditMode}
+              $isLoading={isLoading}
+            >
+              Edit
+            </Button>
+            
+            <Button
+              // variant="danger"
+              onClick={() => setIsDeleteModalOpen(true)}
+              $isLoading={isDeleting}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Deleting..." : "Delete Tag"}
+            </Button>
+          </>
         )}
         </ButtonContainer>
 
@@ -1141,6 +1213,17 @@ const MyClass: React.FC<MyClassProps> = ({
             onClose={() => setErrorPopup(null)}
           />
         )}
+        
+        {/* 新增删除确认弹窗 */}
+        <ConfirmationModal
+          isOpen={isDeleteModalOpen}
+          onClose={handleDeleteCancel}
+          onConfirm={handleDeleteConfirm}
+          title="Delete Tag"
+          message={`Are you sure you want to delete the tag "${title} and remove all associations with groups"? This action cannot be undone.`}
+          confirmText="Delete"
+          cancelText="Cancel"
+        />
       </TopContainer>
 
       <SearchRoomsContainer $isEditMode={isEditMode}>

@@ -579,7 +579,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
               ? "Confirm to Remove Selected Members"
               : "Confirm to Exit Chat Group"
           }
-          message="Caution: This action cannot be undone."
+          message="Are you sure you want to proceed? This action cannot be undone."
         />
       )}
       
@@ -589,7 +589,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
           onClose={() => setShowDisbandConfirmation(false)}
           onConfirm={handleDisbandGroup}
           title="Confirm to Disband Group"
-          message="Warning: This will permanently delete the group and remove all members. This action cannot be undone."
+          message="Are you sure you want to permanently delete the group and remove all members? This action cannot be undone."
         />
       )}
     </>
