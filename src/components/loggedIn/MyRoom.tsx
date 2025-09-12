@@ -173,7 +173,7 @@ const ReplyPreview = styled.div`
   border-radius: 4px;
   font-size: 0.85rem;
   cursor: pointer;
-  transition: all 0.2s ease-in-out;
+  // transition: all 0.2s ease-in-out;
   
   &:hover {
     background: #e8f5e8;
@@ -314,7 +314,7 @@ const MessageInput = styled.textarea<{ $disabled?: boolean; $isReplying?: boolea
   line-height: 1.5;
   box-sizing: border-box;
   font-family: inherit;
-  transition: all 0.2s ease-in-out;
+  // transition: all 0.2s ease-in-out;
  
   &:focus {
     outline: none;
