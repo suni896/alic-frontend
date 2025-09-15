@@ -19,11 +19,14 @@ const Overlay = styled.div`
   display: flex;
   justify-content: flex-end;
   z-index: 2000;
+  overflow-y: auto;
   
 `;
 
 const MembersListContainer = styled.div`
-  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
   width: 20%;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
@@ -86,29 +89,37 @@ const Title = styled.p`
   }
 `;
 
-const BottomContainer = styled.div`
+const ContentContainer = styled.div`
   width: 100%;
   background-color: white;
   display: flex;
   flex-direction: column;
   align-items: center;
-  position: relative;
-  height: 100vh;
+  flex: 1; /* 占据剩余空间 */
   overflow-x: hidden; /* 防止水平滚动 */
-  // overflow-y: auto;   /* 保持垂直滚动 */
+`;
+
+const FooterContainer = styled.div`
+  width: 100%;
+  background-color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem 0;
+  overflow-x: hidden; /* 防止水平滚动 */
 `;
 
 const ListContainer = styled.div`
   width: 90%;
-  height: 65%;
   margin-top: 2rem;
+  margin-bottom: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
   overflow-y: auto;
   overflow-x: hidden; /* 防止水平滚动 */
   padding: 0 0.5rem;
-  
+  max-height: calc(100vh - 220px); /* 设置最大高度，避免内容过多时挤压页脚 */
   /* Custom scrollbar */
   &::-webkit-scrollbar {
     width: 6px;
@@ -140,12 +151,13 @@ const LineSeparator = styled.hr`
 
 const CloseArrow = styled(MdOutlineKeyboardDoubleArrowRight)`
   font-size: 1.5rem;
-  position: fixed;
-  bottom: 4vh;
+  // position: fixed;
+  // bottom: 4vh;
+  margin-top: 2rem;
   color: #6b7280;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+  overflow-y: auto;
   &:hover {
     color: #374151;
     transform: translateX(4px);
@@ -283,11 +295,16 @@ const MemberLabel = styled.span`
 
 const ButtonContainer = styled.div`
   display: flex;
+  flex-direction: column;
   justify-content: flex-end;
   gap: 12px;
-  height: 40px;
-  position: fixed;
-  bottom: 10vh;
+  width: 100%;
+  align-items: center;
+  padding: 1rem 0;
+  /* 移除固定高度，让容器根据内容自动调整 */
+  /* height: 100px; */
+  /* 移除不必要的滚动属性 */
+  /* overflow-y: auto; */
 `;
 
 const RemoveIcon = styled(AiOutlineMinusCircle)<{ isSelected: boolean }>`
@@ -513,7 +530,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
             <MembersLogo />
             <Title>Group Members</Title>
           </TitleContainer>
-          <BottomContainer>
+          <ContentContainer>
             <ListContainer>
               {loading ? (
                 <LoadingIndicator>Loading members...</LoadingIndicator>
@@ -548,6 +565,8 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
                 ))
               )}
             </ListContainer>
+          </ContentContainer>
+          <FooterContainer>
             <LineSeparator />
             <ButtonContainer>
               <Button variant="primary" onClick={handleActionButton} disabled={isExiting}>
@@ -563,9 +582,8 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
                  </Button>
                )}
             </ButtonContainer>
-            
             <CloseArrow onClick={onClose} />
-          </BottomContainer>
+          </FooterContainer>
         </MembersListContainer>
       </Overlay>
 
