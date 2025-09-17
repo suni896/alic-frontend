@@ -9,11 +9,14 @@ import { CiSearch } from "react-icons/ci";
 import { useLocation, useNavigate } from "react-router-dom";
 import { PiSignOutBold } from "react-icons/pi";
 import { RxCross2 } from "react-icons/rx";
-import { MdPeopleAlt, MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight, MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
+import { MdPeopleAlt, MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight, MdKeyboardArrowLeft, MdKeyboardArrowRight, MdDelete, MdEdit } from "react-icons/md";
 import CreateRoomComponent from "./CreateRoomComponent";
 import { FaTag } from "react-icons/fa";
 import JoinRooms from "./JoinRooms";
 import CreateNewTag from "./CreateNewTag";
+import EditTag from "./EditTag";
+import ConfirmationModal from "../ConfirmationModal";
+import AddRoomToTag from "./AddRoomToTag";
 import axios from "axios";
 import apiClient from "../loggedOut/apiClient";
 import { UserInformation } from "./types";
@@ -684,6 +687,92 @@ const StyledPlusButtonOptionText = styled.span`
   }
 `;
 
+const ContextMenuContainer = styled.div<{ $x: number; $y: number }>`
+  position: fixed;
+  top: ${props => props.$y}px;
+  left: ${props => props.$x}px;
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  width: 180px;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  border: 1px solid #e2e8f0;
+`;
+
+const ContextMenuOptionContainer = styled.div`
+  margin: 0;
+  width: 100%;
+  height: 33.5%;
+  display: flex;
+  align-items: center;
+  gap: 3%;
+  cursor: pointer;
+  transition: background-color 0.2s ease, transform 0.1s ease;
+  padding: 0.5rem;
+  border-radius: 0.25rem;
+
+  &:hover {
+    background-color: #f4f4f4;
+  }
+
+  &.delete:hover {
+    background-color: #fef2f2;
+  }
+`;
+
+const StyledMdEdit = styled(MdEdit)`
+  width: 20px;
+  height: 20px;
+  color: #016532;
+  @media (max-width: 500px) {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
+const StyledMdDelete = styled(MdDelete)`
+  width: 20px;
+  height: 20px;
+  color: #dc2626;
+  @media (max-width: 500px) {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
+const ContextMenuOptionText = styled.span`
+  font-family: Roboto;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: black;
+
+  &.delete {
+    color: #dc2626;
+  }
+
+  @media (max-width: 1200px) {
+    font-size: 0.8rem;
+  }
+
+  @media (max-width: 1090px) {
+    font-size: 0.75rem;
+  }
+
+  @media (max-width: 800px) {
+    font-size: 0.65rem;
+  }
+  @media (max-width: 700px) {
+    font-size: 0.55rem;
+  }
+  @media (max-width: 500px) {
+    font-size: 0.45rem;
+  }
+`;
+
 const PaginationContainer = styled.div`
   display: flex;
   justify-content: center;
@@ -976,6 +1065,29 @@ const Sidebar: React.FC = () => {
   const [isJoinRoomsOverlayVisible, setIsJoinRoomsOverlayVisible] = useState(false);
   const [isCreateTagOverlayVisible, setIsCreateTagOverlayVisible] = useState(false);
 
+  // 添加右键菜单相关状态
+  const [contextMenu, setContextMenu] = useState<{
+    visible: boolean;
+    x: number;
+    y: number;
+    tagId?: number;
+    tagName?: string;
+  }>({ visible: false, x: 0, y: 0 });
+
+  // EditTag 相关状态
+  const [isEditTagVisible, setIsEditTagVisible] = useState(false);
+  const [editingTag, setEditingTag] = useState<{ tagId: number; tagName: string } | null>(null);
+  
+  // DeleteTag 相关状态
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [deletingTag, setDeletingTag] = useState<{ tagId: number; tagName: string } | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  
+  // AddRoom 相关状态
+  const [isAddRoomVisible, setIsAddRoomVisible] = useState(false);
+  const [addingRoomTag, setAddingRoomTag] = useState<{ tagId: number; tagName: string } | null>(null);
+  const [isAddingRooms, setIsAddingRooms] = useState(false);
+
   const [tagsPagination, setTagsPagination] = useState({
     pageSize: 10,
     pageNum: 1,
@@ -1155,6 +1267,148 @@ const Sidebar: React.FC = () => {
     }));
     fetchTags();
   }, [fetchTags]);
+
+  // 添加右键菜单处理函数
+  const handleContextMenu = (e: React.MouseEvent, tag: Tag) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      tagId: tag.tagId,
+      tagName: tag.tagName
+    });
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu({ visible: false, x: 0, y: 0 });
+  };
+
+  const handleEditTag = () => {
+    if (contextMenu.tagId && contextMenu.tagName) {
+      setEditingTag({ 
+        tagId: contextMenu.tagId, 
+        tagName: contextMenu.tagName 
+      });
+      setIsEditTagVisible(true);
+    }
+    closeContextMenu();
+  };
+  
+  const handleDeleteTag = () => {
+    if (contextMenu.tagId && contextMenu.tagName) {
+      setDeletingTag({ 
+        tagId: contextMenu.tagId, 
+        tagName: contextMenu.tagName 
+      });
+      setIsDeleteModalOpen(true);
+    }
+    closeContextMenu();
+  };
+  
+  const handleAddRoomToTag = () => {
+    if (contextMenu.tagId && contextMenu.tagName) {
+      setAddingRoomTag({ 
+        tagId: contextMenu.tagId, 
+        tagName: contextMenu.tagName 
+      });
+      setIsAddRoomVisible(true);
+    }
+    closeContextMenu();
+  };
+  
+  const handleEditTagClose = () => {
+    setIsEditTagVisible(false);
+    setEditingTag(null);
+  };
+  
+  const handleEditTagSuccess = () => {
+    setIsEditTagVisible(false);
+    setEditingTag(null);
+    // 重新请求标签列表以获取最新数据
+    if (activeTab === "myTags") {
+      fetchTags();
+    }
+  };
+  
+  const handleDeleteCancel = () => {
+    setIsDeleteModalOpen(false);
+    setDeletingTag(null);
+  };
+  
+  const handleDeleteConfirm = async () => {
+    if (!deletingTag) return;
+    
+    setIsDeleting(true);
+    try {
+      const response = await apiClient.post("/v1/tag/delete_tag", {
+        tagId: deletingTag.tagId
+      });
+      
+      if (response.data.code === 200) {
+        // 删除成功，刷新标签列表
+        if (activeTab === "myTags") {
+          fetchTags();
+        }
+        setIsDeleteModalOpen(false);
+        setDeletingTag(null);
+      } else {
+        console.error("Delete tag failed:", response.data.message);
+      }
+    } catch (error) {
+      console.error("Delete tag error:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+  
+  const handleAddRooms = async (selectedRoomIds: number[]) => {
+    if (!addingRoomTag || selectedRoomIds.length === 0) return;
+    
+    setIsAddingRooms(true);
+    try {
+      const requestData = {
+        groupIdList: selectedRoomIds,
+        tagId: addingRoomTag.tagId,
+        tagName: addingRoomTag.tagName,
+      };
+      
+      const response = await apiClient.post("/v1/tag/add_group", requestData);
+      
+      if (response.data.code === 200) {
+        // 添加成功，关闭模态框
+        setIsAddRoomVisible(false);
+        setAddingRoomTag(null);
+        console.log("Rooms added successfully");
+      } else {
+        console.error("Add rooms failed:", response.data.message);
+      }
+    } catch (error) {
+      console.error("Add rooms error:", error);
+    } finally {
+      setIsAddingRooms(false);
+    }
+  };
+
+  // 添加点击外部关闭菜单的处理
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu.visible) {
+        closeContextMenu();
+      }
+    };
+
+    if (contextMenu.visible) {
+      document.addEventListener('click', handleClickOutside);
+      document.addEventListener('contextmenu', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('contextmenu', handleClickOutside);
+    };
+  }, [contextMenu]);
 
   // 渲染加载状态
   const renderLoadingState = () => (
@@ -1375,7 +1629,9 @@ const Sidebar: React.FC = () => {
                         $isActive={tag.tagId === activeTagId}
                       >
                         <Tag />
-                        <RoomDescContainer>
+                        <RoomDescContainer
+                          onContextMenu={(e) => handleContextMenu(e, tag)}
+                        >
                           <RoomTitle>{tag.tagName}</RoomTitle>
                         </RoomDescContainer>
                       </RoomContainer>
@@ -1414,6 +1670,55 @@ const Sidebar: React.FC = () => {
             </>
           )}
         </>
+      )}
+
+      {/* EditTag 模态框 */}
+      {isEditTagVisible && editingTag && (
+        <EditTag
+          tagId={editingTag.tagId}
+          currentTagName={editingTag.tagName}
+          onClose={handleEditTagClose}
+          onTagUpdated={handleEditTagSuccess}
+        />
+      )}
+      
+      {/* DeleteTag 确认对话框 */}
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Tag"
+        message={`Are you sure you want to delete the tag "${deletingTag?.tagName}" and remove all associations with groups? This action cannot be undone.`}
+        confirmText={isDeleting ? "Deleting..." : "Delete"}
+        cancelText="Cancel"
+      />
+      
+      {/* AddRoom 模态框 */}
+      {isAddRoomVisible && addingRoomTag && (
+        <AddRoomToTag
+          onAddRooms={handleAddRooms}
+          onClose={() => setIsAddRoomVisible(false)}
+          isProcessing={isAddingRooms}
+          tagId={addingRoomTag.tagId}
+        />
+      )}
+
+      {/* 添加上下文菜单 */}
+      {contextMenu && contextMenu.visible && (
+        <ContextMenuContainer $x={contextMenu.x} $y={contextMenu.y}>
+          <ContextMenuOptionContainer onClick={handleEditTag}>
+            <StyledMdEdit />
+            <ContextMenuOptionText>Edit Tag</ContextMenuOptionText>
+          </ContextMenuOptionContainer>
+          <ContextMenuOptionContainer onClick={handleAddRoomToTag}>
+            <StyledMdPeopleAlt />
+            <ContextMenuOptionText>Add Room</ContextMenuOptionText>
+          </ContextMenuOptionContainer>
+          <ContextMenuOptionContainer className="delete" onClick={handleDeleteTag}>
+            <StyledMdDelete />
+            <ContextMenuOptionText className="delete">Delete Tag</ContextMenuOptionText>
+          </ContextMenuOptionContainer>
+        </ContextMenuContainer>
       )}
     </SidebarContainer>
   );
