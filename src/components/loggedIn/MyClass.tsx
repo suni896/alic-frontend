@@ -878,7 +878,8 @@ const MyClass: React.FC<MyClassProps> = ({
 
     const roomDetails = await fetchRoomInfo(groupId);
     if (roomDetails) {
-      handleJoinClick(groupId, roomDetails.groupType);
+      //tag中的room默认已加入
+      handleJoinClick(groupId, roomDetails.groupType, true);
     }
   };
 

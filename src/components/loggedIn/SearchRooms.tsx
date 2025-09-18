@@ -353,7 +353,7 @@ const SearchRooms: React.FC = () => {
             mainAreaRooms.map((room, index) => (
               <RoomContainer
                 key={room.groupId}
-                onClick={() => handleJoinClick(room.groupId, room.groupType)}
+                onClick={() => handleJoinClick(room.groupId, room.groupType, room.isJoined)}
                 ref={index === 0 ? roomRef : null}
               >
 
