@@ -3,8 +3,9 @@ import RegisterPage from "./pages/RegisterPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
 import SearchRoomsPage from "./pages/SearchRoomsPage";
 import MyClassPage from "./pages/MyClassPage";
-import VerifyOTPRegister from "./components/loggedOut/VerifyOTPRegister";
-import VerifyOTPReset from "./components/loggedOut/VerifyOTPReset";
+// import VerifyOTPRegister from "./components/loggedOut/VerifyOTPRegister";
+import VerifyOTPRegisterPage from "./pages/VerifyOTPRegisterPage"
+// import VerifyOTPReset from "./components/loggedOut/VerifyOTPReset";
 import { useState } from "react";
 import SigninPage from "./pages/SigninPage";
 import MyRoomPage from "./pages/MyRoomPage";
@@ -40,13 +41,13 @@ function App() {
             <Route
               path="/verify-register"
               element={
-                <VerifyOTPRegister
+                <VerifyOTPRegisterPage
                   onVerifySuccess={handleVerifySuccess}
                   email={email}
                 />
               }
             />
-            <Route
+            {/* <Route
               path="/verify-reset"
               element={
                 <VerifyOTPReset
@@ -54,7 +55,7 @@ function App() {
                   email={email}
                 />
               }
-            />
+            /> */}
             <Route path="/search-rooms" element={<SearchRoomsPage />} />
             <Route path="/my-class/:tagId" element={<MyClassPage />} />
             <Route path="/my-room/:groupId" element={<MyRoomPage />} />
