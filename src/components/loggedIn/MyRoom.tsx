@@ -49,6 +49,8 @@ interface Message {
   portrait: string;
   replyToMsgId?: number; // 被回复消息的ID
   replyToMessage?: Message; // 被回复的消息对象
+  needsFetchReply?: boolean; // 是否需要获取被回复消息
+  replyLoading?: boolean; // 被回复消息是否正在加载
 }
 
 // 全局样式
@@ -628,7 +630,16 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       setTimeout(() => {
         messageElement.classList.remove('highlight-message');
       }, 2000);
+    } else {
+      // 消息未加载，显示提示
+      console.log('消息未加载，无法跳转');
+      // 可以添加用户提示，比如显示toast
     }
+  };
+
+  // 检查消息是否已加载的辅助函数
+  const isMessageLoaded = (messageId: number): boolean => {
+    return messages.some(msg => msg.infoId === messageId);
   };
 
   const handleCancelReply = () => {
@@ -724,6 +735,42 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     };
   };
 
+  // 获取单个消息
+  const fetchSingleMessage = async (messageId: number): Promise<Message | null> => {
+    try {
+      console.log('🔍 开始获取单个消息:', messageId);
+      const response = await apiClient.post('/v1/chat/getMsgByIds', {
+        groupId: groupId,
+        msgIds: [messageId]
+      });
+      
+      console.log('📨 getMsgByIds响应:', response.data);
+      
+      if (response.data.data && response.data.data.length > 0) {
+        const msg = response.data.data[0];
+        
+        // 获取发送者信息
+        if (msg.senderType === "CHATBOT") {
+          const botInfo = await fetchBotInfo(msg.senderId);
+          msg.name = botInfo.botName;
+          msg.portrait = botIcon;
+        } else {
+          const userInfo = await fetchUserInfo(msg.senderId);
+          msg.name = userInfo.userName;
+          msg.portrait = userInfo.userPortrait;
+        }
+        
+        console.log('✅ 成功获取并处理消息:', msg);
+        return msg;
+      }
+      console.log('❌ 响应中没有消息数据');
+      return null;
+    } catch (error) {
+      console.error('❌ 获取单个消息失败:', error);
+      return null;
+    }
+  };
+
   // 获取消息历史
   const fetchMessageHistory = async (loadMore = false) => {
     const prevMessages = messages.length;
@@ -759,11 +806,52 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           .sort((a, b) => a.infoId - b.infoId);
 
         // 在合并后的消息数组中处理回复关系
-        merged.forEach(msg => {
+        const processedMessages = merged.map(msg => {
           if (msg.replyToMsgId) {
+            // 首先在已加载消息中查找
             const replyToMsg = merged.find(m => m.infoId === msg.replyToMsgId);
             if (replyToMsg) {
-              msg.replyToMessage = replyToMsg;
+              return { ...msg, replyToMessage: replyToMsg };
+            } else {
+              // 如果未找到，标记为需要获取
+              return { ...msg, needsFetchReply: true, replyLoading: true };
+            }
+          }
+          return msg;
+        });
+
+        // 异步获取缺失的被回复消息
+        processedMessages.forEach(async (msg) => {
+          if (msg.needsFetchReply && msg.replyToMsgId && !msg.replyToMessage) {
+            try {
+              const replyMessage = await fetchSingleMessage(msg.replyToMsgId);
+              if (replyMessage) {
+                setMessages(prevMsgs => 
+                  prevMsgs.map(m => 
+                    m.infoId === msg.infoId 
+                      ? { ...m, replyToMessage: replyMessage, needsFetchReply: false, replyLoading: false }
+                      : m
+                  )
+                );
+              } else {
+                // 获取失败，标记为无法获取
+                setMessages(prevMsgs => 
+                  prevMsgs.map(m => 
+                    m.infoId === msg.infoId 
+                      ? { ...m, needsFetchReply: false, replyLoading: false }
+                      : m
+                  )
+                );
+              }
+            } catch (error) {
+              console.error('获取被回复消息失败:', error);
+              setMessages(prevMsgs => 
+                prevMsgs.map(m => 
+                  m.infoId === msg.infoId 
+                    ? { ...m, needsFetchReply: false, replyLoading: false }
+                    : m
+                )
+              );
             }
           }
         });
@@ -775,7 +863,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             setInitialLoading(false);
           }
         });
-        return merged;
+        return processedMessages;
       });
 
       if (loadMore) {
@@ -865,16 +953,66 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           ]).then(() => {
             setMessages((prev) => {
               // Process replyToMsgId for the received message
+              let processedMessage = { ...receivedMessage };
               if (receivedMessage.replyToMsgId) {
                 const replyToMsg = prev.find(m => m.infoId === receivedMessage.replyToMsgId);
                 if (replyToMsg) {
-                  receivedMessage.replyToMessage = replyToMsg;
+                  processedMessage.replyToMessage = replyToMsg;
+                  console.log('✅ 在现有消息中找到被回复消息:', replyToMsg.infoId);
+                } else {
+                  processedMessage.needsFetchReply = true;
+                  processedMessage.replyLoading = true;
+                  console.log('🔄 需要异步获取被回复消息:', receivedMessage.replyToMsgId);
+                  
+                  // 异步获取被回复消息
+                  fetchSingleMessage(receivedMessage.replyToMsgId).then(replyMessage => {
+                    console.log('📥 异步获取被回复消息结果:', replyMessage);
+                    if (replyMessage) {
+                      setMessages(prevMsgs => {
+                        console.log('🔄 更新消息状态，当前消息数量:', prevMsgs.length);
+                        const updatedMessages = prevMsgs.map(m => {
+                          if (m.infoId === receivedMessage.infoId) {
+                            console.log('✅ 找到目标消息，更新回复信息:', m.infoId);
+                            return { 
+                              ...m, 
+                              replyToMessage: replyMessage, 
+                              needsFetchReply: false, 
+                              replyLoading: false 
+                            };
+                          }
+                          return m;
+                        });
+                        console.log('📊 更新后的消息:', updatedMessages.find(m => m.infoId === receivedMessage.infoId));
+                        return updatedMessages;
+                      });
+                    } else {
+                      console.log('❌ 获取被回复消息失败，标记为不可用');
+                      setMessages(prevMsgs => 
+                        prevMsgs.map(m => 
+                          m.infoId === receivedMessage.infoId 
+                            ? { ...m, needsFetchReply: false, replyLoading: false }
+                            : m
+                        )
+                      );
+                    }
+                  }).catch(error => {
+                    console.error('❌ 异步获取被回复消息出错:', error);
+                    setMessages(prevMsgs => 
+                      prevMsgs.map(m => 
+                        m.infoId === receivedMessage.infoId 
+                          ? { ...m, needsFetchReply: false, replyLoading: false }
+                          : m
+                      )
+                    );
+                  });
                 }
               }
               
-              const newMessages = [...prev, receivedMessage]
+              const newMessages = [...prev, processedMessage]
                 .filter((v, i, a) => a.findIndex((t) => t.infoId === v.infoId) === i)
                 .sort((a, b) => a.infoId - b.infoId);
+
+              console.log('📋 处理后的消息列表长度:', newMessages.length);
 
               requestAnimationFrame(() => {
                 if (chatContainerRef.current) {
@@ -1098,12 +1236,37 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               </UserName>
               
               {/* 显示被回复消息的引用 */}
-              {msg.replyToMessage && (
-                <ReplyPreview onClick={() => scrollToMessage(msg.replyToMessage!.infoId)}>
+              {msg.replyToMsgId && (
+                <ReplyPreview 
+                  onClick={() => {
+                    if (msg.replyToMessage && !msg.replyLoading) {
+                      scrollToMessage(msg.replyToMessage.infoId);
+                    }
+                  }}
+                  style={{
+                    cursor: msg.replyToMessage && !msg.replyLoading ? 'pointer' : 'default',
+                    opacity: msg.replyToMessage && !msg.replyLoading ? 1 : 0.7
+                  }}
+                >
                   <ReplyHeader>
-                    Reply {msg.replyToMessage.senderId === userInfo?.userId ? "You" : msg.replyToMessage.name}
+                    回复 {msg.replyToMessage 
+                      ? (msg.replyToMessage.senderId === userInfo?.userId ? "你" : msg.replyToMessage.name)
+                      : "未知用户"
+                    }
                   </ReplyHeader>
-                  <ReplyContent>{msg.replyToMessage.content}</ReplyContent>
+                  <ReplyContent>
+                    {msg.replyLoading 
+                      ? "正在加载被回复消息..." 
+                      : msg.replyToMessage 
+                        ? msg.replyToMessage.content 
+                        : "被回复消息不可用"
+                    }
+                  </ReplyContent>
+                  {!msg.replyToMessage && !msg.replyLoading && (
+                    <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                      该消息未加载，无法跳转
+                    </div>
+                  )}
                 </ReplyPreview>
               )}
               
