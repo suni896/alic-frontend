@@ -578,7 +578,7 @@ const validationSchema = (showAssistants: boolean) =>
       ),
     roomDescription: Yup.string()
       .required("Group Description is required")
-      .max(200, "Group Description cannot exceed 200 characters"),
+      .max(800, "Group Description cannot exceed 800 characters"),
     roomType: Yup.string() // Changed to string to match form values
       .oneOf(["0", "1"], "Invalid group type") // Changed to string values
       .required("Group Type is required"),
@@ -601,8 +601,8 @@ const validationSchema = (showAssistants: boolean) =>
               name: Yup.string()
                 .required("Assistant name is required")
                 .matches(
-                  /^[A-Za-z0-9]{1,20}$/,
-                  "Must be 1-20 characters long, supports uppercase and lowercase English letters and numbers"
+                  /^[\u4e00-\u9fa5A-Za-z0-9]{1,20}$/,
+                  "Must be 1-20 characters long. Supports letters, numbers, and Chinese characters."
                 )
                 .test(
                   "unique-name",
