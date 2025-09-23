@@ -583,8 +583,8 @@ const validationSchema = (showAssistants: boolean) =>
       .oneOf(["0", "1"], "Invalid group type") // Changed to string values
       .required("Group Type is required"),
 
-    password: Yup.string().when("roomType", {
-      is: (value: string) => value === "0", // Changed to "0" for private
+    roomPassword: Yup.string().when("roomType", {
+      is: (value: string) => value === "0",
       then: (schema) =>
         schema
           .required("Password is required for private groups")
@@ -761,7 +761,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       groupName: values.roomName,
       groupDescription: values.roomDescription,
       groupType: groupTypeValue,
-      ...(groupTypeValue === 0 ? { password: values.password } : {}),
+      ...(groupTypeValue === 0 ? { password: values.roomPassword } : {}),
       chatBotVOList,
     };
 
@@ -782,7 +782,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       roomName: "",
       roomDescription: "",
       roomType: "1",
-      password: "",
+      roomPassword: "",
       bots: [
         {
           name: "",
@@ -961,7 +961,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
         groupName: values.roomName,
         groupDescription: values.roomDescription,
         // Include password only for private rooms or if it was previously set
-        ...(values.roomType === "0" ? { password: values.password } : {}),
+        ...(values.roomType === "0" ? { password: values.roomPassword } : {}),
         // Include bots only if assistants are enabled
         ...(showAssistants
           ? {
@@ -1105,7 +1105,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                 roomName: roomData.groupName,
                 roomDescription: roomData.groupDescription || "",
                 roomType: roomData.groupType.toString(),
-                password: roomData.password || "",
+                roomPassword: roomData.password || "",
                 bots: isAdmin ? formattedBots : [], // Only include bots if admin
               });
             } else {
@@ -1266,20 +1266,21 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
 
             {formik.values.roomType === "0" && (
               <InputGroup>
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="roomPassword">Password</Label>
                 <Input
-                  id="password"
-                  name="password"
+                  id="roomPassword"
+                  name="roomPassword"
                   type="password"
+                  autoComplete="new-password"
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
-                  value={formik.values.password}
+                  value={formik.values.roomPassword}
                   $hasError={
-                    !!(formik.touched.password && formik.errors.password)
+                    !!(formik.touched.roomPassword && formik.errors.roomPassword)
                   }
                 />
-                {formik.touched.password && formik.errors.password && (
-                  <ErrorMessage>{formik.errors.password}</ErrorMessage>
+                {formik.touched.roomPassword && formik.errors.roomPassword && (
+                  <ErrorMessage>{formik.errors.roomPassword}</ErrorMessage>
                 )}
               </InputGroup>
             )}
