@@ -263,6 +263,7 @@ const UserName = styled.div`
 const MessageText = styled.div`
   word-break: break-word;
   font-size: 0.85rem;
+  color: #333;
 `;
 
 const TimeStamp = styled.div`
