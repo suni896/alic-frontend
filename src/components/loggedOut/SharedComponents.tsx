@@ -8,6 +8,7 @@ export const Title = styled.h1`
   font-weight: 700;
   text-decoration: underline;
   margin: 1.5% auto;
+  color: #333;
 
   @media (max-width: 740px) {
     font-size: 1.8rem;

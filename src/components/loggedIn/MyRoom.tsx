@@ -375,6 +375,8 @@ const LoadingSpinner = styled.div`
 const HeaderContent = styled.div`
   display: flex;
   align-items: center;
+  color: #333;
+  
 `;
 
 const NewMessageNotification = styled.div`
@@ -418,6 +420,7 @@ const SendIcon = styled(LuSend)`
   font-size: 1.6rem;
   cursor: pointer;
   display: block;
+  color: #333;
 `;
 
 const IconContainer = styled.div`
@@ -463,6 +466,7 @@ const CloseButton = styled.button`
   cursor: pointer;
   font-size: 1.2rem;
   padding: 4px;
+  color: #333;
 
   &:hover {
     background: #f5f5f5;
@@ -473,6 +477,7 @@ const CloseButton = styled.button`
 const BotList = styled.div`
   display: flex;
   flex-direction: column;
+  color: #333;
 `;
 
 const BotItem = styled.div`

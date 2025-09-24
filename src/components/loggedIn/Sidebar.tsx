@@ -536,6 +536,7 @@ const StyledMe = styled.p`
   padding-left: 1%;
   font-style: italic;
   font-family: Roboto;
+  color: #333;
 `;
 
 const HorizontalLine = styled.hr`
@@ -557,6 +558,7 @@ const StyledSignOutContainer = styled.div`
 
 const StyledSignOutText = styled.p`
   font-family: Roboto;
+  color: #333;
 
   @media (max-width: 700px) {
     width: 130%;
@@ -572,6 +574,7 @@ const StyledSignOutIcon = styled(PiSignOutBold)`
   width: 1.5rem;
   height: 1.5rem;
   cursor: pointer;
+  color: #333;
 
   @media (max-width: 600px) {
     width: 1.2rem;
