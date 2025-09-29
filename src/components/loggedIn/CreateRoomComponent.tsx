@@ -1175,6 +1175,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                 id="roomName"
                 name="roomName"
                 placeholder="Explore Generative AI"
+                autoComplete="off"
                 value={formik.values.roomName}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
