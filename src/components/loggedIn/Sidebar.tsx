@@ -23,6 +23,7 @@ import { RoomGroup } from "./useJoinRoom";
 import { MdGroup } from "react-icons/md";
 import LabeledInputWithCount from "../Input";
 import PlusButton from "../PlusButton";
+import UserNameEdit from "./UserNameEdit";
 
 const SidebarContainer = styled.div`
   width: 280px;
@@ -534,7 +535,7 @@ const StyledProfilePopUpCross = styled(RxCross2)`
 const StyledMe = styled.p`
   margin: 0;
   padding-left: 1%;
-  font-style: italic;
+  // font-style: italic;
   font-family: Roboto;
   color: #333;
 `;
@@ -808,6 +809,7 @@ interface PlusButtonOverlayProps {
 
 const ProfilePopUp: React.FC<ProfilePopUpProps> = ({ onClose }) => {
   const navigate = useNavigate(); // Call useNavigate directly
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
 
   // Add useRef to reference the popup container
   const popupRef = React.useRef<HTMLDivElement>(null);
@@ -847,12 +849,33 @@ const ProfilePopUp: React.FC<ProfilePopUpProps> = ({ onClose }) => {
     }
   };
 
+  const handleEditUsername = () => {
+    setIsEditingUsername(true);
+  };
+
+  const handleCloseEdit = () => {
+    setIsEditingUsername(false);
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditingUsername(false);
+  };
+
+  if (isEditingUsername) {
+    return (
+      <UserNameEdit 
+        onClose={handleCloseEdit}
+        onSuccess={handleEditSuccess}
+      />
+    );
+  }
+
   return (
     <ProfilePopUpContainer ref={popupRef}>
       <ModalCloseButton onClick={onClose}>
         <StyledProfilePopUpCross />
       </ModalCloseButton>
-      <StyledMe>ME</StyledMe>
+      <StyledMe onClick={handleEditUsername} style={{cursor: 'pointer'}}>ME</StyledMe>
       <HorizontalLine />
       <StyledSignOutContainer onClick={handleLogout}>
         <StyledSignOutText>Sign Out</StyledSignOutText>
