@@ -392,6 +392,55 @@ const NewMessageNotification = styled.div`
   z-index: 1000;
 `;
 
+// 连接状态提示组件
+const ConnectionStatus = styled.div<{ $status: 'connected' | 'connecting' | 'disconnected' | 'reconnecting' }>`
+  position: fixed;
+  top: 60px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease-in-out;
+
+  ${props => {
+    switch (props.$status) {
+      case 'connected':
+        return 'background-color: #4caf50; color: white; opacity: 0; visibility: hidden;';
+      case 'connecting':
+        return 'background-color: #2196f3; color: white;';
+      case 'disconnected':
+        return 'background-color: #f44336; color: white;';
+      case 'reconnecting':
+        return 'background-color: #ff9800; color: white;';
+      default:
+        return 'background-color: #9e9e9e; color: white;';
+    }
+  }}
+`;
+
+const StatusDot = styled.span<{ $status: 'connected' | 'connecting' | 'disconnected' | 'reconnecting' }>`
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: white;
+
+  ${props => props.$status === 'connecting' || props.$status === 'reconnecting' ? `
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  ` : ''}
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+`;
+
 const IconWrapper = styled.div`
   position: relative;
   width: 2.2rem;
@@ -605,10 +654,17 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const [selectedBot, setSelectedBot] = useState<number | null>(null);
   const [isBotClicked, setIsBotClicked] = useState(false);
-  
+
   // 回复功能状态
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [copySuccess, setCopySuccess] = useState<string>('');
+
+  // 连接状态管理
+  const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected' | 'reconnecting'>('disconnected');
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 10;
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isOnlineRef = useRef(navigator.onLine);
 
   // 埋点Hook
   const { handleTyping, handleSend: trackSend, handleMessageReceived } = useInputTracking(groupId);
@@ -906,36 +962,91 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const connectionStatusRef = useRef<{
     currentGroupId: number | null;
     connectionPromise: Promise<void> | null;
-  }>({ currentGroupId: null, connectionPromise: null });
+    isConnecting: boolean; // 添加连接中标志
+  }>({ currentGroupId: null, connectionPromise: null, isConnecting: false });
+
+  // 计算重连延迟(指数退避)
+  const getReconnectDelay = (attempt: number): number => {
+    const baseDelay = 1000; // 1秒
+    const maxDelay = 30000; // 最大30秒
+    const delay = Math.min(baseDelay * Math.pow(2, attempt), maxDelay);
+    // 添加随机抖动,避免多个客户端同时重连
+    return delay + Math.random() * 1000;
+  };
+
+  // 清理重连定时器
+  const clearReconnectTimeout = () => {
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
+  };
 
   const manageWebSocketConnection = useCallback(async () => {
-    if (connectionStatusRef.current.currentGroupId === groupId) {
+    // 防止重复连接 - 如果正在连接同一个房间,直接返回
+    if (connectionStatusRef.current.currentGroupId === groupId &&
+        connectionStatusRef.current.isConnecting) {
+      console.log('⏸️ 连接正在进行中,跳过重复连接请求');
       return;
     }
 
+    // 如果已经有连接且连接正常,复用
     if (groupId && clientCache.has(groupId)) {
       const cachedClient = clientCache.get(groupId);
-      if (cachedClient !== undefined) {
+      if (cachedClient !== undefined && cachedClient?.connected) {
+        console.log('♻️ 复用现有连接');
         stompClientRef.current = cachedClient;
+        setConnectionStatus('connected');
+        reconnectAttemptsRef.current = 0;
+        connectionStatusRef.current.currentGroupId = groupId;
+        return;
+      } else {
+        // 缓存的连接已失效,清除
+        console.log('🗑️ 清除失效的缓存连接');
+        clientCache.delete(groupId);
       }
-      return;
     }
 
-    if (stompClientRef.current?.connected) {
+    // 如果切换房间,断开之前的连接
+    if (stompClientRef.current?.connected &&
+        connectionStatusRef.current.currentGroupId !== groupId) {
+      console.log(`🔄 切换房间: ${connectionStatusRef.current.currentGroupId} -> ${groupId}`);
       stompClientRef.current.disconnect(() => {
-        console.log("Disconnected from previous connection");
+        console.log("已断开之前的连接");
       });
-      console.log(
-        `Disconnected from previous room: ${connectionStatusRef.current.currentGroupId}`
-      );
     }
-
-    connectionStatusRef.current.currentGroupId = groupId ?? null;
 
     if (!groupId) return;
 
+    // 检查网络状态
+    if (!navigator.onLine) {
+      console.log('🌐 网络离线,等待网络恢复');
+      setConnectionStatus('disconnected');
+      connectionStatusRef.current.isConnecting = false;
+      return;
+    }
+
+    // 标记为正在连接
+    connectionStatusRef.current.currentGroupId = groupId;
+    connectionStatusRef.current.isConnecting = true;
+    setConnectionStatus('connecting');
+
+    console.log(`🔌 开始建立WebSocket连接 (房间: ${groupId})`);
+
     const socket = new SockJS(`${API_BASE_URL}/ws`);
     const client = Stomp.over(socket);
+
+    // 配置心跳机制 (10秒发送,10秒接收超时)
+    client.heartbeat.outgoing = 10000;
+    client.heartbeat.incoming = 10000;
+
+    // 禁用调试日志(生产环境)
+    client.debug = (str) => {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('STOMP Debug:', str);
+      }
+    };
+
     stompClientRef.current = client;
     clientCache.set(groupId, client);
 
@@ -947,6 +1058,12 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             Authorization: `Bearer ${localStorage.getItem("jwtToken")}`,
           },
           () => {
+            console.log('✅ WebSocket连接成功');
+            setConnectionStatus('connected');
+            reconnectAttemptsRef.current = 0; // 重置重连计数
+            connectionStatusRef.current.isConnecting = false;
+            clearReconnectTimeout();
+
             client.subscribe(`/topic/chat/${groupId}`, (message) => {
               console.log("Received message:", message.body);
               const receivedMessage = JSON.parse(message.body) as Message;
@@ -1057,7 +1174,35 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             resolve();
           },
           (error) => {
-            console.error(`Connection failed for room ${groupId}:`, error);
+            console.error(`❌ WebSocket连接失败:`, error);
+            setConnectionStatus('disconnected');
+            connectionStatusRef.current.isConnecting = false;
+
+            // 清除失败的缓存
+            if (groupId) {
+              clientCache.delete(groupId);
+            }
+
+            // 尝试重连
+            if (reconnectAttemptsRef.current < maxReconnectAttempts && navigator.onLine) {
+              const delay = getReconnectDelay(reconnectAttemptsRef.current);
+              console.log(`🔄 将在${(delay/1000).toFixed(1)}秒后重连 (第${reconnectAttemptsRef.current + 1}次尝试)`);
+
+              setConnectionStatus('reconnecting');
+              reconnectAttemptsRef.current += 1;
+
+              clearReconnectTimeout();
+              reconnectTimeoutRef.current = setTimeout(() => {
+                console.log('⏰ 开始重连...');
+                connectionStatusRef.current.currentGroupId = null; // 重置状态以允许重连
+                connectionStatusRef.current.isConnecting = false;
+                manageWebSocketConnection();
+              }, delay);
+            } else {
+              console.error('⛔ 已达到最大重连次数或网络离线');
+              setConnectionStatus('disconnected');
+            }
+
             reject(error);
           }
         );
@@ -1065,15 +1210,67 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     );
 
     try {
-      connectionStatusRef.current.connectionPromise;
+      await connectionStatusRef.current.connectionPromise;
     } catch (error) {
       console.error("WebSocket connection error:", error);
     }
   }, [groupId, handleMessageReceived, userInfo?.userId]);
 
+  // 监听网络状态变化
+  useEffect(() => {
+    const handleOnline = () => {
+      console.log('🌐 网络已恢复');
+      isOnlineRef.current = true;
+
+      // 网络恢复后,如果连接断开则尝试重连
+      if ((connectionStatus === 'disconnected' || connectionStatus === 'reconnecting') && groupId) {
+        console.log('🔄 网络恢复,尝试重连WebSocket');
+        reconnectAttemptsRef.current = 0; // 重置重连计数
+        connectionStatusRef.current.currentGroupId = null;
+        connectionStatusRef.current.isConnecting = false;
+        if (groupId) {
+          clientCache.delete(groupId);
+        }
+        manageWebSocketConnection();
+      }
+    };
+
+    const handleOffline = () => {
+      console.log('🌐 网络已断开');
+      isOnlineRef.current = false;
+      setConnectionStatus('disconnected');
+      connectionStatusRef.current.isConnecting = false;
+      clearReconnectTimeout();
+
+      // 断开现有连接
+      if (stompClientRef.current?.connected) {
+        stompClientRef.current.disconnect(() => {
+          console.log('因网络断开而断开WebSocket');
+        });
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [groupId, connectionStatus, manageWebSocketConnection]);
+
   // 组件初始化
   useEffect(() => {
-    if (!isInitialMount.current) {
+    console.log(`🏠 MyRoom组件挂载/更新 (groupId: ${groupId})`);
+
+    if (!groupId) return;
+
+    // 使用flag避免StrictMode导致的重复执行
+    let isSubscribed = true;
+
+    const initRoom = async () => {
+      if (!isSubscribed) return;
+
       setMessages([]);
       setIsLoading(false);
       setHasNoMoreMessages(false);
@@ -1093,31 +1290,40 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         }
       };
 
-      if (groupId) {
-        fetchMembers();
+      await fetchMembers();
+
+      if (isSubscribed) {
         manageWebSocketConnection();
         fetchMessageHistory(false);
       }
-    } else {
-      isInitialMount.current = false;
-    }
+    };
+
+    initRoom();
 
     return () => {
-      if (stompClientRef.current?.connected) {
-        stompClientRef.current.disconnect(() => {
-          console.log("Disconnected successfully");
-          if (groupId) {
-            clientCache.delete(groupId);
-          }
-        });
-        console.log("Cleanup: WebSocket disconnected");
+      console.log(`🏠 MyRoom组件卸载 (groupId: ${groupId})`);
+      isSubscribed = false;
+      clearReconnectTimeout();
+
+      // 注意: 不要在这里断开连接,因为我们使用了缓存
+      // 连接会在切换房间时由manageWebSocketConnection管理
+      // 或者在组件真正销毁时清理
+
+      // 只在组件完全卸载(不是重新渲染)时清理状态
+      if (!groupId) {
+        if (stompClientRef.current?.connected) {
+          stompClientRef.current.disconnect(() => {
+            console.log("✂️ 组件卸载,断开WebSocket");
+          });
+        }
+        connectionStatusRef.current = {
+          currentGroupId: null,
+          connectionPromise: null,
+          isConnecting: false,
+        };
       }
-      connectionStatusRef.current = {
-        currentGroupId: null,
-        connectionPromise: null,
-      };
     };
-  }, [groupId, manageWebSocketConnection]);
+  }, [groupId]); // 移除manageWebSocketConnection依赖,避免不必要的重新执行
 
   // 发送消息
   const sendMessage = () => {
@@ -1229,6 +1435,17 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   return (
     <Container>
       <GlobalStyle />
+
+      {/* 连接状态提示 */}
+      {connectionStatus !== 'connected' && (
+        <ConnectionStatus $status={connectionStatus}>
+          <StatusDot $status={connectionStatus} />
+          {connectionStatus === 'connecting' && '正在连接...'}
+          {connectionStatus === 'disconnected' && '连接已断开'}
+          {connectionStatus === 'reconnecting' && `正在重连 (${reconnectAttemptsRef.current}/${maxReconnectAttempts})`}
+        </ConnectionStatus>
+      )}
+
       <RenderedChatContainer ref={chatContainerRef} onScroll={handleScroll}>
         {hasNoMoreMessages && (
           <div style={{ textAlign: "center", padding: "5px", color: "#666" }}>
@@ -1370,10 +1587,10 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           </IconWrapper>
         </IconContainer>
         
-        <MessageInputWrapper>
-          
+        <MessageInputWrapper $disabled={connectionStatus !== 'connected'}>
+
           <MessageInput
-            $disabled={isLoading}
+            $disabled={isLoading || connectionStatus !== 'connected'}
             $isReplying={!!replyingTo}
             ref={messageInputRef}
             value={inputMessage}
@@ -1398,7 +1615,13 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                 sendMessage();
               }
             }}
-            placeholder={isLoading ? "Sending..." : "Type your message..."}
+            placeholder={
+              connectionStatus !== 'connected'
+                ? "连接断开,无法发送消息..."
+                : isLoading
+                  ? "Sending..."
+                  : "Type your message..."
+            }
             rows={4}
           />
           {/* 回复预览 */}
