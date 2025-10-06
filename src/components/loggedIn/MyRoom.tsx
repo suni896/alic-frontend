@@ -1197,6 +1197,8 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                 connectionStatusRef.current.currentGroupId = null; // 重置状态以允许重连
                 connectionStatusRef.current.isConnecting = false;
                 manageWebSocketConnection();
+                console.log("📥 拉取断线期间的历史消息");
+                fetchMessageHistory(false);
               }, delay);
             } else {
               console.error('⛔ 已达到最大重连次数或网络离线');
@@ -1232,6 +1234,8 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           clientCache.delete(groupId);
         }
         manageWebSocketConnection();
+        console.log("📥 拉取断线期间的历史消息");
+        fetchMessageHistory(false);
       }
     };
 
@@ -1257,7 +1261,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       window.removeEventListener('online', handleOnline);
       window.removeEventListener('offline', handleOffline);
     };
-  }, [groupId, connectionStatus, manageWebSocketConnection]);
+  }, [groupId, connectionStatus, manageWebSocketConnection, fetchMessageHistory]);
 
   // 组件初始化
   useEffect(() => {
