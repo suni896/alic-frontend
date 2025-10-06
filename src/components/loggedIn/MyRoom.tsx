@@ -81,7 +81,7 @@ const Container = styled.div`
 `;
 
 const RenderedChatContainer = styled.div`
-  width: 100%-40px;
+  width: calc(100% - 40px);
   height: calc(100vh - 7vh - 20px - 11rem - 1vh);
   overflow-y: auto;
   padding-left: 1rem;
@@ -662,7 +662,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   // 连接状态管理
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected' | 'reconnecting'>('disconnected');
   const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 10;
+  const maxReconnectAttempts = 5;
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isOnlineRef = useRef(navigator.onLine);
 
