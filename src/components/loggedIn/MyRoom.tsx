@@ -395,7 +395,7 @@ const NewMessageNotification = styled.div`
 // 连接状态提示组件
 const ConnectionStatus = styled.div<{ $status: 'connected' | 'connecting' | 'disconnected' | 'reconnecting' }>`
   position: fixed;
-  top: 60px;
+  top: 8vh;
   left: 50%;
   transform: translateX(-50%);
   padding: 10px 20px;
@@ -650,7 +650,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [hasNoMoreMessages, setHasNoMoreMessages] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const isInitialMount = useRef(false);
+  // const isInitialMount = useRef(false);
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const [selectedBot, setSelectedBot] = useState<number | null>(null);
   const [isBotClicked, setIsBotClicked] = useState(false);
