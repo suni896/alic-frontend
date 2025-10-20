@@ -3,7 +3,7 @@ import { membersCache } from "./RoomMembersComponent";
 import SockJS from "sockjs-client";
 import Stomp from "stompjs";
 import styled, { createGlobalStyle } from "styled-components";
-import { LuSend, LuX, LuReply, LuCopy } from "react-icons/lu";
+import { LuSend, LuX, LuReply, LuCopy, LuRotateCcw } from "react-icons/lu";
 import botIcon from "../../assets/chat-gpt.png";
 import apiClient from "../loggedOut/apiClient";
 import { useUser } from "./UserContext";
@@ -14,6 +14,7 @@ import remarkGfm from "remark-gfm";
 import { useInputTracking } from "../../hooks/useInputTracking";
 import sensors, { eventQueue, flushEvents } from "../../utils/tracker";
 import { API_BASE_URL } from "../../../config";
+import { RoomInfoResponse } from './CreateRoomComponent';
 
 interface MyRoomProps {
   title?: string;
@@ -226,6 +227,46 @@ const CopySuccessToast = styled.div<{ $show: boolean }>`
   visibility: ${props => props.$show ? 'visible' : 'hidden'};
   transform: translateY(${props => props.$show ? '0' : '-20px'});
   transition: all 0.3s ease-in-out;
+`;
+
+// 清除上下文成功提示样式
+const ClearContextToast = styled.div<{ $show: boolean }>`
+  position: fixed;
+  top: 60px;
+  right: 20px;
+  background-color: #ff9800;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  font-size: 14px;
+  font-weight: 500;
+  opacity: ${props => props.$show ? 1 : 0};
+  visibility: ${props => props.$show ? 'visible' : 'hidden'};
+  transform: translateY(${props => props.$show ? '0' : '-20px'});
+  transition: all 0.3s ease-in-out;
+`;
+
+// 清除上下文图标样式
+const ClearContextIcon = styled(LuRotateCcw)`
+  font-size: 1.6rem;
+  cursor: pointer;
+  display: block;
+  color: #333;
+`;
+
+// 上下文清除提示消息样式
+const ContextClearedMessage = styled.div`
+  text-align: center;
+  padding: 8px 16px;
+  margin: 8px 0;
+  background-color: #fff3cd;
+  border: 1px solid #ffeaa7;
+  border-radius: 6px;
+  color: #856404;
+  font-size: 0.85rem;
+  font-style: italic;
 `;
 
 const ReplyInputText = styled.span`
@@ -658,6 +699,28 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   // 回复功能状态
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [copySuccess, setCopySuccess] = useState<string>('');
+  const [showClearContextToast, setShowClearContextToast] = useState(false);
+  const [contextClearedAt, setContextClearedAt] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // 添加获取群组信息的函数
+  const fetchGroupInfo = useCallback(async (groupId: number) => {
+    try {
+      const url = `/v1/group/get_group_info?groupId=${groupId}`;
+      const response = await apiClient.get<RoomInfoResponse>(url);
+      
+      if (
+        response.status === 200 &&
+        response.data.code === 200 &&
+        response.data.data?.clearContextTime
+      ) {
+        // 如果存在clearContextTime，设置上下文清除状态
+        setContextClearedAt(response.data.data.clearContextTime);
+      }
+    } catch (error) {
+      console.error('Failed to fetch group info:', error);
+    }
+  }, []);
 
   // 连接状态管理
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected' | 'reconnecting'>('disconnected');
@@ -668,6 +731,34 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
   // 埋点Hook
   const { handleTyping, handleSend: trackSend, handleMessageReceived } = useInputTracking(groupId);
+
+  // 检查用户是否为管理员
+  const checkIfAdmin = useCallback((): boolean => {
+    if (!groupId || !userInfo?.userId) return false;
+    try {
+      const members = membersCache.get(Number(groupId));
+      return (
+        members?.some(
+          (m) => m.userId === userInfo.userId && m.groupMemberType === "ADMIN"
+        ) ?? false
+      );
+    } catch (error) {
+      console.error("Error accessing membersCache:", error);
+      return false;
+    }
+  }, [groupId, userInfo?.userId]);
+
+  // 更新管理员状态
+  useEffect(() => {
+    setIsAdmin(checkIfAdmin());
+  }, [checkIfAdmin]);
+
+  // 在组件初始化时获取群组信息
+  useEffect(() => {
+    if (groupId) {
+      fetchGroupInfo(groupId);
+    }
+  }, [groupId, fetchGroupInfo]);
 
   // 回复功能处理函数
   const handleReplyToMessage = (message: Message) => {
@@ -717,6 +808,61 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         setCopySuccess('');
       }, 2000);
     });
+  };
+
+  // 清除AI上下文函数
+  const handleClearContext = async () => {
+    if (!groupId) return;
+    
+    try {
+      const clearContextTime = new Date().toISOString();
+      
+      const response = await apiClient.post('/v1/group/clear_ai_context', {
+        groupId: groupId,
+        clearContextTime: clearContextTime
+      });
+      
+      if (response.data.code === 200) {
+        // 设置清除时间，用于在消息中显示提示
+        setContextClearedAt(clearContextTime);
+        
+        // 显示成功提示
+        setShowClearContextToast(true);
+        setTimeout(() => {
+          setShowClearContextToast(false);
+        }, 3000);
+        
+        console.log('AI context cleared successfully');
+      } else {
+        console.error('Failed to clear AI context:', response.data.message);
+        alert('Failed to clear AI context. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error clearing AI context:', error);
+      alert('Failed to clear AI context. Please try again.');
+    }
+  };
+
+  // 检查消息是否需要显示上下文清除提示
+  const shouldShowContextClearedMessage = (message: Message, index: number) => {
+    if (!contextClearedAt) return false;
+    
+    const messageTime = new Date(message.createTime).getTime();
+    const clearedTime = new Date(contextClearedAt).getTime();
+    
+    // 如果消息时间早于清除时间
+    if (messageTime < clearedTime) {
+      // 检查是否是清除时间之前的最后一条消息
+      const nextMessage = messages[index + 1];
+      if (!nextMessage) {
+        return true; // 这是最后一条消息
+      }
+      
+      const nextMessageTime = new Date(nextMessage.createTime).getTime();
+      return nextMessageTime >= clearedTime; // 下一条消息在清除时间之后
+    }
+    
+    return false;
   };
 
   // 存储用户信息到本地存储
@@ -1440,6 +1586,11 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     <Container>
       <GlobalStyle />
 
+      {/* 清除上下文成功提示 */}
+      <ClearContextToast $show={showClearContextToast}>
+        AI context cleared successfully
+      </ClearContextToast>
+
       {/* 连接状态提示 */}
       {connectionStatus !== 'connected' && (
         <ConnectionStatus $status={connectionStatus}>
@@ -1456,12 +1607,12 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             No more messages
           </div>
         )}
-        {messages.map((msg) => (
-          <MessageContainer
-            key={msg.infoId}
-            $isOwnMessage={msg.senderType === "USER" && msg.senderId === userInfo?.userId}
-            data-message-id={msg.infoId}
-          >
+        {messages.map((msg, index) => (
+          <React.Fragment key={msg.infoId}>
+            <MessageContainer
+              $isOwnMessage={msg.senderType === "USER" && msg.senderId === userInfo?.userId}
+              data-message-id={msg.infoId}
+            >
             <Avatar
               src={
                 msg.senderType === "CHATBOT"
@@ -1560,7 +1711,15 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                 <LuCopy />
               </ActionButton>
             </MessageActions>
-          </MessageContainer>
+            </MessageContainer>
+            
+            {/* 显示上下文清除提示 */}
+            {shouldShowContextClearedMessage(msg, index) && (
+              <ContextClearedMessage>
+                AI agent context has been cleared
+              </ContextClearedMessage>
+            )}
+          </React.Fragment>
         ))}
       </RenderedChatContainer>
 
@@ -1589,6 +1748,11 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           <IconWrapper onClick={sendMessage}>
             <SendIcon />
           </IconWrapper>
+          {isAdmin && (
+            <IconWrapper onClick={handleClearContext}>
+              <ClearContextIcon />
+            </IconWrapper>
+          )}
         </IconContainer>
         
         <MessageInputWrapper $disabled={connectionStatus !== 'connected'}>

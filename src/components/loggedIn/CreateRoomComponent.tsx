@@ -683,6 +683,7 @@ export interface RoomInfoResponse {
     groupDescription: string;
     groupType: number;
     password?: string;
+    clearContextTime?: string; // 添加clearContextTime字段
     // Include both possible field names for the bot list
     chatBotVOList?: Array<{
       botId: number;
