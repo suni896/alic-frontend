@@ -14,7 +14,14 @@ import remarkGfm from "remark-gfm";
 import { useInputTracking } from "../../hooks/useInputTracking";
 import sensors, { eventQueue, flushEvents } from "../../utils/tracker";
 import { API_BASE_URL } from "../../../config";
-import { RoomInfoResponse } from './CreateRoomComponent';
+
+
+// 添加清除历史接口响应类型
+interface ClearHistoryResponse {
+  code: number;
+  message: string;
+  data: string[]; // 时间戳数组
+}
 
 interface MyRoomProps {
   title?: string;
@@ -700,25 +707,29 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [copySuccess, setCopySuccess] = useState<string>('');
   const [showClearContextToast, setShowClearContextToast] = useState(false);
-  const [contextClearedAt, setContextClearedAt] = useState<string | null>(null);
+  const [contextClearedTimes, setContextClearedTimes] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // 添加获取群组信息的函数
-  const fetchGroupInfo = useCallback(async (groupId: number) => {
+  // 获取上下文清除历史记录
+  const fetchClearHistory = useCallback(async (groupId: number) => {
     try {
-      const url = `/v1/group/get_group_info?groupId=${groupId}`;
-      const response = await apiClient.get<RoomInfoResponse>(url);
+      const url = `/v1/group/clearHistory?groupId=${groupId}`;
+      const response = await apiClient.get<ClearHistoryResponse>(url);
       
       if (
         response.status === 200 &&
         response.data.code === 200 &&
-        response.data.data?.clearContextTime
+        response.data.data &&
+        response.data.data.length > 0
       ) {
-        // 如果存在clearContextTime，设置上下文清除状态
-        setContextClearedAt(response.data.data.clearContextTime);
+        // 保存所有清除时间
+        setContextClearedTimes(response.data.data);
+      } else {
+        setContextClearedTimes([]);
       }
     } catch (error) {
-      console.error('Failed to fetch group info:', error);
+      console.error('Failed to fetch clear history:', error);
+      setContextClearedTimes([]);
     }
   }, []);
 
@@ -753,12 +764,12 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     setIsAdmin(checkIfAdmin());
   }, [checkIfAdmin]);
 
-  // 在组件初始化时获取群组信息
+  // 在组件初始化时获取清除历史
   useEffect(() => {
     if (groupId) {
-      fetchGroupInfo(groupId);
+      fetchClearHistory(groupId);
     }
-  }, [groupId, fetchGroupInfo]);
+  }, [groupId, fetchClearHistory]);
 
   // 回复功能处理函数
   const handleReplyToMessage = (message: Message) => {
@@ -823,8 +834,8 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       });
       
       if (response.data.code === 200) {
-        // 设置清除时间，用于在消息中显示提示
-        setContextClearedAt(clearContextTime);
+        // 添加新的清除时间到数组中
+        setContextClearedTimes(prev => [...prev, clearContextTime]);
         
         // 显示成功提示
         setShowClearContextToast(true);
@@ -844,26 +855,30 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   };
 
   // 检查消息是否需要显示上下文清除提示
-  const shouldShowContextClearedMessage = (message: Message, index: number) => {
-    if (!contextClearedAt) return false;
+  const shouldShowContextClearedMessage = useCallback((message: Message, index: number) => {
+    if (contextClearedTimes.length === 0) return null;
     
     const messageTime = new Date(message.createTime).getTime();
-    const clearedTime = new Date(contextClearedAt).getTime();
+    const nextMessage = messages[index + 1];
+    const nextMessageTime = nextMessage ? new Date(nextMessage.createTime).getTime() : Date.now();
     
-    // 如果消息时间早于清除时间
-    if (messageTime < clearedTime) {
-      // 检查是否是清除时间之前的最后一条消息
-      const nextMessage = messages[index + 1];
-      if (!nextMessage) {
-        return true; // 这是最后一条消息
-      }
-      
-      const nextMessageTime = new Date(nextMessage.createTime).getTime();
-      return nextMessageTime >= clearedTime; // 下一条消息在清除时间之后
+    // 查找在当前消息之后、下一条消息之前的所有清除时间
+    const relevantClearTimes = contextClearedTimes.filter(clearTime => {
+      const clearedTime = new Date(clearTime).getTime();
+      return messageTime < clearedTime && clearedTime <= nextMessageTime;
+    });
+    
+    // 如果没有下一条消息，检查是否有在当前消息之后的清除时间
+    if (!nextMessage) {
+      const futureClearTimes = contextClearedTimes.filter(clearTime => {
+        const clearedTime = new Date(clearTime).getTime();
+        return messageTime < clearedTime;
+      });
+      return futureClearTimes.length > 0 ? futureClearTimes : null;
     }
     
-    return false;
-  };
+    return relevantClearTimes.length > 0 ? relevantClearTimes : null;
+  }, [contextClearedTimes, messages]);
 
   // 存储用户信息到本地存储
   useEffect(() => {
