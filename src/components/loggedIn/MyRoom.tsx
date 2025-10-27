@@ -1449,6 +1449,8 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           );
           if (response.data.code === 200) {
             membersCache.set(Number(groupId), response.data.data);
+            // 在membersCache更新后立即更新isAdmin状态
+            setIsAdmin(checkIfAdmin());
           }
         } catch (error) {
           console.error("Error fetching group members:", error);
@@ -1764,8 +1766,11 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             <SendIcon />
           </IconWrapper>
           {isAdmin && (
-            <IconWrapper onClick={handleClearContext}>
-              <ClearContextIcon />
+            <IconWrapper>
+              <ClearContextIcon 
+                onClick={handleClearContext}
+                title="clear ai agent context"
+              />
             </IconWrapper>
           )}
         </IconContainer>
