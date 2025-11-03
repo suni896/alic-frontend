@@ -239,8 +239,8 @@ const CopySuccessToast = styled.div<{ $show: boolean }>`
 // 清除上下文成功提示样式
 const ClearContextToast = styled.div<{ $show: boolean }>`
   position: fixed;
-  top: 60px;
-  right: 20px;
+  top: 8vh;
+  left: 50%;
   background-color: #ff9800;
   color: white;
   padding: 12px 20px;
@@ -1612,9 +1612,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       {connectionStatus !== 'connected' && (
         <ConnectionStatus $status={connectionStatus}>
           <StatusDot $status={connectionStatus} />
-          {connectionStatus === 'connecting' && '正在连接...'}
-          {connectionStatus === 'disconnected' && '连接已断开'}
-          {connectionStatus === 'reconnecting' && `正在重连 (${reconnectAttemptsRef.current}/${maxReconnectAttempts})`}
+          {connectionStatus === 'connecting' && 'connecting...'}
+          {connectionStatus === 'disconnected' && 'disconnected'}
+          {connectionStatus === 'reconnecting' && `reconnecting (${reconnectAttemptsRef.current}/${maxReconnectAttempts})`}
         </ConnectionStatus>
       )}
 

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import styled from "styled-components";
-import logo from "../assets/Logo.png";
+// import logo from "../assets/Logo.png";
+import logo from "../../public/alic.png";
 import { FaGlobe } from "react-icons/fa";
 
 interface LanguageDropdownProps {
@@ -23,12 +24,13 @@ const Container = styled.div`
 const LogoContainer = styled.div`
   display: flex;
   align-items: center;
+  margin-left: 20px;
 `;
 
 const Logo = styled.img`
-  width: 40px;
-  height: 46px;
-  margin-right: 20px;
+  width: 75px;
+  height: 30px;
+  // margin-right: 60px;
 `;
 
 const Title = styled.h1`
@@ -113,7 +115,7 @@ const Navbar = () => {
       <LogoContainer>
         <Logo src={logo} alt="EduHK Logo" />
         <Title>
-          Artificial Intelligence and Learning Analytics in Collaboration
+          {/* Artificial Intelligence and Learning Analytics in Collaboration */}
         </Title>
       </LogoContainer>
       <RightContainer>
