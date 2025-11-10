@@ -582,6 +582,9 @@ const validationSchema = (showAssistants: boolean) =>
     roomType: Yup.string() // Changed to string to match form values
       .oneOf(["0", "1"], "Invalid group type") // Changed to string values
       .required("Group Type is required"),
+    groupMode: Yup.string()
+      .oneOf(["free", "feedback"], "Invalid group mode")
+      .required("Group Mode is required"),
 
     roomPassword: Yup.string().when("roomType", {
       is: (value: string) => value === "0",
@@ -639,6 +642,21 @@ const validationSchema = (showAssistants: boolean) =>
           .min(1, "Add at least one assistant")
           .required("Bot info is required")
       : Yup.array().notRequired(),
+    // 新增：feedbackBot 基础校验（非必填，避免报错）
+    feedbackBot: Yup.object({
+      name: Yup.string().notRequired(),
+      prompt: Yup.string().notRequired(),
+      msgCountInterval: Yup.number()
+        .typeError("Message Count Interval must be a number")
+        .integer("Message Count Interval must be an integer")
+        .min(1, "Minimum value is 1")
+        .notRequired(),
+      timeInterval: Yup.number()
+        .typeError("Time Interval must be a number")
+        .integer("Time Interval must be an integer")
+        .min(1, "Minimum value is 1")
+        .notRequired(),
+    }),
   });
 
 // Define interface for bot data structure
@@ -647,6 +665,7 @@ interface ChatBotVO {
   botContext: number;
   botName: string;
   botPrompt: string;
+  botId?: number;
 }
 
 // Define interface for form bot data
@@ -657,13 +676,24 @@ interface FormBot {
   adminOnly: boolean;
 }
 
+// Define interface for feedback mode payload
+interface ChatBotFeedbackVO {
+  botName: string;
+  botPrompt: string;
+  msgCountInterval: number;
+  timeInterval: number;
+  botId?: number;
+}
+
 // Define interface for request payload
 interface CreateGroupPayload {
   groupName: string;
   groupDescription: string;
   groupType: number;
   password?: string;
+  groupMode: "free" | "feedback";
   chatBotVOList: ChatBotVO[];
+  chatBotFeedbackVO?: ChatBotFeedbackVO;
 }
 
 interface CreateRoomComponentProps {
@@ -684,21 +714,12 @@ export interface RoomInfoResponse {
     groupType: number;
     password?: string;
     clearContextTime?: string; // 添加clearContextTime字段
+    groupMode?: "free" | "feedback";
     // Include both possible field names for the bot list
-    chatBotVOList?: Array<{
-      botId: number;
-      botName: string;
-      botPrompt: string;
-      botContext: number;
-      accessType: number;
-    }>;
-    chatBots?: Array<{
-      botId: number;
-      botName: string;
-      botPrompt: string;
-      botContext: number;
-      accessType: number;
-    }>;
+
+    chatBots?: ChatBotVO[];
+    chatBotFeedback?:ChatBotFeedbackVO;
+    
   };
 }
 
@@ -718,13 +739,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   const [showAssistants, setShowAssistants] = useState(false);
   const [apiRequestMade, setApiRequestMade] = useState(false);
   const [originalBots, setOriginalBots] = useState<
-    Array<{
-      botId: number;
-      botName: string;
-      botPrompt: string;
-      botContext: number;
-      accessType: number;
-    }>
+    ChatBotVO[]
   >([]);
   const { groupId: urlGroupId } = useParams<{ groupId: string }>();
   const effectiveIsModify = fromSidebar ? false : isModify;
@@ -745,7 +760,6 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   ) => {
     const groupTypeValue = parseInt(values.roomType, 10);
 
-    // Transform bots into ChatBotVO array
     const chatBotVOList: ChatBotVO[] = showAssistantsEnabled
       ? values.bots.map((bot: FormBot) => ({
           accessType: bot.adminOnly ? 0 : 1,
@@ -758,13 +772,39 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
         }))
       : [];
 
-    const requestPayload: CreateGroupPayload = {
-      groupName: values.roomName,
-      groupDescription: values.roomDescription,
-      groupType: groupTypeValue,
-      ...(groupTypeValue === 0 ? { password: values.roomPassword } : {}),
-      chatBotVOList,
-    };
+    let requestPayload: CreateGroupPayload;
+
+    if (values.groupMode === "feedback") {
+      requestPayload = {
+        groupName: values.roomName,
+        groupDescription: values.roomDescription,
+        groupType: groupTypeValue,
+        ...(groupTypeValue === 0 ? { password: values.roomPassword } : {}),
+        groupMode: "feedback",
+        chatBotVOList: [],
+        chatBotFeedbackVO: {
+          botName: values.feedbackBot.name || "",
+          botPrompt: values.feedbackBot.prompt || "",
+          msgCountInterval:
+            typeof values.feedbackBot.msgCountInterval === "number"
+              ? values.feedbackBot.msgCountInterval
+              : parseInt(String(values.feedbackBot.msgCountInterval), 10),
+          timeInterval:
+            typeof values.feedbackBot.timeInterval === "number"
+              ? values.feedbackBot.timeInterval
+              : parseInt(String(values.feedbackBot.timeInterval), 10),
+        },
+      };
+    } else {
+      requestPayload = {
+        groupName: values.roomName,
+        groupDescription: values.roomDescription,
+        groupType: groupTypeValue,
+        ...(groupTypeValue === 0 ? { password: values.roomPassword } : {}),
+        groupMode: "free",
+        chatBotVOList,
+      };
+    }
 
     setIsSubmitting(true);
     try {
@@ -783,6 +823,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       roomName: "",
       roomDescription: "",
       roomType: "1",
+      groupMode: "free",
       roomPassword: "",
       bots: [
         {
@@ -794,6 +835,13 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
           status: "new",
         },
       ] as FormBotWithStatus[],
+      feedbackBot: {
+        name: "",
+        prompt: "",
+        msgCountInterval: 1,
+        timeInterval: 1,
+        botId: undefined,
+      },
     },
     validationSchema: validationSchema(showAssistants),
     onSubmit: async (values) => {
@@ -955,7 +1003,22 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
           botName: bot.name,
           botPrompt: bot.prompt,
         }));
-
+      const feedbackBotVO: ChatBotFeedbackVO | undefined =
+        values.groupMode === "feedback"
+            ? {
+                  botId: values.feedbackBot.botId,
+                  botName: values.feedbackBot.name || "",
+                  botPrompt: values.feedbackBot.prompt || "",
+                  msgCountInterval:
+                      typeof values.feedbackBot.msgCountInterval === "number"
+                          ? values.feedbackBot.msgCountInterval
+                          : parseInt(String(values.feedbackBot?.msgCountInterval ?? 0), 10),
+                  timeInterval:
+                      typeof values.feedbackBot?.timeInterval === "number"
+                          ? values.feedbackBot.timeInterval
+                          : parseInt(String(values.feedbackBot?.timeInterval ?? 0), 10),
+              }
+            : undefined;
       // Per API documentation
       const requestPayload = {
         groupId: Number(currentGroupId), // Ensure groupId is a number
@@ -964,7 +1027,11 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
         // Include password only for private rooms or if it was previously set
         ...(values.roomType === "0" ? { password: values.roomPassword } : {}),
         // Include bots only if assistants are enabled
-        ...(showAssistants
+        ...(values.groupMode === "feedback" 
+          ? {
+            modifyChatBotFeedbackVO: feedbackBotVO,
+            }:{}),
+        ...(showAssistants && values.groupMode === "free"
           ? {
               addChatBotVOList: addedBots,
               modifyChatBotVOS: existingBots, // All existing bots that haven't been deleted
@@ -1071,43 +1138,80 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
               response.data.data
             ) {
               const roomData = response.data.data;
-              const botList = roomData.chatBotVOList || roomData.chatBots || [];
+              const botList = roomData.chatBots || [];
               setOriginalBots([...botList]);
 
               const hasBots = botList.length > 0;
-              let formattedBots: FormBotWithStatus[];
 
-              if (hasBots) {
-                formattedBots = botList.map((bot) => ({
-                  name: bot.botName,
-                  prompt: bot.botPrompt,
-                  context: bot.botContext,
-                  adminOnly: bot.accessType === 0,
-                  botId: bot.botId,
-                  status: "unchanged",
-                }));
+              // Detect feedback mode via groupMode or presence of feedback bot info
+              const feedbackInfo =
+                (roomData as any).chatBotFeedbackVO ||
+                roomData.chatBotFeedback;
+              const isFeedbackMode =
+                roomData.groupMode === "feedback" || !!feedbackInfo;
 
-                // Only show assistants section if user is admin
-                setShowAssistants(isAdmin && hasBots);
+              let formattedBots: FormBotWithStatus[] = [];
+
+              if (!isFeedbackMode) {
+                if (hasBots) {
+                  formattedBots = botList.map((bot) => ({
+                    name: bot.botName,
+                    prompt: bot.botPrompt,
+                    context: bot.botContext,
+                    adminOnly: bot.accessType === 0,
+                    botId: bot.botId,
+                    status: "unchanged",
+                  }));
+
+                  // Only show assistants section if user is admin
+                  setShowAssistants(isAdmin && hasBots);
+                } else {
+                  formattedBots = [
+                    {
+                      name: "",
+                      prompt: "",
+                      context: 1,
+                      adminOnly: false,
+                      status: "new",
+                    },
+                  ];
+                  setShowAssistants(false);
+                }
               } else {
-                formattedBots = [
-                  {
-                    name: "",
-                    prompt: "",
-                    context: 1,
-                    adminOnly: false,
-                    status: "new",
-                  },
-                ];
+                // In feedback mode, do not show normal assistants
+                setShowAssistants(false);
               }
 
-              // Pre-fill form values regardless of user role
+              // Pre-fill form values
               formik.setValues({
                 roomName: roomData.groupName,
                 roomDescription: roomData.groupDescription || "",
                 roomType: roomData.groupType.toString(),
+                groupMode: isFeedbackMode ? "feedback" : "free",
                 roomPassword: roomData.password || "",
-                bots: isAdmin ? formattedBots : [], // Only include bots if admin
+                bots: isAdmin && !isFeedbackMode ? formattedBots : [],
+                feedbackBot:
+                  isFeedbackMode && feedbackInfo
+                    ? {
+                        name: feedbackInfo.botName || "",
+                        prompt: feedbackInfo.botPrompt || "",
+                        msgCountInterval:
+                          typeof feedbackInfo.msgCountInterval === "number"
+                            ? feedbackInfo.msgCountInterval
+                            : parseInt(String(feedbackInfo.msgCountInterval), 10),
+                        timeInterval:
+                          typeof feedbackInfo.timeInterval === "number"
+                            ? feedbackInfo.timeInterval
+                            : parseInt(String(feedbackInfo.timeInterval), 10),
+                        botId: feedbackInfo.botId,
+                      }
+                    : {
+                        name: "",
+                        prompt: "",
+                        msgCountInterval: 1,
+                        timeInterval: 1,
+                        botId: undefined,
+                      },
               });
             } else {
               console.error(
@@ -1286,8 +1390,59 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                 )}
               </InputGroup>
             )}
+            <InputGroup>
+              <Label>Group Mode</Label>
+              <RadioGroup>
+                <RadioCard
+                  checked={formik.values.groupMode === "free"}
+                  disabled={effectiveIsModify}
+                >
+                  <input
+                    type="radio"
+                    name="groupMode"
+                    value="free"
+                    checked={formik.values.groupMode === "free"}
+                    onChange={(e) => {
+                      console.log("[groupMode] changed to:", e.target.value);
+                      formik.handleChange(e);
+                    }}
+                    disabled={effectiveIsModify}
+                  />
+                  <RadioIcon checked={formik.values.groupMode === "free"} />
+                  <RadioContent>
+                    <RadioTitle>Free Chat Mode</RadioTitle>
+                    <RadioDescription>Unmoderated, Open Dialogue</RadioDescription>
+                  </RadioContent>
+                </RadioCard>
 
-            {(!effectiveIsModify || userRole === "ADMIN") && (
+                <RadioCard
+                  checked={formik.values.groupMode === "feedback"}
+                  disabled={effectiveIsModify}
+                >
+                  <input
+                    type="radio"
+                    name="groupMode"
+                    value="feedback"
+                    checked={formik.values.groupMode === "feedback"}
+                    onChange={(e) => {
+                      console.log("[groupMode] changed to:", e.target.value);
+                      formik.handleChange(e);
+                    }}
+                    disabled={effectiveIsModify}
+                  />
+                  <RadioIcon checked={formik.values.groupMode === "feedback"} />
+                  <RadioContent>
+                    <RadioTitle>Auto Feedback Mode</RadioTitle>
+                    <RadioDescription>助手自动提供反馈与建议</RadioDescription>
+                  </RadioContent>
+                </RadioCard>
+              </RadioGroup>
+              {formik.touched.groupMode && formik.errors.groupMode && (
+                <ErrorMessage>{formik.errors.groupMode}</ErrorMessage>
+              )}
+            </InputGroup>
+            
+            {(!effectiveIsModify || userRole === "ADMIN") && (formik.values.groupMode === "free") &&(
               <CheckboxContainer>
                 <CheckboxInput
                   type="checkbox"
@@ -1366,8 +1521,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                                 !!(
                                   formik.touched.bots?.[index]?.prompt &&
                                   formik.errors.bots?.[index] &&
-                                  typeof formik.errors.bots[index] ===
-                                    "object" &&
+                                  typeof formik.errors.bots[index] ===                                    "object" &&
                                   (formik.errors.bots[index] as any).prompt
                                 )
                               }
@@ -1469,6 +1623,124 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
               </FieldArrayContainer>
             )}
 
+            {(!effectiveIsModify || userRole === "ADMIN") && formik.values.groupMode === "feedback" && (
+              <FieldArrayContainer>
+                <AssistantHeader>
+                  <AssistantIcon />
+                  <AssistantTitle>AI Feedback Assistant Configuration</AssistantTitle>
+                </AssistantHeader>
+
+                <HeaderRow>
+                  <CenteredColumnHeader></CenteredColumnHeader>
+                  <ColumnHeader>Assistant Name</ColumnHeader>
+                  <ColumnHeader>Prompt</ColumnHeader>
+                  <ColumnHeader>Message Count Interval</ColumnHeader>
+                  <ColumnHeader>Time Interval</ColumnHeader>
+                </HeaderRow>
+
+                <AddAssistantRow>
+                  <div />
+
+                  <SmallInputContainer>
+                    <SmallInput
+                      name="feedbackBot.name"
+                      disabled={effectiveIsModify}
+                      placeholder="Assistant Name"
+                      value={formik.values.feedbackBot?.name ?? ""}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      $hasError={
+                        !!(
+                          (formik.touched as any).feedbackBot?.name &&
+                          (formik.errors.feedbackBot as any)?.name
+                        )
+                      }
+                    />
+                    {(formik.touched as any).feedbackBot?.name &&
+                      (formik.errors.feedbackBot as any)?.name && (
+                        <BotFieldErrorMessage>
+                          {(formik.errors.feedbackBot as any).name}
+                        </BotFieldErrorMessage>
+                      )}
+                  </SmallInputContainer>
+
+                  <SmallTextareaContainer>
+                    <AutoResizeTextarea
+                      name="feedbackBot.prompt"
+                      placeholder="Prompt"
+                      value={formik.values.feedbackBot?.prompt ?? ""}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      hasError={
+                        !!(
+                          (formik.touched as any).feedbackBot?.prompt &&
+                          (formik.errors.feedbackBot as any)?.prompt
+                        )
+                      }
+                    />
+                    {(formik.touched as any).feedbackBot?.prompt &&
+                      (formik.errors.feedbackBot as any)?.prompt && (
+                        <BotFieldErrorMessage>
+                          {(formik.errors.feedbackBot as any).prompt}
+                        </BotFieldErrorMessage>
+                      )}
+                  </SmallTextareaContainer>
+
+                  <SmallInputContainer>
+                    <SmallInput
+                      type="number"
+                      name="feedbackBot.msgCountInterval"
+                      placeholder="Message Count Interval"
+                      value={
+                        formik.values.feedbackBot?.msgCountInterval?.toString() ?? "1"
+                      }
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      min={1}
+                      $hasError={
+                        !!(
+                          (formik.touched as any).feedbackBot?.msgCountInterval &&
+                          (formik.errors.feedbackBot as any)?.msgCountInterval
+                        )
+                      }
+                    />
+                    {(formik.touched as any).feedbackBot?.msgCountInterval &&
+                      (formik.errors.feedbackBot as any)?.msgCountInterval && (
+                        <BotFieldErrorMessage>
+                          {(formik.errors.feedbackBot as any).msgCountInterval}
+                        </BotFieldErrorMessage>
+                      )}
+                  </SmallInputContainer>
+
+                  <SmallInputContainer>
+                    <SmallInput
+                      type="number"
+                      name="feedbackBot.timeInterval"
+                      placeholder="Time Interval"
+                      value={
+                        formik.values.feedbackBot?.timeInterval?.toString() ?? "1"
+                      }
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      min={1}
+                      $hasError={
+                        !!(
+                          (formik.touched as any).feedbackBot?.timeInterval &&
+                          (formik.errors.feedbackBot as any)?.timeInterval
+                        )
+                      }
+                    />
+                    {(formik.touched as any).feedbackBot?.timeInterval &&
+                      (formik.errors.feedbackBot as any)?.timeInterval && (
+                        <BotFieldErrorMessage>
+                          {(formik.errors.feedbackBot as any).timeInterval}
+                        </BotFieldErrorMessage>
+                      )}
+                  </SmallInputContainer>
+                </AddAssistantRow>
+              </FieldArrayContainer>
+            )}
+
             {(!effectiveIsModify || userRole === "ADMIN") && (
               <ButtonContainer>
                 <Button
@@ -1478,7 +1750,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                 >
                   Cancel
                 </Button>
-                <Button variant="primary" disabled={isSubmitting}>
+                <Button variant="primary" disabled={isSubmitting} type="submit">
                   {effectiveIsModify ? "Update Room" : "Create Room"}
                 </Button>
               </ButtonContainer>
