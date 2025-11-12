@@ -766,7 +766,6 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     setIsAdmin(checkIfAdmin());
   }, [checkIfAdmin]);
 
-  // 获取 groupMode（优先使用服务端返回的 groupMode，其次以 chatBotFeedbackVO 存在判定）
   useEffect(() => {
     const fetchGroupMode = async () => {
       if (!groupId) return;
@@ -775,8 +774,8 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         const response = await apiClient.get(url);
         if (response.status === 200 && response.data?.code === 200 && response.data?.data) {
           const data = response.data.data;
-          const isFeedback = data.groupMode === 'feedback' || !!data.chatBotFeedbackVO;
-          setGroupMode(isFeedback ? 'feedback' : 'free');
+          const isFeedback = data.groupMode;
+          setGroupMode(isFeedback);
         } else {
           setGroupMode('free');
         }

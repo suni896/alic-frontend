@@ -340,6 +340,32 @@ const AddAssistantRow = styled.div`
   }
 `;
 
+const FeedbackAssistantRow = styled.div`
+  display: grid;
+  grid-template-columns: 10px 0.7fr 1fr 50px 50px;
+  gap: 0.9rem;
+  align-items: center;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid #e2e8f0;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #f1f5f9;
+    border-radius: 8px;
+    margin: 0 -0.5rem;
+    padding: 0.75rem 0.5rem;
+  }
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  @media (max-width: 800px) {
+    grid-template-columns: 28px 1fr 1fr 60px 50px;
+    gap: 0.4rem;
+  }
+`;
+
 const HeaderRow = styled.div`
   display: grid;
   grid-template-columns: 32px 0.8fr 1.3fr 70px 50px;
@@ -642,21 +668,63 @@ const validationSchema = (showAssistants: boolean) =>
           .min(1, "Add at least one assistant")
           .required("Bot info is required")
       : Yup.array().notRequired(),
-    // 新增：feedbackBot 基础校验（非必填，避免报错）
-    feedbackBot: Yup.object({
-      name: Yup.string().notRequired(),
-      prompt: Yup.string().notRequired(),
-      msgCountInterval: Yup.number()
-        .typeError("Message Count Interval must be a number")
-        .integer("Message Count Interval must be an integer")
-        .min(1, "Minimum value is 1")
-        .notRequired(),
-      timeInterval: Yup.number()
-        .typeError("Time Interval must be a number")
-        .integer("Time Interval must be an integer")
-        .min(1, "Minimum value is 1")
-        .notRequired(),
-    }),
+
+    // Make feedback assistant required only in feedback mode
+    feedbackBot:
+    Yup.object()
+      .shape({
+        name: Yup.string().transform((v) => (typeof v === "string" ? v.trim() : v)),
+        prompt: Yup.string().transform((v) => (typeof v === "string" ? v.trim() : v)),
+        msgCountInterval: Yup.number(),
+        timeInterval: Yup.number(),
+      })
+      .when("groupMode", {
+        is: "feedback",
+        then: (schema) =>
+          schema
+            .shape({
+              name: Yup.string()
+                .transform((v) => (typeof v === "string" ? v.trim() : v))
+                .required("Assistant name is required")
+                .matches(
+                  /^[\u4e00-\u9fa5A-Za-z0-9]{1,20}$/,
+                  "Must be 1-20 characters long. Supports letters, numbers, and Chinese characters."
+                ),
+              prompt: Yup.string()
+                .transform((v) => (typeof v === "string" ? v.trim() : v))
+                .required("Prompt is required")
+                .max(2000, "Prompt cannot exceed 2000 characters"),
+              msgCountInterval: Yup.number()
+                .typeError("Message Count Interval must be a number")
+                .integer("Message Count Interval must be an integer")
+                .min(1, "Minimum value is 1")
+                .max(20, "Maximum value is 20")
+                .required("Message Count Interval is required"),
+              timeInterval: Yup.number()
+                .typeError("Time Interval must be a number")
+                .integer("Time Interval must be an integer")
+                .min(1, "Minimum value is 1")
+                .max(30, "Maximum value is 30")
+                .required("Time Interval is required"),
+            })
+            .required("AI Feedback Assistant Configuration is required"),
+        otherwise: (schema) =>
+          schema
+            .shape({
+              name: Yup.string()
+                .transform((v) => (typeof v === "string" ? v.trim() : v))
+                .nullable()
+                .notRequired(),
+              prompt: Yup.string()
+                .transform((v) => (typeof v === "string" ? v.trim() : v))
+                .nullable()
+                .notRequired(),
+              msgCountInterval: Yup.number().nullable().notRequired(),
+              timeInterval: Yup.number().nullable().notRequired(),
+            })
+            .nullable()
+            .notRequired(),
+      }),
   });
 
 // Define interface for bot data structure
@@ -1433,7 +1501,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   <RadioIcon checked={formik.values.groupMode === "feedback"} />
                   <RadioContent>
                     <RadioTitle>Auto Feedback Mode</RadioTitle>
-                    <RadioDescription>助手自动提供反馈与建议</RadioDescription>
+                    <RadioDescription>Automatic feedback from the assistant</RadioDescription>
                   </RadioContent>
                 </RadioCard>
               </RadioGroup>
@@ -1456,7 +1524,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
               </CheckboxContainer>
             )}
 
-            {showAssistants && (
+            {showAssistants  && (formik.values.groupMode === "free") && (
               <FieldArrayContainer>
                 <AssistantHeader>
                   <AssistantIcon />
@@ -1519,10 +1587,8 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               onBlur={formik.handleBlur}
                               hasError={
                                 !!(
-                                  formik.touched.bots?.[index]?.prompt &&
-                                  formik.errors.bots?.[index] &&
-                                  typeof formik.errors.bots[index] ===                                    "object" &&
-                                  (formik.errors.bots[index] as any).prompt
+                                  formik.touched.bots?.[index]?.prompt && formik.errors.bots?.[index] &&
+                                  typeof formik.errors.bots[index] === "object" && (formik.errors.bots[index] as any).prompt
                                 )
                               }
                             />
@@ -1623,7 +1689,9 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
               </FieldArrayContainer>
             )}
 
-            {(!effectiveIsModify || userRole === "ADMIN") && formik.values.groupMode === "feedback" && (
+            {(!effectiveIsModify || userRole === "ADMIN") &&
+            formik.values.groupMode === "feedback" &&
+            (!effectiveIsModify || !!formik.values.feedbackBot?.botId) && (
               <FieldArrayContainer>
                 <AssistantHeader>
                   <AssistantIcon />
@@ -1638,7 +1706,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   <ColumnHeader>Time Interval</ColumnHeader>
                 </HeaderRow>
 
-                <AddAssistantRow>
+                <FeedbackAssistantRow>
                   <div />
 
                   <SmallInputContainer>
@@ -1668,7 +1736,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                     <AutoResizeTextarea
                       name="feedbackBot.prompt"
                       placeholder="Prompt"
-                      value={formik.values.feedbackBot?.prompt ?? ""}
+                      value={formik.values.feedbackBot?.prompt}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
                       hasError={
@@ -1697,6 +1765,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
                       min={1}
+                      max={20}
                       $hasError={
                         !!(
                           (formik.touched as any).feedbackBot?.msgCountInterval &&
@@ -1723,6 +1792,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
                       min={1}
+                      max={30}
                       $hasError={
                         !!(
                           (formik.touched as any).feedbackBot?.timeInterval &&
@@ -1737,7 +1807,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                         </BotFieldErrorMessage>
                       )}
                   </SmallInputContainer>
-                </AddAssistantRow>
+                </FeedbackAssistantRow>
               </FieldArrayContainer>
             )}
 
