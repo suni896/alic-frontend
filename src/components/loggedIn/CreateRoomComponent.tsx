@@ -309,6 +309,30 @@ const ColumnHeader = styled.div`
   height: 2.5rem;
 `;
 
+const ColumnHeaderWithHelp = styled(ColumnHeader)`
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  height: auto;
+  min-height: 2.5rem;
+  line-height: 1.2;
+`;
+const HelpIcon = styled.span`
+  margin-left: 0.35rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1rem;
+  height: 1rem;
+  font-size: 0.75rem;
+  line-height: 1;
+  color: #64748b;
+  border: 1px solid #cbd5e1;
+  border-radius: 9999px;
+  background-color: #f1f5f9;
+  cursor: 
+`;
+
 const CenteredColumnHeader = styled(ColumnHeader)`
   text-align: center;
   justify-content: center;
@@ -1702,8 +1726,14 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   <CenteredColumnHeader></CenteredColumnHeader>
                   <ColumnHeader>Assistant Name</ColumnHeader>
                   <ColumnHeader>Prompt</ColumnHeader>
-                  <ColumnHeader>Message Count Interval</ColumnHeader>
-                  <ColumnHeader>Time Interval</ColumnHeader>
+                  <ColumnHeaderWithHelp>
+                    <span>Message Count Interval</span>
+                    <HelpIcon title="The number of messages required to trigger an automatic reply" aria-label="trigger feedback message count">?</HelpIcon>
+                  </ColumnHeaderWithHelp>
+                  <ColumnHeaderWithHelp>
+                    <span>Time Interval</span>
+                    <HelpIcon title="The minimum time gap between two automatic replies (in minutes)" aria-label="trigger feedback message count">?</HelpIcon>
+                  </ColumnHeaderWithHelp>
                 </HeaderRow>
 
                 <FeedbackAssistantRow>
