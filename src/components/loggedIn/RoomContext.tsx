@@ -50,12 +50,20 @@ interface Pagination {
   total: number;
 }
 
+// 类型区：扩展 CreateRoomRequest
 interface CreateRoomRequest {
   groupName: string;
   groupDescription: string;
   groupType: number;
   password?: string;
   chatBotVOList: ChatBotVO[];
+  groupMode: "free" | "feedback"; // 新增
+  chatBotFeedbackVO?: { // 新增（仅 feedback 模式会传）
+    botName: string;
+    botPrompt: string;
+    msgCountInterval: number;
+    timeInterval: number;
+  };
 }
 
 interface ChatBotVO {

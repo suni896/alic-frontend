@@ -609,6 +609,7 @@ const BotListPopUp: React.FC<MyRoomProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const { userInfo } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
+  // const [groupMode, setGroupMode] = useState<'free' | 'feedback' | undefined>('free');
 
   useEffect(() => {
     const fetchBots = async () => {
@@ -709,6 +710,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [showClearContextToast, setShowClearContextToast] = useState(false);
   const [contextClearedTimes, setContextClearedTimes] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [groupMode, setGroupMode] = useState<'free' | 'feedback'>('free');
 
   // 获取上下文清除历史记录
   const fetchClearHistory = useCallback(async (groupId: number) => {
@@ -763,6 +765,27 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   useEffect(() => {
     setIsAdmin(checkIfAdmin());
   }, [checkIfAdmin]);
+
+  useEffect(() => {
+    const fetchGroupMode = async () => {
+      if (!groupId) return;
+      try {
+        const url = `/v1/group/get_group_info?groupId=${groupId}`;
+        const response = await apiClient.get(url);
+        if (response.status === 200 && response.data?.code === 200 && response.data?.data) {
+          const data = response.data.data;
+          const isFeedback = data.groupMode;
+          setGroupMode(isFeedback);
+        } else {
+          setGroupMode('free');
+        }
+      } catch (error) {
+        console.error('Failed to fetch group mode:', error);
+        setGroupMode('free');
+      }
+    };
+    fetchGroupMode();
+  }, [groupId]);
 
   // 在组件初始化时获取清除历史
   useEffect(() => {
@@ -1749,18 +1772,22 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       <SendMessageContainer>
         
         <IconContainer>
-          <IconWrapper onClick={() => setIsBotClicked(!isBotClicked)}>
-            <BotIcon
-              src={botIcon}
-              alt="Bot Icon"
-            />
-          </IconWrapper>
-          {isBotClicked && (
-            <BotListPopUp
-              onClose={() => setIsBotClicked(false)}
-              groupId={groupId}
-              onBotSelect={handleBotSelect}
-            />
+          {groupMode === 'free' && (
+            <>
+              <IconWrapper onClick={() => setIsBotClicked(!isBotClicked)}>
+                <BotIcon
+                  src={botIcon}
+                  alt="Bot Icon"
+                />
+              </IconWrapper>
+              {isBotClicked && (
+                <BotListPopUp
+                  onClose={() => setIsBotClicked(false)}
+                  groupId={groupId}
+                  onBotSelect={handleBotSelect}
+                />
+              )}
+            </>
           )}
           <IconWrapper onClick={sendMessage}>
             <SendIcon />
