@@ -1,7 +1,7 @@
 import { useState } from "react";
 import styled from "styled-components";
 // import logo from "../assets/Logo.png";
-import logo from "../../public/alic.png";
+import logo from "../assets/alic.png";
 import { FaGlobe } from "react-icons/fa";
 
 interface LanguageDropdownProps {
