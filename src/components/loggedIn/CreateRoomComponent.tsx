@@ -721,7 +721,7 @@ const validationSchema = (showAssistants: boolean) =>
               msgCountInterval: Yup.number()
                 .typeError("Message Count Interval must be a number")
                 .integer("Message Count Interval must be an integer")
-                .min(1, "Minimum value is 1")
+                .min(2, "Minimum value is 2")
                 .max(20, "Maximum value is 20")
                 .required("Message Count Interval is required"),
               timeInterval: Yup.number()
@@ -930,7 +930,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       feedbackBot: {
         name: "",
         prompt: "",
-        msgCountInterval: 1,
+        msgCountInterval: 2,
         timeInterval: 1,
         botId: undefined,
       },
@@ -1104,11 +1104,11 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   msgCountInterval:
                       typeof values.feedbackBot.msgCountInterval === "number"
                           ? values.feedbackBot.msgCountInterval
-                          : parseInt(String(values.feedbackBot?.msgCountInterval ?? 0), 10),
+                          : parseInt(String(values.feedbackBot?.msgCountInterval ?? 2), 10),
                   timeInterval:
                       typeof values.feedbackBot?.timeInterval === "number"
                           ? values.feedbackBot.timeInterval
-                          : parseInt(String(values.feedbackBot?.timeInterval ?? 0), 10),
+                          : parseInt(String(values.feedbackBot?.timeInterval ?? 1), 10),
               }
             : undefined;
       // Per API documentation
@@ -1300,7 +1300,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                     : {
                         name: "",
                         prompt: "",
-                        msgCountInterval: 1,
+                        msgCountInterval: 2,
                         timeInterval: 1,
                         botId: undefined,
                       },
@@ -1583,6 +1583,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                               value={bot.name}
                               onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
+                              disabled={effectiveIsModify && bot?.botId != null}
                               $hasError={
                                 !!(
                                   formik.touched.bots?.[index]?.name &&
@@ -1790,11 +1791,11 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                       name="feedbackBot.msgCountInterval"
                       placeholder="Message Count Interval"
                       value={
-                        formik.values.feedbackBot?.msgCountInterval?.toString() ?? "1"
+                        formik.values.feedbackBot?.msgCountInterval?.toString() ?? "2"
                       }
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
-                      min={1}
+                      min={2}
                       max={20}
                       $hasError={
                         !!(
