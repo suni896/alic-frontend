@@ -6,11 +6,11 @@
 // Environment configuration
 const ENV = {
   development: {
-    ETHERPAD_URL: 'http://localhost:9001',
+    ETHERPAD_URL: 'http://8.138.89.124:8080',
     API_KEY: '4e4183f5467fcd0f2ee35a7c4c0b65d40a1d2a9a3d2b45d9614c938f3c243c50',
   },
   production: {
-    ETHERPAD_URL: 'https://etherpad.example.com',
+    ETHERPAD_URL: 'http://8.138.89.124:8080',
     API_KEY: '4e4183f5467fcd0f2ee35a7c4c0b65d40a1d2a9a3d2b45d9614c938f3c243c50',
   },
   // Can add more environments
