@@ -1,101 +1,71 @@
-# ALIC Frontend
+# React + TypeScript + Vite
 
-A collaborative learning platform frontend built with React and TypeScript.
+This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
-## Features
+Currently, two official plugins are available:
 
-### 🌟 Main Features
-- **Real-time Chat**: Interactive messaging with AI bots and other users
-- **Room Management**: Create, join, and manage learning rooms
-- **User Authentication**: Secure login and registration system
-- **Responsive Design**: Works on desktop and mobile devices
+- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
+- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
 
-### 📄 Shared Document Feature
-The platform includes a powerful shared document feature powered by Etherpad:
+## Expanding the ESLint configuration
 
-#### Basic Usage
-1. **Open Document**: Click the "Document" (Shared Document) button on the right side of the screen
-2. **Switch Modes**: 
-   - **Docked Mode**: Document panel is attached to the right side
-   - **Floating Mode**: Document becomes a movable window
+## command
+当你运行 npm run dev 时，应用会加载 .env.development 文件中的配置；
+当你运行 npm run build 时，应用会加载 .env.production 文件中的配置。
+npx vite preview --port 5173
 
-#### Advanced Features
-- **Drag & Drop**: In floating mode, drag the document window by its header
-- **Resize**: 
-  - **Docked Mode**: Drag the left edge to resize horizontally
-  - **Floating Mode**: Drag any edge or corner to resize in all directions
-- **Smart Boundaries**: Window stays within screen bounds with safety margins
-- **Auto-sizing**: Optimized default sizes for different modes
+netstat -an | findstr ":517"
+taskkill /F /IM node.exe
 
-#### Keyboard & Mouse Controls
-- **Header Drag Handle**: Visual indicator shows draggable area
-- **Resize Handles**: Corner indicators appear on hover
-- **Mode Toggle**: Click the maximize/minimize button to switch between modes
-- **Auto-close**: Document closes when switching rooms
 
-#### Technical Details
-- Built with Etherpad for real-time collaboration
-- Responsive design adapts to different screen sizes
-- Persistent state across room visits
-- Optimized performance with React hooks
+rd -r -force node_modules/.vite
+stop:ctrl+c
 
-## Getting Started
+https://112.74.92.135/swagger-ui/index.html#/group-controller
 
-### Prerequisites
-- Node.js (version 16 or higher)
-- npm or yarn
+netstat -ano | findstr :5173
+taskkill /F /PID 23360
 
-### Installation
-```bash
-# Clone the repository
-git clone [repository-url]
+If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
 
-# Navigate to project directory
-cd alic-frontend
+- Configure the top-level `parserOptions` property like this:
 
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
+```js
+export default tseslint.config({
+  languageOptions: {
+    // other options...
+    parserOptions: {
+      project: ['./tsconfig.node.json', './tsconfig.app.json'],
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+})
 ```
 
-### Environment Setup
-Create a `.env` file in the root directory with the following variables:
-```env
-VITE_API_BASE_URL=your_api_url
-VITE_ETHERPAD_URL=your_etherpad_url
+- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
+- Optionally add `...tseslint.configs.stylisticTypeChecked`
+- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
+
+```js
+// eslint.config.js
+import react from 'eslint-plugin-react'
+
+export default tseslint.config({
+  // Set the react version
+  settings: { react: { version: '18.3' } },
+  plugins: {
+    // Add the react plugin
+    react,
+  },
+  rules: {
+    // other rules...
+    // Enable its recommended rules
+    ...react.configs.recommended.rules,
+    ...react.configs['jsx-runtime'].rules,
+  },
+})
 ```
 
-## Project Structure
-```
-src/
-├── components/           # Reusable UI components
-│   ├── loggedIn/        # Components for authenticated users
-│   │   ├── EtherpadDrawer.tsx    # Shared document component
-│   │   ├── EtherpadComponent.tsx # Etherpad integration
-│   │   └── ...
-│   └── loggedOut/       # Components for guest users
-├── pages/               # Page components
-├── utils/               # Utility functions and configurations
-└── types/               # TypeScript type definitions
-```
-
-## Contributing
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## Technologies Used
-- **React 18** - Frontend framework
-- **TypeScript** - Type safety
-- **Styled Components** - CSS-in-JS styling
-- **Vite** - Build tool and dev server
-- **Etherpad** - Collaborative document editing
-- **React Router** - Client-side routing
-- **React Markdown** - Markdown rendering
-
-## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+# handle the problem config
+del .env.production
+"VITE_API_BASE_URL=https://chat.alic-dev.xyz" | Out-File -Encoding utf8 -FilePath .env.production -NoNewline   

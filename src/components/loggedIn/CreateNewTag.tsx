@@ -10,7 +10,7 @@ import ModalHeader from "../Header";
 
 const Overlay = styled.div`
   position: fixed;
-  top: 0;
+  top: 7vh;
   left: 0;
   width: 100%;
   height: 100%;
@@ -33,6 +33,8 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
+  position: absolute;
+  top: 70px;
   background: white;
   border: none;
   border-radius: 16px;
@@ -40,7 +42,6 @@ const Modal = styled.div`
   width: 28%;
   max-width: 480px;
   min-width: 320px;
-  position: relative;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   animation: slideIn 0.3s ease-out;
   
@@ -98,6 +99,7 @@ const ButtonContainer = styled.div`
   gap: 0.75rem;
   margin-top: 2rem;
   justify-content: center;
+  height: 40px;
   
   @media (max-width: 500px) {
     flex-direction: column;

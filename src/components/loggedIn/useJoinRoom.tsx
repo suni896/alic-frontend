@@ -45,16 +45,19 @@ export function useJoinRoom() {
 
         if (response.data.code === 200 || response.data.code === 1009) {
           setJoinSuccess(true);
-          setErrorMessage("Successfully joined group");
-          setShowErrorModal(true);
+          // alert("Successfully joined group");
+          // setShowErrorModal(true);
           setRedirectPath(`/my-room/${groupId}`);
           return true; // 返回成功状态
         } else {
-          throw new Error(response.data.message);
+          alert(
+            response.data.message || "Failed to join group."
+          );
+          return false;
         }
       } catch (error: any) {
-        setErrorMessage(error.message || "Failed to join group");
-        setShowErrorModal(true);
+        alert(error.message || "Failed to join group");
+        // setShowErrorModal(true);
         return false;
       } finally {
         setIsProcessing(false);

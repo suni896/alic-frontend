@@ -1,10 +1,11 @@
 import { useState } from "react";
 import styled from "styled-components";
-import logo from "../assets/Logo.png";
+// import logo from "../assets/Logo.png";
+import logo from "../assets/alic.png";
 import { FaGlobe } from "react-icons/fa";
 
 interface LanguageDropdownProps {
-  show: boolean;
+  $show: boolean;
 }
 
 const Container = styled.div`
@@ -12,7 +13,7 @@ const Container = styled.div`
   top: 0;
   left: 0;
   width: 100%;
-  height: 60px;
+  height: 7vh;
   background-color: #016532;
   display: flex;
   align-items: center;
@@ -23,12 +24,13 @@ const Container = styled.div`
 const LogoContainer = styled.div`
   display: flex;
   align-items: center;
+  margin-left: 20px;
 `;
 
 const Logo = styled.img`
-  width: 40px;
-  height: 46px;
-  margin-right: 20px;
+  width: 75px;
+  height: 30px;
+  // margin-right: 60px;
 `;
 
 const Title = styled.h1`
@@ -71,7 +73,7 @@ const LanguageDropdown = styled.div<LanguageDropdownProps>`
   background-color: white;
   border: 1px solid #ccc;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  display: ${(props) => (props.show ? "block" : "none")};
+  display: ${(props) => (props.$show ? "block" : "none")};
   z-index: 1001;
 
   @media (max-width: 740px) {
@@ -113,11 +115,11 @@ const Navbar = () => {
       <LogoContainer>
         <Logo src={logo} alt="EduHK Logo" />
         <Title>
-          Artificial Intelligence and Learning Analytics in Collaboration
+          {/* Artificial Intelligence and Learning Analytics in Collaboration */}
         </Title>
       </LogoContainer>
       <RightContainer>
-        <LanguageDropdown show={dropdownOpen}>
+        <LanguageDropdown $show={dropdownOpen}>
           {/* <DropdownOption onClick={closeDropdown}>简体中文</DropdownOption> */}
           <DropdownOption onClick={closeDropdown}>English</DropdownOption>
         </LanguageDropdown>

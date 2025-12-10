@@ -16,12 +16,12 @@ type LabeledInputWithCountProps = {
   variant?: 'default' | 'withIcon';
 };
 
-const StyledTextArea = styled.textarea<{ hasError?: boolean }>`
+const StyledTextArea = styled.textarea<{ $hasError?: boolean }>`
   width: 100%;
   padding: 0.875rem 1rem;
   font-size: 1rem;
   font-family: 'Roboto', sans-serif;
-  border: 2px solid ${(props) => (props.hasError ? "#ef4444" : "#e5e7eb")};
+  border: 2px solid ${(props) => (props.$hasError ? "#ef4444" : "#e5e7eb")};
   border-radius: 12px;
   color: #1f2937;
   background-color: #f9fafb;
@@ -32,10 +32,10 @@ const StyledTextArea = styled.textarea<{ hasError?: boolean }>`
 
   &:focus {
     outline: none;
-    border-color: ${(props) => (props.hasError ? "#ef4444" : "#016532")};
+    border-color: ${(props) => (props.$hasError ? "#ef4444" : "#016532")};
     background-color: white;
     box-shadow: 0 0 0 3px ${(props) =>
-      props.hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
+      props.$hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
   }
 
   &::placeholder {
@@ -49,10 +49,10 @@ const StyledTextArea = styled.textarea<{ hasError?: boolean }>`
   }
 `;
 interface ModalInputProps {
-    hasError?: boolean;
+    $hasError?: boolean;
     disabled?: boolean;
     variant?: 'default' | 'withIcon';
-  }
+}
   
 const ModalInput = styled.input<ModalInputProps>`
   width: 100%;
@@ -60,7 +60,7 @@ const ModalInput = styled.input<ModalInputProps>`
   padding: 0.875rem 1rem;
   font-size: 1rem;
   font-family: 'Roboto', sans-serif;
-  border: 2px solid ${(props) => (props.hasError ? "#ef4444" : "#e5e7eb")};
+  border: 2px solid ${(props) => (props.$hasError ? "#ef4444" : "#e5e7eb")};
   border-radius: 12px;
   color: #1f2937;
   background-color: #f9fafb;
@@ -70,10 +70,10 @@ const ModalInput = styled.input<ModalInputProps>`
 
   &:focus {
     outline: none;
-    border-color: ${(props) => (props.hasError ? "#ef4444" : "#016532")};
+    border-color: ${(props) => (props.$hasError ? "#ef4444" : "#016532")};
     background-color: white;
     box-shadow: 0 0 0 3px ${(props) => 
-      props.hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
+      props.$hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
   }
 
   &::placeholder {
@@ -134,7 +134,7 @@ const LabeledInputWithCount: React.FC<LabeledInputWithCountProps> = ({
     placeholder,
     maxLength,
     disabled,
-    hasError: !!error,
+    $hasError: !!error,
     variant,
   };
 

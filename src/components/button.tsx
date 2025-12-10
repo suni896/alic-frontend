@@ -49,7 +49,6 @@ const BaseButton = styled.button<StyledButtonProps>`
   border: 2px solid transparent;
   outline: none;
   position: relative;
-//   width: 100%;
   height: 100%;
 
   width: 8rem;
@@ -59,6 +58,23 @@ const BaseButton = styled.button<StyledButtonProps>`
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  /* 移除所有focus相关的默认样式 */
+  &:focus {
+    outline: none;
+    box-shadow: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+
+  /* 移除点击时的默认样式 */
+  &:active {
+    outline: none;
+    box-shadow: none;
+  }
 
   &:disabled {
     cursor: not-allowed;
