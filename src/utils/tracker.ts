@@ -7,6 +7,7 @@ interface SensorsDebug {
   testTrack: (eventName: string, data: Record<string, any>) => void;
   dumpQueue: () => number;
   clearQueue: () => number;
+  getQueueLastLength: () => number;
 }
 
 // 扩展sensors类型
@@ -14,6 +15,7 @@ declare module 'sa-sdk-javascript' {
   interface SensorsAnalyticsType {
     debug?: SensorsDebug;
     getPreLoginInfo?: () => any;
+    getQueueLastLength?: () => number;
   }
 }
 
@@ -132,6 +134,94 @@ const isDuplicateInQueue = (data: any): boolean => {
 
 // 这里原来有一个isContentContained函数，现在我们直接使用includes方法进行检查
 
+// 在队列中应用转折点过滤 - 实时保留转折点
+const applyTurningPointFilterInQueue = () => {
+  // 如果队列 <= 2条数据，不进行转折点过滤
+  if (eventQueue.length <= 2) {
+    return;
+  }
+  
+  const CHANGE_THRESHOLD = 2; // 变化小于2个字符视为无效
+  const turningPoints: any[] = [];
+  
+  if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+    console.group('🔍 队列转折点过滤');
+    console.log(`队列长度: ${eventQueue.length}`);
+  }
+  
+  for (let i = 0; i < eventQueue.length; i++) {
+    const current = eventQueue[i];
+    const prev = i > 0 ? eventQueue[i - 1] : null;
+    const next = i < eventQueue.length - 1 ? eventQueue[i + 1] : null;
+    
+    // 获取内容长度
+    const currentLength = current.content?.length || 0;
+    const prevLength = prev?.content?.length || 0;
+    const nextLength = next?.content?.length || 0;
+    
+    // 计算变化量
+    const prevChange = currentLength - prevLength;
+    const nextChange = nextLength - currentLength;
+    
+    // 判断是否为转折点
+    let isTurningPoint = false;
+    let turningType = '';
+    
+    // 第一个元素总是保留（作为起点）
+    if (i === 0) {
+      isTurningPoint = true;
+      turningType = '起点';
+    }
+    // 最后一个元素总是保留（作为当前状态）
+    else if (i === eventQueue.length - 1) {
+      isTurningPoint = true;
+      turningType = '当前';
+    }
+    // 减 → 增 转折点
+    else if (prev && next && 
+        prevChange < 0 && nextChange > 0 && 
+        (Math.abs(prevChange) >= CHANGE_THRESHOLD || Math.abs(nextChange) >= CHANGE_THRESHOLD)) {
+      isTurningPoint = true;
+      turningType = '减→增';
+    }
+    // 增 → 减 转折点
+    else if (prev && next && 
+        prevChange > 0 && nextChange < 0 && 
+        (Math.abs(prevChange) >= CHANGE_THRESHOLD || Math.abs(nextChange) >= CHANGE_THRESHOLD)) {
+      isTurningPoint = true;
+      turningType = '增→减';
+    }
+    
+    if (isTurningPoint) {
+      turningPoints.push(current);
+      
+      if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+        console.log(`✅ 保留${turningType}转折点: 长度 ${prevLength} → ${currentLength} → ${nextLength}`);
+        if (config.DEBUG.SHOW_CONTENT_DETAILS) {
+          console.log(`   内容: ${current.content?.substring(0, 30)}${current.content?.length > 30 ? '...' : ''}`);
+        }
+      }
+    } else {
+      if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+        console.log(`❌ 过滤非转折点: 长度 ${prevLength} → ${currentLength} → ${nextLength}`);
+        if (config.DEBUG.SHOW_CONTENT_DETAILS) {
+          console.log(`   内容: ${current.content?.substring(0, 30)}${current.content?.length > 30 ? '...' : ''}`);
+        }
+      }
+    }
+  }
+  
+  // 替换队列内容
+  const originalLength = eventQueue.length;
+  eventQueue.length = 0;
+  eventQueue.push(...turningPoints);
+  
+  if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+    console.log(`过滤完成: ${originalLength} → ${eventQueue.length} (保留率: ${(eventQueue.length / originalLength * 100).toFixed(1)}%)`);
+    console.groupEnd();
+  }
+};
+
 // 添加事件到队列
 const queueEvent = (data: any) => {
   // 记录每次尝试加入队列的内容
@@ -219,7 +309,14 @@ const queueEvent = (data: any) => {
   
   if (DEBUG_MODE) {
     console.log(`📦 事件已加入队列: ${data.event}，队列长度: ${eventQueue.length}`);
-    
+  }
+  
+  // 应用转折点过滤 - 在队列中就保留转折点
+  if (config.FEATURES.TURNING_POINT_FILTER && eventQueue.length > 2) {
+    applyTurningPointFilterInQueue();
+  }
+  
+  if (DEBUG_MODE) {
     // 自动显示完整队列数据，方便调试
     autoDumpQueue();
   }
@@ -676,6 +773,13 @@ try {
 
   // 只有在埋点功能启用时才执行后续操作
   if (isTrackingEnabled) {
+    // 暴露获取队列最新记录长度的方法到sensors对象
+    (sensors as any).getQueueLastLength = () => {
+      if (eventQueue.length === 0) return 0;
+      const lastEvent = eventQueue[eventQueue.length - 1];
+      return lastEvent.content?.length || 0;
+    };
+    
     // 全面拦截所有可能的埋点GET请求
     
     // 1. 拦截XMLHttpRequest
@@ -752,6 +856,12 @@ try {
         testTrack: (eventName: string, data: Record<string, any>) => {
           console.log(`🧪 测试埋点: ${eventName}`, data);
           sensors.track(eventName, data);
+        },
+        // 新增：获取队列最新记录的内容长度
+        getQueueLastLength: () => {
+          if (eventQueue.length === 0) return 0;
+          const lastEvent = eventQueue[eventQueue.length - 1];
+          return lastEvent.content?.length || 0;
         },
         // 新增：打印当前队列内容 - 显示完整数据
         dumpQueue: () => {

@@ -307,6 +307,10 @@ export const useInputTracking = (roomId?: number) => {
     wasReduced: false,
     lastReducedContent: ''
   });
+  // 记录输入法组合状态（用于过滤拼音输入）
+  const isComposing = useRef<boolean>(false);
+  // 记录组合结束后待处理的内容
+  const pendingContent = useRef<string>('');
 
   // 清理函数 - 在组件卸载时发送最后的状态
   useEffect(() => {
@@ -382,43 +386,22 @@ export const useInputTracking = (roomId?: number) => {
       return;
     }
     
-      // 检查内容是否满足记录条件
-  if (config.FEATURES.CONTENT_LENGTH_CHECK && !isContentEligible(content)) {
-    if (DEBUG_MODE && config.DEBUG.VERBOSE && config.DEBUG.SHOW_CONTENT_DIFF_NOTICE) {
-      if (config.DEBUG.SHOW_CONTENT_DETAILS) {
-        console.log(`🚫 内容过短，不记录埋点: ${content.substring(0, 20)}`);
-      } else {
-        console.log(`🚫 内容过短，不记录埋点`);
-      }
-    }
-    return;
-  }
-  
-  // 检查与上次记录的内容相比，变化是否足够大
-  if (config.FEATURES.CONTENT_DIFF_CHECK && !isChangeSufficient(lastRecordedContent.current, content)) {
-    if (DEBUG_MODE && config.DEBUG.VERBOSE && config.DEBUG.SHOW_CONTENT_DIFF_NOTICE) {
-      if (config.DEBUG.SHOW_LENGTH_INFO) {
-        console.log(`🚫 内容变化不够大，不记录埋点: 上次内容长度${lastRecordedContent.current.length}，当前内容长度${content.length}`);
-      } else {
-        console.log(`🚫 内容变化不够大，不记录埋点`);
-      }
-    }
-    return;
-  }
+    // 新规则：只要文字发生变化就记录，不做内容长度和变化检查
+    // 转折点过滤会在队列中自动处理
     
-    // 组件级别的节流控制
+    // 只做基本的重复检查 - 防止完全相同的内容在极短时间内重复
     const now = Date.now();
     const lastTime = lastEventTime.current[`${eventName}_${inputAction}`] || 0;
-    // 根据操作类型选择不同的节流时间
-    const minInterval = inputAction === 'add' ? DEBOUNCE_TIME.chat_input_typing_add : DEBOUNCE_TIME.chat_input_typing_delete;
     
-    if (now - lastTime < minInterval) {
-      if (DEBUG_MODE && config.DEBUG.VERBOSE) console.log(`⏱️ 组件级节流: ${eventName}(${inputAction}) 事件间隔过短 (${now - lastTime}ms < ${minInterval}ms)`);
+    // 极短时间内（50ms）的重复检查，防止意外的重复触发
+    if (now - lastTime < 50) {
+      if (DEBUG_MODE && config.DEBUG.VERBOSE) console.log(`⏱️ 极短时间重复: ${eventName}(${inputAction}) 间隔 ${now - lastTime}ms`);
       return;
     }
     
-    // 防止重复发送同一事件
-    if (isDuplicateEvent(eventName, content, inputAction, roomId)) {
+    // 检查内容是否与上次完全相同
+    if (lastRecordedContent.current === content) {
+      if (DEBUG_MODE && config.DEBUG.VERBOSE) console.log(`🚫 内容完全相同，跳过: ${content.substring(0, 20)}`);
       return;
     }
     
@@ -445,8 +428,35 @@ export const useInputTracking = (roomId?: number) => {
     }
   }, [getTrackingData, roomId]);
 
-  // 修改typing处理函数，区分增加和删除操作，实现新的埋点规则
-  const handleTyping = useCallback((content: string) => {
+  // 处理输入法组合开始（拼音输入开始）
+  const handleCompositionStart = useCallback(() => {
+    isComposing.current = true;
+    if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+      console.log('🎯 输入法组合开始（拼音输入中...）');
+    }
+  }, []);
+
+  // 处理输入法组合结束（拼音转换为中文完成）
+  const handleCompositionEnd = useCallback((content: string) => {
+    isComposing.current = false;
+    pendingContent.current = content;
+    
+    if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+      console.log('🎯 输入法组合结束（拼音已转换为中文）');
+    }
+    
+    // 组合结束后立即处理内容
+    // 使用 setTimeout 确保在 input 事件之后执行
+    setTimeout(() => {
+      if (pendingContent.current) {
+        handleTypingInternal(pendingContent.current);
+        pendingContent.current = '';
+      }
+    }, 0);
+  }, []);
+
+  // 内部的 typing 处理函数
+  const handleTypingInternal = useCallback((content: string) => {
     if (!content.trim()) {
       lastInputLength.current = 0;
       maxInputLength.current = 0;
@@ -462,62 +472,53 @@ export const useInputTracking = (roomId?: number) => {
     // 保存当前内容用于组件卸载时发送
     lastInputContent.current = content;
     
-    // 比较当前内容长度与上一次长度，判断是增加还是删除
+    // 比较当前内容长度与队列最新记录的长度，判断是增加还是删除
     const currentLength = content.length;
-    const previousLength = lastInputLength.current;
-    const inputAction: 'add' | 'delete' = currentLength >= previousLength ? 'add' : 'delete';
+    const previousLength = lastInputLength.current; // 保存上一次的长度用于状态判断
+    // 从tracker获取队列最新记录的长度
+    const queueLastLength = (sensors as any).getQueueLastLength?.() || lastInputLength.current;
+    const inputAction: 'add' | 'delete' = currentLength >= queueLastLength ? 'add' : 'delete';
     
     // 更新上一次输入长度
     lastInputLength.current = currentLength;
     
-    // 取消之前的定时器
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-      timerRef.current = null;
+    // 更新本次会话的最大长度
+    if (currentLength > maxInputLength.current) {
+      maxInputLength.current = currentLength;
+      sessionState.current.maxContent = content;
     }
     
-    // 新规则实现：
-    if (inputAction === 'add') {
-      // 如果是增加操作
-      
-      // 更新本次会话的最大长度
-      if (currentLength > maxInputLength.current) {
-        maxInputLength.current = currentLength;
-        sessionState.current.maxContent = content;
-      }
-      
-      // 标记有待发送的增加事件
-      hasPendingAddEvent.current = true;
-      
-      // 内容一直增加，不立即发送埋点，等待网页关闭或发送消息时才记录
-      // 或者等待一段无操作时间后发送最新状态
-      timerRef.current = setTimeout(() => {
-        if (hasPendingAddEvent.current) {
-          trackEvent('chat_input_typing', content, 'add');
-          hasPendingAddEvent.current = false;
-        }
-      }, DEBOUNCE_TIME.chat_input_typing_add);
-      
-    } else {
-      // 如果是删除操作 - 移除50%阈值条件
-      
-      // 更新最后删除的内容
+    // 新规则：只要文字发生变化就立即记录埋点，让队列中的转折点过滤来处理
+    // 不再使用防抖延迟，减少数据延迟
+    trackEvent('chat_input_typing', content, inputAction);
+    
+    // 更新会话状态
+    if (inputAction === 'delete') {
       sessionState.current.lastReducedContent = content;
-      
-      // 标记已处于删除状态
       if (!sessionState.current.wasReduced) {
         sessionState.current.wasReduced = true;
       }
-      
-      // 立即发送删除事件，无需检查阈值
-      trackEvent('chat_input_typing', content, 'delete');
-      
+    } else {
       // 如果从删除状态恢复增加，重置删除状态
       if (sessionState.current.wasReduced && currentLength > previousLength) {
         sessionState.current.wasReduced = false;
       }
     }
   }, [trackEvent]);
+
+  // 修改typing处理函数，区分增加和删除操作，实现新的埋点规则
+  const handleTyping = useCallback((content: string) => {
+    // 如果正在输入法组合中（拼音输入中），不记录埋点
+    if (isComposing.current) {
+      if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+        console.log('⏸️ 输入法组合中，跳过埋点记录');
+      }
+      return;
+    }
+    
+    // 非组合状态，正常处理
+    handleTypingInternal(content);
+  }, [handleTypingInternal]);
 
   // 发送消息的处理函数 - 增加发送前记录最终状态
   const handleSend = useCallback((content: string) => {
@@ -582,6 +583,8 @@ export const useInputTracking = (roomId?: number) => {
   return {
     handleTyping,
     handleSend,
-    handleMessageReceived
+    handleMessageReceived,
+    handleCompositionStart,
+    handleCompositionEnd
   };
 }; 

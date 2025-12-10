@@ -9,10 +9,13 @@ export const FEATURE_CONFIG = {
     ENABLED: true,
     // 以下配置仅在ENABLED为true时生效
     CONTENT_CONTAIN_CHECK: true,
-    CONTENT_LENGTH_CHECK: true,
-    CONTENT_DIFF_CHECK: true,
+    // 注意：以下两个检查已在新规则中禁用，改为在队列中通过转折点过滤处理
+    CONTENT_LENGTH_CHECK: false, // 不再检查内容长度，让所有变化都能记录
+    CONTENT_DIFF_CHECK: false,   // 不再检查内容差异，让所有变化都能记录
     AUTO_DUMP_QUEUE: true,
     SEND_MESSAGE_TRIGGER: true,
+    // 是否启用转折点过滤 - 只保留增→减、减→增的转折点（在队列中实时过滤）
+    TURNING_POINT_FILTER: true,
 };
 
 // 调试模式配置
@@ -43,10 +46,10 @@ export const THROTTLE_CONFIG = {
     "chat_input_typing": 2000,
 };
 
-// 防抖配置
+// 防抖配置（已废弃 - 新规则不使用防抖，改为实时记录+队列转折点过滤）
 export const DEBOUNCE_CONFIG = {
-    chat_input_typing_add: 3000,
-    chat_input_typing_delete: 1000,
+    chat_input_typing_add: 0,     // 不再使用防抖
+    chat_input_typing_delete: 0,  // 不再使用防抖
 };
 
 // 允许的埋点事件

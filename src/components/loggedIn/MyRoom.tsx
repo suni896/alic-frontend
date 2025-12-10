@@ -329,8 +329,8 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [isLoading, setIsLoading] = useState(false);
   const isInitialMount = useRef(false);
 
-    // 使用埋点Hook - 已更新埋点规则
-  const { handleTyping, handleSend: trackSend, handleMessageReceived } = useInputTracking(groupId);
+    // 使用埋点Hook - 已更新埋点规则（包含输入法组合事件处理）
+  const { handleTyping, handleSend: trackSend, handleMessageReceived, handleCompositionStart, handleCompositionEnd } = useInputTracking(groupId);
 
   // 存储用户信息到本地存储，便于埋点使用
   useEffect(() => {
@@ -876,6 +876,14 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             // 使用更新后的埋点规则处理输入事件
             // 无论是增加还是删除都会触发，但规则逻辑在hook内部处理
             handleTyping(e.target.value);
+          }}
+          onCompositionStart={() => {
+            // 输入法组合开始（拼音输入开始）
+            handleCompositionStart();
+          }}
+          onCompositionEnd={(e) => {
+            // 输入法组合结束（拼音转换为中文完成）
+            handleCompositionEnd((e.target as HTMLInputElement).value);
           }}
           onKeyPress={(e) => {
             if (e.key === "Enter") {
