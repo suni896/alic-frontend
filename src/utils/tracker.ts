@@ -136,8 +136,8 @@ const isDuplicateInQueue = (data: any): boolean => {
 
 // 在队列中应用转折点过滤 - 实时保留转折点
 const applyTurningPointFilterInQueue = () => {
-  // 如果队列 <= 2条数据，不进行转折点过滤
-  if (eventQueue.length <= 2) {
+  // 如果队列只有1条数据，不进行转折点过滤
+  if (eventQueue.length <= 1) {
     return;
   }
   
@@ -149,6 +149,7 @@ const applyTurningPointFilterInQueue = () => {
     console.log(`队列长度: ${eventQueue.length}`);
   }
   
+  // 策略：保留所有局部极值点（转折点）和当前状态
   for (let i = 0; i < eventQueue.length; i++) {
     const current = eventQueue[i];
     const prev = i > 0 ? eventQueue[i - 1] : null;
@@ -159,53 +160,59 @@ const applyTurningPointFilterInQueue = () => {
     const prevLength = prev?.content?.length || 0;
     const nextLength = next?.content?.length || 0;
     
-    // 计算变化量
-    const prevChange = currentLength - prevLength;
-    const nextChange = nextLength - currentLength;
-    
-    // 判断是否为转折点
     let isTurningPoint = false;
     let turningType = '';
     
-    // 第一个元素总是保留（作为起点）
-    if (i === 0) {
+    // 规则1：最后一个元素总是保留（当前状态）
+    if (i === eventQueue.length - 1) {
       isTurningPoint = true;
-      turningType = '起点';
+      turningType = '当前状态';
     }
-    // 最后一个元素总是保留（作为当前状态）
-    else if (i === eventQueue.length - 1) {
-      isTurningPoint = true;
-      turningType = '当前';
+    // 规则2：第一个元素，如果后面有减少，则保留为局部最大值
+    else if (i === 0 && next) {
+      const nextChange = nextLength - currentLength;
+      
+      if (nextChange < 0) {
+        // 后面在减少，说明当前是局部最大值
+        isTurningPoint = true;
+        turningType = '增→减（局部最大值/首元素）';
+      }
     }
-    // 减 → 增 转折点
-    else if (prev && next && 
-        prevChange < 0 && nextChange > 0 && 
-        (Math.abs(prevChange) >= CHANGE_THRESHOLD || Math.abs(nextChange) >= CHANGE_THRESHOLD)) {
-      isTurningPoint = true;
-      turningType = '减→增';
-    }
-    // 增 → 减 转折点
-    else if (prev && next && 
-        prevChange > 0 && nextChange < 0 && 
-        (Math.abs(prevChange) >= CHANGE_THRESHOLD || Math.abs(nextChange) >= CHANGE_THRESHOLD)) {
-      isTurningPoint = true;
-      turningType = '增→减';
+    // 规则3：检查是否为转折点（有前后元素）
+    else if (prev && next) {
+      const prevChange = currentLength - prevLength;
+      const nextChange = nextLength - currentLength;
+      
+      if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+        console.log(`🔍 检查转折点 [${i}]: prevChange=${prevChange}, nextChange=${nextChange}`);
+      }
+      
+      // 局部最小值：减 → 增 转折点
+      if (prevChange <= 0 && nextChange > 0) {
+        isTurningPoint = true;
+        turningType = '减→增（局部最小值）';
+      }
+      // 局部最大值：增 → 减 转折点
+      else if (prevChange >= 0 && nextChange < 0) {
+        isTurningPoint = true;
+        turningType = '增→减（局部最大值）';
+      }
     }
     
     if (isTurningPoint) {
       turningPoints.push(current);
       
       if (DEBUG_MODE && config.DEBUG.VERBOSE) {
-        console.log(`✅ 保留${turningType}转折点: 长度 ${prevLength} → ${currentLength} → ${nextLength}`);
+        console.log(`✅ 保留${turningType}: 长度 ${prevLength} → ${currentLength} → ${nextLength}`);
         if (config.DEBUG.SHOW_CONTENT_DETAILS) {
-          console.log(`   内容: ${current.content?.substring(0, 30)}${current.content?.length > 30 ? '...' : ''}`);
+          console.log(`   内容: "${current.content?.substring(0, 30)}${current.content?.length > 30 ? '...' : ''}"`);
         }
       }
     } else {
       if (DEBUG_MODE && config.DEBUG.VERBOSE) {
         console.log(`❌ 过滤非转折点: 长度 ${prevLength} → ${currentLength} → ${nextLength}`);
         if (config.DEBUG.SHOW_CONTENT_DETAILS) {
-          console.log(`   内容: ${current.content?.substring(0, 30)}${current.content?.length > 30 ? '...' : ''}`);
+          console.log(`   内容: "${current.content?.substring(0, 30)}${current.content?.length > 30 ? '...' : ''}"`);
         }
       }
     }
@@ -240,68 +247,12 @@ const queueEvent = (data: any) => {
     console.groupEnd();
   }
   
-      // 增强的重复检测
-    if (isDuplicateInQueue(data)) {
-      if (DEBUG_MODE && config.DEBUG.VERBOSE && config.DEBUG.SHOW_CONTENT_DETAILS) {
-        console.log(`🚫 内容被重复检测过滤: "${data.content?.substring(0, 30)}${data.content?.length > 30 ? '...' : ''}"`);
-      }
-      return;
+  // 增强的重复检测
+  if (isDuplicateInQueue(data)) {
+    if (DEBUG_MODE && config.DEBUG.VERBOSE && config.DEBUG.SHOW_CONTENT_DETAILS) {
+      console.log(`🚫 内容被重复检测过滤: "${data.content?.substring(0, 30)}${data.content?.length > 30 ? '...' : ''}"`);
     }
-  
-  // 新增规则：检查当前记录的数据是否包含队列中最后一条数据
-  if (config.FEATURES.CONTENT_CONTAIN_CHECK && eventQueue.length > 0 && data.content && eventQueue[eventQueue.length - 1].content) {
-    const lastEvent = eventQueue[eventQueue.length - 1];
-    const newContent = data.content;
-    const lastContent = lastEvent.content;
-    
-    // 检查操作类型
-    const isDeleteOperation = data.input_action === 'delete';
-    
-    // 内容包含关系检测
-    const newContainsLast = newContent.includes(lastContent);
-    const lastContainsNew = lastContent.includes(newContent);
-    
-    // 处理包含关系逻辑
-    if (newContainsLast || lastContainsNew) {
-      // 对于删除操作，只有当新内容包含旧内容时才替换
-      // 如果旧内容包含新内容，说明删除了部分内容，应该保留两条记录
-      if (isDeleteOperation && !newContainsLast && lastContainsNew) {
-              if (DEBUG_MODE && config.DEBUG.VERBOSE) {
-        if (config.DEBUG.SHOW_LENGTH_INFO) {
-          console.log(`🔄 删除操作: 旧内容(${lastContent.length}字符)包含新内容(${newContent.length}字符)，保留两条记录`);
-        } else {
-          console.log(`🔄 删除操作: 内容存在包含关系，保留两条记录`);
-        }
-        
-        if (config.DEBUG.SHOW_CONTENT_DETAILS) {
-          console.log(`🔍 旧内容: ${lastContent.substring(0, 30)}${lastContent.length > 30 ? '...' : ''}`);
-          console.log(`🔍 新内容: ${newContent.substring(0, 30)}${newContent.length > 30 ? '...' : ''}`);
-        }
-      }
-        // 不做任何替换，保留两条记录
-      } else {
-        // 对于增加操作或新内容包含旧内容的删除操作，替换最后一条数据
-        if (DEBUG_MODE && config.DEBUG.VERBOSE) {
-          if (config.DEBUG.SHOW_LENGTH_INFO) {
-            if (newContainsLast) {
-              console.log(`🔄 新内容(${newContent.length}字符)包含旧内容(${lastContent.length}字符)，替换最后事件`);
-            } else {
-              console.log(`🔄 旧内容(${lastContent.length}字符)包含新内容(${newContent.length}字符)，替换最后事件`);
-            }
-          } else {
-            console.log(`🔄 内容存在包含关系，替换最后事件`);
-          }
-          
-          if (config.DEBUG.SHOW_CONTENT_DETAILS) {
-            console.log(`🔍 旧内容: ${lastContent.substring(0, 30)}${lastContent.length > 30 ? '...' : ''}`);
-            console.log(`🔍 新内容: ${newContent.substring(0, 30)}${newContent.length > 30 ? '...' : ''}`);
-          }
-        }
-        
-        // 删除队列中的最后一条数据
-        eventQueue.pop();
-      }
-    }
+    return;
   }
   
   // 添加新事件到队列

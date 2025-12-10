@@ -8,7 +8,8 @@ export const FEATURE_CONFIG = {
     // 是否启用埋点功能 - 设置为false将完全禁用埋点功能和所有日志
     ENABLED: true,
     // 以下配置仅在ENABLED为true时生效
-    CONTENT_CONTAIN_CHECK: true,
+    // 禁用内容包含检查，改为完全依赖转折点过滤
+    CONTENT_CONTAIN_CHECK: false,
     // 注意：以下两个检查已在新规则中禁用，改为在队列中通过转折点过滤处理
     CONTENT_LENGTH_CHECK: false, // 不再检查内容长度，让所有变化都能记录
     CONTENT_DIFF_CHECK: false,   // 不再检查内容差异，让所有变化都能记录

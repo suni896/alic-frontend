@@ -457,17 +457,18 @@ export const useInputTracking = (roomId?: number) => {
 
   // 内部的 typing 处理函数
   const handleTypingInternal = useCallback((content: string) => {
-    if (!content.trim()) {
-      lastInputLength.current = 0;
-      maxInputLength.current = 0;
-      lastInputContent.current = '';
-      sessionState.current = {
-        maxContent: '',
-        wasReduced: false,
-        lastReducedContent: ''
-      };
-      return;
-    }
+    // 允许空内容也记录，用于转折点判断
+    // if (!content.trim()) {
+    //   lastInputLength.current = 0;
+    //   maxInputLength.current = 0;
+    //   lastInputContent.current = '';
+    //   sessionState.current = {
+    //     maxContent: '',
+    //     wasReduced: false,
+    //     lastReducedContent: ''
+    //   };
+    //   return;
+    // }
     
     // 保存当前内容用于组件卸载时发送
     lastInputContent.current = content;
