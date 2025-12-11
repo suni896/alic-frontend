@@ -744,9 +744,6 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isOnlineRef = useRef(navigator.onLine);
 
-  // 埋点Hook
-  const { handleTyping, handleSend: trackSend, handleMessageReceived } = useInputTracking(groupId);
-
   // 检查用户是否为管理员
   const checkIfAdmin = useCallback((): boolean => {
     if (!groupId || !userInfo?.userId) return false;
@@ -1815,6 +1812,14 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               handleInputChange(e);
               handleTyping(e.target.value);
             }}
+            onCompositionStart={() => {
+              // 输入法组合开始（拼音输入开始）
+              handleCompositionStart();
+            }}
+            onCompositionEnd={(e) => {
+              // 输入法组合结束（拼音转换为中文完成）
+              handleCompositionEnd((e.target as HTMLTextAreaElement).value);
+            }}
             onKeyDown={e => {
               if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
                 e.preventDefault();
@@ -1851,31 +1856,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               <LuX />
             </CancelReplyButton>
           </ReplyInputContainer>
-        <MessageInput
-          placeholder="Type your message..."
-          value={inputMessage}
-          onChange={(e) => {
-            setInputMessage(e.target.value);
-
-            // 使用更新后的埋点规则处理输入事件
-            // 无论是增加还是删除都会触发，但规则逻辑在hook内部处理
-            handleTyping(e.target.value);
-          }}
-          onCompositionStart={() => {
-            // 输入法组合开始（拼音输入开始）
-            handleCompositionStart();
-          }}
-          onCompositionEnd={(e) => {
-            // 输入法组合结束（拼音转换为中文完成）
-            handleCompositionEnd((e.target as HTMLInputElement).value);
-          }}
-          onKeyPress={(e) => {
-            if (e.key === "Enter") {
-              console.log('⌨️ 按下回车键发送消息');
-              sendMessage();
-            }
-          }}
-        />
+        )}
         <BotIcon
           src={botIcon}
           alt="Bot Icon"
