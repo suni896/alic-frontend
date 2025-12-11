@@ -1007,11 +1007,11 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       }
       console.log('响应中没有消息数据');
       return [];
-    } catch (error) {
+      } catch (error) {
       console.error('批量获取消息失败:', error);
       return [];
-    }
-  };
+      }
+    };
 
   // 获取消息历史
   const fetchMessageHistory = async (loadMore = false) => {
@@ -1182,7 +1182,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         setConnectionStatus('connected');
         reconnectAttemptsRef.current = 0;
         connectionStatusRef.current.currentGroupId = groupId;
-        return;
+      return;
       } else {
         // 缓存的连接已失效,清除
         console.log('🗑️ 清除失效的缓存连接');
@@ -1259,17 +1259,17 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               }
 
               Promise.all([
-            receivedMessage.senderType === "CHATBOT"
-              ? fetchBotInfo(receivedMessage.senderId).then((botInfo) => {
-                  receivedMessage.name = botInfo.botName;
-                  receivedMessage.portrait = botIcon;
-                })
-              : fetchUserInfo(receivedMessage.senderId).then((userInfo) => {
-                  receivedMessage.name = userInfo.userName;
-                  receivedMessage.portrait = userInfo.userPortrait;
-                }),
+                receivedMessage.senderType === "CHATBOT"
+                  ? fetchBotInfo(receivedMessage.senderId).then((botInfo) => {
+                      receivedMessage.name = botInfo.botName;
+                      receivedMessage.portrait = botIcon;
+                    })
+                  : fetchUserInfo(receivedMessage.senderId).then((userInfo) => {
+                      receivedMessage.name = userInfo.userName;
+                      receivedMessage.portrait = userInfo.userPortrait;
+                    }),
           ]).then(() => {
-            setMessages((prev) => {
+              setMessages((prev) => {
               // Process replyToMsgId for the received message
               let processedMessage = { ...receivedMessage };
               if (receivedMessage.replyToMsgId) {
@@ -1333,25 +1333,25 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
               console.log('📋 处理后的消息列表长度:', newMessages.length);
 
-              requestAnimationFrame(() => {
-                if (chatContainerRef.current) {
-                  const { scrollTop, scrollHeight, clientHeight } =
-                    chatContainerRef.current;
-                  const isNearBottom =
+                requestAnimationFrame(() => {
+                  if (chatContainerRef.current) {
+                    const { scrollTop, scrollHeight, clientHeight } =
+                      chatContainerRef.current;
+                    const isNearBottom =
                     scrollHeight - (scrollTop + clientHeight) < 300;
 
-                  if (isNearBottom) {
-                    chatContainerRef.current.scrollTop = scrollHeight;
-                    setHasNewMessage(false);
-                  } else {
-                    setHasNewMessage(true);
+                    if (isNearBottom) {
+                      chatContainerRef.current.scrollTop = scrollHeight;
+                      setHasNewMessage(false);
+                    } else {
+                      setHasNewMessage(true);
+                    }
                   }
-                }
-              });
+                });
 
-              return newMessages;
+                return newMessages;
             });
-          });
+              });
             });
 
             resolve();
@@ -1500,16 +1500,16 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
       // 只在组件完全卸载(不是重新渲染)时清理状态
       if (!groupId) {
-        if (stompClientRef.current?.connected) {
-          stompClientRef.current.disconnect(() => {
+      if (stompClientRef.current?.connected) {
+        stompClientRef.current.disconnect(() => {
             console.log("✂️ 组件卸载,断开WebSocket");
-          });
-        }
-        connectionStatusRef.current = {
-          currentGroupId: null,
-          connectionPromise: null,
+        });
+      }
+      connectionStatusRef.current = {
+        currentGroupId: null,
+        connectionPromise: null,
           isConnecting: false,
-        };
+      };
       }
     };
   }, [groupId]); // 移除manageWebSocketConnection依赖,避免不必要的重新执行
@@ -1648,10 +1648,10 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         )}
         {messages.map((msg, index) => (
           <React.Fragment key={msg.infoId}>
-            <MessageContainer
-              $isOwnMessage={msg.senderType === "USER" && msg.senderId === userInfo?.userId}
+          <MessageContainer
+            $isOwnMessage={msg.senderType === "USER" && msg.senderId === userInfo?.userId}
               data-message-id={msg.infoId}
-            >
+          >
             <Avatar
               src={
                 msg.senderType === "CHATBOT"
@@ -1750,7 +1750,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                 <LuCopy />
               </ActionButton>
             </MessageActions>
-            </MessageContainer>
+          </MessageContainer>
 
             {/* 显示上下文清除提示 */}
             {shouldShowContextClearedMessage(msg, index) && (
@@ -1803,15 +1803,15 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
         <MessageInputWrapper $disabled={connectionStatus !== 'connected'}>
 
-          <MessageInput
+        <MessageInput
             $disabled={isLoading || connectionStatus !== 'connected'}
             $isReplying={!!replyingTo}
             ref={messageInputRef}
-            value={inputMessage}
-            onChange={(e) => {
+          value={inputMessage}
+          onChange={(e) => {
               handleInputChange(e);
-              handleTyping(e.target.value);
-            }}
+            handleTyping(e.target.value);
+          }}
             onCompositionStart={() => {
               // 输入法组合开始（拼音输入开始）
               handleCompositionStart();
@@ -1834,9 +1834,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                 }, 0);
               } else if (e.key === "Enter") {
                 e.preventDefault();
-                sendMessage();
-              }
-            }}
+              sendMessage();
+            }
+          }}
             placeholder={
               connectionStatus !== 'connected'
                 ? "连接断开,无法发送消息..."
@@ -1856,18 +1856,6 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               <LuX />
             </CancelReplyButton>
           </ReplyInputContainer>
-        )}
-        <BotIcon
-          src={botIcon}
-          alt="Bot Icon"
-          onClick={() => setIsBotClicked(!isBotClicked)}
-        />
-        {isBotClicked && (
-          <BotListPopUp
-            onClose={() => setIsBotClicked(false)}
-            groupId={groupId}
-            onBotSelect={handleBotSelect}
-          />
         )}
         </MessageInputWrapper>
       </SendMessageContainer>
