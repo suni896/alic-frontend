@@ -13,6 +13,7 @@ import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import { useInputTracking } from "../../hooks/useInputTracking";
 import sensors, { eventQueue, flushEvents } from "../../utils/tracker";
+import { EtherpadDrawerWithButton } from "./EtherpadDrawer";
 import { API_BASE_URL } from "../../../config";
 
 
@@ -1640,6 +1641,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         </ConnectionStatus>
       )}
 
+      <EtherpadDrawerWithButton roomId={groupId} currentRoomId={groupId}>
       <RenderedChatContainer ref={chatContainerRef} onScroll={handleScroll}>
         {hasNoMoreMessages && (
           <div style={{ textAlign: "center", padding: "5px", color: "#666" }}>
@@ -1774,18 +1776,18 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           {groupMode === 'free' && (
             <>
               <IconWrapper onClick={() => setIsBotClicked(!isBotClicked)}>
-                <BotIcon
-                  src={botIcon}
-                  alt="Bot Icon"
-                />
+        <BotIcon
+          src={botIcon}
+          alt="Bot Icon"
+        />
               </IconWrapper>
-              {isBotClicked && (
-                <BotListPopUp
-                  onClose={() => setIsBotClicked(false)}
-                  groupId={groupId}
-                  onBotSelect={handleBotSelect}
-                />
-              )}
+        {isBotClicked && (
+          <BotListPopUp
+            onClose={() => setIsBotClicked(false)}
+            groupId={groupId}
+            onBotSelect={handleBotSelect}
+          />
+        )}
             </>
           )}
           <IconWrapper onClick={sendMessage}>
@@ -1859,6 +1861,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         )}
         </MessageInputWrapper>
       </SendMessageContainer>
+      </EtherpadDrawerWithButton>
 
       {/* 复制成功提示 */}
       <CopySuccessToast $show={!!copySuccess}>
