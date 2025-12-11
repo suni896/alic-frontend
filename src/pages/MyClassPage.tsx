@@ -8,6 +8,15 @@ import TagNavbar from "../components/loggedIn/TagNavbar";
 
 const Container = styled.div`
   display: flex;
+  width: 100%;
+  
+  /* Sidebar 已经是 fixed 定位，宽度为 280px */
+  /* 让第二个子元素占据剩余空间 */
+  & > :nth-child(2) {
+    margin-left: 280px;
+    flex: 1;
+    width: calc(100vw - 280px);
+  }
 `;
 
 const MyClassPage: React.FC = () => {
@@ -19,8 +28,7 @@ const MyClassPage: React.FC = () => {
     location.state || {};
   const tagIdNumber = tagId ? parseInt(tagId, 10) : undefined;
   return (
-    <Layout>
-      <TagNavbar tagId={tagIdNumber} />
+    <Layout customNavbar={<TagNavbar tagId={tagIdNumber} />}>
       <Container>
         <Sidebar />
         <MyClass title={title} desc={desc} />

@@ -6,142 +6,17 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ContainerLayout from "./ContainerLayout";
 import { API_BASE_URL } from "../../../config";
+import { Label, Input, ErrorText, RegisterButton, BackButton, Title } from "./SharedComponents";
+import PasswordInput from "../PasswordInput";
 
 axios.defaults.baseURL = API_BASE_URL;
 
 const SigninForm = styled.form`
+  flex: 1;
   display: flex;
   flex-direction: column;
   width: 100%;
   height: 100%;
-`;
-
-const Title = styled.h1`
-  text-align: center;
-  font-size: 2rem;
-  font-family: "Roboto", serif;
-  font-weight: 700;
-  text-decoration: underline;
-  margin: 1.5% auto;
-
-  @media (max-width: 740px) {
-    font-size: 1.7rem;
-    margin: 2.5% auto;
-  }
-
-  @media (max-height: 720px) {
-    margin: 0 auto;
-  }
-`;
-
-const Label = styled.label`
-  font-size: 0.9rem;
-  font-family: "Roboto", serif;
-  font-weight: 400;
-  margin-bottom: 0.8vh;
-
-  @media (max-width: 740px) {
-    font-size: 0.8rem;
-    margin-bottom: 0.1vh;
-  }
-
-  @media (max-height: 720px) {
-    margin-bottom: 0;
-    font-size: 0.8rem;
-  }
-`;
-
-const Input = styled.input`
-  padding: 0.75rem;
-  font-size: 0.8rem;
-  color: black;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: white;
-  margin-bottom: 1rem;
-  width: 100%;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #016532;
-  }
-
-  @media (max-width: 740px) {
-    margin-bottom: 3%;
-  }
-
-  @media (max-height: 720px) {
-    height: 8%;
-  }
-`;
-
-const ErrorText = styled.div`
-  color: #fc5600;
-  font-size: 0.7rem;
-  margin-top: -3%;
-  margin-bottom: 0.5%;
-
-  @media (max-width: 740px) {
-    margin-bottom: 0.5%;
-  }
-
-  @media (max-height: 720px) {
-    margin-top: -4%;
-  }
-`;
-
-const RegisterButton = styled.button<{ hasError: boolean }>`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40%;
-  padding: 0.75rem;
-  font-size: 1rem;
-  cursor: pointer;
-  margin: 1rem auto 1.5rem auto;
-  border-radius: 5px;
-  background-color: black;
-  color: white;
-
-  @media (max-width: 740px) {
-    width: 60%;
-    height: 5vh;
-    margin-bottom: ${({ hasError }) => (hasError ? "2%" : "1.5rem")};
-  }
-
-  @media (max-width: 740px) and (min-height: 720px) {
-    margin: 10% auto;
-  }
-  @media (max-height: 720px) {
-    height: 8%;
-    margin: 2% auto;
-  }
-`;
-
-const BackButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 60%;
-  height: 55px;
-  padding: 0.75rem;
-  font-size: 1rem;
-  cursor: pointer;
-  margin: 0 auto 0 auto;
-  border-radius: 5px;
-  background-color: #016532;
-  color: white;
-
-  @media (max-width: 740px) {
-    width: 80%;
-    height: 5vh;
-  }
-
-  @media (max-height: 720px) {
-    height: 8%;
-    margin: 1% auto;
-  }
 `;
 
 interface RegisterFormValues {
@@ -242,9 +117,9 @@ const Register: React.FC<{ setEmail: (email: string) => void }> = ({
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
         />
-        {formik.touched.email && formik.errors.email && (
-          <ErrorText>{formik.errors.email}</ErrorText>
-        )}
+        <ErrorText>
+          {formik.touched.email && formik.errors.email ? formik.errors.email : ''}
+        </ErrorText>
         <Label htmlFor="username">Username</Label>
         <Input
           type="text"
@@ -255,36 +130,40 @@ const Register: React.FC<{ setEmail: (email: string) => void }> = ({
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
         />
-        {formik.touched.username && formik.errors.username && (
-          <ErrorText>{formik.errors.username}</ErrorText>
-        )}
+        <ErrorText>
+          {formik.touched.username && formik.errors.username ? formik.errors.username : ''}
+        </ErrorText>
         <Label htmlFor="password">Password</Label>
-        <Input
-          type="password"
+        <PasswordInput
           id="password"
           name="password"
           placeholder="Enter your password"
           value={formik.values.password}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
+          $hasError={formik.touched.password && !!formik.errors.password}
         />
-        {formik.touched.password && formik.errors.password && (
-          <ErrorText>{formik.errors.password}</ErrorText>
-        )}
+        <ErrorText>
+          {formik.touched.password && formik.errors.password ? formik.errors.password : ''}
+        </ErrorText>
         <Label htmlFor="confirmPassword">Confirm Password</Label>
-        <Input
-          type="password"
+        <PasswordInput
           id="confirmPassword"
           name="confirmPassword"
           placeholder="Enter your password again"
           value={formik.values.confirmPassword}
           onChange={formik.handleChange}
           onBlur={formik.handleBlur}
+          $hasError={formik.touched.confirmPassword && !!formik.errors.confirmPassword}
         />
-        {formik.touched.confirmPassword && formik.errors.confirmPassword && (
-          <ErrorText>{formik.errors.confirmPassword}</ErrorText>
-        )}
-        <RegisterButton type="submit" hasError={!!hasErrors}>
+        <ErrorText>
+          {formik.touched.confirmPassword && formik.errors.confirmPassword ? formik.errors.confirmPassword : ''}
+        </ErrorText>
+        <RegisterButton
+          type="submit"
+          disabled={!formik.isValid || formik.isSubmitting}
+          $hasError={!!hasErrors}
+        >
           Register
         </RegisterButton>
         <BackButton type="button" onClick={handleBack}>

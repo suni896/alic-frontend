@@ -7,10 +7,12 @@ import axios from "axios";
 import apiClient from "../loggedOut/apiClient";
 import { useNavigate } from "react-router-dom";
 import { useJoinRoom, RoomGroup } from "./useJoinRoom";
-import CloseButton from "../CloseButton";
 import Button from "../button";
 import LabeledInputWithCount from "../Input";
 import ModalHeader from "../Header";
+import { useFormik } from "formik";
+import * as Yup from "yup";
+import PasswordInput from "../PasswordInput";
 
 // Animations
 const fadeIn = keyframes`
@@ -30,7 +32,7 @@ const slideIn = keyframes`
 
 const OverlayContainer = styled.div`
   position: fixed;
-  top: 0;
+  top: 7vh;
   left: 0;
   width: 100%;
   height: 100%;
@@ -47,9 +49,10 @@ const Container = styled.div`
   background: white;
   width: 90%;
   max-width: 900px;
-  height: 85vh;
+  height: 80vh;
   border-radius: 16px;
-  position: relative;
+  position: absolute;
+  top:5px;
   overflow: hidden;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
   animation: ${slideIn} 0.3s ease-out;
@@ -116,15 +119,15 @@ const RoomListContainer = styled.div`
   }
 `;
 
-const RoomList = styled.div<{ blur: boolean }>`
+const RoomList = styled.div<{ $blur: boolean }>`
   display: flex;
   flex-direction: column;
   gap: 1rem;
   max-width: 800px;
   margin: 0 auto;
 
-  ${({ blur }) =>
-    blur &&
+  ${({ $blur }) =>
+    $blur &&
     css`
       filter: blur(5px);
       pointer-events: none;
@@ -164,7 +167,7 @@ const RoomTitle = styled.h3`
   gap: 0.5rem;
 `;
 
-const RoomType = styled.div<{ isPrivate: boolean }>`
+const RoomType = styled.div<{ $isPrivate: boolean }>`
   display: flex;
   align-items: center;
   gap: 0.25rem;
@@ -172,8 +175,8 @@ const RoomType = styled.div<{ isPrivate: boolean }>`
   border-radius: 20px;
   font-size: 0.75rem;
   font-weight: 500;
-  background: ${props => props.isPrivate ? '#fff3cd' : '#d1edff'};
-  color: ${props => props.isPrivate ? '#856404' : '#0c5460'};
+  background: ${props => props.$isPrivate ? '#fff3cd' : '#d1edff'};
+  color: ${props => props.$isPrivate ? '#856404' : '#0c5460'};
 `;
 
 const RoomInfo = styled.div`
@@ -199,9 +202,9 @@ const RoomDescription = styled.p`
   font-size: 0.95rem;
 `;
 
-const JoinButton = styled.button<{ isJoined?: boolean }>`
+const JoinButton = styled.button<{ $isJoined?: boolean }>`
   padding: 0.75rem 2rem;
-  background: ${props => props.isJoined ? '#28a745' : '#016532'};
+  background: ${props => props.$isJoined ? '#28a745' : '#016532'};
   color: white;
   border: none;
   border-radius: 8px;
@@ -212,7 +215,7 @@ const JoinButton = styled.button<{ isJoined?: boolean }>`
   min-width: 100px;
 
   &:hover {
-    background: ${props => props.isJoined ? '#218838' : '#014d26'};
+    background: ${props => props.$isJoined ? '#218838' : '#014d26'};
     transform: translateY(-1px);
   }
 
@@ -285,42 +288,66 @@ const Overlay = styled.div`
 `;
 
 const Modal = styled.div`
+  position: absolute;
+  top: 70px;
   background: white;
+  border: none;
   border-radius: 16px;
-  padding: 2rem;
-  width: 90%;
-  max-width: 400px;
-  position: relative;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
-  animation: ${slideIn} 0.2s ease-out;
-`;
-
-const PasswordTitle = styled.label`
-  display: block;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  color: #212529;
-`;
-
-const PasswordInput = styled.input`
-  width: 100%;
-  padding: 0.75rem;
-  font-size: 1rem;
-  border: 2px solid #e9ecef;
-  border-radius: 8px;
-  margin-bottom: 1.5rem;
-  transition: border-color 0.2s ease;
-
-  &:focus {
-    outline: none;
-    border-color: #016532;
+  padding: 2.5rem;
+  width: 28%;
+  max-width: 480px;
+  min-width: 320px;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  animation: slideIn 0.3s ease-out;
+  
+  @keyframes slideIn {
+    from {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
   }
+
+  @media (max-width: 1200px) {
+    width: 35%;
+  }
+  @media (max-width: 1000px) {
+    width: 45%;
+  }
+  @media (max-width: 700px) {
+    width: 55%;
+    padding: 2rem;
+  }
+  @media (max-width: 500px) {
+    width: 70%;
+    padding: 1.5rem;
+  }
+  @media (max-width: 400px) {
+    width: 85%;
+    padding: 1.25rem;
+  }
+`;
+
+const PasswordInputContainer = styled.div`
+  width: 90%;
+  margin: 0 auto 1.5rem auto;
+  display: block;
 `;
 
 const ButtonContainer = styled.div`
   display: flex;
-  justify-content: flex-end;
   gap: 0.75rem;
+  margin-top: 2rem;
+  justify-content: center;
+  height: 40px;
+  
+  @media (max-width: 500px) {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
 `;
 
 const ErrorMessage = styled.div`
@@ -330,9 +357,9 @@ const ErrorMessage = styled.div`
   text-align: center;
 `;
 
-const ErrorModalButton = styled.button<{ success?: boolean }>`
+const ErrorModalButton = styled.button<{ $success?: boolean }>`
   padding: 0.75rem 1.5rem;
-  background: ${props => props.success ? '#28a745' : '#dc3545'};
+  background: ${props => props.$success ? '#28a745' : '#dc3545'};
   color: white;
   border: none;
   border-radius: 8px;
@@ -343,7 +370,26 @@ const ErrorModalButton = styled.button<{ success?: boolean }>`
   margin: 0 auto;
 
   &:hover {
-    background: ${props => props.success ? '#218838' : '#c82333'};
+    background: ${props => props.$success ? '#218838' : '#c82333'};
+  }
+`;
+
+const ErrorText = styled.p`
+  font-size: 0.8rem;
+  color: #fc5600;
+  margin-top: 0;
+  margin-bottom: 3px;
+  min-height: 1.5em; /* 预留固定高度 */
+  // line-height: 1.2;
+
+  @media (max-width: 740px) {
+    font-size: 0.7rem;
+    min-height: 1.1em;
+  }
+
+  @media (max-height: 720px) {
+    margin: 0;
+    min-height: 1em;
   }
 `;
 
@@ -362,6 +408,21 @@ interface GroupListResponse {
 interface CreateRoomComponentProps {
   onClose: () => void;
 }
+
+interface PasswordFormValues {
+  password: string;
+}
+
+const passwordValidationSchema = Yup.object({
+  password: Yup.string()
+    .min(6, "Password must be between 6 and 20 characters")
+    .max(20, "Password must be between 6 and 20 characters")
+    .matches(
+      /^[a-zA-Z0-9!@#$%^&*()_+=\[\]{}|;:'",.<>?/`~\\-]*$/,
+      "Password can only include letters, numbers, and special characters"
+    )
+    .required("Password is required"),
+});
 
 const roomsCache = new Map<string, RoomGroup[]>();
 
@@ -405,8 +466,23 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
     redirectPath,
     setRedirectPath,
     handlePasswordSubmit,
-    isPasswordEmpty,
   } = useJoinRoom();
+
+  const passwordFormik = useFormik<PasswordFormValues>({
+    initialValues: {
+      password: "",
+    },
+    validationSchema: passwordValidationSchema,
+    onSubmit: (values) => {
+      setPassword(values.password);
+      handlePasswordSubmit();
+    },
+  });
+
+  // Sync formik password with useJoinRoom password
+  useEffect(() => {
+    passwordFormik.setFieldValue("password", password);
+  }, [password]);
 
   useEffect(() => {
     if (redirectPath) {
@@ -534,7 +610,7 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
                 <LoadingText>Searching for rooms...</LoadingText>
               </LoadingContainer>
             ) : (
-              <RoomList blur={showPasswordModal || showErrorModal}>
+              <RoomList $blur={showPasswordModal || showErrorModal}>
                 {displayRooms.length > 0 ? (
                   displayRooms.map((room) => (
                     <RoomCard key={room.groupId}>
@@ -542,7 +618,7 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
                         <RoomTitle>
                           {room.groupName}
                         </RoomTitle>
-                        <RoomType isPrivate={room.groupType === 0}>
+                        <RoomType $isPrivate={room.groupType === 0}>
                           {room.groupType === 0 ? <MdLock /> : <MdPublic />}
                           {room.groupType === 0 ? 'Private' : 'Public'}
                         </RoomType>
@@ -566,7 +642,7 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
                       )}
 
                       <JoinButton
-                        isJoined={room.isJoined}
+                        $isJoined={room.isJoined}
                         onClick={() =>
                           handleJoinClick(room.groupId, room.groupType, room.isJoined)
                         }
@@ -597,26 +673,40 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
           <Overlay>
             {showPasswordModal && (
               <Modal>
-                <CloseButton onClick={() => setShowPasswordModal(false)}>
-                </CloseButton>
-                <PasswordTitle>Enter Room Password</PasswordTitle>
-                <PasswordInput
-                  type="password"
-                  placeholder="Enter password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      handlePasswordSubmit();
-                    }
-                  }}
-                />
+                <ModalHeader icon={MdLock} title="Enter Room Password" onClose={() => setShowPasswordModal(false)} />
+                {/* <CloseButton onClick={() => setShowPasswordModal(false)}>
+                </CloseButton> */}
+                {/* <PasswordTitle>Enter Room Password</PasswordTitle> */}
+                <PasswordInputContainer>
+                  <PasswordInput
+                    placeholder="Enter password"
+                    value={passwordFormik.values.password}
+                    onChange={(e) => {
+                      passwordFormik.handleChange(e);
+                      setPassword(e.target.value);
+                    }}
+                    onBlur={passwordFormik.handleBlur}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        passwordFormik.handleSubmit();
+                      }
+                    }}
+                    name="password"
+                    $hasError={passwordFormik.touched.password && !!passwordFormik.errors.password}
+                  />
+                </PasswordInputContainer>
+                <ErrorText>{passwordFormik.touched.password && passwordFormik.errors.password }</ErrorText>
+                
                 <ButtonContainer>
                   <Button variant="cancel" onClick={() => setShowPasswordModal(false)}>
                     Cancel
                   </Button>
 
-                  <Button variant="primary" onClick={handlePasswordSubmit} disabled={isPasswordEmpty}>
+                  <Button 
+                    variant="primary" 
+                    onClick={() => passwordFormik.handleSubmit()} 
+                    disabled={!passwordFormik.isValid || !passwordFormik.values.password}
+                  >
                     Join Room
                   </Button>
                 </ButtonContainer>
@@ -628,7 +718,7 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
                   {errorMessage}
                 </ErrorMessage>
                 <ErrorModalButton
-                  success={joinSuccess}
+                  $success={joinSuccess}
                   onClick={() => {
                     setShowErrorModal(false);
                     if (joinSuccess) {

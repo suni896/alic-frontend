@@ -1,17 +1,17 @@
 import React from "react";
 import styled from "styled-components";
 import LeftSection from "./LeftSection";
-import image1 from "../../assets/collaborativeLearning-1.png";
-import image2 from "../../assets/collaborativeLearning-2.png";
-import image3 from "../../assets/collaborativeLearning-3.png";
+import coverImage from "../../assets/cover.png";
+
 import { useEffect } from "react";
 import { useState } from "react";
 
-const images = [image1, image2, image3];
+const images = [coverImage];
 
 const Container = styled.div`
   display: flex;
-  height: 100vh;
+  height: calc(100vh - 7vh);
+  width: 100vw;
   box-sizing: border-box;
   justify-content: center;
   align-items: center;
@@ -23,7 +23,7 @@ const Wrapper = styled.div`
   display: flex;
   box-sizing: border-box;
   width: 90vw;
-  height: 70vh;
+  height: 75vh;
   max-width: 1300px;
   background: white;
   border: 1px solid #016532;
@@ -43,6 +43,8 @@ const RightSection = styled.div`
   width: 100%;
   height: 100%;
   padding: 0.5rem 2rem;
+  overflow-y: auto;
+  
 `;
 
 const ContainerLayout = ({ children }: { children: React.ReactNode }) => {

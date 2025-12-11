@@ -17,12 +17,13 @@ const Container = styled.div`
   top: 0;
   left: 0;
   width: 100%;
-  height: 60px;
+  height: 7vh;
   background-color: #016532;
   display: flex;
   align-items: center;
   justify-content: space-between;
   z-index: 1000;
+  
 `;
 
 const BackArrow = styled(MdKeyboardArrowLeft)`
@@ -87,7 +88,7 @@ const RightContainer = styled.div`
 
 const Settings = styled(IoSettingsOutline)`
   color: white;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   cursor: pointer;
 
   @media (max-width: 500px) {
@@ -98,7 +99,7 @@ const Settings = styled(IoSettingsOutline)`
 
 const Share = styled(MdOutlineIosShare)`
   color: white;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   cursor: pointer;
 
   @media (max-width: 500px) {
@@ -108,7 +109,7 @@ const Share = styled(MdOutlineIosShare)`
 
 const Menu = styled(IoEllipsisHorizontal)`
   color: white;
-  font-size: 1.8rem;
+  font-size: 1.6rem;
   cursor: pointer;
 
   @media (max-width: 500px) {

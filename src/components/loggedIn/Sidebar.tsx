@@ -23,18 +23,22 @@ import { RoomGroup } from "./useJoinRoom";
 import { MdGroup } from "react-icons/md";
 import LabeledInputWithCount from "../Input";
 import PlusButton from "../PlusButton";
+import UserNameEdit from "./UserNameEdit";
 
 const SidebarContainer = styled.div`
   width: 280px;
   max-width: 320px; /* Fixed maximum width for consistency */
   min-width: 280px; /* Minimum width to prevent too narrow display */
-  height: calc(100vh - 60px);
+  height: calc(100vh - 7vh);
   background-color: #ffffff;
-  padding: 2rem 0rem 1.5rem 1rem;
+  padding: 0rem 0rem 1rem 1rem;
   display: flex;
   flex-direction: column;
   border-right: 1px solid #016532;
-  margin-top: 60px;
+  position: fixed; /* 保持固定定位 */
+  left: 0; /* 固定在左侧 */
+  z-index: 100; /* 确保侧边栏在其他内容之上 */
+  top: 7vh; /* 使用top替代margin-top，与导航栏高度匹配 */
 `;
 
 const spin = keyframes`
@@ -109,7 +113,10 @@ const EmptyStateMessage = styled.p`
 const ProfileSection = styled.div`
   display: flex;
   align-items: center;
-  margin-bottom: 5px;
+  // margin-bottom: 10px;
+  margin-top: 10px;
+  height: 60px;
+  // background-color: lightblue;
 `;
 
 const LineSeparator = styled.hr`
@@ -140,7 +147,7 @@ const Avatar = styled.img`
 const UserInfo = styled.div`
   display: flex;
   flex-direction: column;
-  min-width: 0;
+  min-width: 100px;
   flex: 1;
   gap: 2px;
 `;
@@ -212,7 +219,7 @@ const StyledArrowDown = styled(IoIosArrowDown)`
 const SearchContainer = styled.div`
   display: flex;
   align-items: flex-start;
-  margin-top: 1.5rem;
+  // margin-top: 0.8rem;
   gap: 1rem;
   padding: 0 1rem;
   justify-content: flex-start;
@@ -220,15 +227,15 @@ const SearchContainer = styled.div`
   width: 250px;
   max-width: 320px; /* Fixed maximum width for consistency */
   min-width: 250px; /* Minimum width to prevent too narrow display */ 
-
+  height: 40px;
 `;
 
 const SearchWrapper = styled.div`
   position: relative;
   flex: 1;
   max-width: 1000px;
-    width: 160px;
-  height: 42px;
+  width: 160px;
+  height: 40px;
 
   // 让里面的输入框继承这个高度
   display: flex;
@@ -248,11 +255,10 @@ const ToggleContainer = styled.div`
   display: flex;
   align-items: center;
   padding: 0.25rem;
-  margin: 1rem 0 0.5rem 0;
+  margin: 0.5rem 0 0.5rem 0;
   gap: 0.2rem;
   width: 250px;
-  max-width: 320px; /* Fixed maximum width for consistency */
-  min-width: 250px; /* Minimum width to prevent too narrow display */
+  height: 40px;
   background-color: #f1f5f9;
   border-radius: 0.5rem;
   border: 1px solid #e2e8f0;
@@ -269,8 +275,8 @@ const ToggleButton = styled.button<ToggleButtonProps>`
   align-items: center;
   justify-content: center;
   flex: 1;
-  padding: 0.6rem 0.5rem;
-  height: 100%;
+  height: 90%;
+  padding: 0.7rem 0.5rem;
   border: none;
   border-radius: 0.375rem;
   font-family: Roboto, sans-serif;
@@ -278,23 +284,23 @@ const ToggleButton = styled.button<ToggleButtonProps>`
   font-size: 0.8rem;
   word-wrap: break-word;
   word-break: break-word;
-  background-color: ${({ isActive }) => (isActive ? "white" : "transparent")};
-  color: ${({ isActive }) => (isActive ? "#016532" : "#64748b")};
+  background-color: ${({ $isActive }) => ($isActive ? "white" : "transparent")};
+  color: ${({ $isActive }) => ($isActive ? "#016532" : "#64748b")};
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: ${({ isActive }) =>
-    isActive ? "0 1px 3px rgba(0, 0, 0, 0.1)" : "none"};
+  box-shadow: ${({ $isActive }) =>
+    $isActive ? "0 1px 3px rgba(0, 0, 0, 0.1)" : "none"};
   outline: none;
 
   &:hover {
-    background-color: ${({ isActive }) => (isActive ? "white" : "#e2e8f0")};
-    color: ${({ isActive }) => (isActive ? "#016532" : "#374151")};
+    background-color: ${({ $isActive }) => ($isActive ? "white" : "#e2e8f0")};
+    color: ${({ $isActive }) => ($isActive ? "#016532" : "#374151")};
   }
 
   &:focus {
     outline: none;
-    box-shadow: ${({ isActive }) =>
-      isActive 
+    box-shadow: ${({ $isActive }) =>
+      $isActive 
         ? "0 1px 3px rgba(0, 0, 0, 0.1), 0 0 0 2px rgba(1, 101, 50, 0.2)" 
         : "0 0 0 2px rgba(1, 101, 50, 0.2)"};
   }
@@ -316,23 +322,21 @@ const ToggleButton = styled.button<ToggleButtonProps>`
 `;
 
 interface ToggleButtonProps {
-  isActive: boolean;
+  $isActive: boolean;
 }
 
 const RoomList = styled.ul`
   list-style: none;
   padding: 0.5rem;
-  flex: 1;
+  // flex: 1;
   overflow-y: auto;
-  margin: 0.5rem 0;
-  background-color: #f8fafc;
+  margin: 0 0 0.5rem 0;
+  background-color: #f1f5f9;
   border-radius: 0.5rem;
   border: 1px solid #e2e8f0;
   // width: 100%;
-  width: 250px;
-  max-width: 320px; /* Fixed maximum width for consistency */
-  min-width: 250px; /* Minimum width to prevent too narrow display */
-  max-height: 50vh;
+  width: 90%;
+  height: calc(100vh - 7vh - 190px - 90px);
 
   @media (max-width: 900px) {
     max-width: 280px;
@@ -362,6 +366,7 @@ const RoomContainer = styled.div<{ $isActive?: boolean }>`
   transition: all 0.2s ease;
   cursor: pointer;
   width: 90%;
+  height: calc(calc(100vh - 7vh - 190px - 90px)/12);
   ${({ $isActive }) =>
     $isActive &&
     `
@@ -478,10 +483,10 @@ const GroupIcon = styled(MdGroup)`
 
 const ProfilePopUpContainer = styled.div`
   position: absolute;
-  top: 13vh;
-  left: 5%;
-  width: 12%;
-  height: 8vh;
+  left: 90px;
+  top: 40px;
+  width: 180px;
+  height: 60px;
   border: 1px solid #016532;
   border-radius: 8px;
   background-color: white;
@@ -492,7 +497,6 @@ const ProfilePopUpContainer = styled.div`
   padding: 1vh 1%;
   box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
   z-index: 3500;
-  z-index: 3000;
 
   @media (max-width: 1000px) {
     font-size: 0.8rem;
@@ -522,19 +526,6 @@ const ModalCloseButton = styled.button`
     opacity: 0.7;
   }
 
-  @media (max-width: 1000px) {
-    right: -10%;
-  }
-  @media (max-width: 600px) {
-    top: -5%;
-    right: -12%;
-    font-size: 0.8rem;
-  }
-  @media (max-width: 500px) {
-    top: -5%;
-    right: -15%;
-    font-size: 0.8rem;
-  }
 `;
 
 const StyledProfilePopUpCross = styled(RxCross2)`
@@ -544,8 +535,9 @@ const StyledProfilePopUpCross = styled(RxCross2)`
 const StyledMe = styled.p`
   margin: 0;
   padding-left: 1%;
-  font-style: italic;
+  // font-style: italic;
   font-family: Roboto;
+  color: #333;
 `;
 
 const HorizontalLine = styled.hr`
@@ -567,6 +559,7 @@ const StyledSignOutContainer = styled.div`
 
 const StyledSignOutText = styled.p`
   font-family: Roboto;
+  color: #333;
 
   @media (max-width: 700px) {
     width: 130%;
@@ -582,6 +575,7 @@ const StyledSignOutIcon = styled(PiSignOutBold)`
   width: 1.5rem;
   height: 1.5rem;
   cursor: pointer;
+  color: #333;
 
   @media (max-width: 600px) {
     width: 1.2rem;
@@ -596,30 +590,24 @@ const StyledSignOutIcon = styled(PiSignOutBold)`
 
 const PlusButtonOverlayContainer = styled.div`
   position: absolute;
-  top: 23vh;
-  left: 17.8%;
-  width: 13%;
-  height: 12vh;
-  border: 1px solid #016532;
-  border-radius: 8px;
+  top: 0;
+  left: calc(100% + 0.5rem);
   background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 20;
+  width: 180px;
+  padding: 1rem;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: space-between;
-  padding: 0.8vh 1%;
-  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-  z-index: 3500;
+  gap: 0.5rem;
+`;
 
-  @media (max-width: 650px) {
-    left: -10%;
-    width: 305;
-  }
-
-  @media (max-width: 800px) {
-    left: 9%;
-    width: 18%;
-  }
+const PlusButtonWrapper = styled.div`
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 40px;
 `;
 
 const PlusButtonOptionContainer = styled.div`
@@ -636,9 +624,9 @@ const PlusButtonOptionContainer = styled.div`
     background-color: #f4f4f4;
   }
 
-  &:active {
-    transform: scale(0.9);
-  }
+  // &:active {
+  //   transform: scale(0.9);
+  // }
 `;
 
 const StyledIoMdPersonAdd = styled(IoMdPersonAdd)`
@@ -706,16 +694,15 @@ const PaginationContainer = styled.div`
   align-items: center;
   gap: 0.5rem;
   padding: 0.75rem 0.5rem;
-  background-color: white;
+  // background-color: lightblue;
   position: sticky;
-  bottom: 0;
-  width: 250px;
-  max-width: 320px; /* Match RoomList width */
-  min-width: 250px; /* Match RoomList width */
+  bottom: 10px;
+  width: 90%;
+  height: 30px;
   margin-top: auto;
   border-top: 1px solid #e2e8f0;
-  border-radius: 0 0 0.5rem 0.5rem;
-  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
+  // border-radius: 0 0 0.5rem 0.5rem;
+  // box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.05);
 
   @media (max-width: 900px) {
     max-width: 280px;
@@ -822,6 +809,7 @@ interface PlusButtonOverlayProps {
 
 const ProfilePopUp: React.FC<ProfilePopUpProps> = ({ onClose }) => {
   const navigate = useNavigate(); // Call useNavigate directly
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
 
   // Add useRef to reference the popup container
   const popupRef = React.useRef<HTMLDivElement>(null);
@@ -861,12 +849,33 @@ const ProfilePopUp: React.FC<ProfilePopUpProps> = ({ onClose }) => {
     }
   };
 
+  const handleEditUsername = () => {
+    setIsEditingUsername(true);
+  };
+
+  const handleCloseEdit = () => {
+    setIsEditingUsername(false);
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditingUsername(false);
+  };
+
+  if (isEditingUsername) {
+    return (
+      <UserNameEdit 
+        onClose={handleCloseEdit}
+        onSuccess={handleEditSuccess}
+      />
+    );
+  }
+
   return (
     <ProfilePopUpContainer ref={popupRef}>
       <ModalCloseButton onClick={onClose}>
         <StyledProfilePopUpCross />
       </ModalCloseButton>
-      <StyledMe>ME</StyledMe>
+      <StyledMe onClick={handleEditUsername} style={{cursor: 'pointer'}}>ME</StyledMe>
       <HorizontalLine />
       <StyledSignOutContainer onClick={handleLogout}>
         <StyledSignOutText>Sign Out</StyledSignOutText>
@@ -1173,51 +1182,74 @@ const Sidebar: React.FC = () => {
     fetchTags();
   }, [fetchTags]);
 
+  // 渲染加载状态
+  const renderLoadingState = () => (
+    <LoadingContainer>
+      <LoadingSpinner />
+    </LoadingContainer>
+  );
+
+  // 渲染错误状态
+  const renderErrorState = () => (
+    <ErrorContainer>
+      <ErrorMessage>{userInfoError}</ErrorMessage>
+    </ErrorContainer>
+  );
+
+  // 渲染用户信息
+  const renderUserInfo = () => {
+    if (!userInfo) return null;
+    
+    return (
+      <>
+        <Avatar
+          src={`data:image/png;base64,${userInfo.userPortrait}`}
+          alt="User Avatar"
+        />
+        <UserInfo>
+          <UserNameContainer>
+            <UserName $textLength={userInfo.userName.toString().length}>
+              {userInfo.userName}
+            </UserName>
+            <StyledArrowDown
+              onClick={() => setIsProfileClicked(!isProfileClicked)}
+            />
+            {isProfileClicked && (
+              <ProfilePopUp
+                onClose={() => setIsProfileClicked(false)}
+                userInfo={userInfo}
+              />
+            )}
+          </UserNameContainer>
+          <UserEmail $textLength={userInfo.userEmail.toString().length}>
+            {userInfo.userEmail}
+          </UserEmail>
+        </UserInfo>
+      </>
+    );
+  };
+
+  // 渲染空状态
+  const renderEmptyState = () => (
+    <EmptyStateContainer>
+      <EmptyStateMessage>No user information available</EmptyStateMessage>
+    </EmptyStateContainer>
+  );
+
+  // 渲染 ProfileSection 内容
+  const renderProfileContent = () => {
+    if (isUserInfoLoading) return renderLoadingState();
+    if (userInfoError) return renderErrorState();
+    if (userInfo) return renderUserInfo();
+    return renderEmptyState();
+  };
+
   return (
     <SidebarContainer>
       <ProfileSection>
-        {isUserInfoLoading ? (
-          <LoadingContainer>
-            <LoadingSpinner />
-          </LoadingContainer>
-        ) : userInfoError ? (
-          <ErrorContainer>
-            <ErrorMessage>{userInfoError}</ErrorMessage>
-          </ErrorContainer>
-        ) : userInfo ? (
-          <>
-            <Avatar
-              src={`data:image/png;base64,${userInfo.userPortrait}`}
-              alt="User Avatar"
-            />
-            <UserInfo>
-              <UserNameContainer>
-                <UserName $textLength={userInfo.userName.toString().length}>
-                  {userInfo.userName}
-                </UserName>
-                <StyledArrowDown
-                  onClick={() => setIsProfileClicked(!isProfileClicked)}
-                />
-                {isProfileClicked && (
-                  <ProfilePopUp
-                    onClose={() => setIsProfileClicked(false)}
-                    userInfo={userInfo} // Pass the actual userInfo here
-                  />
-                )}
-              </UserNameContainer>
-              <UserEmail $textLength={userInfo.userEmail.toString().length}>
-                {userInfo.userEmail}
-              </UserEmail>
-            </UserInfo>
-          </>
-        ) : (
-          <EmptyStateContainer>
-            <EmptyStateMessage>No user information available</EmptyStateMessage>
-          </EmptyStateContainer>
-        )}
+        {renderProfileContent()}
       </ProfileSection>
       <LineSeparator />
-
       <SearchContainer>
         <SearchWrapper>
           <SearchIcon />
@@ -1238,23 +1270,23 @@ const Sidebar: React.FC = () => {
           />
         </SearchWrapper>
 
-        <PlusButton onClick={() => setIsPlusButtonOverlayVisible(true)}>
-        </PlusButton>
+        <PlusButtonWrapper>
+          <PlusButton onClick={() => setIsPlusButtonOverlayVisible(true)} />
+          {isPlusButtonOverlayVisible && (
+            <PlusButtonOverlay
+              onClose={() => setIsPlusButtonOverlayVisible(false)}
+              userInfo={userInfo}
+              onTagCreated={refreshTags}
+              isCreateRoomOverlayVisible={isCreateRoomOverlayVisible}
+              setIsCreateRoomOverlayVisible={setIsCreateRoomOverlayVisible}
+              isJoinRoomsOverlayVisible={isJoinRoomsOverlayVisible}
+              setIsJoinRoomsOverlayVisible={setIsJoinRoomsOverlayVisible}
+              isCreateTagOverlayVisible={isCreateTagOverlayVisible}
+              setIsCreateTagOverlayVisible={setIsCreateTagOverlayVisible}
+            />
+          )}
+        </PlusButtonWrapper>
       </SearchContainer>
-
-      {isPlusButtonOverlayVisible && (
-        <PlusButtonOverlay
-          onClose={() => setIsPlusButtonOverlayVisible(false)}
-          userInfo={userInfo}
-          onTagCreated={refreshTags}
-          isCreateRoomOverlayVisible={isCreateRoomOverlayVisible}
-          setIsCreateRoomOverlayVisible={setIsCreateRoomOverlayVisible}
-          isJoinRoomsOverlayVisible={isJoinRoomsOverlayVisible}
-          setIsJoinRoomsOverlayVisible={setIsJoinRoomsOverlayVisible}
-          isCreateTagOverlayVisible={isCreateTagOverlayVisible}
-          setIsCreateTagOverlayVisible={setIsCreateTagOverlayVisible}
-        />
-      )}
 
       {/* 子组件独立渲染 */}
       {isCreateRoomOverlayVisible && (
@@ -1275,13 +1307,13 @@ const Sidebar: React.FC = () => {
 
       <ToggleContainer>
         <ToggleButton
-          isActive={activeTab === "myRooms"}
+          $isActive={activeTab === "myRooms"}
           onClick={() => setActiveTab("myRooms")}
         >
           MY ROOMS
         </ToggleButton>
         <ToggleButton
-          isActive={activeTab === "myTags"}
+          $isActive={activeTab === "myTags"}
           onClick={() => setActiveTab("myTags")}
         >
           MY TAGS
@@ -1335,7 +1367,6 @@ const Sidebar: React.FC = () => {
                   {sidebarRoomsPagination.pages}
                 </Ellipsis>
                 <PageButton
-                  $active={false}
                   onClick={() =>
                     handlePageChange(sidebarRoomsPagination.pageNum + 1)
                   }

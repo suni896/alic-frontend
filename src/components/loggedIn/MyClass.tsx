@@ -29,42 +29,85 @@ interface StyledMinusProps {
 const Container = styled.div`
   background: white;
   width: 100%;
-  margin-top: 60px;
-`;
+  // margin-left: 280px; /* 为侧边栏留出空间 */
+  padding-top: 0px;
+  padding-left: 20px;
+  padding-right: 20px;
+  box-sizing: border-box;
+  position: relative;
+  min-height: calc(100vh - 7vh);
+  overflow-y: auto;
 
+// const TopContainer = styled.div`
+//   display: flex;
+//   width: 100%;
+//   align-items: center;
+//   justify-content: ;
+//   position: relative;
+//   padding: 1.5rem 2rem;
+//   height: 2.5rem;
+  
+//   @media (max-width: 800px) {
+//     padding: 1rem;
+//     min-height: 10vh;
+//   }
+  
+//   @media (max-width: 600px) {
+//     flex-direction: column;
+//     gap: 1rem;
+//     min-height: auto;
+//     padding: 1rem 0.5rem;
+//     justify-content: center;
+//   }
+// `;
 const TopContainer = styled.div`
   display: flex;
-  width: 100%;
+  justify-content: space-between;
   align-items: center;
-  justify-content: ;
-  position: relative;
-  padding: 1.5rem 2rem;
-  height: 2.5rem;
-  
+  padding: 2vh 4vw;
+  width: 100%;
+  height: 12vh;
+  box-sizing: border-box;
+  // background-color: lightblue;
+
   @media (max-width: 800px) {
-    padding: 1rem;
-    min-height: 10vh;
+    padding: 2vh 2vw;
   }
-  
+
   @media (max-width: 600px) {
     flex-direction: column;
+    height: auto;
     gap: 1rem;
-    min-height: auto;
-    padding: 1rem 0.5rem;
-    justify-content: center;
+    padding: 2vh 1rem;
   }
+`;
+
+const TitleContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 10px;
+`;
+
+const PlusButtonContainer = styled.div`
+  // display: flex;
+  // align-items: center;
+  margin-left: 0px;
+  height: 2.5rem;
+`;
+
+const HeaderContainer = styled.div`
+  display: flex;
+  align-items: center;
+  width: 20%;
+  // justify-content: space-between;
 `;
 
 const ButtonContainer = styled.div`
-  position: fixed;
+
   display: flex;
   align-items: center;
-  right: 1.5rem;
-  // top: 9.5rem;
   gap: 0.8rem;
   height: 2.5rem;
-  z-index: 1000;
-  max-width: calc(100vw - 3rem); // 防止超出屏幕
   overflow: hidden;
 `;
 const Title = styled.p`
@@ -102,25 +145,55 @@ const Tag = styled(FiTag)`
   }
 `;
 
+// const SearchRoomsContainer = styled.div<RoomContainerProps>`
+//   display: grid;
+//   grid-template-columns: repeat(2, 1fr);
+//   gap: 2rem;
+//   padding: 0 2rem;
+//   margin-top: 4vh;
+//   margin-bottom: 8vh;
+//   box-sizing: border-box;
+//   position: relative;
+
+//   @media (max-width: 1000px) {
+//     gap: 1.5rem;
+//   }
+//   @media (max-width: 600px) {
+//     gap: 1rem;
+//     padding: 0 1rem;
+//   }
+// `;
 const SearchRoomsContainer = styled.div<RoomContainerProps>`
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
-  padding: 0 2rem;
-  margin-top: 4vh;
-  margin-bottom: 8vh;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 4rem;
+  padding: 1rem 4rem;
   box-sizing: border-box;
-  position: relative;
+  margin: 0 auto;
+  justify-content: flex-start;
+  min-height: 20vh;
+  overflow-y: auto;
+  width: 100%;
+  // background-color: lightblue;
+
+  @media (max-width: 1200px) {
+    gap: 2rem 3rem;
+    padding: 2rem 3rem;
+  }
 
   @media (max-width: 1000px) {
-    gap: 1.5rem;
+    gap: 2rem;
   }
+
+  @media (max-width: 800px) {
+    padding: 2rem;
+  }
+
   @media (max-width: 600px) {
-    gap: 1rem;
-    padding: 0 1rem;
+    gap: 2rem 0.8rem;
+    padding: 1.5rem 1rem;
   }
 `;
-
 const LoadingOverlay = styled.div`
   position: absolute;
   top: 0;
@@ -135,19 +208,20 @@ const LoadingOverlay = styled.div`
 `;
 
 const SearchRoomContainer = styled.div<RoomContainerProps>`
-  width: 100%;
+  width: 420px;
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   gap: 1rem;
   box-sizing: border-box;
   align-items: center;
 `;
 
 const RoomContainer = styled.div<RoomContainerProps>`
-  width: ${(props) => (props.$isEditMode ? "calc(100% - 2.5rem)" : "100%")};
+  width: ${(props) => (props.$isEditMode ? "calc(420px - 5.5rem)" : "420px")};
   display: flex;
   align-items: flex-start;
   padding: 0.75rem;
+  height: 70px;
   background-color: white;
   border-radius: 0.375rem;
   border: 1px solid #e2e8f0;
@@ -215,8 +289,19 @@ const RoomDescription = styled.span`
   font-family: Roboto;
   font-weight: 400;
   margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+  max-height: 1.4em; /* 1 line * 1.4 line-height */
+  word-break: break-word;
+  
   @media (max-width: 600px) {
     font-size: 0.7rem;
+    -webkit-line-clamp: 1;
+    max-height: 1.4em; /* 1 line on mobile */
   }
 `;
 
@@ -225,10 +310,12 @@ const Footer = styled.div`
   justify-content: center;
   align-items: center;
   gap: 0.3rem;
-  position: fixed;
-  bottom: 4vh;
-  width: 80%;
+  position: relative;
+  height: 4vh;
+  width: 100%;
   background-color: white;
+  padding: 1.5rem 0;
+  margin-top: 1rem;
 `;
 
 const Ellipsis = styled.span`
@@ -314,7 +401,7 @@ interface LocationState {
 
 const Overlay = styled.div`
   position: fixed;
-  top: 0;
+  top: 7vh;
   left: 0;
   width: 100%;
   height: 100%;
@@ -330,12 +417,12 @@ const Modal = styled.div`
   border: none;
   border-radius: 16px;
   padding: 2.5rem;
-  width: 28%;
+  width: 440px;
   max-width: 500px;
   min-width: 320px;
   position: relative;
   box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  max-height: 80vh;
+  height: 450px;
   display: flex;
   flex-direction: column;
 
@@ -383,11 +470,13 @@ const SearchContainer = styled.div`
   background: #white;
   // border-bottom: 1px solid #e9ecef;
   position: relative;
+  height: 40px;
 `;
 const SearchWrapper = styled.div`
   position: relative;
   max-width: 500px;
   margin: 0 auto;
+  height: 40px;
 `;
 
 const SearchIcon = styled(CiSearch)`
@@ -403,7 +492,7 @@ const SearchIcon = styled(CiSearch)`
 const RoomList = styled.ul`
   list-style: none;
   padding: 1rem;
-  max-height: 26vh;
+  height: 600px;
   overflow-y: auto;
   margin: 2vh 0;
   background: white;
@@ -424,6 +513,7 @@ const RoomList = styled.ul`
 
 const AddRoomContainer = styled.div`
   display: flex;
+  height: 15px;
   align-items: center;
   gap: 0.75rem;
   padding: 0.75rem;
@@ -458,8 +548,8 @@ const BindedRoomTitle = styled(AddRoomTitle)`
 `;
 
 const Checkbox = styled.input.attrs({ type: "checkbox" })`
-  width: 20px;
-  height: 20px;
+  width: 1rem;
+  height: 1rem;
   background-color: white;
   appearance: none;
   border: 1px solid black;
@@ -505,8 +595,9 @@ const NoRoomsMessage = styled.p`
 const OverlayButtonContainer = styled.div`
   display: flex;
   gap: 0.75rem;
-  margin-top: 2rem;
+  margin-top: 1rem;
   justify-content: center;
+  height: 40px;
   
   @media (max-width: 500px) {
     flex-direction: column;
@@ -733,7 +824,7 @@ const MyClass: React.FC<MyClassProps> = ({
     [key: number]: boolean;
   }>({});
   const [pagination, setPagination] = useState({
-    pageSize: 8,
+    pageSize: 20,
     pageNum: 1,
     total: 0,
     pages: 0,
@@ -787,7 +878,8 @@ const MyClass: React.FC<MyClassProps> = ({
 
     const roomDetails = await fetchRoomInfo(groupId);
     if (roomDetails) {
-      handleJoinClick(groupId, roomDetails.groupType);
+      //tag中的room默认已加入
+      handleJoinClick(groupId, roomDetails.groupType, true);
     }
   };
 
@@ -1002,10 +1094,16 @@ const MyClass: React.FC<MyClassProps> = ({
   return (
     <Container>
       <TopContainer>
-        <Tag />
-        <Title>{title}</Title>
-        <PlusButton onClick={() => setIsAddRoomVisible(true)}>
-        </PlusButton>
+        <HeaderContainer>
+          <TitleContainer>
+            <Tag />
+            <Title>{title}</Title>
+          </TitleContainer>
+          <PlusButtonContainer>
+            <PlusButton onClick={() => setIsAddRoomVisible(true)}>
+            </PlusButton>
+          </PlusButtonContainer>
+        </HeaderContainer>
         {/* 将按钮移到顶部 */}
         <ButtonContainer>
 

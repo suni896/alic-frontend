@@ -12,6 +12,11 @@ Currently, two official plugins are available:
 ## command
 当你运行 npm run dev 时，应用会加载 .env.development 文件中的配置；
 当你运行 npm run build 时，应用会加载 .env.production 文件中的配置。
+npx vite preview --port 5173
+
+netstat -an | findstr ":517"
+taskkill /F /IM node.exe
+
 
 rd -r -force node_modules/.vite
 stop:ctrl+c

@@ -5,8 +5,8 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import Layout from "./Layout";
 import { API_BASE_URL } from "../../../config";
+import { SubmitButton, BackButton, Title, ConfirmationText, EmailHighlight, CodeInputContainer, CodeInput } from "./SharedComponents";
 
 axios.defaults.baseURL = API_BASE_URL;
 
@@ -18,113 +18,12 @@ const ConfirmationContainer = styled.div`
   height: 100%;
 `;
 
-const Title = styled.h1`
-  text-align: center;
-  font-size: 2rem;
-  font-family: "Roboto", serif;
-  font-weight: 700;
-  text-decoration: underline;
-  margin: 2.5% auto;
-
-  @media (max-width: 740px) {
-    font-size: 1.8rem;
-    margin: 5% auto;
-  }
-`;
-
-const ConfirmationText = styled.p<{ small?: boolean }>`
-  font-size: ${({ small }) => (small ? "1.3rem" : "1.8rem")};
-  margin: ${({ small }) => (small ? "0.3rem 0 0 0" : "1rem 0 0.5rem 0")};
-  font-family: "Roboto", serif;
-  text-align: center;
-  font-weight: 700;
-
-  @media (max-width: 740px) {
-    font-size: ${({ small }) => (small ? "1rem" : "1.5rem")};
-    line-height: 180%;
-  }
-
-  @media (max-height: 720px) {
-    line-height: 110%;
-    font-weight: 600;
-    font-size: ${({ small }) => (small ? "0.9rem" : "1.2rem")};
-  }
-`;
-
 const Form = styled.form``;
 
-const EmailHighlight = styled.span`
-  color: #016532;
-  font-weight: bold;
-`;
-
-const CodeInputContainer = styled.div`
-  display: flex;
-  gap: 0.5rem;
-  justify-content: center;
-  margin: 2rem 0 1rem 0;
-`;
-
-const CodeInput = styled.input`
-  width: 3.5rem;
-  height: 3.5rem;
-  text-align: center;
-  font-size: 1.5rem;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  background: #d9d9d9;
-  color: #000;
-
-  &:focus {
-    outline: none;
-    border-color: #016532;
-  }
-
-  @media (max-width: 740px) {
-    width: 2.5rem;
-    height: 2.5rem;
-  }
-
-  @media (max-height: 720px) {
-    width: 2.2rem;
-    height: 2.2rem;
-  }
-`;
-
-const SubmitButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 60%;
-  height: 6vh;
-  padding: 0.75rem;
-  font-size: 1rem;
-  cursor: pointer;
-  margin: 1rem auto 0 auto;
-  border-radius: 5px;
-  background-color: #016532;
-  color: white;
-`;
-
-const BackButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 60%;
-  height: 6vh;
-  padding: 0.75rem;
-  font-size: 1rem;
-  cursor: pointer;
-  margin: 1rem auto 0 auto;
-  border-radius: 5px;
-  background-color: black;
-  color: white;
-`;
-
-const ErrorMessage = styled.p<{ show: boolean }>`
+const ErrorMessage = styled.p<{ $show: boolean }>`
   color: #fc5600;
-  visibility: ${({ show }) => (show ? "visible" : "hidden")};
-  opacity: ${({ show }) => (show ? 1 : 0)};
+  visibility: ${({ $show }) => ($show ? "visible" : "hidden")};
+  opacity: ${({ $show }) => ($show ? 1 : 0)};
   text-align: center;
   margin: 0;
   font-size: 1rem;
@@ -278,16 +177,16 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
   };
 
   return (
-    <Layout>
+    // <Layout>
       <ContainerLayout>
         <ConfirmationContainer>
           <Title>Verify OTP</Title>
           <ConfirmationText>Confirm your email address</ConfirmationText>
-          <ConfirmationText small>
-            We've sent a confirmation code to{" "}
-            <EmailHighlight>{email}</EmailHighlight>.
-          </ConfirmationText>
-          <ConfirmationText small>
+          <ConfirmationText $small>
+          We've sent a verification code to{" "}
+          <EmailHighlight>{email}</EmailHighlight>
+        </ConfirmationText>
+        <ConfirmationText $small>
             Check your inbox and enter the code here.
           </ConfirmationText>
 
@@ -315,10 +214,10 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
               ))}
             </CodeInputContainer>
             {formik.touched.otp && formik.errors.otp && (
-              <ErrorMessage show={showError}>{formik.errors.otp}</ErrorMessage>
+              <ErrorMessage $show={showError}>{formik.errors.otp}</ErrorMessage>
             )}
 
-            <ErrorMessage show={showError}>
+            <ErrorMessage $show={showError}>
               The code is incorrect or expired.
               <RequestNewCode onClick={handleRequestNewCode}>
                 Request a new code
@@ -332,7 +231,7 @@ const VerifyOTP: React.FC<VerifyOTPProps> = ({
           </Form>
         </ConfirmationContainer>
       </ContainerLayout>
-    </Layout>
+    // {/* </Layout> */}
   );
 };
 

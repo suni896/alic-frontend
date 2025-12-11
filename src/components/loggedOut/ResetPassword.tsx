@@ -7,140 +7,45 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import VerifyOTP from "./VerifyOTP";
 import { API_BASE_URL } from "../../../config";
+import { Label, Input, ErrorText, SubmitButton, BackButton, Title } from "./SharedComponents";
+import PasswordInput from "../PasswordInput";
 
 axios.defaults.baseURL = API_BASE_URL;
 
 const ResetPasswordForm = styled.form`
+  flex: 1;
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100%;
+  height: 80%;
 `;
 
-const Title = styled.h1`
-  text-align: center;
-  font-size: 2rem;
-  font-family: "Roboto", serif;
-  font-weight: 700;
-  text-decoration: underline;
-  margin: 2.5% auto;
 
-  @media (max-width: 740px) {
-    font-size: 1.7rem;
-    margin-bottom: 7%;
-  }
-
-  @media (max-width: 740px) and (min-height: 80px) {
-    margin-top: 5%;
-    margin-bottom: 10%;
-  }
-`;
-
-const Label = styled.label`
-  font-size: 1rem;
-  font-family: "Roboto", serif;
-  font-weight: 400;
-  margin-bottom: 0.8vh;
-
-  @media (max-width: 740px) {
-    font-size: 0.8rem;
-  }
-`;
-
-const Input = styled.input`
-  padding: 0.75rem;
-  font-size: 1rem;
-  color: black;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  background-color: white;
-  width: 100%;
-  box-sizing: border-box;
-
-  &:focus {
-    outline: none;
-    border-color: #016532;
-  }
-
-  @media (max-width: 740px) {
-    height: 5vh;
-  }
-`;
-
-const ErrorText = styled.p`
-  font-size: 0.8rem;
-  color: #fc5600;
-  margin-top: 0;
-  margin-bottom: 3%;
-
-  @media (max-width: 740px) {
-    font-size: 0.7rem;
-  }
-
-  @media (max-height: 720px) {
-    margin: 0;
-  }
-`;
-
-const SubmitButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40%;
-  padding: 0.75rem;
-  font-size: 1rem;
-  height: 6vh;
-  cursor: pointer;
-  margin: 5% auto;
-  border-radius: 5px;
-  background-color: black;
-  color: white;
-
-  @media (max-width: 740px) {
-    width: 60%;
-    margin-top: 15%;
-    margin-bottom: 6%;
-  }
-
-  @media (max-height: 720px) and (min-height: 740px) {
-    margin-bottom: 0;
-    margin-top: 0;
-  }
-
-  @media (max-width: 740px) and (min-height: 820px) {
-    height: 5vh;
-    margin-bottom: 8%;
-  }
-`;
-
-const BackButton = styled.button`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 60%;
-  height: 7vh;
-  padding: 0.75rem;
-  font-size: 1rem;
-  cursor: pointer;
-  margin: 10% auto 0 auto;
-  border-radius: 5px;
-  background-color: #016532;
-  color: white;
-
-  @media (max-width: 740px) {
-    width: 80%;
-    margin-top: 15%;
-  }
-`;
 
 interface ResetPasswordFormValues {
   email: string;
+  password?: string;
+  confirmPassword?: string;
 }
 
 const validationSchema = Yup.object({
   email: Yup.string()
     .email("Invalid email address")
     .required("Email is required"),
+});
+
+const resetPasswordValidationSchema = Yup.object({
+  password: Yup.string()
+    .min(6, "Password must be between 6 and 20 characters")
+    .max(20, "Password must be between 6 and 20 characters")
+    .matches(
+      /^[a-zA-Z0-9!@#$%^&*()_+=[\]{}|;:'",.<>?/`~\\-]*$/,
+      "Password can only include letters, numbers, and special characters"
+    )
+    .required("Password is required"),
+  confirmPassword: Yup.string()
+    .oneOf([Yup.ref("password")], "Passwords must match")
+    .required("Confirm Password is required"),
 });
 
 const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
@@ -179,41 +84,42 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
     },
   });
 
+  const resetPasswordFormik = useFormik({
+    initialValues: {
+      password: "",
+      confirmPassword: "",
+    },
+    validationSchema: resetPasswordValidationSchema,
+    onSubmit: async (values) => {
+      if (token) {
+        try {
+          const response = await axios.post("/auth/reset", {
+            newPassword: values.password,
+            token: token,
+            type: "3",
+            userEmail: formik.values.email,
+          });
+
+          if (response.data.code === 200) {
+            alert("Password reset successfully!");
+            navigate("/"); // Redirect to home
+          } else {
+            alert(response.data.message || "Failed to reset password.");
+          }
+        } catch (error) {
+          console.error("Error resetting password:", error);
+          alert("Failed to reset password. Please try again.");
+        }
+      }
+    },
+  });
+
   const handleVerifySuccess = (receivedToken: string) => {
     setToken(receivedToken);
     setStep(3); // Move to new password step
   };
 
-  const handleResetPassword = async (
-    newPassword: string,
-    confirmPassword: string
-  ) => {
-    if (newPassword !== confirmPassword) {
-      alert("Passwords do not match.");
-      return;
-    }
 
-    if (token) {
-      try {
-        const response = await axios.post("/auth/reset", {
-          newPassword: newPassword,
-          token: token,
-          type: "3",
-          userEmail: formik.values.email,
-        });
-
-        if (response.data.code === 200) {
-          alert("Password reset successfully!");
-          navigate("/"); // Redirect to home
-        } else {
-          alert(response.data.message || "Failed to reset password.");
-        }
-      } catch (error) {
-        console.error("Error resetting password:", error);
-        alert("Failed to reset password. Please try again.");
-      }
-    }
-  };
 
   return (
     <>
@@ -231,9 +137,9 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
             />
-            {formik.touched.email && formik.errors.email ? (
-              <ErrorText>{formik.errors.email}</ErrorText>
-            ) : null}
+            <ErrorText>
+              {formik.touched.email && formik.errors.email ? formik.errors.email : ''}
+            </ErrorText>
             <SubmitButton type="submit">Send Reset Email</SubmitButton>
             <BackButton type="button" onClick={() => navigate("/")}>
               Back to Sign-In
@@ -250,36 +156,34 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
       )}
       {step === 3 && (
         <ContainerLayout>
-          <ResetPasswordForm
-            onSubmit={(e) => {
-              e.preventDefault();
-              const passwordInput = (
-                e.target as HTMLFormElement
-              ).elements.namedItem("password") as HTMLInputElement;
-              const confirmPasswordInput = (
-                e.target as HTMLFormElement
-              ).elements.namedItem("confirmPassword") as HTMLInputElement;
-              handleResetPassword(
-                passwordInput.value,
-                confirmPasswordInput.value
-              );
-            }}
-          >
+          <ResetPasswordForm onSubmit={resetPasswordFormik.handleSubmit}>
             <Title>Set New Password</Title>
             <Label htmlFor="password">New Password</Label>
-            <Input
-              type="password"
+            <PasswordInput
               id="password"
               name="password"
               placeholder="Enter new password"
+              value={resetPasswordFormik.values.password}
+              onChange={resetPasswordFormik.handleChange}
+              onBlur={resetPasswordFormik.handleBlur}
+              $hasError={resetPasswordFormik.touched.password && !!resetPasswordFormik.errors.password}
             />
+            <ErrorText>
+              {resetPasswordFormik.touched.password && resetPasswordFormik.errors.password ? resetPasswordFormik.errors.password : ''}
+            </ErrorText>
             <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <Input
-              type="password"
+            <PasswordInput
               id="confirmPassword"
               name="confirmPassword"
               placeholder="Re-enter new password"
+              value={resetPasswordFormik.values.confirmPassword}
+              onChange={resetPasswordFormik.handleChange}
+              onBlur={resetPasswordFormik.handleBlur}
+              $hasError={resetPasswordFormik.touched.confirmPassword && !!resetPasswordFormik.errors.confirmPassword}
             />
+            <ErrorText>
+              {resetPasswordFormik.touched.confirmPassword && resetPasswordFormik.errors.confirmPassword ? resetPasswordFormik.errors.confirmPassword : ''}
+            </ErrorText>
             <SubmitButton type="submit">Submit</SubmitButton>
             <BackButton type="button" onClick={() => navigate("/")}>
               Back to Sign-In
