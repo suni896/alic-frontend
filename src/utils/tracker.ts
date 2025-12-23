@@ -132,8 +132,6 @@ const isDuplicateInQueue = (data: any): boolean => {
   return hasDuplicate;
 };
 
-// 这里原来有一个isContentContained函数，现在我们直接使用includes方法进行检查
-
 // 在队列中应用转折点过滤 - 实时保留转折点
 const applyTurningPointFilterInQueue = () => {
   // 如果队列只有1条数据，不进行转折点过滤
@@ -141,7 +139,6 @@ const applyTurningPointFilterInQueue = () => {
     return;
   }
   
-  const CHANGE_THRESHOLD = 2; // 变化小于2个字符视为无效
   const turningPoints: any[] = [];
   
   if (DEBUG_MODE && config.DEBUG.VERBOSE) {

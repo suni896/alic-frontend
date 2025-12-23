@@ -33,4 +33,4 @@ export const ETHERPAD_CONFIG = {
   },
 };
 
-export default ETHERPAD_CONFIG; 
+export default ETHERPAD_CONFIG;

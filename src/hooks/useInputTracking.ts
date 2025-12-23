@@ -33,99 +33,12 @@ const ALLOWED_EVENTS = config.ALLOWED_EVENTS;
 // 从配置文件获取调试开关
 const DEBUG_MODE = config.DEBUG.ENABLED;
 
-// 从配置文件获取防抖时间间隔
-const DEBOUNCE_TIME = {
-  chat_input_typing_add: config.DEBOUNCE.chat_input_typing_add,     // 增加内容时等待更长时间，只保留最终状态
-  chat_input_typing_delete: config.DEBOUNCE.chat_input_typing_delete,  // 删除操作更快记录
-  chat_input_blur: 1000,          // 虽然已移除但保留配置以备将来使用
-  chat_input_before_send: 500,
-  chat_input_sent: 500,
-  chat_message_received: 500
-};
-
 // 生成事件指纹，用于更精确的去重
 const generateEventFingerprint = (eventName: string, content: string, inputAction: 'add' | 'delete', roomId?: number): string => {
   // 提取内容的前30个字符作为指纹的一部分
   const contentDigest = content.substring(0, 30);
   // 组合事件名、内容摘要、操作类型和房间ID生成唯一指纹
   return `${eventName}_${contentDigest}_${inputAction}_${roomId || 0}`;
-};
-
-  // 全局记录上次发送的事件，用于防止重复
-const lastEvents: Record<string, {
-  content: string;
-  timestamp: number;
-  count: number;  // 追踪尝试次数
-  fingerprint: string; // 添加指纹字段
-  length: number; // 记录内容长度
-}> = {};
-
-// 检查是否为拼音输入法状态（包含未完成的拼音）
-// 当前未使用，保留供将来可能的功能
-// const isPinyinInput = (content: string): boolean => {
-//   // 检查是否包含拼音输入法特征
-//   const hasPinyinMarkers = /[a-z]+['`]?$/i.test(content); // 以小写字母结尾可能是拼音
-//   return hasPinyinMarkers;
-// };
-
-// 检查是否重复事件 - 防止短时间内相同事件重复发送
-const isDuplicateEvent = (eventName: string, content: string, inputAction: 'add' | 'delete', roomId?: number): boolean => {
-  const now = Date.now();
-  // 生成事件指纹
-  const fingerprint = generateEventFingerprint(eventName, content, inputAction, roomId);
-  
-  // 首先检查是否有任何类型事件的重复发送（全局限制）
-  const allContentKeys = Object.keys(lastEvents).filter(k => 
-    lastEvents[k].fingerprint === fingerprint && 
-    now - lastEvents[k].timestamp < 500
-  );
-  
-  if (allContentKeys.length > 0) {
-    // 有任何事件类型最近500ms内发送过相同内容
-    if (DEBUG_MODE) {
-      console.log(`🛑 全局重复检测: 相同指纹 "${fingerprint}" 在500ms内已发送过`);
-    }
-    return true;
-  }
-  
-  // 检查是否存在相同事件类型的重复
-  const eventWithAction = `${eventName}_${inputAction}`;
-  const sameEventKeys = Object.keys(lastEvents).filter(k => 
-    k.startsWith(eventWithAction) && 
-    lastEvents[k].fingerprint === fingerprint &&
-    now - lastEvents[k].timestamp < DEBOUNCE_TIME[`chat_input_typing_${inputAction}` as keyof typeof DEBOUNCE_TIME]
-  );
-  
-  if (sameEventKeys.length > 0) {
-    // 更新计数
-    sameEventKeys.forEach(k => {
-      lastEvents[k].count = (lastEvents[k].count || 0) + 1;
-    });
-    
-    if (DEBUG_MODE) {
-      console.log(`🔄 忽略第${lastEvents[sameEventKeys[0]].count}次重复事件: ${eventName}(${inputAction})，距上次发送仅 ${now - lastEvents[sameEventKeys[0]].timestamp}ms`);
-    }
-    return true;
-  }
-  
-  // 生成唯一键，加入操作类型
-  const key = `${eventName}_${inputAction}_${now}`;
-  
-  // 记录本次事件
-  lastEvents[key] = { 
-    content, 
-    timestamp: now, 
-    count: 1,
-    fingerprint,
-    length: content.length
-  };
-  
-  // 清理过期事件记录
-  setTimeout(() => {
-    delete lastEvents[key];
-  }, 10000); // 延长保留时间到10秒，增强防重复能力
-  
-  return false;
 };
 
 // 获取用户ID - 增强从session获取
@@ -231,58 +144,8 @@ const logTracking = (eventName: string, data: TrackingData) => {
   console.groupEnd();
 };
 
-// 检查内容是否满足记录条件（至少两个中文字符或两个英文单词）
-const isContentEligible = (content: string): boolean => {
-  if (!content || !content.trim()) return false;
-  
-  // 检查中文字符数量
-  const chineseChars = content.match(/[\u4e00-\u9fa5]/g);
-  if (chineseChars && chineseChars.length > 2) {
-    return true;
-  }
-  
-  // 检查英文单词数量
-  const englishWords = content.trim().split(/\s+/).filter(word => /[a-zA-Z]/.test(word));
-  if (englishWords.length > 2) {
-    return true;
-  }
-  
-  // 检查总字符数，也可以作为补充条件
-  if (content.length > 10) {
-    return true;
-  }
-  
-  return false;
-};
-
-// 检查两个内容之间的差异是否足够大
-const isChangeSufficient = (oldContent: string, newContent: string): boolean => {
-  if (!oldContent || !newContent) return true; // 如果任一内容为空，视为变化足够
-  
-  // 计算字符差异
-  const diff = Math.abs(newContent.length - oldContent.length);
-  if (diff >= 5) return true; // 如果字符差异大于等于5，视为变化足够
-  
-  // 检查中文字符差异
-  const oldChineseChars = oldContent.match(/[\u4e00-\u9fa5]/g) || [];
-  const newChineseChars = newContent.match(/[\u4e00-\u9fa5]/g) || [];
-  if (Math.abs(oldChineseChars.length - newChineseChars.length) >= 2) {
-    return true;
-  }
-  
-  // 检查英文单词差异
-  const oldEnglishWords = oldContent.trim().split(/\s+/).filter(word => /[a-zA-Z]/.test(word));
-  const newEnglishWords = newContent.trim().split(/\s+/).filter(word => /[a-zA-Z]/.test(word));
-  if (Math.abs(oldEnglishWords.length - newEnglishWords.length) >= 2) {
-    return true;
-  }
-  
-  return false;
-};
 
 export const useInputTracking = (roomId?: number) => {
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  
   // 记录已触发事件，避免重复
   // const eventTracked = useRef<{[key: string]: boolean}>({});
   // 记录组件级别的最后事件时间
