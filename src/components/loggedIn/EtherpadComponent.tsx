@@ -5,6 +5,7 @@ import { useUser } from './UserContext';
 
 interface EtherpadProps {
   roomId?: number;
+  roomName?: string;
   width?: string;
   height?: string;
   showControls?: boolean;
@@ -26,6 +27,7 @@ const EtherpadIframe = styled.iframe`
 
 const EtherpadComponent: React.FC<EtherpadProps> = ({
   roomId,
+  roomName,
   width = '100%',
   height = '100%',
   showControls = true,
@@ -50,6 +52,11 @@ const EtherpadComponent: React.FC<EtherpadProps> = ({
       userName: userName,
       lang: ETHERPAD_CONFIG.DEFAULT_SETTINGS.lang,
     });
+
+    // Add room name if available
+    if (roomName) {
+      params.append('roomName', roomName);
+    }
 
     // Remove userColor reference as it's not in UserInformation type
     // Use default color instead

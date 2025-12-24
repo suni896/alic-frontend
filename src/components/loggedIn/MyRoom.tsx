@@ -712,6 +712,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [contextClearedTimes, setContextClearedTimes] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [groupMode, setGroupMode] = useState<'free' | 'feedback'>('free');
+  const [roomName, setRoomName] = useState<string>('');
 
   // 获取上下文清除历史记录
   const fetchClearHistory = useCallback(async (groupId: number) => {
@@ -776,6 +777,10 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           const data = response.data.data;
           const isFeedback = data.groupMode;
           setGroupMode(isFeedback);
+          // Save room name
+          if (data.groupName) {
+            setRoomName(data.groupName);
+          }
         } else {
           setGroupMode('free');
         }
@@ -1641,7 +1646,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         </ConnectionStatus>
       )}
 
-      <EtherpadDrawerWithButton roomId={groupId} currentRoomId={groupId}>
+      <EtherpadDrawerWithButton roomId={groupId} roomName={roomName} currentRoomId={groupId}>
       <RenderedChatContainer ref={chatContainerRef} onScroll={handleScroll}>
         {hasNoMoreMessages && (
           <div style={{ textAlign: "center", padding: "5px", color: "#666" }}>

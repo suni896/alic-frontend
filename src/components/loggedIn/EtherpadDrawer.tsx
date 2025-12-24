@@ -5,6 +5,7 @@ import EtherpadComponent from './EtherpadComponent';
 
 interface EtherpadDrawerProps {
   roomId?: number;
+  roomName?: string;
   isOpen: boolean;
   onClose: () => void;
   width: string;
@@ -300,6 +301,7 @@ const ResizeHandle = styled.div<{ direction: string }>`
 
 const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
   roomId,
+  roomName,
   isOpen,
   onClose,
   width,
@@ -511,7 +513,8 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
         </DrawerHeader>
         <DrawerContent>
           <EtherpadComponent 
-            roomId={roomId} 
+            roomId={roomId}
+            roomName={roomName}
             height="100%" 
           />
         </DrawerContent>
@@ -522,11 +525,13 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
 
 // Export component with button
 export const EtherpadDrawerWithButton: React.FC<{ 
-  roomId?: number; 
+  roomId?: number;
+  roomName?: string;
   children?: React.ReactNode;
   currentRoomId?: number;
 }> = ({ 
   roomId,
+  roomName,
   children,
   currentRoomId
 }) => {
@@ -599,7 +604,8 @@ export const EtherpadDrawerWithButton: React.FC<{
       )}
       
       <EtherpadDrawer 
-        roomId={roomId} 
+        roomId={roomId}
+        roomName={roomName}
         isOpen={isOpen} 
         onClose={handleClose} 
         width={drawerWidth}
