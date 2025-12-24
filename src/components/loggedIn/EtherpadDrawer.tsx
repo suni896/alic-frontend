@@ -27,11 +27,11 @@ interface StyledProps {
 
 const DrawerContainer = styled.div<StyledProps>`
   position: ${props => props.isFloating ? 'fixed' : 'fixed'};
-  top: ${props => props.isFloating ? `${props.top}px` : '60px'};
+  top: ${props => props.isFloating ? `${props.top}px` : '7vh'};
   right: ${props => props.isFloating ? 'auto' : '0'};
   left: ${props => props.isFloating ? `${props.left}px` : 'auto'};
   width: ${props => props.width};
-  height: ${props => props.isFloating ? props.height : 'calc(100vh - 60px)'};
+  height: ${props => props.isFloating ? props.height : 'calc(100vh - 7vh)'};
   background-color: white;
   box-shadow: ${props => props.isFloating ? '0 4px 20px rgba(0, 0, 0, 0.25)' : '-2px 0 8px rgba(0, 0, 0, 0.15)'};
   z-index: 1000;
@@ -390,7 +390,8 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
         }
         if (resizeDirection.includes('top')) {
           const maxDelta = startSize.height - 200;
-          const maxTopMove = position.y - 60; // Minimum 60px from top (considering navbar)
+          const navbarHeight = window.innerHeight * 0.07; // 7vh
+          const maxTopMove = position.y - navbarHeight; // Minimum navbar height from top
           const constrainedDelta = Math.max(-maxDelta, Math.min(maxTopMove, deltaY));
           newHeight = startSize.height - constrainedDelta;
           newY = startPosition.y + constrainedDelta;
@@ -405,9 +406,10 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
         // Stricter boundary checks
         const drawerWidth = parseInt(width.replace('px', '')) || 300;
         const drawerHeight = parseInt(height.replace('px', '')) || 200;
+        const navbarHeight = window.innerHeight * 0.07; // 7vh
         
         const newX = Math.max(20, Math.min(window.innerWidth - drawerWidth - 20, startPosition.x + deltaX));
-        const newY = Math.max(60, Math.min(window.innerHeight - drawerHeight - 20, startPosition.y + deltaY));
+        const newY = Math.max(navbarHeight, Math.min(window.innerHeight - drawerHeight - 20, startPosition.y + deltaY));
         
         onPositionChange({ x: newX, y: newY });
       }
@@ -531,7 +533,10 @@ export const EtherpadDrawerWithButton: React.FC<{
   const [isOpen, setIsOpen] = useState(false);
   const [drawerWidth, setDrawerWidth] = useState('40%');
   const [drawerHeight, setDrawerHeight] = useState('60vh');
-  const [position, setPosition] = useState({ x: window.innerWidth / 2 - 300, y: 100 });
+  const [position, setPosition] = useState({ 
+    x: window.innerWidth / 2 - 300, 
+    y: Math.max(window.innerHeight * 0.07 + 20, 100) // Ensure it's below navbar (7vh + 20px margin)
+  });
   const [isFloating, setIsFloating] = useState(false);
   const prevRoomIdRef = useRef<number | undefined>(currentRoomId);
 
