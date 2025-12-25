@@ -24,6 +24,7 @@ interface StyledProps {
   isFloating?: boolean;
   top?: number;
   left?: number;
+  isResizing?: boolean;
 }
 
 const DrawerContainer = styled.div<StyledProps>`
@@ -37,7 +38,10 @@ const DrawerContainer = styled.div<StyledProps>`
   box-shadow: ${props => props.isFloating ? '0 4px 20px rgba(0, 0, 0, 0.25)' : '-2px 0 8px rgba(0, 0, 0, 0.15)'};
   z-index: 1000;
   transform: ${props => props.isFloating ? 'none' : `translateX(${props.isOpen ? '0' : '100%'})`};
-  transition: ${props => props.isFloating ? 'box-shadow 0.2s ease' : 'transform 0.3s ease-in-out'};
+  transition: ${props => {
+    if (props.isResizing) return 'none';
+    return props.isFloating ? 'box-shadow 0.2s ease' : 'transform 0.3s ease-in-out';
+  }};
   display: ${props => props.isOpen ? 'flex' : 'none'};
   flex-direction: column;
   border: ${props => props.isFloating ? '1px solid #ddd' : 'none'};
@@ -48,8 +52,9 @@ const DrawerContainer = styled.div<StyledProps>`
   overflow: hidden;
   min-width: 300px;
   min-height: 200px;
+  will-change: ${props => props.isResizing ? 'width, height, top, left' : 'auto'};
   
-  ${props => props.isFloating && `
+  ${props => props.isFloating && !props.isResizing && `
     &:hover {
       box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
     }
@@ -362,66 +367,97 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
     setStartPosition({ x: position.x, y: position.y });
   };
 
+  // Use refs to avoid recreating event handlers
+  const onSizeChangeRef = useRef(onSizeChange);
+  const onPositionChangeRef = useRef(onPositionChange);
+  const widthRef = useRef(width);
+  const heightRef = useRef(height);
+  const rafIdRef = useRef<number | null>(null);
+  
+  useEffect(() => {
+    onSizeChangeRef.current = onSizeChange;
+    onPositionChangeRef.current = onPositionChange;
+    widthRef.current = width;
+    heightRef.current = height;
+  });
+
   // Handle mouse move events
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (isResizing) {
-        const deltaX = e.clientX - startMousePos.x;
-        const deltaY = e.clientY - startMousePos.y;
-        
-        let newWidth = startSize.width;
-        let newHeight = startSize.height;
-        let newX = startPosition.x;
-        let newY = startPosition.y;
-        
-        // Calculate new size and position based on resize direction
-        if (resizeDirection.includes('right')) {
-          const maxWidth = window.innerWidth - position.x - 20; // Keep 20px margin
-          newWidth = Math.max(300, Math.min(maxWidth, startSize.width + deltaX));
-        }
-        if (resizeDirection.includes('left')) {
-          const maxDelta = startSize.width - 300;
-          const maxLeftMove = position.x - 20; // Minimum 20px from left edge
-          const constrainedDelta = Math.max(-maxDelta, Math.min(maxLeftMove, deltaX));
-          newWidth = startSize.width - constrainedDelta;
-          newX = startPosition.x + constrainedDelta;
-        }
-        if (resizeDirection.includes('bottom')) {
-          const maxHeight = window.innerHeight - position.y - 20; // Keep 20px margin
-          newHeight = Math.max(200, Math.min(maxHeight, startSize.height + deltaY));
-        }
-        if (resizeDirection.includes('top')) {
-          const maxDelta = startSize.height - 200;
-          const navbarHeight = window.innerHeight * 0.07; // 7vh
-          const maxTopMove = position.y - navbarHeight; // Minimum navbar height from top
-          const constrainedDelta = Math.max(-maxDelta, Math.min(maxTopMove, deltaY));
-          newHeight = startSize.height - constrainedDelta;
-          newY = startPosition.y + constrainedDelta;
-        }
-        
-        onSizeChange({ width: `${newWidth}px`, height: `${newHeight}px` });
-        onPositionChange({ x: newX, y: newY });
-      } else if (isDragging && isFloating) {
-        const deltaX = e.clientX - dragStartPos.x;
-        const deltaY = e.clientY - dragStartPos.y;
-        
-        // Stricter boundary checks
-        const drawerWidth = parseInt(width.replace('px', '')) || 300;
-        const drawerHeight = parseInt(height.replace('px', '')) || 200;
-        const navbarHeight = window.innerHeight * 0.07; // 7vh
-        
-        const newX = Math.max(20, Math.min(window.innerWidth - drawerWidth - 20, startPosition.x + deltaX));
-        const newY = Math.max(navbarHeight, Math.min(window.innerHeight - drawerHeight - 20, startPosition.y + deltaY));
-        
-        onPositionChange({ x: newX, y: newY });
+      // Cancel any pending animation frame
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
       }
+      
+      // Use requestAnimationFrame for smooth updates
+      rafIdRef.current = requestAnimationFrame(() => {
+        if (isResizing) {
+          e.preventDefault();
+          
+          const deltaX = e.clientX - startMousePos.x;
+          const deltaY = e.clientY - startMousePos.y;
+          
+          let newWidth = startSize.width;
+          let newHeight = startSize.height;
+          let newX = startPosition.x;
+          let newY = startPosition.y;
+          
+          // Calculate new size and position based on resize direction
+          if (resizeDirection.includes('right')) {
+            const maxWidth = window.innerWidth - startPosition.x - 20;
+            newWidth = Math.max(300, Math.min(maxWidth, startSize.width + deltaX));
+          }
+          if (resizeDirection.includes('left')) {
+            const maxDelta = startSize.width - 300;
+            const maxLeftMove = startPosition.x - 20;
+            const constrainedDelta = Math.max(-maxDelta, Math.min(maxLeftMove, deltaX));
+            newWidth = startSize.width - constrainedDelta;
+            newX = startPosition.x + constrainedDelta;
+          }
+          if (resizeDirection.includes('bottom')) {
+            const maxHeight = window.innerHeight - startPosition.y - 20;
+            newHeight = Math.max(200, Math.min(maxHeight, startSize.height + deltaY));
+          }
+          if (resizeDirection.includes('top')) {
+            const maxDelta = startSize.height - 200;
+            const navbarHeight = window.innerHeight * 0.07;
+            const maxTopMove = startPosition.y - navbarHeight;
+            const constrainedDelta = Math.max(-maxDelta, Math.min(maxTopMove, deltaY));
+            newHeight = startSize.height - constrainedDelta;
+            newY = startPosition.y + constrainedDelta;
+          }
+          
+          // Use refs to avoid dependency issues
+          onSizeChangeRef.current({ width: `${newWidth}px`, height: `${newHeight}px` });
+          if (newX !== startPosition.x || newY !== startPosition.y) {
+            onPositionChangeRef.current({ x: newX, y: newY });
+          }
+        } else if (isDragging && isFloating) {
+          e.preventDefault();
+          
+          const deltaX = e.clientX - dragStartPos.x;
+          const deltaY = e.clientY - dragStartPos.y;
+          
+          const drawerWidth = parseInt(widthRef.current.replace('px', '')) || 300;
+          const drawerHeight = parseInt(heightRef.current.replace('px', '')) || 200;
+          const navbarHeight = window.innerHeight * 0.07;
+          
+          const newX = Math.max(20, Math.min(window.innerWidth - drawerWidth - 20, startPosition.x + deltaX));
+          const newY = Math.max(navbarHeight, Math.min(window.innerHeight - drawerHeight - 20, startPosition.y + deltaY));
+          
+          onPositionChangeRef.current({ x: newX, y: newY });
+        }
+      });
     };
 
     const handleMouseUp = () => {
+      if (rafIdRef.current !== null) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
       setIsResizing(false);
       setIsDragging(false);
       setResizeDirection('');
-      // Release mouse styles
       document.body.style.cursor = '';
       document.body.style.userSelect = '';
     };
@@ -444,20 +480,23 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
         document.body.style.cursor = 'move';
       }
       
-      // Prevent text selection
       document.body.style.userSelect = 'none';
       
-      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mousemove', handleMouseMove, { passive: false });
       document.addEventListener('mouseup', handleMouseUp);
       
       return () => {
         document.removeEventListener('mousemove', handleMouseMove);
         document.removeEventListener('mouseup', handleMouseUp);
+        if (rafIdRef.current !== null) {
+          cancelAnimationFrame(rafIdRef.current);
+          rafIdRef.current = null;
+        }
         document.body.style.cursor = '';
         document.body.style.userSelect = '';
       };
     }
-  }, [isResizing, isDragging, resizeDirection, startMousePos, startPosition, startSize, dragStartPos, position, width, height, onSizeChange, onPositionChange, isFloating]);
+  }, [isResizing, isDragging, resizeDirection, startMousePos, startPosition, startSize, dragStartPos, isFloating]);
 
   const toggleFloatingMode = () => {
     onFloatingChange(!isFloating);
@@ -480,6 +519,7 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
         isFloating={isFloating}
         top={position.y}
         left={position.x}
+        isResizing={isResizing}
       >
         {/* Resize handles - only show in floating mode */}
         {isFloating && (
@@ -515,7 +555,8 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
           <EtherpadComponent 
             roomId={roomId}
             roomName={roomName}
-            height="100%" 
+            height="100%"
+            isResizing={isResizing}
           />
         </DrawerContent>
       </DrawerContainer>

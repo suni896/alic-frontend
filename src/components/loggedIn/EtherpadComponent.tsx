@@ -9,6 +9,7 @@ interface EtherpadProps {
   width?: string;
   height?: string;
   showControls?: boolean;
+  isResizing?: boolean;
 }
 
 const EtherpadContainer = styled.div`
@@ -19,10 +20,11 @@ const EtherpadContainer = styled.div`
   background: white;
 `;
 
-const EtherpadIframe = styled.iframe`
+const EtherpadIframe = styled.iframe<{ isResizing?: boolean }>`
   width: 100%;
   height: 100%;
   border: none;
+  pointer-events: ${props => props.isResizing ? 'none' : 'auto'};
 `;
 
 const EtherpadComponent: React.FC<EtherpadProps> = ({
@@ -31,6 +33,7 @@ const EtherpadComponent: React.FC<EtherpadProps> = ({
   width = '100%',
   height = '100%',
   showControls = true,
+  isResizing = false,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { userInfo } = useUser();
@@ -80,6 +83,7 @@ const EtherpadComponent: React.FC<EtherpadProps> = ({
         title="Etherpad Collaborative Editor"
         allow="fullscreen"
         onLoad={handleIframeLoad}
+        isResizing={isResizing}
       />
     </EtherpadContainer>
   );
