@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 import { LuX, LuFileText, LuMaximize2, LuMinimize2 } from 'react-icons/lu';
 import EtherpadComponent from './EtherpadComponent';
@@ -28,7 +29,7 @@ interface StyledProps {
 }
 
 const DrawerContainer = styled.div<StyledProps>`
-  position: ${props => props.isFloating ? 'fixed' : 'fixed'};
+  position: ${props => props.isFloating ? 'fixed' : 'fixed'} !important;
   top: ${props => props.isFloating ? `${props.top}px` : '7vh'};
   right: ${props => props.isFloating ? 'auto' : '0'};
   left: ${props => props.isFloating ? `${props.left}px` : 'auto'};
@@ -36,7 +37,7 @@ const DrawerContainer = styled.div<StyledProps>`
   height: ${props => props.isFloating ? props.height : 'calc(100vh - 7vh)'};
   background-color: white;
   box-shadow: ${props => props.isFloating ? '0 4px 20px rgba(0, 0, 0, 0.25)' : '-2px 0 8px rgba(0, 0, 0, 0.15)'};
-  z-index: 1000;
+  z-index: ${props => props.isFloating ? '9999' : '1000'} !important; /* Higher z-index in floating mode to cover all content including sidebar */
   transform: ${props => props.isFloating ? 'none' : `translateX(${props.isOpen ? '0' : '100%'})`};
   transition: ${props => {
     if (props.isResizing) return 'none';
@@ -163,7 +164,7 @@ const DrawerButton = styled.button`
   justify-content: center;
   cursor: pointer;
   box-shadow: -3px 0 15px rgba(0, 0, 0, 0.25);
-  z-index: 999;
+  z-index: 1500; /* Ensure button is always visible above other content */
   transition: all 0.3s ease;
   padding: 10px 5px;
 
@@ -409,7 +410,7 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
           }
           if (resizeDirection.includes('left')) {
             const maxDelta = startSize.width - 300;
-            const maxLeftMove = startPosition.x - 20;
+            const maxLeftMove = startPosition.x - 20; // Allow resize over sidebar
             const constrainedDelta = Math.max(-maxDelta, Math.min(maxLeftMove, deltaX));
             newWidth = startSize.width - constrainedDelta;
             newX = startPosition.x + constrainedDelta;
@@ -442,6 +443,7 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
           const drawerHeight = parseInt(heightRef.current.replace('px', '')) || 200;
           const navbarHeight = window.innerHeight * 0.07;
           
+          // Allow dragging over sidebar with minimal left margin
           const newX = Math.max(20, Math.min(window.innerWidth - drawerWidth - 20, startPosition.x + deltaX));
           const newY = Math.max(navbarHeight, Math.min(window.innerHeight - drawerHeight - 20, startPosition.y + deltaY));
           
@@ -509,58 +511,59 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
     onClose();
   };
 
-  return (
-    <>
-      <DrawerContainer 
-        ref={drawerRef} 
-        isOpen={isOpen} 
-        width={width}
-        height={height}
-        isFloating={isFloating}
-        top={position.y}
-        left={position.x}
-        isResizing={isResizing}
-      >
-        {/* Resize handles - only show in floating mode */}
-        {isFloating && (
-          <>
-            <ResizeHandle direction="top" onMouseDown={(e) => handleResizeStart(e, 'top')} />
-            <ResizeHandle direction="bottom" onMouseDown={(e) => handleResizeStart(e, 'bottom')} />
-            <ResizeHandle direction="left" onMouseDown={(e) => handleResizeStart(e, 'left')} />
-            <ResizeHandle direction="right" onMouseDown={(e) => handleResizeStart(e, 'right')} />
-            <ResizeHandle direction="top-left" onMouseDown={(e) => handleResizeStart(e, 'top-left')} />
-            <ResizeHandle direction="top-right" onMouseDown={(e) => handleResizeStart(e, 'top-right')} />
-            <ResizeHandle direction="bottom-left" onMouseDown={(e) => handleResizeStart(e, 'bottom-left')} />
-            <ResizeHandle direction="bottom-right" onMouseDown={(e) => handleResizeStart(e, 'bottom-right')} />
-          </>
-        )}
-        {/* Original left resize handle - only show in docked mode */}
-        {!isFloating && <ResizeHandle direction="left" onMouseDown={(e) => handleResizeStart(e, 'left')} />}
-        
-        <DrawerHeader ref={headerRef} onMouseDown={handleDragStart}>
-          <DrawerTitle>
-            <LuFileText />
-            Shared Document
-          </DrawerTitle>
-          <HeaderButtons>
-            <IconButton onClick={toggleFloatingMode} title={isFloating ? "Dock Window" : "Float Window"}>
-              {isFloating ? <LuMinimize2 /> : <LuMaximize2 />}
-            </IconButton>
-            <IconButton onClick={handleClose} title="Close">
-              <LuX />
-            </IconButton>
-          </HeaderButtons>
-        </DrawerHeader>
-        <DrawerContent>
-          <EtherpadComponent 
-            roomId={roomId}
-            roomName={roomName}
-            height="100%"
-            isResizing={isResizing}
-          />
-        </DrawerContent>
-      </DrawerContainer>
-    </>
+  // Always use Portal to render drawer at body level to avoid z-index stacking context issues
+  // This prevents iframe reload when switching between floating and docked modes
+  return ReactDOM.createPortal(
+    <DrawerContainer 
+      ref={drawerRef} 
+      isOpen={isOpen} 
+      width={width}
+      height={height}
+      isFloating={isFloating}
+      top={position.y}
+      left={position.x}
+      isResizing={isResizing}
+    >
+      {/* Resize handles - only show in floating mode */}
+      {isFloating && (
+        <>
+          <ResizeHandle direction="top" onMouseDown={(e) => handleResizeStart(e, 'top')} />
+          <ResizeHandle direction="bottom" onMouseDown={(e) => handleResizeStart(e, 'bottom')} />
+          <ResizeHandle direction="left" onMouseDown={(e) => handleResizeStart(e, 'left')} />
+          <ResizeHandle direction="right" onMouseDown={(e) => handleResizeStart(e, 'right')} />
+          <ResizeHandle direction="top-left" onMouseDown={(e) => handleResizeStart(e, 'top-left')} />
+          <ResizeHandle direction="top-right" onMouseDown={(e) => handleResizeStart(e, 'top-right')} />
+          <ResizeHandle direction="bottom-left" onMouseDown={(e) => handleResizeStart(e, 'bottom-left')} />
+          <ResizeHandle direction="bottom-right" onMouseDown={(e) => handleResizeStart(e, 'bottom-right')} />
+        </>
+      )}
+      {/* Original left resize handle - only show in docked mode */}
+      {!isFloating && <ResizeHandle direction="left" onMouseDown={(e) => handleResizeStart(e, 'left')} />}
+      
+      <DrawerHeader ref={headerRef} onMouseDown={handleDragStart}>
+        <DrawerTitle>
+          <LuFileText />
+          Shared Document
+        </DrawerTitle>
+        <HeaderButtons>
+          <IconButton onClick={toggleFloatingMode} title={isFloating ? "Dock Window" : "Float Window"}>
+            {isFloating ? <LuMinimize2 /> : <LuMaximize2 />}
+          </IconButton>
+          <IconButton onClick={handleClose} title="Close">
+            <LuX />
+          </IconButton>
+        </HeaderButtons>
+      </DrawerHeader>
+      <DrawerContent>
+        <EtherpadComponent 
+          roomId={roomId}
+          roomName={roomName}
+          height="100%"
+          isResizing={isResizing}
+        />
+      </DrawerContent>
+    </DrawerContainer>,
+    document.body
   );
 };
 
@@ -579,9 +582,16 @@ export const EtherpadDrawerWithButton: React.FC<{
   const [isOpen, setIsOpen] = useState(false);
   const [drawerWidth, setDrawerWidth] = useState('40%');
   const [drawerHeight, setDrawerHeight] = useState('60vh');
-  const [position, setPosition] = useState({ 
-    x: window.innerWidth / 2 - 300, 
-    y: Math.max(window.innerHeight * 0.07 + 20, 100) // Ensure it's below navbar (7vh + 20px margin)
+  const [position, setPosition] = useState(() => {
+    const navbarHeight = window.innerHeight * 0.07;
+    const defaultDrawerWidth = 600;
+    // Center horizontally on screen
+    const centerX = (window.innerWidth - defaultDrawerWidth) / 2;
+    
+    return {
+      x: Math.max(20, centerX), // Just keep minimum margin from screen edge
+      y: Math.max(navbarHeight + 20, 100)
+    };
   });
   const [isFloating, setIsFloating] = useState(false);
   const prevRoomIdRef = useRef<number | undefined>(currentRoomId);
@@ -621,6 +631,15 @@ export const EtherpadDrawerWithButton: React.FC<{
     if (floating) {
       setDrawerWidth('600px');
       setDrawerHeight('500px');
+      // Reset position to center of screen when switching to floating mode
+      const navbarHeight = window.innerHeight * 0.07;
+      const drawerWidthNum = 600;
+      const centerX = (window.innerWidth - drawerWidthNum) / 2;
+      
+      setPosition({
+        x: Math.max(20, centerX), // Allow covering sidebar with high z-index
+        y: Math.max(navbarHeight + 50, 100)
+      });
     } else {
       setDrawerWidth('40%');
       setDrawerHeight('60vh');
