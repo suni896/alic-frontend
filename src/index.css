@@ -11,15 +11,38 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Base palette you provided */
+  --ash-grey: #cad2c5;
+  --muted-teal: #84a98c;
+  --deep-teal: #52796f;
+  --dark-slate-grey: #354f52;
+  --charcoal-blue: #2f3e46;
+
+  /* Theme tokens mapped to the palette */
+  --color-bg: var(--ash-grey);
+  --color-card: #ffffff;
+  --color-text: var(--charcoal-blue);
+  --color-muted-text: var(--deep-teal);
+  --color-border: var(--muted-teal);
+  --color-accent: var(--deep-teal);
+  --color-accent-hover: var(--dark-slate-grey);
+
+  --shadow-soft: 0 10px 30px rgba(0,0,0,0.06);
+  --radius: 12px;
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
 }
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: var(--color-accent);
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: var(--color-accent-hover);
 }
 
 body {
@@ -28,6 +51,10 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  color: var(--color-text);
+  background-color: var(--color-bg);
+  display: block;
+  line-height: 1.6;
 }
 
 h1 {
@@ -37,17 +64,18 @@ h1 {
 
 button {
   border-radius: 8px;
-  border: 1px solid transparent;
+  border: 1px solid var(--color-border);
   padding: 0.6em 1.2em;
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: var(--color-card);
+  color: var(--color-text);
   cursor: pointer;
   transition: border-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: var(--color-accent);
 }
 button:focus,
 button:focus-visible {

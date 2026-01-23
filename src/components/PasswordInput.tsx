@@ -18,17 +18,24 @@ interface PasswordInputProps {
 const InputContainer = styled.div`
   position: relative;
   width: 100%;
+  max-width: 420px;        /* 与普通输入保持一致 */
+  margin: 0;               
+  align-self: flex-start;  /* 在列布局中左对齐 */
+  
+  @media (max-width: 740px) {
+    max-width: 100%;       /* 小屏自适应 */
+  }
 `;
 
 const StyledInput = styled.input<{ $hasError?: boolean }>`
   padding: 0.75rem;
   padding-right: 3rem; /* 为眼睛图标留出空间 */
-  font-size: 1rem;
-  color: black;
+  font-size: 0.9rem;
+  color: #374151;            /* 深灰文本 */
   height: 40px;
-  border: 1px solid ${(props) => (props.$hasError ? "#ef4444" : "#ccc")};
+  border: 1px solid ${(props) => (props.$hasError ? "#ef4444" : "#f3f4f6")};
   border-radius: 6px;
-  background-color: white;
+  background-color: #f3f4f6; /* 浅灰底色 */
   width: 100%;
   box-sizing: border-box;
 

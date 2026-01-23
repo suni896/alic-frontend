@@ -8,9 +8,9 @@ const StyledAppBar = styled(AppBar)`
   z-index: 1000; /* 明确设置AppBar的z-index */
 `;
 
-const MainContent = styled.main`
-  margin-top: 7vh; /* 与 Navbar 高度匹配 */
-  height: calc(100vh - 7vh);
+const MainContent = styled.main<{ $hasNavbar: boolean }>`
+  margin-top: ${(props) => (props.$hasNavbar ? "7vh" : "0")}; /* 与 Navbar 高度匹配 */
+  height: ${(props) => (props.$hasNavbar ? "calc(100vh - 7vh)" : "100vh")};
   overflow-y: auto;
   width: 100%;
 `;
@@ -18,15 +18,20 @@ const MainContent = styled.main`
 interface Props {
   children: React.ReactNode;
   customNavbar?: React.ReactNode; // 添加自定义导航栏属性
+  hideNavbar?: boolean; // 新增：隐藏导航栏
 }
 
-const Layout = ({ children, customNavbar }: Props) => {
+const Layout = ({ children, customNavbar, hideNavbar = false }: Props) => {
+  const hasNavbar = !hideNavbar;
+
   return (
     <>
-      <StyledAppBar color="default" position="fixed">
-        {customNavbar || <Navbar />} {/* 使用自定义导航栏或默认导航栏 */}
-      </StyledAppBar>
-      <MainContent>{children}</MainContent>
+      {hasNavbar && (
+        <StyledAppBar color="default" position="fixed">
+          {customNavbar || <Navbar />} {/* 使用自定义导航栏或默认导航栏 */}
+        </StyledAppBar>
+      )}
+      <MainContent $hasNavbar={hasNavbar}>{children}</MainContent>
     </>
   );
 };

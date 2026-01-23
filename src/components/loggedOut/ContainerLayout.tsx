@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import LeftSection from "./LeftSection";
-import coverImage from "../../assets/cover.png";
+import coverImage from "../../assets/banner.png";
 
 import { useEffect } from "react";
 import { useState } from "react";
@@ -15,36 +15,45 @@ const Container = styled.div`
   box-sizing: border-box;
   justify-content: center;
   align-items: center;
-  background: white;
-  overflow-y: scroll;
+  background: var(--color-bg);
+  overflow-y: auto;
 `;
 
 const Wrapper = styled.div`
   display: flex;
   box-sizing: border-box;
   width: 90vw;
-  height: 75vh;
+  height: 85vh;
   max-width: 1300px;
-  background: white;
-  border: 1px solid #016532;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
-
-  @media (max-width: 740px) {
-    height: 63vh;
-  }
+  background: var(--color-card);
+  // border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-soft);
 `;
 
+// Styled Component: RightSection
 const RightSection = styled.div`
-  flex: 1;
+  flex: 0.8;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  justify-content: center;      /* 子内容居中 */
+  align-items: center;          /* 垂直居中 */
   box-sizing: border-box;
-  width: 100%;
+  width: 30%;
   height: 100%;
-  padding: 0.5rem 2rem;
+  padding: 0;                   /* 边距由嵌套容器提供 */
   overflow-y: auto;
-  
+`;
+
+// 新增：右侧内部容器，提供左右边距与统一布局
+const RightContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;      /* 容器内元素左对齐 */
+  width: 85%;
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: 2rem 3rem;           /* 统一内边距，形成边距效果 */
+  gap: 1rem;                    /* 元素间垂直间距 */
 `;
 
 const ContainerLayout = ({ children }: { children: React.ReactNode }) => {
@@ -66,7 +75,9 @@ const ContainerLayout = ({ children }: { children: React.ReactNode }) => {
           currentIndex={currentIndex}
           images={images || []}
         />
-        <RightSection>{children}</RightSection>
+        <RightSection>
+          <RightContent>{children}</RightContent>
+        </RightSection>
       </Wrapper>
     </Container>
   );

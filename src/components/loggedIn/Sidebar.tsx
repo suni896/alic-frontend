@@ -726,9 +726,9 @@ const PaginationContainer = styled.div`
 `;
 
 const PageButton = styled.button<{ $active?: boolean }>`
-  background: ${(props) => (props.$active ? "#016532" : "white")};
+  background: ${(props) => (props.$active ? "#386641" : "white")};
   color: ${(props) => (props.$active ? "white" : "#374151")};
-  border: 1px solid ${(props) => (props.$active ? "#016532" : "#d1d5db")};
+  border: 1px solid ${(props) => (props.$active ? "#386641" : "#d1d5db")};
   border-radius: 0.375rem;
   padding: 0.4rem 0.6rem;
   cursor: pointer;

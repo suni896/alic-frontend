@@ -1,23 +1,21 @@
 import React from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ContainerLayout from "./ContainerLayout";
 import { API_BASE_URL } from "../../../config";
-import { Label, Input, ErrorText, RegisterButton, BackButton, Title } from "./SharedComponents";
+ // 移除未使用的 Label 引入
+// 修改导入：加入 FieldGroup
+import { Input, ErrorText, SubmitButton, HelperText, Title, FieldGroup, ForgotPassword, SigninForm, AuthForm } from "./SharedComponents";
 import PasswordInput from "../PasswordInput";
 
 axios.defaults.baseURL = API_BASE_URL;
 
-const SigninForm = styled.form`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-`;
+// 修改注册页的表单布局间距
+// styled components
+// 移除本地 FieldGroup 定义，仅保留 SigninForm
+
 
 interface RegisterFormValues {
   email: string;
@@ -25,6 +23,8 @@ interface RegisterFormValues {
   password: string;
   confirmPassword: string;
 }
+
+type RegisterProps = { setEmail: (email: string) => void };
 
 const validationSchema = Yup.object({
   email: Yup.string()
@@ -50,9 +50,7 @@ const validationSchema = Yup.object({
     .required("Username is required"),
 });
 
-const Register: React.FC<{ setEmail: (email: string) => void }> = ({
-  setEmail,
-}) => {
+const Register = ({ setEmail }: RegisterProps): JSX.Element => {
   const navigate = useNavigate();
 
   const formik = useFormik<RegisterFormValues>({
@@ -94,84 +92,87 @@ const Register: React.FC<{ setEmail: (email: string) => void }> = ({
     },
   });
 
-  const handleBack = () => {
-    navigate("/");
-  };
-
-  const hasErrors =
-    (formik.touched.email && formik.errors.email) ||
-    (formik.touched.username && formik.errors.username) ||
-    (formik.touched.password && formik.errors.password) ||
-    (formik.touched.confirmPassword && formik.errors.confirmPassword);
-
   return (
     <ContainerLayout>
-      <SigninForm onSubmit={formik.handleSubmit}>
+      <SigninForm>
         <Title>Register</Title>
-        <Label htmlFor="email">Email</Label>
-        <Input
-          type="email"
-          name="email"
-          placeholder="Enter your email"
-          value={formik.values.email}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-        />
-        <ErrorText>
-          {formik.touched.email && formik.errors.email ? formik.errors.email : ''}
-        </ErrorText>
-        <Label htmlFor="username">Username</Label>
-        <Input
-          type="text"
-          id="username"
-          name="username"
-          placeholder="Enter your username"
-          value={formik.values.username}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-        />
-        <ErrorText>
-          {formik.touched.username && formik.errors.username ? formik.errors.username : ''}
-        </ErrorText>
-        <Label htmlFor="password">Password</Label>
-        <PasswordInput
-          id="password"
-          name="password"
-          placeholder="Enter your password"
-          value={formik.values.password}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          $hasError={formik.touched.password && !!formik.errors.password}
-        />
-        <ErrorText>
-          {formik.touched.password && formik.errors.password ? formik.errors.password : ''}
-        </ErrorText>
-        <Label htmlFor="confirmPassword">Confirm Password</Label>
-        <PasswordInput
-          id="confirmPassword"
-          name="confirmPassword"
-          placeholder="Enter your password again"
-          value={formik.values.confirmPassword}
-          onChange={formik.handleChange}
-          onBlur={formik.handleBlur}
-          $hasError={formik.touched.confirmPassword && !!formik.errors.confirmPassword}
-        />
-        <ErrorText>
-          {formik.touched.confirmPassword && formik.errors.confirmPassword ? formik.errors.confirmPassword : ''}
-        </ErrorText>
-        <RegisterButton
-          type="submit"
-          disabled={!formik.isValid || formik.isSubmitting}
-          $hasError={!!hasErrors}
-        >
-          Register
-        </RegisterButton>
-        <BackButton type="button" onClick={handleBack}>
-          Back to Sign-In
-        </BackButton>
+        <AuthForm onSubmit={formik.handleSubmit}>
+          <FieldGroup>
+            <Input
+              type="email"
+              name="email"
+              placeholder="Email"
+              value={formik.values.email}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+            />
+            {formik.touched.email && formik.errors.email ? (
+              <ErrorText>{formik.errors.email}</ErrorText>
+            ) : (
+              <HelperText>We'll never share your email.</HelperText>
+            )}
+          </FieldGroup>
+
+          <FieldGroup>
+            <Input
+              type="text"
+              id="username"
+              name="username"
+              placeholder="Username"
+              value={formik.values.username}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+            />
+            {formik.touched.username && formik.errors.username ? (
+              <ErrorText>{formik.errors.username}</ErrorText>
+            ) : (
+              <HelperText>Username can only contain English letters and numbers</HelperText>
+            )}
+          </FieldGroup>
+
+          <FieldGroup>
+            <PasswordInput
+              id="password"
+              name="password"
+              placeholder="Password"
+              value={formik.values.password}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              $hasError={formik.touched.password && !!formik.errors.password}
+            />
+            {formik.touched.password && formik.errors.password ? (
+              <ErrorText>{formik.errors.password}</ErrorText>
+            ) : (
+              <HelperText>Password must be between 6 and 20 characters.</HelperText>
+            )}
+          </FieldGroup>
+
+          <FieldGroup>
+            <PasswordInput
+              id="confirmPassword"
+              name="confirmPassword"
+              placeholder="Comfirm password"
+              value={formik.values.confirmPassword}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
+              $hasError={formik.touched.confirmPassword && !!formik.errors.confirmPassword}
+            />
+            {formik.touched.confirmPassword && formik.errors.confirmPassword ? (
+              <ErrorText>{formik.errors.confirmPassword}</ErrorText>
+            ) : (
+              <HelperText>Password must be between 6 and 20 characters.</HelperText>
+            )}
+          </FieldGroup>
+
+          <SubmitButton type="submit">Register</SubmitButton>
+        </AuthForm>
+
+        <ForgotPassword onClick={() => navigate("/")}>
+          Already have an account? Sign In
+        </ForgotPassword>
       </SigninForm>
     </ContainerLayout>
   );
-};
+}
 
 export default Register;

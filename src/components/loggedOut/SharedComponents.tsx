@@ -1,22 +1,22 @@
 import styled from "styled-components";
 
-// 共享的Title组件
+// Title
 export const Title = styled.h1`
-  text-align: center;
-  font-size: 2rem;
+  text-align: left;
+  font-size: 34px;
   font-family: "Roboto", serif;
   font-weight: 700;
-  text-decoration: underline;
-  margin: 1.5% auto;
+  text-decoration: none;
+  margin: 0 0 1.25rem 0;  /* 增加底部间距 */
   color: #333;
 
   @media (max-width: 740px) {
-    font-size: 1.8rem;
-    margin: 5% auto;
+    font-size: 40px;
+    margin: 0 0 1rem 0;   /* 移动端保留稍小的底部间距 */
   }
 
   @media (max-height: 720px) {
-    margin: 0 auto;
+    margin: 0;            /* 短屏维持现有紧凑样式 */
   }
 `;
 
@@ -25,11 +25,11 @@ export const ConfirmationText = styled.p<{ $small?: boolean }>`
   font-size: ${({ $small }) => ($small ? "1.3rem" : "1.8rem")};
   margin: ${({ $small }) => ($small ? "0.3rem 0 0 0" : "1rem 0 0.5rem 0")};
   font-family: "Roboto", serif;
-  text-align: center;
-  font-weight: 700;
-
+  text-align: left;
+  font-weight: 400;
+  color: #333
   @media (max-width: 740px) {
-    font-size: ${({ $small }) => ($small ? "1rem" : "1.5rem")};
+    font-size: ${({ $small }) => ($small ? "0.9rem" : "1.2rem")};
     line-height: 180%;
   }
 
@@ -51,19 +51,19 @@ export const CodeInputContainer = styled.div`
   display: flex;
   gap: 0.5rem;
   justify-content: center;
-  margin: 2rem 0 1rem 0;
+  margin: 0.5rem 0 0rem 0;
 `;
 
 // 共享的CodeInput组件
 export const CodeInput = styled.input`
-  width: 3.5rem;
-  height: 3.5rem;
+  width: 3rem;
+  height: 3rem;
   text-align: center;
   font-size: 1.5rem;
-  border: 1px solid #ccc;
   border-radius: 5px;
-  background: #d9d9d9;
-  color: #000;
+  background: #84a98c;
+  color: white;
+  border: 1px solid var(--color-border);
 
   &:focus {
     outline: none;
@@ -96,13 +96,13 @@ export const Label = styled.label`
 // 共享的Input组件
 export const Input = styled.input`
   padding: 0.75rem;
-  font-size: 1rem;
-  color: black;
+  font-size: 0.9rem;
+  color: #374151;
   height: 40px;
-  border: 1px solid #ccc;
+  border: 1px solid #f3f4f6;
   border-radius: 6px;
-  background-color: white;
-  width: 100%;
+  background-color: #f3f4f6;
+  width: 100%;              /* 跟随父容器宽度 */
   box-sizing: border-box;
 
   &:focus {
@@ -113,6 +113,41 @@ export const Input = styled.input`
   @media (max-width: 740px) {
     height: 5vh;
   }
+`;
+
+// 新增：共享的 FieldGroup 容器
+export const FieldGroup = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;   /* 控制输入与说明/错误的贴近程度 */
+  width: 100%;    /* 跟随父容器宽度 */
+`;
+
+// 新增：统一控制字段区宽度的表单容器
+export const AuthForm = styled.form`
+  width: 100%;
+  max-width: 420px;          /* 统一限制宽度 */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.5rem 0;
+
+  @media (max-width: 740px) {
+    max-width: 100%;
+  }
+`;
+
+// 新增：将 SigninForm 改为纯布局容器（div）
+export const SigninForm = styled.div`
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 90%;
+  align-content: center;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 0.5rem 0;
 `;
 
 // 共享的ErrorText组件
@@ -139,14 +174,17 @@ export const SubmitButton = styled.button`
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 40%;
+  width: 100%;             /* 与输入框一致 */
+  max-width: 420px;        /* 与 Input 相同的最大宽度 */
+  box-sizing: border-box;
   padding: 0.75rem;
   font-size: 1rem;
   cursor: pointer;
   height: 40px;
-  margin: 20px auto 0 auto;
+  margin: 20px 0 0 0;      /* 左对齐，不居中 */
+  align-self: flex-start;  /* 在列布局中左对齐 */
   border-radius: 5px;
-  background-color: black;
+  background-color: #386641;
   color: white;
   border: none;
   outline: none;
@@ -167,7 +205,7 @@ export const SubmitButton = styled.button`
   }
 
   @media (max-width: 740px) {
-    width: 60%;
+    max-width: 100%;       /* 小屏铺满容器宽度 */
     margin-top: 10%;
     margin-bottom: 6%;
   }
@@ -195,7 +233,7 @@ export const BackButton = styled.button`
   cursor: pointer;
   margin: 20px auto 0 auto;
   border-radius: 5px;
-  background-color: #016532;
+  background-color: #386641;
   color: white;
   border: none;
   outline: none;
@@ -292,7 +330,7 @@ export const SigninRegisterButton = styled.button`
   cursor: pointer;
   margin: 20px auto 0 auto;
   border-radius: 5px;
-  background-color: #016532;
+  background-color: #386641;
   color: white;
   border: none;
   outline: none;
@@ -325,5 +363,35 @@ export const SigninRegisterButton = styled.button`
   @media (max-width: 740px) and (min-height: 820px) {
     height: 6vh;
     margin-top: 18%;
+  }
+`;
+
+// 共享的ForgotPassword组件
+export const ForgotPassword = styled.a`
+  color: #fc5600;
+  text-decoration: underline;
+  cursor: pointer;
+  font-size: 1rem;
+  margin: 1%;
+
+  @media (max-width: 740px) {
+    font-size: 0.9rem;
+  }
+  color: var(--color-accent);
+  text-decoration: none;
+  &:hover {
+    color: var(--color-accent-hover);
+    text-decoration: underline;
+  }
+`;
+
+export const HelperText = styled.p`
+  font-size: 0.8rem;
+  color: #666;
+  margin-top: 0;
+  margin-bottom: 3px;
+
+  @media (max-width: 740px) {
+    font-size: 0.7rem;
   }
 `;

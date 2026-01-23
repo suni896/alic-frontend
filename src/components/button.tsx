@@ -114,15 +114,15 @@ const CancelButton = styled(BaseButton)`
 
 // 创建按钮（主按钮）
 const CreateButton = styled(BaseButton)`
-  background-color: #016532;
+  background-color: #386641;
   color: white;
-  border-color: #016532;
+  border-color: #386641;
 
   &:hover:not(:disabled) {
-    background-color: #014a24;
-    border-color: #014a24;
+    background-color: #2e573e;
+    border-color: #2e573e;
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(1, 101, 50, 0.3);
+    box-shadow: 0 4px 12px rgba(56, 102, 65, 0.3);
   }
 
   &:active:not(:disabled) {
@@ -133,7 +133,7 @@ const CreateButton = styled(BaseButton)`
     $isEditMode &&
     !$isLoading &&
     css`
-      box-shadow: 0 0 0 3px rgba(1, 101, 50, 0.4);
+      box-shadow: 0 0 0 3px rgba(56, 102, 65, 0.4);
     `}
 `;
 

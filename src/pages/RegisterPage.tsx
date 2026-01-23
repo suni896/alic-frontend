@@ -8,7 +8,7 @@ interface RegisterPageProps {
 
 const RegisterPage: React.FC<RegisterPageProps> = ({ setEmail }) => {
   return (
-    <Layout>
+    <Layout hideNavbar>
       <Register setEmail={setEmail} />
     </Layout>
   );

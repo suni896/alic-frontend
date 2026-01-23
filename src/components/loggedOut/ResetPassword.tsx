@@ -2,25 +2,15 @@ import React, { useState } from "react";
 import ContainerLayout from "./ContainerLayout";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import styled from "styled-components";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import VerifyOTP from "./VerifyOTP";
 import { API_BASE_URL } from "../../../config";
-import { Label, Input, ErrorText, SubmitButton, BackButton, Title } from "./SharedComponents";
+// 修改导入：加入 FieldGroup
+import { Input, HelperText, ErrorText, SubmitButton, SigninForm, Title, FieldGroup,ForgotPassword, AuthForm } from "./SharedComponents";
 import PasswordInput from "../PasswordInput";
 
 axios.defaults.baseURL = API_BASE_URL;
-
-const ResetPasswordForm = styled.form`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 80%;
-`;
-
-
 
 interface ResetPasswordFormValues {
   email: string;
@@ -48,6 +38,8 @@ const resetPasswordValidationSchema = Yup.object({
     .required("Confirm Password is required"),
 });
 
+type ResetValues = { password: string; confirmPassword: string };
+
 const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
   setEmail,
 }) => {
@@ -55,7 +47,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
   const [token, setToken] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const formik = useFormik<ResetPasswordFormValues>({
+  const sendmailFormik = useFormik<ResetPasswordFormValues>({
     initialValues: {
       email: "",
     },
@@ -84,7 +76,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
     },
   });
 
-  const resetPasswordFormik = useFormik({
+  const resetPasswordFormik = useFormik<ResetValues>({
     initialValues: {
       password: "",
       confirmPassword: "",
@@ -97,7 +89,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
             newPassword: values.password,
             token: token,
             type: "3",
-            userEmail: formik.values.email,
+            userEmail: sendmailFormik.values.email,
           });
 
           if (response.data.code === 200) {
@@ -119,76 +111,99 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
     setStep(3); // Move to new password step
   };
 
-
-
   return (
     <>
       {step === 1 && (
         <ContainerLayout>
-          <ResetPasswordForm onSubmit={formik.handleSubmit}>
+          <SigninForm>
             <Title>Reset Password</Title>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              type="email"
-              id="email"
-              name="email"
-              placeholder="Enter your email"
-              value={formik.values.email}
-              onChange={formik.handleChange}
-              onBlur={formik.handleBlur}
-            />
-            <ErrorText>
-              {formik.touched.email && formik.errors.email ? formik.errors.email : ''}
-            </ErrorText>
-            <SubmitButton type="submit">Send Reset Email</SubmitButton>
-            <BackButton type="button" onClick={() => navigate("/")}>
-              Back to Sign-In
-            </BackButton>
-          </ResetPasswordForm>
+
+            <AuthForm onSubmit={sendmailFormik.handleSubmit}>
+              <FieldGroup>
+                <Input
+                  type="email"
+                  id="email"
+                  name="email"
+                  placeholder="Email"
+                  value={sendmailFormik.values.email}
+                  onChange={sendmailFormik.handleChange}
+                  onBlur={sendmailFormik.handleBlur}
+                />
+                {sendmailFormik.touched.email && sendmailFormik.errors.email ? (
+                  <ErrorText>{sendmailFormik.errors.email}</ErrorText>
+                ) : (
+                  <HelperText>We'll never share your email.</HelperText>
+                )}
+              </FieldGroup>
+
+              <SubmitButton type="submit">Send Reset Email</SubmitButton>
+            </AuthForm>
+
+            <ForgotPassword onClick={() => navigate("/")}>
+              Back to Sign In
+            </ForgotPassword>
+          </SigninForm>
         </ContainerLayout>
       )}
       {step === 2 && (
         <VerifyOTP
           onVerifySuccess={handleVerifySuccess}
           type="reset"
-          email={formik.values.email}
+          email={sendmailFormik.values.email}
         />
       )}
       {step === 3 && (
         <ContainerLayout>
-          <ResetPasswordForm onSubmit={resetPasswordFormik.handleSubmit}>
+          <SigninForm>
             <Title>Set New Password</Title>
-            <Label htmlFor="password">New Password</Label>
-            <PasswordInput
-              id="password"
-              name="password"
-              placeholder="Enter new password"
-              value={resetPasswordFormik.values.password}
-              onChange={resetPasswordFormik.handleChange}
-              onBlur={resetPasswordFormik.handleBlur}
-              $hasError={resetPasswordFormik.touched.password && !!resetPasswordFormik.errors.password}
-            />
-            <ErrorText>
-              {resetPasswordFormik.touched.password && resetPasswordFormik.errors.password ? resetPasswordFormik.errors.password : ''}
-            </ErrorText>
-            <Label htmlFor="confirmPassword">Confirm Password</Label>
-            <PasswordInput
-              id="confirmPassword"
-              name="confirmPassword"
-              placeholder="Re-enter new password"
-              value={resetPasswordFormik.values.confirmPassword}
-              onChange={resetPasswordFormik.handleChange}
-              onBlur={resetPasswordFormik.handleBlur}
-              $hasError={resetPasswordFormik.touched.confirmPassword && !!resetPasswordFormik.errors.confirmPassword}
-            />
-            <ErrorText>
-              {resetPasswordFormik.touched.confirmPassword && resetPasswordFormik.errors.confirmPassword ? resetPasswordFormik.errors.confirmPassword : ''}
-            </ErrorText>
+            <AuthForm onSubmit={resetPasswordFormik.handleSubmit}>
+            <FieldGroup>
+              <PasswordInput
+                id="password"
+                name="password"
+                placeholder="New password"
+                value={resetPasswordFormik.values.password}
+                onChange={resetPasswordFormik.handleChange}
+                onBlur={resetPasswordFormik.handleBlur}
+                $hasError={
+                  resetPasswordFormik.touched.password &&
+                  !!resetPasswordFormik.errors.password
+                }
+              />
+
+              {resetPasswordFormik.touched.password && resetPasswordFormik.errors.password ? (
+                <ErrorText>{resetPasswordFormik.errors.password}</ErrorText>
+              ) : (
+                <HelperText>Password must be between 6 and 20 characters.</HelperText>
+              )}
+            </FieldGroup>
+
+            <FieldGroup>
+              <PasswordInput
+                id="confirmPassword"
+                name="confirmPassword"
+                placeholder="Confirm new password"
+                value={resetPasswordFormik.values.confirmPassword}
+                onChange={resetPasswordFormik.handleChange}
+                onBlur={resetPasswordFormik.handleBlur}
+                $hasError={
+                  resetPasswordFormik.touched.confirmPassword &&
+                  !!resetPasswordFormik.errors.confirmPassword
+                }
+              />
+              {resetPasswordFormik.touched.confirmPassword && resetPasswordFormik.errors.confirmPassword ? (
+                <ErrorText>{resetPasswordFormik.errors.confirmPassword}</ErrorText>
+              ) : (
+                <HelperText>Password must be between 6 and 20 characters.</HelperText>
+              )}
+            </FieldGroup>
+
             <SubmitButton type="submit">Submit</SubmitButton>
-            <BackButton type="button" onClick={() => navigate("/")}>
-              Back to Sign-In
-            </BackButton>
-          </ResetPasswordForm>
+            </AuthForm>
+            <ForgotPassword onClick={() => navigate("/")}>
+              Back to Sign In
+            </ForgotPassword>
+          </SigninForm>
         </ContainerLayout>
       )}
     </>

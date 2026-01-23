@@ -9,7 +9,7 @@ interface VerifyOTPRegisterPageProps {
 
 const VerifyOTPRegisterPage: React.FC<VerifyOTPRegisterPageProps> = ({ email, onVerifySuccess }) => {
   return (
-    <Layout>
+    <Layout hideNavbar>
       <VerifyOTPRegister  email={ email } onVerifySuccess={ onVerifySuccess }/>
     </Layout>
   );

@@ -9,7 +9,7 @@ interface ResetPasswordPageProps {
 
 const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ setEmail }) => {
   return (
-    <Layout>
+    <Layout hideNavbar>
       <ResetPassword setEmail={setEmail} />
     </Layout>
   );

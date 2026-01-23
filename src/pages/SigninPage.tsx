@@ -4,7 +4,7 @@ import Signin from "../components/loggedOut/Signin";
 const SigninPage = () => {
   return (
     <>
-      <Layout>
+      <Layout hideNavbar>
         <Signin />
       </Layout>
     </>

@@ -204,7 +204,7 @@ const RoomDescription = styled.p`
 
 const JoinButton = styled.button<{ $isJoined?: boolean }>`
   padding: 0.75rem 2rem;
-  background: ${props => props.$isJoined ? '#28a745' : '#016532'};
+  background: ${props => props.$isJoined ? '#28a745' : '#386641'};
   color: white;
   border: none;
   border-radius: 8px;
@@ -215,7 +215,7 @@ const JoinButton = styled.button<{ $isJoined?: boolean }>`
   min-width: 100px;
 
   &:hover {
-    background: ${props => props.$isJoined ? '#218838' : '#014d26'};
+    background: ${props => props.$isJoined ? '#218838' : '#2e573e'};
     transform: translateY(-1px);
   }
 
