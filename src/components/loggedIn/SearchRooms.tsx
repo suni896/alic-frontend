@@ -6,14 +6,41 @@ import { useRoomContext } from "./RoomContext";
 import { useNavigate } from "react-router-dom";
 import { useJoinRoom } from "./useJoinRoom";
 import LabeledInputWithCount from "../Input";
+import { MdGroup } from "react-icons/md";
 
+
+// 样式区域（紧随已有样式组件之后）
+const RoomInfo = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+  // margin-bottom: 0.5rem;
+  color: #6c757d;
+  font-size: 0.9rem;
+`;
+
+const InfoItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+
+  /* 允许子元素在 flex 中触发文本省略 */
+  min-width: 0;
+`;
+const InfoItemText = styled.span`
+  flex: 1;        /* 占满剩余空间 */
+  min-width: 0;   /* 允许在 flex 中收缩以触发省略 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
 const Container = styled.div`
-  background: white;
+  background: #F5F5F5;
   width: 100%;
-  // margin-left: 280px; /* 为侧边栏留出空间 */
   padding-top: 20px;
-  padding-left: 20px;
-  padding-right: 20px;
+  padding-left: 10px;
+  padding-right: 10px;
   box-sizing: border-box;
   position: relative;
   min-height: calc(100vh - 7vh);
@@ -81,34 +108,31 @@ const SearchIcon = styled(CiSearch)`
 
 
 const SearchRoomsContainer = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 4rem;
-  padding: 1rem 4rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+  padding: 1rem 2rem; /* 去掉左右内边距，只保留上下 */
   box-sizing: border-box;
   margin: 0 auto;
-  justify-content: flex-start;
   min-height: 20vh;
   overflow-y: auto;
   width: 100%;
   // background-color: lightblue;
 
   @media (max-width: 1200px) {
-    gap: 2rem 3rem;
-    padding: 2rem 3rem;
-  }
-
-  @media (max-width: 1000px) {
-    gap: 2rem;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.5rem;
+    padding: 1rem 0;
   }
 
   @media (max-width: 800px) {
-    padding: 2rem;
+    grid-template-columns: 1fr;
+    padding: 1rem 0;
   }
 
   @media (max-width: 600px) {
-    gap: 2rem 0.8rem;
-    padding: 1.5rem 1rem;
+    gap: 1.25rem 0.8rem;
+    padding: 0.75rem 0;
   }
 `;
 
@@ -263,6 +287,144 @@ const EmptyState = styled.div`
   grid-column: 1 / -1;
 `;
 
+// 新增：卡片样式组件，参考 feed.html 页签设计
+const IntegrationCard = styled.div`
+  width: 85%;
+  padding: 24px; /* p-6 */
+  background: white;
+  border-radius: 8px; /* rounded */
+  display: flex; /* 填满网格单元更稳定 */
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  gap: 24px; /* gap-6 */
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+
+  &:hover {
+    box-shadow: 0 4px 12px rgba(16, 24, 40, 0.08);
+    transform: translateY(-1px);
+    border-color: #10b981; /* emerald-400 */
+  }
+
+  @media (max-width: 600px) {
+    width: 100%;
+  }
+`;
+
+const CardTop = styled.div`
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px; /* gap-4 */
+`;
+
+const CardHeader = styled.div`
+  width: 100%;
+  display: inline-flex;
+  justify-content: space-between;
+  align-items: flex-start;
+`;
+
+const HeaderLeft = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 16px; /* gap-4 */
+`;
+
+const Avatar = styled.div`
+  width: 48px; /* w-12 */
+  height: 48px; /* h-12 */
+  position: relative;
+  background: #6366f1; /* indigo-500 */
+  border-radius: 12px; /* rounded-xl */
+  overflow: hidden;
+`;
+
+const AvatarImg = styled.img`
+  width: 32px; /* w-8 */
+  height: 32px; /* h-8 */
+  position: absolute;
+  left: 8px; /* left-[8px] */
+  top: 8px; /* top-[8px] */
+`;
+
+const NameBlock = styled.div`
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px; /* gap-1 */
+`;
+
+const NameText = styled.div`
+  color: #111827; /* gray-900 */
+  font-size: 1rem; /* text-base */
+  font-weight: 600; /* font-semibold */
+  letter-spacing: 0.02em; /* tracking-tight-ish */
+
+  /* 单行省略 */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0; /* 允许在 flex 中收缩以触发省略 */
+`;
+
+const StatusRow = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px; /* gap-2 */
+`;
+
+const StatusDot = styled.div<{ $joined: boolean }>`
+  width: 8px; /* w-2 */
+  height: 8px; /* h-2 */
+  background: ${(props) => (props.$joined ? "#10b981" : "#cbd5e1")}; /* green/gray */
+  border-radius: 999px; /* rounded-full */
+`;
+
+// 样式区域（紧随已有样式组件之后）
+const StatusText = styled.div`
+  color: #64748b; /* slate-500 */
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 500; /* font-medium */
+  line-height: 1.5rem; /* leading-6 */
+`;
+
+const CardDescription = styled.div`
+  font-size: 0.9rem;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-height: 3em;
+  color: #64748b; 
+`;
+
+const ActionButton = styled.button`
+  width: 100%; /* self-stretch */
+  height: 38px; /* h-12 */
+  padding: 8px; /* p-2 */
+  background: #10b981; /* emerald-400 */
+  border: none;
+  border-radius: 8px; /* rounded */
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px; /* gap-2.5 */
+  color: white;
+  font-size: 0.875rem; /* text-sm */
+  font-weight: 600; /* font-semibold */
+  line-height: 1.25rem; /* leading-5 */
+  cursor: pointer;
+
+  &:hover {
+    filter: brightness(0.95);
+  }
+`;
+
 const SearchRooms: React.FC = () => {
   const { mainAreaRooms, mainAreaRoomsPagination, setMainAreaRoomListRequest } =
     useRoomContext();
@@ -328,22 +490,6 @@ const SearchRooms: React.FC = () => {
         <CreateRoomComponent onClose={() => setIsCreateRoomOpen(false)} />
       )}
       <Container style={{ filter: isCreateRoomOpen ? "blur(5px)" : "none" }}>
-        <TopContainer>
-          <Title>Public Chat Rooms</Title>
-          <SearchContainer>
-            <SearchWrapper>
-              <SearchIcon />
-              <LabeledInputWithCount
-                variant="withIcon"
-                value={searchKeyword}
-                onChange={handleSearchChange}
-                placeholder="Search rooms by name or description..."
-                type="text"
-                showCount={false} // 搜索框通常不需要字数统计
-              />
-            </SearchWrapper>
-          </SearchContainer>
-        </TopContainer>
         <SearchRoomsContainer>
           {loading ? (
             <LoadingContainer>Loading...</LoadingContainer>
@@ -351,20 +497,48 @@ const SearchRooms: React.FC = () => {
             <EmptyState>No rooms found</EmptyState>
           ) : (
             mainAreaRooms.map((room, index) => (
-              <RoomContainer
-                key={room.groupId}
-                onClick={() => handleJoinClick(room.groupId, room.groupType, room.isJoined)}
-                ref={index === 0 ? roomRef : null}
-              >
+              // 卡片：参考 feed 页签样式
+              <IntegrationCard key={room.groupId} ref={index === 0 ? roomRef : null}>
+                <CardTop>
+                  <CardHeader>
+                    <HeaderLeft>
+                      <Avatar>
+                        <AvatarImg src="https://placehold.co/32x32" alt="" />
+                      </Avatar>
+                      <NameBlock>
+                        <NameText>{room.groupName}</NameText>
+                        <StatusRow>
+                          <StatusDot $joined={room.isJoined} />
+                          <StatusText>{room.isJoined ? "Joined" : "Not Join"}</StatusText>
+                        </StatusRow>
+                      </NameBlock>
+                    </HeaderLeft>
+                  </CardHeader>
 
-                <RoomContent>
-                  <RoomTitle>{room.groupName}</RoomTitle>
-                  <RoomAdmin>Admin: {room.adminName}</RoomAdmin>
-                  {room.groupDescription && (
-                    <RoomDescription>{room.groupDescription}</RoomDescription>
-                  )}
-                </RoomContent>
-              </RoomContainer>
+                  {/* 新增：房间信息区块（成员数与管理员） */}
+                  <RoomInfo>
+                    <InfoItem>
+                      <MdGroup />
+                      <InfoItemText>{room.memberCount} members</InfoItemText>
+                    </InfoItem>
+                    <InfoItem>
+                      <InfoItemText>Admin: {room.adminName}</InfoItemText>
+                    </InfoItem>
+                  </RoomInfo>
+
+                  <CardDescription>
+                    {room.groupDescription || "Join this room to start chatting."}
+                  </CardDescription>
+                </CardTop>
+
+                <ActionButton
+                  onClick={() =>
+                    handleJoinClick(room.groupId, room.groupType, room.isJoined)
+                  }
+                >
+                  {room.isJoined ? "Joined" : "Join"}
+                </ActionButton>
+              </IntegrationCard>
             ))
           )}
         </SearchRoomsContainer>

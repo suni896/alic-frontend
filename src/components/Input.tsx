@@ -21,9 +21,9 @@ const StyledTextArea = styled.textarea<{ $hasError?: boolean }>`
   padding: 0.875rem 1rem;
   font-size: 1rem;
   font-family: 'Roboto', sans-serif;
-  border: 2px solid ${(props) => (props.$hasError ? "#ef4444" : "#e5e7eb")};
-  border-radius: 12px;
-  color: #1f2937;
+  // border: 2px solid ${(props) => (props.$hasError ? "#ef4444" : "#e5e7eb")};
+  // border-radius: 12px;
+  // color: #1f2937;
   background-color: #f9fafb;
   transition: all 0.2s ease;
   box-sizing: border-box;
@@ -60,12 +60,12 @@ const ModalInput = styled.input<ModalInputProps>`
   padding: 0.875rem 1rem;
   font-size: 1rem;
   font-family: 'Roboto', sans-serif;
-  border: 2px solid ${(props) => (props.$hasError ? "#ef4444" : "#e5e7eb")};
-  border-radius: 12px;
-  color: #1f2937;
+  border: 0px solid ${(props) => (props.$hasError ? "#ef4444" : "#e5e7eb")};
+  // border-radius: 12px;
+  // color: #1f2937;
   background-color: #f9fafb;
   transition: all 0.2s ease;
-  box-sizing: border-box;
+  // box-sizing: border-box;
   padding-left: ${(props) => (props.variant === 'withIcon' ? '2.5rem' : '1rem')};
 
   &:focus {

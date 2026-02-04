@@ -24,21 +24,28 @@ import { MdGroup } from "react-icons/md";
 import LabeledInputWithCount from "../Input";
 import PlusButton from "../PlusButton";
 import UserNameEdit from "./UserNameEdit";
+import logo from "../../assets/alicloggreen.png";
 
+const Logo = styled.img`
+  width: 120px;
+  height: 50px;
+  align-items: center;
+  // margin-right: 60px;
+`;
 const SidebarContainer = styled.div`
-  width: 280px;
-  max-width: 320px; /* Fixed maximum width for consistency */
-  min-width: 280px; /* Minimum width to prevent too narrow display */
-  height: calc(100vh - 7vh);
+  width: 240px;
+  max-width: 300px; /* Fixed maximum width for consistency */
+  min-width: 240px; /* Minimum width to prevent too narrow display */
+  height: 100vh;
   background-color: #ffffff;
   padding: 0rem 0rem 1rem 1rem;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid #016532;
+  // border-right: 1px solid #016532;
   position: fixed; /* 保持固定定位 */
   left: 0; /* 固定在左侧 */
   z-index: 100; /* 确保侧边栏在其他内容之上 */
-  top: 7vh; /* 使用top替代margin-top，与导航栏高度匹配 */
+  top: 0; 
 `;
 
 const spin = keyframes`
@@ -51,6 +58,12 @@ const SpinnerWrapper = styled.div`
   align-items: center;
   justify-content: center;
   padding: 8px;
+`;
+const LogoContainer = styled.div`
+  display: flex;
+  align-items: center;
+  height: 80px;
+  width: 100%;
 `;
 
 const Spinner = styled.div`
@@ -331,9 +344,9 @@ const RoomList = styled.ul`
   // flex: 1;
   overflow-y: auto;
   margin: 0 0 0.5rem 0;
-  background-color: #f1f5f9;
+  background-color: white;
   border-radius: 0.5rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid white;
   // width: 100%;
   width: 90%;
   height: calc(100vh - 7vh - 190px - 90px);
@@ -355,30 +368,32 @@ const RoomList = styled.ul`
 `;
 
 const RoomContainer = styled.div<{ $isActive?: boolean }>`
-  display: flex;
-  align-items: flex-start;
-  margin: 0 0 0.5rem 0;
-  padding: 0.75rem;
-  background-color: white;
-  border-radius: 0.375rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-  cursor: pointer;
-  width: 90%;
-  height: calc(calc(100vh - 7vh - 190px - 90px)/12);
+  display: inline-flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 1rem;              /* gap-4 */
+  padding: 0 1rem;        /* px-4 */
+  width: 100%;            /* self-stretch */
+  height: 80px;           /* h-20 */
+  background-color: #ffffff;   /* neutral-100 */
+  border-radius: 12px;    /* rounded-lg */
+  border: 0px solid #e5e7eb;   /* subtle border */
+  box-shadow: none;
+  transition: background-color 0.2s ease, border-color 0.2s ease;
+
   ${({ $isActive }) =>
     $isActive &&
     `
       background-color: #e6f7ff;
       border: 2px solid #016532;
-      box-shadow: 0 0 0 2px rgba(1, 101, 50, 0.2);
+      box-shadow: 0 0 0 2px rgba(1, 101, 50, 0.12);
     `}
 
   &:hover {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transform: translateY(-1px);
-    border-color: #016532;
+    background-color: #f5f5f5; /* hover 更浅灰 */
+    border-color: #d1d5db;
+    transform: none;
+    box-shadow: none;
   }
 
   &:last-child {
@@ -1196,60 +1211,12 @@ const Sidebar: React.FC = () => {
     </ErrorContainer>
   );
 
-  // 渲染用户信息
-  const renderUserInfo = () => {
-    if (!userInfo) return null;
-    
-    return (
-      <>
-        <Avatar
-          src={`data:image/png;base64,${userInfo.userPortrait}`}
-          alt="User Avatar"
-        />
-        <UserInfo>
-          <UserNameContainer>
-            <UserName $textLength={userInfo.userName.toString().length}>
-              {userInfo.userName}
-            </UserName>
-            <StyledArrowDown
-              onClick={() => setIsProfileClicked(!isProfileClicked)}
-            />
-            {isProfileClicked && (
-              <ProfilePopUp
-                onClose={() => setIsProfileClicked(false)}
-                userInfo={userInfo}
-              />
-            )}
-          </UserNameContainer>
-          <UserEmail $textLength={userInfo.userEmail.toString().length}>
-            {userInfo.userEmail}
-          </UserEmail>
-        </UserInfo>
-      </>
-    );
-  };
-
-  // 渲染空状态
-  const renderEmptyState = () => (
-    <EmptyStateContainer>
-      <EmptyStateMessage>No user information available</EmptyStateMessage>
-    </EmptyStateContainer>
-  );
-
-  // 渲染 ProfileSection 内容
-  const renderProfileContent = () => {
-    if (isUserInfoLoading) return renderLoadingState();
-    if (userInfoError) return renderErrorState();
-    if (userInfo) return renderUserInfo();
-    return renderEmptyState();
-  };
+  
 
   return (
     <SidebarContainer>
-      <ProfileSection>
-        {renderProfileContent()}
-      </ProfileSection>
-      <LineSeparator />
+
+      <LogoContainer><Logo src={logo} alt="EduHK Logo" /></LogoContainer>
       <SearchContainer>
         <SearchWrapper>
           <SearchIcon />

@@ -9,8 +9,8 @@ const StyledAppBar = styled(AppBar)`
 `;
 
 const MainContent = styled.main<{ $hasNavbar: boolean }>`
-  margin-top: ${(props) => (props.$hasNavbar ? "7vh" : "0")}; /* 与 Navbar 高度匹配 */
-  height: ${(props) => (props.$hasNavbar ? "calc(100vh - 7vh)" : "100vh")};
+  margin-top: ${(props) => (props.$hasNavbar ? "80px" : "0")}; /* 与 Navbar 高度匹配 */
+  height: ${(props) => (props.$hasNavbar ? "calc(100vh - 80px)" : "100vh")};
   overflow-y: auto;
   width: 100%;
 `;

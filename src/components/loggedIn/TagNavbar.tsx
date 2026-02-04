@@ -34,8 +34,8 @@ interface TagInfoResponse {
 const Container = styled.div`
   position: fixed;
   top: 0;
-  left: 0;
-  width: 100%;
+  left: 250px;
+  width: calc(100vw - 250px);
   height: 7vh;
   background-color: #016532;
   display: flex;

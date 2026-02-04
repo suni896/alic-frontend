@@ -6,16 +6,13 @@ import Sidebar from "../components/loggedIn/Sidebar";
 import MyClass from "../components/loggedIn/MyClass";
 import TagNavbar from "../components/loggedIn/TagNavbar";
 
+// Container
 const Container = styled.div`
   display: flex;
-  width: 100%;
-  
-  /* Sidebar 已经是 fixed 定位，宽度为 280px */
-  /* 让第二个子元素占据剩余空间 */
+
   & > :nth-child(2) {
-    margin-left: 280px;
-    flex: 1;
-    width: calc(100vw - 280px);
+    margin-left: 240px;
+    width: calc(100vw - 240px);
   }
 `;
 

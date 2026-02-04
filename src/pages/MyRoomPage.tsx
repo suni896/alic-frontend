@@ -5,13 +5,13 @@ import MyRoom from "../components/loggedIn/MyRoom";
 import Layout from "../components/loggedOut/Layout";
 import RoomNavbar from "../components/loggedIn/RoomNavbar";
 
+// Container
 const Container = styled.div`
   display: flex;
-  
-  /* 添加左侧边距，与侧边栏宽度相同 */
+
   & > :nth-child(2) {
-    margin-left: 280px;
-    width: calc(100vw - 280px); /* 确保内容区域宽度正确 因为MyRoom组件内部的Container设置了 position: fixed */
+    margin-left: 240px;
+    width: calc(100vw - 240px); /* 确保内容区域宽度正确 因为MyRoom组件内部的Container设置了 position: fixed */
   }
 `;
 

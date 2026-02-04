@@ -169,10 +169,6 @@ const Signin = (): JSX.Element => {
           </ForgotPassword>
             <SubmitButton type="submit">Sign In</SubmitButton>
           </AuthForm>
-
-
-
-          
           <ForgotPassword onClick={handleRegister}>
             Don’t have an account? Get Started
           </ForgotPassword>

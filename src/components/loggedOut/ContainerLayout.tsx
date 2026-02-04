@@ -10,7 +10,7 @@ const images = [coverImage];
 
 const Container = styled.div`
   display: flex;
-  height: calc(100vh - 7vh);
+  height: calc(100vh - 80px);
   width: 100vw;
   box-sizing: border-box;
   justify-content: center;
