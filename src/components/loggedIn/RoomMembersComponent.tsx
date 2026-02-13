@@ -60,7 +60,7 @@ const TitleContainer = styled.div`
 `;
 
 const MembersLogo = styled(MdPeopleAlt)`
-  color: white;
+  color: var(--white);
   font-size: clamp(1.5rem, 5vw, 2rem);
   margin-left: 1rem;
   filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
@@ -71,7 +71,7 @@ const MembersLogo = styled(MdPeopleAlt)`
 `;
 
 const Title = styled.p`
-  color: white;
+  color: var(--white);
   font-size: 1.2rem;
   font-weight: 600;
   margin-left: 5%;
@@ -147,7 +147,7 @@ const CloseArrow = styled(MdOutlineKeyboardDoubleArrowRight)`
   transition: all 0.3s ease;
   
   &:hover {
-    color: #374151;
+    color: var(--slate-grey);
     transform: translateX(4px);
   }
 `;

@@ -34,18 +34,21 @@ interface TagInfoResponse {
 const Container = styled.div`
   position: fixed;
   top: 0;
-  left: 250px;
-  width: calc(100vw - 250px);
-  height: 7vh;
-  background-color: #016532;
+  margin-left: 16rem;
+  width: calc(100vw - 16rem);
+  height: 5rem;
+  background-color: white;
   display: flex;
   align-items: center;
   justify-content: space-between;
   z-index: 1000;
+  border-left: 1px solid var(--color-line); /* 左侧灰色边框 */
+  border-bottom: 1px solid var(--color-line);
+  box-sizing: border-box;
 `;
 
 const BackArrow = styled(MdKeyboardArrowLeft)`
-  color: white;
+  color: var(--black);
   font-size: 2rem;
   margin-right: 1rem;
   cursor: pointer;
@@ -53,7 +56,7 @@ const BackArrow = styled(MdKeyboardArrowLeft)`
 
 
 const Title = styled.h1`
-  color: white;
+  color: var(--black);
   font-size: 1.3rem;
   font-family: "Roboto", sans-serif;
   font-weight: 400;
@@ -77,9 +80,6 @@ const RightContainer = styled.div`
   margin-right: 2%;
   gap: 1rem;
 
-  @media (max-width: 500px) {
-    gap: 0.4rem;
-  }
 `;
 
 interface TagNavbarProps {

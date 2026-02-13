@@ -21,7 +21,7 @@ axios.defaults.baseURL = API_BASE_URL;
 
 const Overlay = styled.div`
   position: fixed;
-  top: 7vh;
+  top: 0;
   left: 0;
   width: 100%;
   height: 100%;
@@ -98,7 +98,7 @@ const Label = styled.label`
   font-family: "Roboto", sans-serif;
   font-weight: 500;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--slate-grey);
   margin: 0;
 `;
 
@@ -127,7 +127,7 @@ const Input = styled.input<InputProps>`
   }
 
   &::placeholder {
-    color: #9ca3af;
+    color: var(--input);
   }
 
   &:disabled {
@@ -263,7 +263,7 @@ const CheckboxLabel = styled.label`
   font-family: "Roboto", sans-serif;
   font-weight: 500;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--slate-grey);
   cursor: pointer;
   display: flex;
   align-items: center;

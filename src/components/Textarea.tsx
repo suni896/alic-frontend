@@ -16,7 +16,7 @@ const SmallTextarea = styled.textarea<InputProps>`
   overflow-y: auto;
   box-sizing: border-box;
   font-family: "Roboto", sans-serif;
-  border: 2px solid ${(props) => (props.$hasError ? "#ef4444" : "#e5e7eb")};
+  border: 2px solid ${(props) => (props.$hasError ? "var(--error-red)" : "#e5e7eb")};
   border-radius: 12px;
   color: #1f2937;
   background-color: #f9fafb;
@@ -33,7 +33,7 @@ const SmallTextarea = styled.textarea<InputProps>`
   appearance: none;
 
   &:focus {
-    border-color: ${(props) => (props.$hasError ? "#ef4444" : "#016532")};
+    border-color: ${(props) => (props.$hasError ? "var(--error-red)" : "#016532")};
     background-color: white;
     box-shadow: 0 0 0 3px
       ${(props) =>
@@ -41,7 +41,7 @@ const SmallTextarea = styled.textarea<InputProps>`
   }
 
   &::placeholder {
-    color: #9ca3af;
+    color: var(--input);
     line-height: 1.4;
   }
 

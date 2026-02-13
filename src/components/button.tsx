@@ -37,45 +37,35 @@ const BaseButton = styled.button<StyledButtonProps>`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: 1;
-  flex-shrink: 1;
-  padding: 0.875rem 1.5rem;
-  font-size: 1rem;
-  font-family: 'Roboto', sans-serif;
-  font-weight: 600;
-  border-radius: 12px;
+  flex: 0 0 auto;
+  padding: var(--space-3) var(--space-5);             /* px-4 py-2 */
+  font-family: var(--font-sans);
+  font-size: var(--space-10);
+  font-weight: var(--weight-medium);                 /* font-bold */
+  border-radius: var(--radius-5);
   cursor: pointer;
   transition: all 0.2s ease;
-  border: 2px solid transparent;
   outline: none;
   position: relative;
-  height: 100%;
-
-  width: 8rem;
-  min-width: 8rem;
-  max-width: 8rem;
+  height: 2rem;
+  width: 100%;
   text-align: center;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 
-  /* 移除所有focus相关的默认样式 */
   &:focus {
     outline: none;
     box-shadow: none;
   }
-
   &:focus-visible {
     outline: none;
     box-shadow: none;
   }
-
-  /* 移除点击时的默认样式 */
   &:active {
     outline: none;
     box-shadow: none;
   }
-
   &:disabled {
     cursor: not-allowed;
     opacity: 0.6;
@@ -88,53 +78,39 @@ const BaseButton = styled.button<StyledButtonProps>`
       color: white;
       pointer-events: none;
     `}
-
-  @media (max-width: 500px) {
-    padding: 0.75rem 1.25rem;
-    font-size: 0.9rem;
-  }
 `;
 
-// 取消按钮
+// 取消按钮（白底、绿色字、圆角更大 rounded-xl）
 const CancelButton = styled(BaseButton)`
-  background-color: #f8fafc;
-  color: #374151;
-  border-color: #e5e7eb;
+  background-color: var(--white);
+  color: var(--emerald-green);                   /* emerald-400 */
+  border-color: var(--emerald-green);
+  border-radius: var(--radius-5);           /* rounded-xl */
 
   &:hover:not(:disabled) {
-    background-color: #f1f5f9;
-    border-color: #d1d5db;
-    transform: translateY(-1px);
+    background-color: var(--emerald-green-50);      /* emerald-50 */
+    border-color: var(--emerald-green-600);          /* emerald-500 */
   }
-
   &:active:not(:disabled) {
-    transform: translateY(0);
+    background-color: var(--emerald-green-100);      /* emerald-100 */
   }
 `;
 
-// 创建按钮（主按钮）
+// 创建按钮（主按钮：绿色底、白字、rounded-md）
 const CreateButton = styled(BaseButton)`
-  background-color: #386641;
+  background-color: var(--emerald-green);        /* emerald-400 */
   color: white;
-  border-color: #386641;
+  border-color: var(--emerald-green);            /* 与底色一致 */
+  border-radius: var(--radius-5);          /* rounded-md */
 
   &:hover:not(:disabled) {
-    background-color: #2e573e;
-    border-color: #2e573e;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(56, 102, 65, 0.3);
+    background-color: var(--emerald-green-600);      /* emerald-500 */
+    border-color: var(--emerald-green-600);
   }
-
   &:active:not(:disabled) {
-    transform: translateY(0);
+    background-color: var(--emerald-green-600);      /* emerald-600 */
+    border-color: var(--emerald-green-600);
   }
-
-  ${({ $isEditMode, $isLoading }) =>
-    $isEditMode &&
-    !$isLoading &&
-    css`
-      box-shadow: 0 0 0 3px rgba(56, 102, 65, 0.4);
-    `}
 `;
 
 // 通用按钮组件

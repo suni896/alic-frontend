@@ -6,9 +6,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import VerifyOTP from "./VerifyOTP";
 import { API_BASE_URL } from "../../../config";
-// 修改导入：加入 FieldGroup
-import { Input, HelperText, ErrorText, SubmitButton, SigninForm, Title, FieldGroup,ForgotPassword, AuthForm } from "./SharedComponents";
-import PasswordInput from "../PasswordInput";
+import { Input, HelperText, ErrorText, SubmitButton, SigninForm, Title, FieldGroup, ForgotPassword, AuthForm, PasswordInput } from "../SharedComponents";
+
 
 axios.defaults.baseURL = API_BASE_URL;
 
@@ -40,9 +39,7 @@ const resetPasswordValidationSchema = Yup.object({
 
 type ResetValues = { password: string; confirmPassword: string };
 
-const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
-  setEmail,
-}) => {
+const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEmail }) => {
   const [step, setStep] = useState(1);
   const [token, setToken] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -128,6 +125,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({
                   value={sendmailFormik.values.email}
                   onChange={sendmailFormik.handleChange}
                   onBlur={sendmailFormik.handleBlur}
+                  $hasError={sendmailFormik.touched.email && !!sendmailFormik.errors.email}
                 />
                 {sendmailFormik.touched.email && sendmailFormik.errors.email ? (
                   <ErrorText>{sendmailFormik.errors.email}</ErrorText>

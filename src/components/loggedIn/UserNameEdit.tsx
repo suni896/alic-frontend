@@ -5,74 +5,87 @@ import LabeledInputWithCount from '../Input';
 import Button from '../button';
 import { useUser } from './UserContext';
 import apiClient from '../loggedOut/apiClient';
-import ModalHeader from '../Header';
+import { Input as SharedInput } from '../SharedComponents';
 
 const Overlay = styled.div`
   position: fixed;
-  top: 7vh;
+  top: 80px;
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.6);
+  background: var(--overlay-dark-60);   /* 使用令牌 */
   backdrop-filter: blur(4px);
   display: flex;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  animation: fadeIn 0.2s ease-out;
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
 `;
 
+// 弹窗容器
 const Modal = styled.div`
   position: absolute;
   top: 70px;
-  background: white;
+  background: var(--white);
   border: none;
-  border-radius: 16px;
-  padding: 2.5rem;
-  width: 28%;
-  max-width: 480px;
-  min-width: 320px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  animation: slideIn 0.3s ease-out;
-  
-  @keyframes slideIn {
-    from {
-      transform: translateY(-20px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
+  border-radius: var(--radius-12);
+  padding: var(--space-7);      /* 2rem */
+  width: 751px;                 /* 固定宽度 */
+  min-height: 24rem;            /* 近似 h-96 */
+  box-shadow: 0 25px 50px -12px var(--shadow-25);
+`;
 
-  @media (max-width: 1200px) {
-    width: 35%;
-  }
-  @media (max-width: 1000px) {
-    width: 45%;
-  }
-  @media (max-width: 700px) {
-    width: 55%;
-    padding: 2rem;
-  }
-  @media (max-width: 500px) {
-    width: 70%;
-    padding: 1.5rem;
-  }
-  @media (max-width: 400px) {
-    width: 85%;
-    padding: 1.25rem;
-  }
+// 顶部标题区域（不使用 ModalHeader）
+const HeaderTitle = styled.div`
+  color: var(--gray-900);
+  font-size: var(--space-8);         /* text-lg */
+  font-weight: var(--weight-bold);
+  font-family: var(--font-urbanist);
+  line-height: 1.75rem;
+`;
+
+const HeaderSubTitle = styled.div`
+  color: var(--muted-6b7280);
+  font-size: var(--space-10);        /* text-sm */
+  font-weight: var(--weight-medium);
+  font-family: var(--font-urbanist);
+  line-height: var(--space-6);
+`;
+
+// 字段标签
+const InputLabel = styled.label`
+  display: block;
+  font-family: var(--font-roboto);
+  font-weight: var(--weight-medium);
+  font-size: var(--space-10);
+  color: var(--slate-grey);
+  margin-bottom: var(--space-3);
+`;
+
+// 输入容器（浅灰背景 + 圆角 + 固定高度）
+const FieldBox = styled.div`
+  height: 3.5rem;                        /* h-14 */
+  padding: var(--space-5);               /* p-4 */
+  background: var(--input-bg);           /* bg-neutral-50 */
+  border-radius: var(--radius-12);       /* rounded-lg */
+  display: inline-flex;
+  justify-content: flex-start;
+  align-items: center;
+`;
+
+// 底部按钮区域右对齐
+const ButtonContainer = styled.div`
+  display: flex;
+  gap: var(--space-3);
+  margin-top: var(--space-6);
+  justify-content: flex-end;
+  height: var(--space-12);               /* 3rem 近似 */
+`;
+
+// 成功提示（令牌）
+const SuccessMessage = styled.div`
+  color: var(--emerald-green);
+  font-size: var(--space-10);
+  margin-top: var(--space-3);
 `;
 
 const UserIcon = styled(FiUser)`
@@ -84,27 +97,7 @@ const InputContainer = styled.div`
   margin-bottom: 1.5rem;
 `;
 
-const InputLabel = styled.label`
-  display: block;
-  font-family: 'Roboto', sans-serif;
-  font-weight: 500;
-  font-size: 0.875rem;
-  color: #374151;
-  margin-bottom: 0.5rem;
-`;
 
-const ButtonContainer = styled.div`
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 2rem;
-  justify-content: center;
-  height: 40px;
-  
-  @media (max-width: 500px) {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-`;
 
 const LoadingSpinner = styled.div`
   display: inline-block;
@@ -122,11 +115,7 @@ const LoadingSpinner = styled.div`
   }
 `;
 
-const SuccessMessage = styled.div`
-  color: #16a34a;
-  font-size: 0.875rem;
-  margin-top: 0.5rem;
-`;
+
 
 interface UserNameEditProps {
   onClose: () => void;
@@ -171,7 +160,7 @@ export const UserNameEdit: React.FC<UserNameEditProps> = ({ onClose, onSuccess }
     return '';
   };
 
-  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setUsername(value);
     setError('');
@@ -227,30 +216,35 @@ export const UserNameEdit: React.FC<UserNameEditProps> = ({ onClose, onSuccess }
   return (
     <Overlay>
       <Modal ref={modalRef}>
-        <ModalHeader icon={UserIcon} title="Edit Username" onClose={onClose} />
-        <InputContainer>
-          <InputLabel>Username</InputLabel>
-          <LabeledInputWithCount
+        {/* 顶部标题（不再使用 ModalHeader） */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', marginBottom: '1.5rem' }}>
+          <HeaderTitle>Account Setting</HeaderTitle>
+          <HeaderSubTitle>View and update your account details, profile, and more.</HeaderSubTitle>
+        </div>
+
+        {/* Username 字段 */}
+        <InputLabel>Username</InputLabel>
+        <FieldBox>
+          <SharedInput
             value={username}
             onChange={handleUsernameChange}
-            onKeyPress={handleKeyPress}
-            error={error}
-            maxLength={20}
             placeholder="Enter username"
-            type="text"
             disabled={isLoading}
+            $hasError={!!error}
           />
-        </InputContainer>
-        
+        </FieldBox>
+
+        {/* 成功/错误提示 */}
         {success && <SuccessMessage>{success}</SuccessMessage>}
-        
+        {error && <div style={{ color: 'var(--error-red)', fontSize: 'var(--space-10)', marginTop: '0.5rem' }}>{error}</div>}
+
+        {/* 底部按钮：右对齐 */}
         <ButtonContainer>
           <Button variant="cancel" onClick={onClose} disabled={isLoading}>
             Cancel
           </Button>
-          <Button variant="primary" onClick={handleUpdateUsername} disabled={isLoading || !username.trim()}>
-            {isLoading && <LoadingSpinner />}
-            {isLoading ? 'Saving...' : 'Save'}
+          <Button onClick={handleUpdateUsername} $isLoading={isLoading} disabled={isLoading}>
+            {isLoading ? "Processing..." : "Submit"}
           </Button>
         </ButtonContainer>
       </Modal>

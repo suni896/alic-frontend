@@ -10,7 +10,7 @@ const images = [coverImage];
 
 const Container = styled.div`
   display: flex;
-  height: calc(100vh - 80px);
+  height: 100vh;
   width: 100vw;
   box-sizing: border-box;
   justify-content: center;
@@ -24,10 +24,8 @@ const Wrapper = styled.div`
   box-sizing: border-box;
   width: 90vw;
   height: 85vh;
-  max-width: 1300px;
   background: var(--color-card);
-  // border: 1px solid var(--color-border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-12);
   box-shadow: var(--shadow-soft);
 `;
 
@@ -44,7 +42,6 @@ const RightSection = styled.div`
   overflow-y: auto;
 `;
 
-// 新增：右侧内部容器，提供左右边距与统一布局
 const RightContent = styled.div`
   display: flex;
   flex-direction: column;
@@ -52,8 +49,8 @@ const RightContent = styled.div`
   width: 85%;
   min-height: 100%;
   box-sizing: border-box;
-  padding: 2rem 3rem;           /* 统一内边距，形成边距效果 */
-  gap: 1rem;                    /* 元素间垂直间距 */
+  padding: var(--space-7) var(--space-12);           /* 统一内边距，形成边距效果 */
+  gap: var(--space-5);                    /* 元素间垂直间距 */
 `;
 
 const ContainerLayout = ({ children }: { children: React.ReactNode }) => {

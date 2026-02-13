@@ -1,30 +1,15 @@
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import styled from "styled-components";
 import { useNavigate } from "react-router-dom";
 import ContainerLayout from "./ContainerLayout";
 import axios from "axios";
 import apiClient from "./apiClient";
 import { useUser } from "../loggedIn/UserContext";
-import { useState } from "react";
 import { API_BASE_URL } from "../../../config";
-// 修改导入：使用共享的 FieldGroup
-import { Input, ErrorText, SubmitButton, Title, FieldGroup, ForgotPassword, HelperText, SigninForm, AuthForm } from "./SharedComponents";
-import PasswordInput from "../PasswordInput";
+// 导入区域（将默认导入改为命名导入）
+import { Input, ErrorText, SubmitButton, Title, FieldGroup, ForgotPassword, HelperText, SigninForm, AuthForm, PasswordInput } from "../SharedComponents";
 
 axios.defaults.baseURL = API_BASE_URL;
-
-// ErrorToast
-const ErrorToast = styled.div`
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: var(--color-card);
-  color: #b91c1c;
-  border: 1px solid var(--color-border);
-  box-shadow: var(--shadow-soft);
-`;
 
 const validationSchema = Yup.object({
   email: Yup.string()
@@ -48,7 +33,6 @@ interface FormValues {
 const Signin = (): JSX.Element => {
   const navigate = useNavigate();
   const { refreshUserInfo } = useUser();
-  const [errorMessage, setErrorMessage] = useState("");
   const formik = useFormik<FormValues>({
     initialValues: {
       email: "",
@@ -99,32 +83,6 @@ const Signin = (): JSX.Element => {
 
   return (
     <>
-      {errorMessage && (
-        <ErrorToast>
-          {errorMessage}
-          <button
-            onClick={() => setErrorMessage("")}
-            style={{
-              marginLeft: "20px",
-              background: "#ff4444",
-              border: "none",
-              color: "white",
-              cursor: "pointer",
-              width: "20px",
-              height: "20px",
-              borderRadius: "50%",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 0,
-              fontSize: "14px",
-              lineHeight: 1,
-            }}
-          >
-            ×
-          </button>
-        </ErrorToast>
-      )}
       <ContainerLayout>
         <SigninForm>
           <Title>Login to your account</Title>
@@ -138,6 +96,7 @@ const Signin = (): JSX.Element => {
                 value={formik.values.email}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                $hasError={formik.touched.email && !!formik.errors.email}
               />
               {formik.touched.email && formik.errors.email ? (
                 <ErrorText>{formik.errors.email}</ErrorText>
@@ -167,7 +126,7 @@ const Signin = (): JSX.Element => {
           <ForgotPassword onClick={handleResetPassword}>
             Forgot password?
           </ForgotPassword>
-            <SubmitButton type="submit">Sign In</SubmitButton>
+          <SubmitButton type="submit">Sign In</SubmitButton>
           </AuthForm>
           <ForgotPassword onClick={handleRegister}>
             Don’t have an account? Get Started

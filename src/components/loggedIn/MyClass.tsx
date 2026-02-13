@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
 import { FiTag } from "react-icons/fi";
-import { AiOutlineMinusCircle } from "react-icons/ai";
 import styled from "styled-components";
 import { CiSearch } from "react-icons/ci";
 import { useLocation, useParams } from "react-router-dom";
@@ -9,57 +8,57 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useJoinRoom } from "./useJoinRoom";
 import { RoomInfoResponse } from "./CreateRoomComponent";
-import PlusButton from "../PlusButton";
 import Button from "../button";
 import LabeledInputWithCount from "../Input";
 import ModalHeader from "../Header";
+import {
+  PageButton as PagerButton,
+  PaginationCenter,
+  PageNumber,
+  EllipsisBlock,
+  SearchRoomsContainer as SharedSearchRoomsContainer,
+  LoadingContainer,
+  EmptyState,
+  IntegrationCard,
+  CardTop,
+  CardHeader,
+  HeaderLeft,
+  Avatar,
+  AvatarImg,
+  NameBlock,
+  NameText,
+  StatusRow,
+  StatusDot,
+  StatusText,
+  RoomInfo,
+  InfoItem,
+  InfoItemText,
+  CardDescription,
+  ActionButton,
+} from "../SharedComponents";
+import {
+  MdKeyboardArrowLeft,
+  MdKeyboardArrowRight,
+  MdKeyboardDoubleArrowLeft,
+  MdKeyboardDoubleArrowRight,
+  MdGroup,
+  MdCheckCircle,
+  MdRadioButtonUnchecked,
+} from "react-icons/md";
 
-interface RoomContainerProps {
-  $isEditMode: boolean;
-}
-
-interface PageButtonProps {
-  active?: boolean;
-}
-
-interface StyledMinusProps {
-  $isSelected: boolean;
-}
 
 const Container = styled.div`
-  background: white;
+  background: var(--color-line);
   width: 100%;
-  // margin-left: 280px; /* 为侧边栏留出空间 */
-  padding-top: 0px;
-  padding-left: 20px;
-  padding-right: 20px;
   box-sizing: border-box;
   position: relative;
-  min-height: calc(100vh - 7vh);
-  overflow-y: auto;
+  height: calc(100vh - 5rem);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-family: var(--font-sans);
+`;
 
-// const TopContainer = styled.div`
-//   display: flex;
-//   width: 100%;
-//   align-items: center;
-//   justify-content: ;
-//   position: relative;
-//   padding: 1.5rem 2rem;
-//   height: 2.5rem;
-  
-//   @media (max-width: 800px) {
-//     padding: 1rem;
-//     min-height: 10vh;
-//   }
-  
-//   @media (max-width: 600px) {
-//     flex-direction: column;
-//     gap: 1rem;
-//     min-height: auto;
-//     padding: 1rem 0.5rem;
-//     justify-content: center;
-//   }
-// `;
 const TopContainer = styled.div`
   display: flex;
   justify-content: space-between;
@@ -69,30 +68,12 @@ const TopContainer = styled.div`
   height: 12vh;
   box-sizing: border-box;
   // background-color: lightblue;
-
-  @media (max-width: 800px) {
-    padding: 2vh 2vw;
-  }
-
-  @media (max-width: 600px) {
-    flex-direction: column;
-    height: auto;
-    gap: 1rem;
-    padding: 2vh 1rem;
-  }
 `;
 
 const TitleContainer = styled.div`
   display: flex;
   align-items: center;
   gap: 10px;
-`;
-
-const PlusButtonContainer = styled.div`
-  // display: flex;
-  // align-items: center;
-  margin-left: 0px;
-  height: 2.5rem;
 `;
 
 const HeaderContainer = styled.div`
@@ -103,7 +84,6 @@ const HeaderContainer = styled.div`
 `;
 
 const ButtonContainer = styled.div`
-
   display: flex;
   align-items: center;
   gap: 0.8rem;
@@ -111,243 +91,84 @@ const ButtonContainer = styled.div`
   overflow: hidden;
 `;
 const Title = styled.p`
-  font-family: 'Roboto', sans-serif;
-  font-weight: 700;
-  font-size: 2.5rem;
-  color: #1a202c;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: var(--font-sans);
+  font-weight: var(--weight-bold);
+  font-size: var(--space-7);
+  color: var(--color-text);
   letter-spacing: -0.5px;
   margin: 0;
   display: flex;
   align-items: center;
   gap: 1rem;
   margin-right: 2rem;
-  
-  @media (max-width: 800px) {
-    font-size: 2rem;
-    font-weight: 600;
-    margin-right: 1rem;
-  }
-
-  @media (max-width: 600px) {
-    font-size: 1.7rem;
-    gap: 0.75rem;
-    margin-right: 0;
-  }
 `;
 
 const Tag = styled(FiTag)`
-  color: black;
-  font-size: 2rem;
-
-  @media (max-width: 500px) {
-    font-size: 1.7rem;
-  }
-`;
-
-// const SearchRoomsContainer = styled.div<RoomContainerProps>`
-//   display: grid;
-//   grid-template-columns: repeat(2, 1fr);
-//   gap: 2rem;
-//   padding: 0 2rem;
-//   margin-top: 4vh;
-//   margin-bottom: 8vh;
-//   box-sizing: border-box;
-//   position: relative;
-
-//   @media (max-width: 1000px) {
-//     gap: 1.5rem;
-//   }
-//   @media (max-width: 600px) {
-//     gap: 1rem;
-//     padding: 0 1rem;
-//   }
-// `;
-const SearchRoomsContainer = styled.div<RoomContainerProps>`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem 4rem;
-  padding: 1rem 4rem;
-  box-sizing: border-box;
-  margin: 0 auto;
-  justify-content: flex-start;
-  min-height: 20vh;
-  overflow-y: auto;
-  width: 100%;
-  // background-color: lightblue;
-
-  @media (max-width: 1200px) {
-    gap: 2rem 3rem;
-    padding: 2rem 3rem;
-  }
-
-  @media (max-width: 1000px) {
-    gap: 2rem;
-  }
-
-  @media (max-width: 800px) {
-    padding: 2rem;
-  }
-
-  @media (max-width: 600px) {
-    gap: 2rem 0.8rem;
-    padding: 1.5rem 1rem;
-  }
-`;
-const LoadingOverlay = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(255, 255, 255, 0.7);
-  z-index: 5;
-`;
-
-const SearchRoomContainer = styled.div<RoomContainerProps>`
-  width: 420px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-  box-sizing: border-box;
-  align-items: center;
-`;
-
-const RoomContainer = styled.div<RoomContainerProps>`
-  width: ${(props) => (props.$isEditMode ? "calc(420px - 5.5rem)" : "420px")};
-  display: flex;
-  align-items: flex-start;
-  padding: 0.75rem;
-  height: 70px;
-  background-color: white;
-  border-radius: 0.375rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  transition: all 0.2s ease;
-  cursor: pointer;
-
-  &:hover {
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transform: translateY(-1px);
-    border-color: #016532;
-  }
-
-  @media (max-width: 600px) {
-    padding: 0.6rem;
-  }
-`;
-
-const StyledMinus = styled(AiOutlineMinusCircle)<StyledMinusProps>`
-  color: ${(props) => (props.$isSelected ? "#fc5600" : "black")};
-  font-size: 1.5rem;
-  cursor: pointer;
-  flex-shrink: 0;
-  min-width: 1.5rem;
-`;
-
-const RoomContent = styled.div`
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  width: 100%;
-  min-width: 0;
-  gap: 0.25rem;
-`;
-
-const RoomTitle = styled.h2`
-  color: black;
-  font-size: 1rem;
-  font-family: Roboto;
-  font-weight: 700;
-  margin: 0;
-
-  @media (max-width: 600px) {
-    font-size: 0.8rem;
-  }
-  @media (max-width: 400px) {
-    font-size: 0.75rem;
-  }
-`;
-
-const RoomAdmin = styled.p`
-  font-size: 0.8rem;
-  font-family: Roboto;
-  font-weight: 400;
-  color: #757575;
-  margin: 0;
-  @media (max-width: 600px) {
-    font-size: 0.7rem;
-  }
-`;
-
-const RoomDescription = styled.span`
-  color: black;
-  font-size: 0.9rem;
-  font-family: Roboto;
-  font-weight: 400;
-  margin: 0;
-  display: -webkit-box;
-  -webkit-line-clamp: 1;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  line-height: 1.4;
-  max-height: 1.4em; /* 1 line * 1.4 line-height */
-  word-break: break-word;
-  
-  @media (max-width: 600px) {
-    font-size: 0.7rem;
-    -webkit-line-clamp: 1;
-    max-height: 1.4em; /* 1 line on mobile */
-  }
+  color: var(--color-text);
+  font-size: var(--space-7);
 `;
 
 const Footer = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 0.3rem;
+  gap: var(--space-1);
   position: relative;
-  height: 4vh;
+  height: 1rem;
   width: 100%;
   background-color: white;
-  padding: 1.5rem 0;
-  margin-top: 1rem;
+  padding: var(--space-6) 0;
+  margin-top: var(--space-5);
+  flex-shrink: 0;
+  font-family: var(--font-sans);
+  font-weight: var(--weight-regular);
 `;
 
-const Ellipsis = styled.span`
-  padding: 0 0.5rem;
+const PaginationCenterFixed = styled(PaginationCenter)`
+  flex: 0;
+  gap: var(--space-2);
+  min-width: calc(6 * (var(--space-9) + var(--space-3)) + 5 * var(--space-2));
 `;
 
-const PageButton = styled.button<PageButtonProps>`
-  background: ${(props) => (props.active ? "black" : "white")};
-  color: ${(props) => (props.active ? "white" : "black")};
-  border: ${(props) => (props.active ? "1px solid #d9d9d9" : "none")};
-  border-radius: 4px;
-  padding: 0.3rem 1rem;
+const SelectableCard = styled(IntegrationCard)<{ $selected?: boolean }>`
+  position: relative;
+  border: 1px solid ${props => (props.$selected ? "var(--emerald-green)" : "transparent")};
+  box-shadow: ${props =>
+    props.$selected
+      ? "0 0 0 2px rgba(1, 101, 50, 0.15)"
+      : "0 1px 2px rgba(16, 24, 40, 0.04)"};
+  overflow: hidden;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(148, 163, 184, 0.18);
+    border-radius: inherit;
+    opacity: ${props => (props.$selected ? 1 : 0)};
+    pointer-events: none;
+    z-index: 1;
+    transition: opacity 0.15s ease;
+  }
+`;
+
+const EditSelectBadge = styled.button<{ $selected?: boolean }>`
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: var(--space-6);
+  height: var(--space-6);
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
   cursor: pointer;
-
-  &:hover {
-    background: #f0f0f0;
-  }
-
-  &:disabled {
-    color: #d9d9d9;
-    cursor: not-allowed;
-  }
-  @media (max-width: 800px) {
-    font-size: 0.8rem;
-    padding: 0.3rem 0.5rem;
-  }
-
-  @media (max-width: 500px) {
-    font-size: 0.6rem;
-    padding: 0.3rem;
-  }
+  color: ${props => (props.$selected ? "#016532" : "#94a3b8")};
+  z-index: 2;
 `;
+
 
 interface TagGroupItem {
   groupId: number;
@@ -605,6 +426,15 @@ const OverlayButtonContainer = styled.div`
   }
 `;
 
+// 新增：用于限定按钮长度的容器
+const FixedButtonContainer = styled.div`
+  width: 6rem;           /* 固定宽度，按需调整 */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+`;
+
 const TagIcon = styled(FiTag)`
   color: #white;
   font-size: 1.5rem;
@@ -775,9 +605,11 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
           )}
         </RoomList>
         <OverlayButtonContainer>
-          <Button onClick={handleAddRooms} disabled={isProcessing}>
-            {isProcessing ? "Adding..." : "Add"}
-          </Button>
+          <FixedButtonContainer>
+            <Button onClick={handleAddRooms} disabled={isProcessing}>
+              {isProcessing ? "Adding..." : "Add"}
+            </Button>
+          </FixedButtonContainer>
         </OverlayButtonContainer>
         
       </Modal>
@@ -824,7 +656,7 @@ const MyClass: React.FC<MyClassProps> = ({
     [key: number]: boolean;
   }>({});
   const [pagination, setPagination] = useState({
-    pageSize: 20,
+    pageSize: 6,
     pageNum: 1,
     total: 0,
     pages: 0,
@@ -945,6 +777,37 @@ const MyClass: React.FC<MyClassProps> = ({
     if (page > 0 && page <= pagination.pages) {
       setCurrentPage(page);
     }
+  };
+
+  // 与 SearchRooms 一致的页码生成规则
+  const getPageItems = (current: number, total: number): Array<number | "ellipsis"> => {
+    // ≤5 页：全展示
+    if (total <= 5) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+
+    // >5 页：按规则与末尾对称处理
+    if (current === 1) {
+      return [1, 2, "ellipsis", total - 1, total];
+    }
+    if (current === 2) {
+      return [1, 2, 3, "ellipsis", total];
+    }
+    if (current === 3) {
+      return [1, "ellipsis", 3, "ellipsis", total];
+    }
+    if (current === total) {
+      return [1, 2, "ellipsis", total - 1, total];
+    }
+    if (current === total - 1) {
+      return [1, "ellipsis", total - 2, total - 1, total];
+    }
+    if (current === total - 2) {
+      return [1, "ellipsis", total - 2, total - 1, total];
+    }
+
+    // 中间页：左右省略，当前页居中
+    return [1, "ellipsis", current, "ellipsis", total];
   };
 
   const handleRemoveRoom = (roomId: number): void => {
@@ -1099,43 +962,57 @@ const MyClass: React.FC<MyClassProps> = ({
             <Tag />
             <Title>{title}</Title>
           </TitleContainer>
-          <PlusButtonContainer>
-            <PlusButton onClick={() => setIsAddRoomVisible(true)}>
-            </PlusButton>
-          </PlusButtonContainer>
         </HeaderContainer>
         {/* 将按钮移到顶部 */}
         <ButtonContainer>
 
         {isEditMode ? (
           <>
-            <Button
-              variant="cancel"
-              onClick={() => {
-                setSelectedRoomsToRemove({});
-                setIsEditMode(false);
-              }}
-              $isLoading={isLoading}
-            >
-              Cancel
-            </Button>
+            <FixedButtonContainer>
+              <Button
+                variant="cancel"
+                onClick={() => {
+                  setSelectedRoomsToRemove({});
+                  setIsEditMode(false);
+                }}
+                $isLoading={isLoading}
+              >
+                Cancel
+              </Button>
+            </FixedButtonContainer>
 
-            <Button
-              onClick={toggleEditMode}
-              $isEditMode={isEditMode}
-              $isLoading={isLoading}
-            >
-              {isLoading ? "Processing..." : "Submit"}
-            </Button>
+            <FixedButtonContainer>
+              <Button
+                onClick={toggleEditMode}
+                $isEditMode={isEditMode}
+                $isLoading={isLoading}
+              >
+                {isLoading ? "Processing..." : "Submit"}
+              </Button>
+            </FixedButtonContainer>
           </>
         ) : (
-          <Button
-            onClick={toggleEditMode}
-            $isEditMode={isEditMode}
-            $isLoading={isLoading}
-          >
-            Edit
-          </Button>
+          <>
+            <FixedButtonContainer>
+              <Button
+                variant="cancel"
+                onClick={() => setIsAddRoomVisible(true)}
+                $isLoading={isLoading}
+              >
+                + Add Room
+              </Button>
+            </FixedButtonContainer>
+            <FixedButtonContainer>
+              <Button
+                onClick={toggleEditMode}
+                $isEditMode={isEditMode}
+                $isLoading={isLoading}
+              >
+                Edit
+              </Button>
+            </FixedButtonContainer>
+          </>
+          
         )}
         </ButtonContainer>
 
@@ -1155,74 +1032,109 @@ const MyClass: React.FC<MyClassProps> = ({
         )}
       </TopContainer>
 
-      <SearchRoomsContainer $isEditMode={isEditMode}>
-        {isLoading && (
-          <LoadingOverlay>
-            <p>Loading...</p>
-          </LoadingOverlay>
+      <SharedSearchRoomsContainer>
+        {isLoading ? (
+          <LoadingContainer>Loading...</LoadingContainer>
+        ) : tagGroups.length === 0 ? (
+          <EmptyState>No rooms found</EmptyState>
+        ) : (
+          tagGroups.map((room) => {
+            const isSelected = !!selectedRoomsToRemove[room.groupId];
+            return (
+              <SelectableCard key={room.groupId} $selected={isEditMode && isSelected}>
+                {isEditMode && (
+                  <EditSelectBadge
+                    $selected={isSelected}
+                    onClick={() => handleRemoveRoom(room.groupId)}
+                    aria-label={isSelected ? "Selected" : "Select for removal"}
+                  >
+                    {isSelected ? <MdCheckCircle /> : <MdRadioButtonUnchecked />}
+                  </EditSelectBadge>
+                )}
+
+                <CardTop>
+                  <CardHeader>
+                    <HeaderLeft>
+                      <Avatar>
+                        <AvatarImg src="https://placehold.co/32x32" alt="" />
+                      </Avatar>
+                      <NameBlock>
+                        <NameText>{room.groupName}</NameText>
+                        <StatusRow>
+                          <StatusDot $joined={true} />
+                          <StatusText>Joined</StatusText>
+                        </StatusRow>
+                      </NameBlock>
+                    </HeaderLeft>
+                  </CardHeader>
+
+                  <RoomInfo>
+                    <InfoItem>
+                      <MdGroup />
+                      <InfoItemText>Admin: {room.groupAdmin}</InfoItemText>
+                    </InfoItem>
+                  </RoomInfo>
+
+                  <CardDescription>
+                    {room.groupDescription || "Join this room to start chatting."}
+                  </CardDescription>
+                </CardTop>
+
+                <ActionButton
+                  onClick={() => handleRoomClick(room.groupId)}
+                  disabled={isEditMode}
+                >
+                  Enter
+                </ActionButton>
+              </SelectableCard>
+            );
+          })
         )}
-
-        {error && <ErrorMessage>{error}</ErrorMessage>}
-
-        {tagGroups.length > 0 ? (
-          tagGroups.map((room) => (
-            <SearchRoomContainer key={room.groupId} $isEditMode={isEditMode}>
-              <RoomContainer
-                $isEditMode={isEditMode}
-                onClick={() => handleRoomClick(room.groupId)}
-              >
-                <RoomContent>
-                  <RoomTitle>{room.groupName}</RoomTitle>
-                  <RoomAdmin>Admin: {room.groupAdmin}</RoomAdmin>
-                  {room.groupDescription && (
-                    <RoomDescription>{room.groupDescription}</RoomDescription>
-                  )}
-                </RoomContent>
-              </RoomContainer>
-              {isEditMode && (
-                <StyledMinus
-                  onClick={() => handleRemoveRoom(room.groupId)}
-                  $isSelected={selectedRoomsToRemove[room.groupId] || false}
-                />
-              )}
-            </SearchRoomContainer>
-          ))
-        ) : !isLoading ? (
-          <NoRoomsMessage>
-            No rooms are bound to this tag yet. Click the '+' button to add
-            rooms.
-          </NoRoomsMessage>
-        ) : null}
-
-      </SearchRoomsContainer>
+      </SharedSearchRoomsContainer>
       <Footer>
-        <PageButton
+        <PagerButton
           onClick={() => handlePageChange(1)}
           disabled={currentPage === 1}
         >
-          First
-        </PageButton>
-        <PageButton
+          <MdKeyboardDoubleArrowLeft/>
+        </PagerButton>
+
+        <PagerButton
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 1}
         >
-          Previous
-        </PageButton>
-        <Ellipsis>
-          Page {currentPage} of {pagination.pages}
-        </Ellipsis>
-        <PageButton
+          <MdKeyboardArrowLeft/>
+        </PagerButton>
+
+        <PaginationCenterFixed>
+          {getPageItems(currentPage, pagination.pages).map((item, idx) =>
+            item === "ellipsis" ? (
+              <EllipsisBlock key={`mc-ellipsis-${idx}`}>...</EllipsisBlock>
+            ) : (
+              <PageNumber
+                key={`mc-page-${item}`}
+                $active={currentPage === item}
+                onClick={() => handlePageChange(item)}
+              >
+                {item}
+              </PageNumber>
+            )
+          )}
+        </PaginationCenterFixed>
+
+        <PagerButton
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage === pagination.pages}
         >
-          Next
-        </PageButton>
-        <PageButton
+          <MdKeyboardArrowRight/>
+        </PagerButton>
+
+        <PagerButton
           onClick={() => handlePageChange(pagination.pages)}
           disabled={currentPage === pagination.pages}
         >
-          Last
-        </PageButton>
+          <MdKeyboardDoubleArrowRight/>
+        </PagerButton>
       </Footer>
     </Container>
   );

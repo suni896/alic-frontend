@@ -66,5 +66,5 @@ const StyledButton = styled.button`
 
 const StyledCross = styled(RxCross2)`
   font-size: 1.25rem;
-  color: white;
+  color: var(--white);
 `;

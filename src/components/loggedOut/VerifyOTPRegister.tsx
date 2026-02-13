@@ -1,19 +1,13 @@
 // VerifyOTPRegister 组件
 import React from "react";
-import styled from "styled-components";
 import ContainerLayout from "./ContainerLayout";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE_URL } from "../../../config";
-import { SubmitButton, Title, ConfirmationText, EmailHighlight, CodeInputContainer, CodeInput, SigninForm, AuthForm, ForgotPassword } from "./SharedComponents";
+import { SubmitButton, Title, ConfirmationText, EmailHighlight, CodeInputContainer, CodeInput, SigninForm, AuthForm, ForgotPassword, ErrorMessage } from "../SharedComponents";
 import { useOtpVerification } from "./useOtpVerification";
 
 axios.defaults.baseURL = API_BASE_URL;
-
-const ErrorMessage = styled.p`
-  color: #fc5600;
-  margin: 0;
-`;
 
 interface VerifyOTPRegisterProps {
   onVerifySuccess: (token: string) => void;
@@ -24,7 +18,7 @@ const VerifyOTPRegister = ({ onVerifySuccess, email }: VerifyOTPRegisterProps): 
   const navigate = useNavigate();
 
   // 使用共享 Hook 抽取表单与交互逻辑（注册场景）
-  const { formik, showError, shouldShowOtpError, handleRequestNewCode, handleCodeInputChange } =
+  const { formik, showError, handleRequestNewCode, handleCodeInputChange } =
     useOtpVerification({
       email,
       variant: "register",
@@ -34,14 +28,16 @@ const VerifyOTPRegister = ({ onVerifySuccess, email }: VerifyOTPRegisterProps): 
       },
     });
 
+  const clientHasError = formik.touched.otp && !!formik.errors.otp;
+
   return (
     <ContainerLayout>
       <SigninForm>
         <Title>Enter verification code</Title>
-        <ConfirmationText $small>
+        <ConfirmationText>
           We've sent a verification code to <EmailHighlight>{email}</EmailHighlight>
         </ConfirmationText>
-        <ConfirmationText $small>
+        <ConfirmationText>
           Check your inbox and enter the code here.
         </ConfirmationText>
 
@@ -62,6 +58,10 @@ const VerifyOTPRegister = ({ onVerifySuccess, email }: VerifyOTPRegisterProps): 
                 onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                   handleCodeInputChange(index, e.target.value);
                 }}
+                onBlur={() => {
+                  // 失焦：标记 touched 并触发校验，让“Verification code is required”覆盖服务端错误
+                  formik.setFieldTouched("otp", true, true);
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Backspace" && !formik.values.otp[index]) {
                     const prevInput = document.getElementById(`code-input-${index - 1}`);
@@ -73,18 +73,20 @@ const VerifyOTPRegister = ({ onVerifySuccess, email }: VerifyOTPRegisterProps): 
             ))}
           </CodeInputContainer>
 
-          {/* 首次点击提交也能出现“Verification code is required” */}
-          {shouldShowOtpError && (
-            <ErrorMessage>{formik.errors.otp as string}</ErrorMessage>
-          )}
-
-          {/* 服务端错误 */}
-          {showError && (
+          {clientHasError ? (
+            <ErrorMessage>{formik.errors.otp as string}<br /><br /></ErrorMessage>
+          ) : showError ? (
             <ErrorMessage>
               The code is incorrect or expired.{" "}
+              <br />
               <ForgotPassword onClick={handleRequestNewCode}>
                 Request a new code
               </ForgotPassword>
+            </ErrorMessage>
+          ) : (
+            // 无任何错误时：渲染一个隐藏的占位，保持与服务端错误相同高度
+            <ErrorMessage>
+              <br /><br />
             </ErrorMessage>
           )}
 

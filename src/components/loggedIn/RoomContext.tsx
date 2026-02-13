@@ -94,14 +94,14 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
   const [mainAreaRooms, setMainAreaRooms] = useState<RoomGroup[]>([]);
   const [sidebarRoomsPagination, setSidebarRoomsPagination] =
     useState<Pagination>({
-      pageSize: 10,
+      pageSize: 5,
       pageNum: 1,
       pages: 1,
       total: 0,
     });
   const [mainAreaRoomsPagination, setMainAreaRoomsPagination] =
     useState<Pagination>({
-      pageSize: 20,
+      pageSize: 6,
       pageNum: 1,
       pages: 1,
       total: 0,
@@ -110,7 +110,7 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
     keyword: "",
     groupDemonTypeEnum: "JOINEDROOM",
     pageRequestVO: {
-      pageSize: 10,
+      pageSize: 5,
       pageNum: 1,
     },
   });
@@ -118,7 +118,7 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
     keyword: "",
     groupDemonTypeEnum: "PUBLICROOM",
     pageRequestVO: {
-      pageSize: 20,
+      pageSize: 6,
       pageNum: 1,
     },
   });

@@ -15,26 +15,27 @@ interface TagData {
 const Container = styled.div`
   position: fixed;
   top: 0;
-  left: 0;
-  width: 100%;
-  height: 7vh;
-  background-color: #016532;
+  margin-left: 256px;
+  width: calc(100vw - 256px);
+  height: 80px;
+  background-color: white;
   display: flex;
   align-items: center;
   justify-content: space-between;
   z-index: 1000;
-  
+  border-left: 1px solid var(--color-line); /* 左侧灰色边框 */
+  border-bottom: 1px solid var(--color-line);
 `;
 
 const BackArrow = styled(MdKeyboardArrowLeft)`
-  color: white;
+  color: black;
   font-size: 2rem;
   margin-right: 1rem;
   cursor: pointer;
 `;
 
 const Title = styled.h1`
-  color: white;
+  color: black;
   font-size: 1.3rem;
   font-family: "Roboto", sans-serif;
   font-weight: 400;
@@ -87,7 +88,7 @@ const RightContainer = styled.div`
 `;
 
 const Settings = styled(IoSettingsOutline)`
-  color: white;
+  color: black;
   font-size: 1.6rem;
   cursor: pointer;
 
@@ -98,7 +99,7 @@ const Settings = styled(IoSettingsOutline)`
 `;
 
 const Share = styled(MdOutlineIosShare)`
-  color: white;
+  color: black;
   font-size: 1.6rem;
   cursor: pointer;
 
@@ -108,7 +109,7 @@ const Share = styled(MdOutlineIosShare)`
 `;
 
 const Menu = styled(IoEllipsisHorizontal)`
-  color: white;
+  color: black;
   font-size: 1.6rem;
   cursor: pointer;
 

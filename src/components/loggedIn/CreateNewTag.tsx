@@ -10,7 +10,7 @@ import ModalHeader from "../Header";
 
 const Overlay = styled.div`
   position: fixed;
-  top: 7vh;
+  top: 0;
   left: 0;
   width: 100%;
   height: 100%;
@@ -90,7 +90,7 @@ const InputLabel = styled.label`
   font-family: 'Roboto', sans-serif;
   font-weight: 500;
   font-size: 0.875rem;
-  color: #374151;
+  color: var(--slate-grey);
   margin-bottom: 0.5rem;
 `;
 

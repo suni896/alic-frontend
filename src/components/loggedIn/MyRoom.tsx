@@ -84,17 +84,18 @@ const Container = styled.div`
   padding-left: 30px;
   padding-right: 20px;
   box-sizing: border-box;
-  position: fixed;
-  height: calc(100vh - 7vh);
+  // position: fixed;
+  height: calc(100vh - 80px);
+  border-left: 1px solid var(--color-line); /* 左侧灰色边框 */
 `;
 
 const RenderedChatContainer = styled.div`
   width: calc(100% - 40px);
-  height: calc(100vh - 7vh - 20px - 11rem - 1vh);
+  height: calc(100vh - 80px - 20px - 11rem - 5px);
   overflow-y: auto;
   padding-left: 1rem;
   padding-right: 1rem;
-  background: #f5f5f5;
+  background: var(--color-line);
   border-radius: 8px;
   font-size: 1rem;
 
@@ -327,7 +328,7 @@ const SendMessageContainer = styled.div`
   align-items: flex-start;
   width: 100%;
   height: 11rem;
-  margin-top: 1vh;
+  margin-top: 5px;
   position: relative;
 `;
 
@@ -338,7 +339,7 @@ const MessageInputWrapper = styled.div<{ $disabled?: boolean }>`
   position: relative;
   
   border-color: ${(props) => (props.$disabled ? "#ccc" : "#d3d3d3")};
-  background-color: ${(props) => (props.$disabled ? "#f5f5f5" : "white")};
+  background-color: ${(props) => (props.$disabled ? "var(--color-line)" : "var(--white)")};
   padding: 0.5rem 1rem 0.5rem 1rem;
   box-sizing: border-box;
 
@@ -494,7 +495,7 @@ const IconWrapper = styled.div`
   width: 2.2rem;
   height: 2.2rem;
   border-radius: 50%;
-  background-color: #ffffff;
+  background-color: var(--white);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -566,7 +567,7 @@ const CloseButton = styled.button`
   color: #333;
 
   &:hover {
-    background: #f5f5f5;
+    background: var(--color-line);
     border-radius: 50%;
   }
 `;
@@ -586,7 +587,7 @@ const BotItem = styled.div`
   cursor: pointer;
 
   &:hover {
-    background: #f5f5f5;
+    background: var(--color-line);
   }
 `;
 
@@ -1603,7 +1604,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     }
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void = (e) => {
     const textarea = e.target;
     setInputMessage(textarea.value);
     textarea.scrollTop = textarea.scrollHeight;
@@ -1713,7 +1714,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                       <code
                         {...props}
                         style={{
-                          backgroundColor: "#f5f5f5",
+                          backgroundColor: "var(--color-line)",
                           padding: "2px 4px",
                           borderRadius: "4px",
                         }}

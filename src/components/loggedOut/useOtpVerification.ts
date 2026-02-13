@@ -53,10 +53,9 @@ export const useOtpVerification = ({
           formik.resetForm();
         } else {
           setShowError(true);
-          formik.setErrors({
-            otp: response.data.message || "The code is incorrect or expired.",
-          });
+          // 提交失败：清空 otp，并重置 touched，让服务端错误优先显示
           formik.setFieldValue("otp", "");
+          formik.setFieldTouched("otp", false, false);
           document.getElementById("code-input-0")?.focus();
         }
       } catch (error) {
@@ -105,6 +104,8 @@ export const useOtpVerification = ({
       const newOtp = formik.values.otp.split("");
       newOtp[index] = value;
       formik.setFieldValue("otp", newOtp.join(""));
+      // 输入时清除服务端错误
+      setShowError(false);
 
       if (isNumber && index < 5) {
         document.getElementById(`code-input-${index + 1}`)?.focus();

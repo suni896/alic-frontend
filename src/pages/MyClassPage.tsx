@@ -11,8 +11,8 @@ const Container = styled.div`
   display: flex;
 
   & > :nth-child(2) {
-    margin-left: 240px;
-    width: calc(100vw - 240px);
+    margin-left: 16rem;
+    width: calc(100vw - 16rem);
   }
 `;
 

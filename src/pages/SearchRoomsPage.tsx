@@ -9,8 +9,8 @@ const Container = styled.div`
   
   /* 添加左侧边距，与侧边栏宽度相同 */
   & > :nth-child(2) {
-    margin-left: 240px;
-    width: calc(100vw - 240px); 
+    margin-left: 16rem;
+    width: calc(100vw - 16rem); 
   }
 `;
 

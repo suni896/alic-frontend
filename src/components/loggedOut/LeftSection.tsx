@@ -12,29 +12,16 @@ const LeftSectionContainer = styled.div<{ $currentImage: string }>`
   flex: 1.2;
   height: 100%;
   position: relative;
-  border-radius: var(--radius) 0 0 var(--radius);
+  border-radius: var(--radius-12) 0 0 var(--radius-12);
   overflow: hidden;
 
-  &::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: url(${(props) => props.$currentImage});
-    background-size: cover;           /* 填满容器 */
-    background-repeat: no-repeat;
-    background-position: left center; /* 左侧相切，垂直居中 */
-    opacity: 0.75;
-    z-index: 1;
-    border-radius: inherit;
-  }
-
-  @media (max-width: 740px) {
-    display: none;
-    flex: 0;
-  }
+  /* 用半透明白遮罩叠加图片，让图片更白 */
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1)),
+    url(${(props) => props.$currentImage});
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-position: left center;
 `;
 
 const CornerLogo = styled.img`
@@ -42,7 +29,7 @@ const CornerLogo = styled.img`
   top: 1rem;
   left: 1rem;
   z-index: 3;
-  width: clamp(62px, 6vw, 68px);
+  width: 5rem;
   height: auto;
   pointer-events: none;
 `;
@@ -53,10 +40,10 @@ const OverlayTitle = styled.div`
   left: 45%;
   transform: translate(-50%, -50%);
   z-index: 2;
-  color: #fff;
-  font-weight: 800;
-  font-size: clamp(2.5rem, 4.8vw, 3.5rem);
-  letter-spacing: 0.3px;
+  color: var(--white);
+  font-family: var(--font-urbanist);
+  font-weight: var(--weight-bold);
+  font-size: 3.5rem;
   text-align: center;
   white-space: nowrap;        /* 不换行 */
   width: max-content;         /* 根据内容长度拉伸宽度 */

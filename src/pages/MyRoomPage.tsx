@@ -10,8 +10,8 @@ const Container = styled.div`
   display: flex;
 
   & > :nth-child(2) {
-    margin-left: 240px;
-    width: calc(100vw - 240px); /* 确保内容区域宽度正确 因为MyRoom组件内部的Container设置了 position: fixed */
+    margin-left: 16rem;
+    width: calc(100vw - 16rem); /* 确保内容区域宽度正确 因为MyRoom组件内部的Container设置了 position: fixed */
   }
 `;
 

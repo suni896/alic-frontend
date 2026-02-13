@@ -1,18 +1,13 @@
 // VerifyOTP 组件
 import React from "react";
-import styled from "styled-components";
 import ContainerLayout from "./ContainerLayout";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { API_BASE_URL } from "../../../config";
-import { SigninForm, AuthForm, SubmitButton, ForgotPassword, Title, ConfirmationText, EmailHighlight, CodeInputContainer, CodeInput } from "./SharedComponents";
+import { SigninForm, AuthForm, SubmitButton, ForgotPassword, Title, ConfirmationText, EmailHighlight, CodeInputContainer, CodeInput, ErrorMessage } from "../SharedComponents";
 import { useOtpVerification } from "./useOtpVerification";
 
 axios.defaults.baseURL = API_BASE_URL;
-const ErrorMessage = styled.p`
-  color: #fc5600;
-  margin: 0;
-`;
 
 interface VerifyOTPProps {
   onVerifySuccess: (token: string) => void;
@@ -20,16 +15,18 @@ interface VerifyOTPProps {
   email: string;
 }
 
-const VerifyOTP = ({ onVerifySuccess, type, email }: VerifyOTPProps): JSX.Element => {
+function VerifyOTP({ onVerifySuccess, type, email }: VerifyOTPProps): JSX.Element {
   const navigate = useNavigate();
 
   // 使用共享 Hook，移除本地 formik/showError/handlers 重复实现
-  const { formik, showError, shouldShowOtpError, handleRequestNewCode, handleCodeInputChange } =
+  const { formik, showError, handleRequestNewCode, handleCodeInputChange } =
     useOtpVerification({
       email,
       variant: type === "register" ? "register" : "reset",
       onVerifySuccess,
     });
+
+  const clientHasError = formik.touched.otp && !!formik.errors.otp;
 
   return (
     // <Layout>
@@ -37,10 +34,9 @@ const VerifyOTP = ({ onVerifySuccess, type, email }: VerifyOTPProps): JSX.Elemen
         {/* SigninForm 仅用于布局容器 */}
         <SigninForm>
           <Title>Enter verification code</Title>
-          <ConfirmationText $small>
+          <ConfirmationText>
             We've sent a verification code to <EmailHighlight>{email}</EmailHighlight>
-          </ConfirmationText>
-          <ConfirmationText $small>
+            <br />
             Check your inbox and enter the code here.
           </ConfirmationText>
 
@@ -62,6 +58,9 @@ const VerifyOTP = ({ onVerifySuccess, type, email }: VerifyOTPProps): JSX.Elemen
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     handleCodeInputChange(index, e.target.value);
                   }}
+                  onBlur={() => {
+                    formik.setFieldTouched("otp", true, true);
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Backspace" && !formik.values.otp[index]) {
                       const prevInput = document.getElementById(`code-input-${index - 1}`);
@@ -73,22 +72,23 @@ const VerifyOTP = ({ onVerifySuccess, type, email }: VerifyOTPProps): JSX.Elemen
               ))}
             </CodeInputContainer>
 
-            {/* 首次提交/失焦后显示必填错误 */}
-            {shouldShowOtpError && (
-            <ErrorMessage>{formik.errors.otp as string}</ErrorMessage>
-          )}
-
-            {/* 服务端错误 */}
-            {showError && (
+            {clientHasError ? (
+              <ErrorMessage>{formik.errors.otp as string}<br /><br /></ErrorMessage>
+            ) : showError ? (
               <ErrorMessage>
                 The code is incorrect or expired.{" "}
+                <br />
                 <ForgotPassword onClick={handleRequestNewCode}>
                   Request a new code
                 </ForgotPassword>
               </ErrorMessage>
+            ) : (
+              // 无任何错误时：渲染一个隐藏的占位，保持与服务端错误相同高度
+              <ErrorMessage>
+                <br /><br />
+              </ErrorMessage>
             )}
 
-            {/* 将提交按钮放在同一个 form 内，确保提交行为正确 */}
             <SubmitButton type="submit">Verify Code</SubmitButton>
           </AuthForm>
 
@@ -97,7 +97,6 @@ const VerifyOTP = ({ onVerifySuccess, type, email }: VerifyOTPProps): JSX.Elemen
           </ForgotPassword>
         </SigninForm>
       </ContainerLayout>
-    // {/* </Layout> */}
   );
 };
 

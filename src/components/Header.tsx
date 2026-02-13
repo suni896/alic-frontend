@@ -24,7 +24,7 @@ const ModalHeader: React.FC<ModalHeaderProps> = ({ icon: Icon, title, onClose })
 export default ModalHeader;
 const Header = styled.div`
   background: #016532;
-  color: white;
+  color: var(--white);
   padding: 1.5rem 2rem;
   display: flex;
   align-items: center;
@@ -58,6 +58,6 @@ const HeaderTitle = styled.h2`
 `;
 
 const StyledIcon = styled.div`
-  color: white;
+  color: var(--white);
   font-size: 1.5rem;
 `;

@@ -1,21 +1,12 @@
-import React from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import ContainerLayout from "./ContainerLayout";
 import { API_BASE_URL } from "../../../config";
- // 移除未使用的 Label 引入
-// 修改导入：加入 FieldGroup
-import { Input, ErrorText, SubmitButton, HelperText, Title, FieldGroup, ForgotPassword, SigninForm, AuthForm } from "./SharedComponents";
-import PasswordInput from "../PasswordInput";
+import { Input, ErrorText, SubmitButton, HelperText, Title, FieldGroup, ForgotPassword, SigninForm, AuthForm, PasswordInput } from "../SharedComponents";
 
 axios.defaults.baseURL = API_BASE_URL;
-
-// 修改注册页的表单布局间距
-// styled components
-// 移除本地 FieldGroup 定义，仅保留 SigninForm
-
 
 interface RegisterFormValues {
   email: string;
@@ -105,6 +96,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
               value={formik.values.email}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
+              $hasError={formik.touched.email && !!formik.errors.email}
             />
             {formik.touched.email && formik.errors.email ? (
               <ErrorText>{formik.errors.email}</ErrorText>
@@ -122,6 +114,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
               value={formik.values.username}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
+              $hasError={formik.touched.username && !!formik.errors.username}
             />
             {formik.touched.username && formik.errors.username ? (
               <ErrorText>{formik.errors.username}</ErrorText>

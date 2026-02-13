@@ -12,7 +12,8 @@ import LabeledInputWithCount from "../Input";
 import ModalHeader from "../Header";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import PasswordInput from "../PasswordInput";
+// 导入区域（将默认导入改为命名导入）
+import { PasswordInput } from "../SharedComponents";
 
 // Animations
 const fadeIn = keyframes`
@@ -32,7 +33,7 @@ const slideIn = keyframes`
 
 const OverlayContainer = styled.div`
   position: fixed;
-  top: 7vh;
+  top: 0;
   left: 0;
   width: 100%;
   height: 100%;
@@ -205,7 +206,7 @@ const RoomDescription = styled.p`
 const JoinButton = styled.button<{ $isJoined?: boolean }>`
   padding: 0.75rem 2rem;
   background: ${props => props.$isJoined ? '#28a745' : '#386641'};
-  color: white;
+  color: var(--white);
   border: none;
   border-radius: 8px;
   font-weight: 600;

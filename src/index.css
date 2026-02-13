@@ -1,7 +1,24 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap');
 :root {
+  --font-sans: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
+  --font-roboto: 'Roboto', Arial, Helvetica, sans-serif;
+  --font-roboto-serif: 'Roboto', serif;
+  --font-poppins: 'Poppins', 'Inter', system-ui, sans-serif;
+  --font-manrope: 'Manrope', 'Inter', system-ui, sans-serif;
+  --font-segoe: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  --font-monospace: monospace;
+  --font-urbanist: 'Urbanist', 'Inter', system-ui, sans-serif;
+  --font-inherit: inherit;
   font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+  --weight-extrabold: 800;
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
@@ -17,23 +34,142 @@
   --deep-teal: #52796f;
   --dark-slate-grey: #354f52;
   --charcoal-blue: #2f3e46;
+  --emerald-green: #10b981;
+  --emerald-green-50: #ecfdf5;
+  --emerald-green-100: #d1fae5;
+  --emerald-green-400: #34d399;
+  --emerald-green-600: #059669;
+  --slate-grey: #374151;
+
+  --white: #ffffff;
+  --black: #000000;
+  --charcoal-333: #333333;
+  --zinc-900: #18181b;
+  --gray-900: #111827;
+  --text-1a202c: #1a202c;
+  --text-1f2937: #1f2937;
+  --muted-6b7280: #6b7280;
+  --neutral-50: #f5f5f5;
+  --neutral-100: #f8fafc;
+  --neutral-110: #f1f5f9;
+  --neutral-120: #f9f9f9;
+  --gray-100: #f1f1f1;
+  --gray-200-bootstrap: #e9ecef;
+  --gray-200-slate: #e2e8f0;
+  --gray-200-neutral: #f0f0f0;
+  --gray-300: #d9d9d9;
+  --gray-300-alt: #e0e0e0;
+  --gray-350: #d3d3d3;
+  --gray-400-slate: #cbd5e1;
+  --gray-450-cool: #c1c8cd;
+  --gray-460: #c1c1c1;
+  --gray-470: #a8b2ba;
+  --gray-500-slate: #94a3b8;
+  --gray-600: #888888;
+  --gray-650: #9e9e9e;
+  --gray-700: #555555;
+  --gray-666: #666666;
+  --border-d9d9d970: #d9d9d970; /* semi-transparent hex */
+  --slate-500: #64748b;
+  --cool-gray-400: #9ca3af;
+  --neutral-50-uppercase: #F5F5F5; /* 保留项目中的大写写法 */
+
+  /* Project color catalog: brand & greens */
+  --brand-green: #016532;
+  --brand-green-dark: #014a24;
+  --brand-green-darker: #014a28;
+  --brand-green-pressed: #014d28;
+  --emerald-green: #10b981; /* 已存在，保留语义 */
+  --emerald-600: #059669;
+  --success-500: #28a745;
+  --success-600: #218838;
+  --forest-700: #386641;
+  --forest-700-alt: #2e573e;
+  --mint-50: #e8f5e8;
+  --mint-100: #dcf8c6;
+  --light-green: #bcee90;
+  --whatsapp-teal: #128c7e;
+  --whatsapp-teal-dark: #075e54;
+  --material-green-500: #4caf50;
+
+  /* Project color catalog: blues */
+  --google-blue: #4285f4;
+  --indigo-500: #6366f1;
+  --blue-500: #2196f3;
+  --blue-accent-500: #3b82f6;
+  --lightblue: #add8e6;
+
+  /* Project color catalog: oranges & yellows */
+  --orange-500: #ff9800;
+  --orange-brand: #fc5600;
+  --amber-500: #ffc107;
+  --alert-yellow: #fff3cd;
+  --alert-yellow-border: #ffeaa7;
+
+  /* Project color catalog: reds & danger */
+  --danger-red: #dc3545;
+  --error-red: #ef4444;
+  --red-600: #b91c1c;
+  --danger-text: #721c24;
+  --danger-bg: #f8d7da;
+  --danger-border: #f5c6cb;
+  --material-red-500: #f44336;
+  --pink-200: #fecaca;
+  --pink-50: #fef2f2;
+
+  /* Project color catalog: browns */
+  --brown-600: #856404;
+
+  /* Project color catalog: other used tokens */
+  --card-border-gray: #e2e8f0;
+  --navbar-border-gray: #d9d9d9;
+  --primary-text: #333333;
+  --secondary-text: #666666;
+
+  /* Project color catalog: rgba & effects */
+  --overlay-dark-60: rgba(0, 0, 0, 0.6);
+  --overlay-white-10: rgba(255, 255, 255, 0.1);
+  --shadow-10: rgba(0, 0, 0, 0.1);
+  --shadow-15: rgba(0, 0, 0, 0.15);
+  --shadow-20: rgba(0, 0, 0, 0.2);
+  --shadow-25: rgba(0, 0, 0, 0.25);
+  --shadow-brand-30: rgba(1, 101, 50, 0.3);
+  --shadow-brand-20: rgba(1, 101, 50, 0.2);
+  --focus-error-10: rgba(239, 68, 68, 0.1);
+  --focus-brand-10: rgba(1, 101, 50, 0.1);
+  --shadow-indigo-08: rgba(16, 24, 40, 0.08);
+  --shadow-indigo-04: rgba(16, 24, 40, 0.04);
 
   /* Theme tokens mapped to the palette */
   --color-bg: var(--ash-grey);
   --color-card: #ffffff;
+  --input-bg: #f3f4f6;
+  --input: var(--cool-gray-400); /* 等同 #9ca3af */
   --color-text: var(--charcoal-blue);
   --color-muted-text: var(--deep-teal);
   --color-border: var(--muted-teal);
   --color-accent: var(--deep-teal);
   --color-accent-hover: var(--dark-slate-grey);
+  --color-line: #f5f5f5; 
 
   --shadow-soft: 0 10px 30px rgba(0,0,0,0.06);
-  --radius: 12px;
-  --space-1: 0.25rem;
-  --space-2: 0.5rem;
-  --space-3: 0.75rem;
-  --space-4: 1rem;
-  --space-5: 1.5rem;
+  --radius-12: 12px;
+  --radius-5: 5px;
+  --radius-3: 3px;
+
+  /* --space-1: 2px */
+  --space-1: 0.125rem;
+  --space-2: 0.25rem; 
+  --space-3: 0.5rem;
+  --space-4: 0.75rem;
+  --space-5: 1rem;
+  --space-6: 1.5rem;
+  --space-7: 2rem;
+  --space-8: 2.5rem;
+  --space-9: 1.25rem;
+  --space-10: 0.8rem;
+  --space-11: 2.75rem;
+  --space-12: 3rem;
 }
 
 a {
@@ -50,9 +186,9 @@ body {
   display: flex;
   place-items: center;
   min-width: 320px;
-  min-height: 100vh;
+  /* min-height: 100vh; */
   color: var(--color-text);
-  background-color: var(--color-bg);
+  background-color: white;
   display: block;
   line-height: 1.6;
 }
