@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { styled } from "styled-components";
 import { useLocation, useParams } from "react-router-dom";
 import Layout from "../components/loggedOut/Layout";
@@ -11,23 +11,29 @@ const Container = styled.div`
   display: flex;
 
   & > :nth-child(2) {
-    margin-left: 16rem;
-    width: calc(100vw - 16rem);
+    margin-left: 0;
+    width: 100vw;
+    
+    @media (min-width: 48rem) {
+      margin-left: 16rem;
+      width: calc(100vw - 16rem);
+    }
   }
 `;
 
 const MyClassPage: React.FC = () => {
   const location = useLocation();
   const { tagId } = useParams();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Extract the state from the location or fallback to default values
   const { title = tagId, desc = "No description available." } =
     location.state || {};
   const tagIdNumber = tagId ? parseInt(tagId, 10) : undefined;
   return (
-    <Layout customNavbar={<TagNavbar tagId={tagIdNumber} />}>
+    <Layout customNavbar={<TagNavbar tagId={tagIdNumber} onMenuClick={() => setSidebarOpen(true)} />}>
       <Container>
-        <Sidebar />
+        <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
         <MyClass title={title} desc={desc} />
       </Container>
     </Layout>

@@ -7,58 +7,44 @@ import {
   IoIosAddCircleOutline,
   IoIosRemoveCircleOutline,
 } from "react-icons/io";
-import { MdGroup, MdLock, MdPublic } from "react-icons/md";
-import axios from "axios";
-import apiClient from "../loggedOut/apiClient";
+import { MdLock, MdPublic } from "react-icons/md";
+import { FiX } from "react-icons/fi";
 import { useParams } from "react-router-dom";
 import { useRoomContext } from "./RoomContext";
 import Button from "../button";
-import ModalHeader from "../Header";
-import { API_BASE_URL } from "../../../config";
 import AutoResizeTextarea from "../Textarea";
+import { useUserRole, useEditGroup, useGroupInfo } from "../../hooks/queries/useGroup";
+import {
+  ModalCloseButton,
+  HeaderSection,
+  HeaderTitle,
+  HeaderSubTitle,
+  InputLabel,
+  ButtonContainer,
+  FixedButtonContainer,
+  Input as SharedInput,
+  ErrorText,
+  ModalBackdrop
+} from "../SharedComponents";
 
-axios.defaults.baseURL = API_BASE_URL;
 
-const Overlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  animation: fadeIn 0.2s ease-out;
-
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-`;
 
 const Modal = styled.div`
-  position: absolute;
-  top: 5px;
-  width: 75%;
+  position: relative;
+  width: 95%;
   max-width: 50rem;
-  min-width: 320px;
-  background: white;
+  background: var(--white);
   border: none;
-  border-radius: 20px;
-  padding: 2.5rem;
+  border-radius: var(--radius-12);
+  padding: var(--space-4);
   height: auto;
-  max-height: 80vh;
-  overflow-y: auto;
-  overflow-x: visible;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  max-height: 90vh;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px var(--shadow-25);
   animation: slideIn 0.3s ease-out;
+  cursor: default;
+  display: flex;
+  flex-direction: column;
 
   @keyframes slideIn {
     from {
@@ -71,100 +57,99 @@ const Modal = styled.div`
     }
   }
 
-  @media (max-width: 700px) {
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
     width: 85%;
-    padding: 2rem;
+    padding: var(--space-6);
+    max-height: 85vh;
   }
 
-  @media (max-width: 400px) {
-    width: 90%;
-    padding: 1.5rem;
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: 75%;
+    padding: var(--space-7);
+    max-height: 40rem;
+  }
+`;
+
+// 可滚动的内容区域
+const ModalContent = styled.div`
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: visible;
+  padding-right: var(--space-1);
+  margin-top: var(--space-3);
+
+  /* 自定义滚动条 */
+  &::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: var(--gray-300);
+    border-radius: 2px;
+  }
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    padding-right: var(--space-2);
+    margin-top: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    padding-right: var(--space-2);
+    margin-top: var(--space-4);
   }
 `;
 
 const Form = styled.form`
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: var(--space-2);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    gap: 0.5rem;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    gap: 0.5rem;
+  }
 `;
 
 const InputGroup = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: var(--space-1);
 `;
 
-const Label = styled.label`
-  font-family: "Roboto", sans-serif;
-  font-weight: 500;
-  font-size: 0.875rem;
-  color: var(--slate-grey);
-  margin: 0;
-`;
-
-interface InputProps {
-  $hasError?: boolean;
-}
-
-const Input = styled.input<InputProps>`
-  font-size: 1rem;
-  font-family: "Roboto", sans-serif;
-  padding: 0.875rem 1rem;
-  border: 2px solid ${(props) => (props.$hasError ? "#ef4444" : "#e5e7eb")};
-  border-radius: 12px;
-  color: #1f2937;
-  background-color: #f9fafb;
-  outline: none;
-  transition: all 0.2s ease;
-  box-sizing: border-box;
-
-  &:focus {
-    border-color: ${(props) => (props.$hasError ? "#ef4444" : "#016532")};
-    background-color: white;
-    box-shadow: 0 0 0 3px
-      ${(props) =>
-        props.$hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
-  }
-
-  &::placeholder {
-    color: var(--input);
-  }
-
-  &:disabled {
-    background-color: #f3f4f6;
-    color: #9ca3af;
-    cursor: not-allowed;
-  }
-
-  @media (max-width: 500px) {
-    font-size: 0.9rem;
-    padding: 0.75rem 0.875rem;
-  }
-`;
-
-const ErrorMessage = styled.div`
-  color: #ef4444;
-  font-size: 0.875rem;
-  font-family: "Roboto", sans-serif;
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-
-  &::before {
-    content: "⚠";
-    font-size: 0.75rem;
-  }
-`;
 
 const RadioGroup = styled.div`
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-  margin-top: 0.5rem;
+  grid-template-columns: 1fr;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
 
-  @media (max-width: 500px) {
-    gap: 0.75rem;
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+    margin-top: 0.5rem;
   }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
 `;
 
 const RadioCard = styled.label<{ checked: boolean; disabled?: boolean }>`
@@ -172,7 +157,7 @@ const RadioCard = styled.label<{ checked: boolean; disabled?: boolean }>`
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  border: 2px solid ${(props) => (props.checked ? "#016532" : "#e5e7eb")};
+  border: 1px solid ${(props) => (props.checked ? "var(--emerald-green)" : "#e5e7eb")};
   border-radius: 12px;
   background-color: ${(props) => (props.checked ? "#f0fdf4" : "#f9fafb")};
   cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
@@ -180,7 +165,7 @@ const RadioCard = styled.label<{ checked: boolean; disabled?: boolean }>`
   opacity: ${(props) => (props.disabled ? 0.6 : 1)};
 
   &:hover:not(:disabled) {
-    border-color: ${(props) => (props.checked ? "#016532" : "#9ca3af")};
+    border-color: ${(props) => (props.checked ? "var(--emerald-green)" : "#9ca3af")};
     background-color: ${(props) => (props.checked ? "#f0fdf4" : "#f3f4f6")};
   }
 
@@ -192,9 +177,9 @@ const RadioCard = styled.label<{ checked: boolean; disabled?: boolean }>`
 const RadioIcon = styled.div<{ checked: boolean }>`
   width: 1.25rem;
   height: 1.25rem;
-  border: 2px solid ${(props) => (props.checked ? "#016532" : "#d1d5db")};
+  border: 1px solid ${(props) => (props.checked ? "var(--emerald-green)" : "#d1d5db")};
   border-radius: 50%;
-  background-color: ${(props) => (props.checked ? "#016532" : "transparent")};
+  background-color: ${(props) => (props.checked ? "var(--emerald-green)" : "transparent")};
   position: relative;
   transition: all 0.2s ease;
 
@@ -253,10 +238,32 @@ const CheckboxContainer = styled.div`
 `;
 
 const CheckboxInput = styled.input`
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
   width: 1.25rem;
   height: 1.25rem;
-  accent-color: #016532;
+  border: 1px solid var(--emerald-green);
+  border-radius: 4px;
+  background-color: white;
   cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+
+  &:checked {
+    background-color: var(--emerald-green);
+  }
+
+  &:checked::after {
+    content: "✓";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: bold;
+  }
 `;
 
 const CheckboxLabel = styled.label`
@@ -271,15 +278,15 @@ const CheckboxLabel = styled.label`
 `;
 
 const AssistantIcon = styled(FaRobot)`
-  color: #016532;
+  color: var(--emerald-green);
   font-size: 1rem;
 `;
 
 const FieldArrayContainer = styled.div`
   margin-top: 1.5rem;
   padding: 1.5rem;
-  background: #f8fafc;
-  border-radius: 12px;
+  background: var(--white);
+  border-radius: var(--radius-12);
   border: 1px solid #e2e8f0;
 `;
 
@@ -340,15 +347,15 @@ const CenteredColumnHeader = styled(ColumnHeader)`
 
 const AddAssistantRow = styled.div`
   display: grid;
-  grid-template-columns: 32px 0.8fr 1.3fr 100px 50px;
+  grid-template-columns: 32px 0.8fr 1.3fr 80px 80px;
   gap: 0.6rem;
-  align-items: center;
+  align-items: start;
   padding: 0.75rem 0;
   border-bottom: 1px solid #e2e8f0;
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: #f1f5f9;
+    background-color: #e0f2fe;
     border-radius: 8px;
     margin: 0 -0.5rem;
     padding: 0.75rem 0.5rem;
@@ -358,50 +365,79 @@ const AddAssistantRow = styled.div`
     border-bottom: none;
   }
 
-  @media (max-width: 800px) {
-    grid-template-columns: 28px 1fr 1fr 60px 50px;
+  /* mobile - 基础样式 */
+  grid-template-columns: 24px 1fr 1fr 50px 50px;
+  gap: 0.3rem;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    grid-template-columns: 28px 1fr 1fr 60px 60px;
     gap: 0.4rem;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    grid-template-columns: 32px 0.8fr 1.3fr 80px 80px;
+    gap: 0.6rem;
   }
 `;
 
 const FeedbackAssistantRow = styled.div`
   display: grid;
-  grid-template-columns: 10px 0.7fr 1fr 50px 50px;
-  gap: 0.9rem;
-  align-items: center;
-  padding: 0.75rem 0;
+  grid-template-columns: 24px 1fr 1fr 50px 50px;
+  gap: 0.3rem;
+  align-items: start;
+  padding: 0.5rem 0;
   border-bottom: 1px solid #e2e8f0;
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: #f1f5f9;
+    background-color: #e0f2fe;
     border-radius: 8px;
     margin: 0 -0.5rem;
-    padding: 0.75rem 0.5rem;
+    padding: 0.5rem 0.5rem;
   }
 
   &:last-child {
     border-bottom: none;
   }
 
-  @media (max-width: 800px) {
-    grid-template-columns: 28px 1fr 1fr 60px 50px;
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    grid-template-columns: 28px 1fr 1fr 60px 60px;
     gap: 0.4rem;
+    padding: 0.75rem 0;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    grid-template-columns: 32px 0.8fr 1.3fr 80px 80px;
+    gap: 0.6rem;
+    padding: 0.75rem 0;
   }
 `;
 
 const HeaderRow = styled.div`
   display: grid;
-  grid-template-columns: 32px 0.8fr 1.3fr 70px 50px;
-  gap: 0.6rem;
-  padding: 0.75rem 0;
-  margin-bottom: 1rem;
+  grid-template-columns: 24px 1fr 1fr 50px 50px;
+  gap: 0.3rem;
+  padding: 0.5rem 0;
+  margin-bottom: 0.75rem;
   border-bottom: 1px solid #cbd5e1;
   align-items: center;
 
-  @media (max-width: 800px) {
-    grid-template-columns: 28px 1fr 1fr 60px 50px;
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    grid-template-columns: 28px 1fr 1fr 60px 60px;
     gap: 0.4rem;
+    padding: 0.75rem 0;
+    margin-bottom: 1rem;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    grid-template-columns: 32px 0.8fr 1.3fr 80px 80px;
+    gap: 0.6rem;
   }
 `;
 
@@ -410,77 +446,62 @@ const SmallInputContainer = styled.div`
   flex-direction: column;
   width: 100%;
   position: relative;
-  min-height: 2.5rem;
-  justify-content: center;
-`;
+  min-height: 2rem;
+  justify-content: flex-start;
 
-const SmallInput = styled(Input)<InputProps>`
-  font-size: 0.875rem;
-  padding: 0.5rem 0.6rem;
-  margin: 0;
-  height: 2.5rem;
-  box-sizing: border-box;
-
-  /* 针对数字输入框的特殊样式 */
-  &[type="number"] {
-    padding: 0.5rem 0.4rem;
-    text-align: center;
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    min-height: 2.5rem;
   }
 
-  @media (max-width: 800px) {
-    font-size: 0.75rem;
-    padding: 0.4rem 0.5rem;
-    height: 2.25rem;
-    
-    &[type="number"] {
-      padding: 0.4rem 0.3rem;
-    }
-  }
-
-  @media (max-width: 600px) {
-    font-size: 0.7rem;
-    height: 2rem;
-    
-    &[type="number"] {
-      padding: 0.3rem 0.2rem;
-    }
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    min-height: 2.5rem;
   }
 `;
+
+
 
 const SmallTextareaContainer = styled.div`
   display: flex;
   flex-direction: column;
   width: 100%;
   position: relative;
-  min-height: 2.5rem;
-  justify-content: center;
+  min-height: 2rem;
+  justify-content: flex-start;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    min-height: 2.5rem;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    min-height: 2.5rem;
+  }
 `;
 
 
-const BotFieldErrorMessage = styled.div`
-  color: #ef4444;
-  font-size: 0.7rem;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  line-height: 1.2;
-  margin-top: 0.2rem;
-  z-index: 1;
-`;
+
 
 const ToggleSwitchContainer = styled.div`
   display: flex;
   width: 100%;
   flex-direction: column;
-  justify-content: center;
-  // align-items: center;
+  justify-content: flex-start;
+  align-items: center;
   position: relative;
   gap: 0;
-  height: 2.5rem;
+  min-height: 2rem;
 
-  @media (max-width: 400px) {
-    width: 100%;
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    min-height: 2.5rem;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    min-height: 2.5rem;
   }
 `;
 
@@ -524,11 +545,29 @@ const ToggleSwitch = styled.label`
     }
   }
 
-  @media (max-width: 800px) {
+  /* mobile - 基础样式 */
+  span {
+    width: 2rem;
+    height: 1rem;
+
+    &::before {
+      width: 0.75rem;
+      height: 0.75rem;
+      top: 0.125rem;
+      left: 0.125rem;
+    }
+  }
+
+  input:checked + span::before {
+    transform: translateX(1rem);
+  }
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
     span {
       width: 2.5rem;
       height: 1.25rem;
-      
+
       &::before {
         width: 1rem;
         height: 1rem;
@@ -536,21 +575,40 @@ const ToggleSwitch = styled.label`
         left: 0.125rem;
       }
     }
-    
+
     input:checked + span::before {
       transform: translateX(1.25rem);
+    }
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem)      width: 3rem;
+      height: 1 {
+    span {
+.5rem;
+
+      &::before {
+        width: 1rem;
+        height: 1rem;
+        top: 0.125rem;
+        left: 0.125rem;
+      }
+    }
+
+    input:checked + span::before {
+      transform: translateX(1.5rem);
     }
   }
 `;
 
 const RemoveIcon = styled(IoIosRemoveCircleOutline)`
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   color: #ef4444;
   cursor: pointer;
   justify-self: center;
   align-self: center;
   transition: all 0.2s ease;
-  height: 2.5rem;
+  height: 2rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -560,26 +618,42 @@ const RemoveIcon = styled(IoIosRemoveCircleOutline)`
     transform: scale(1.1);
   }
 
-  @media (max-width: 400px) {
-    font-size: 1.2rem;
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: 1.5rem;
+    height: 2.5rem;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: 1.5rem;
+    height: 2.5rem;
   }
 `;
 
 const AddIconContainer = styled.div`
   display: grid;
-  grid-template-columns: 32px 1fr 1.3fr 70px 60px;
-  gap: 0.6rem;
-  margin-top: 1rem;
+  grid-template-columns: 24px 1fr 1fr 50px 40px;
+  gap: 0.3rem;
+  margin-top: 0.75rem;
   align-items: center;
 
-  @media (max-width: 800px) {
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
     grid-template-columns: 28px 1fr 1fr 60px 50px;
     gap: 0.4rem;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    grid-template-columns: 32px 1fr 1.3fr 70px 60px;
+    gap: 0.6rem;
+    margin-top: 1rem;
   }
 `;
 
 const AddIcon = styled(IoIosAddCircleOutline)`
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   color: #10b981;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -587,36 +661,47 @@ const AddIcon = styled(IoIosAddCircleOutline)`
   align-items: center;
   justify-content: center;
   width: 100%;
-  height: 1.5rem;
+  height: 1.2rem;
 
   &:hover {
     color: #059669;
     transform: scale(1.1);
   }
 
-  @media (max-width: 800px) {
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: 1.5rem;
+    height: 1.5rem;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: 1.5rem;
+    height: 1.5rem;
+  }
+
+  /* mobile - 基础样式 */
+  font-size: 1rem;
+  height: 2rem;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
     font-size: 1.2rem;
     height: 2.25rem;
   }
 
-  @media (max-width: 400px) {
-    font-size: 1rem;
-    height: 2rem;
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: 1.5rem;
+    height: 2.5rem;
   }
 `;
 
-const ButtonContainer = styled.div`
-  display: flex;
-  gap: 0.75rem;
+const ModalButtonContainer = styled(ButtonContainer)`
   margin-top: 2rem;
-  justify-content: center;
-  height: 50px;
-
-  @media (max-width: 500px) {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
 `;
+
+
 
 const validationSchema = (showAssistants: boolean) =>
   Yup.object().shape({
@@ -792,7 +877,7 @@ interface CreateRoomComponentProps {
   onClose: () => void;
   isModify?: boolean;
   groupId?: number;
-  fromSidebar?: boolean; // New prop
+  fromSidebar?: boolean;
 }
 
 // Define the RoomInfoResponse interface at the appropriate scope
@@ -805,20 +890,17 @@ export interface RoomInfoResponse {
     groupDescription: string;
     groupType: number;
     password?: string;
-    clearContextTime?: string; // 添加clearContextTime字段
+    clearContextTime?: string;
     groupMode?: "free" | "feedback";
-    // Include both possible field names for the bot list
-
     chatBots?: ChatBotVO[];
-    chatBotFeedback?:ChatBotFeedbackVO;
-    
+    chatBotFeedback?: ChatBotFeedbackVO;
   };
 }
 
 // Extend the FormBot interface to include status and botId
 interface FormBotWithStatus extends FormBot {
-  botId?: number; // Only present for existing bots
-  status: "new" | "modified" | "unchanged"; // Track status for edit operations
+  botId?: number;
+  status: "new" | "modified" | "unchanged";
 }
 
 const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
@@ -830,9 +912,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   const { addRoom } = useRoomContext();
   const [showAssistants, setShowAssistants] = useState(false);
   const [apiRequestMade, setApiRequestMade] = useState(false);
-  const [originalBots, setOriginalBots] = useState<
-    ChatBotVO[]
-  >([]);
+  const [originalBots, setOriginalBots] = useState<ChatBotVO[]>([]);
   const { groupId: urlGroupId } = useParams<{ groupId: string }>();
   const effectiveIsModify = fromSidebar ? false : isModify;
   const shouldCheckRole = effectiveIsModify && !fromSidebar;
@@ -844,6 +924,11 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   // Determine the groupId to use - from props or URL params
   const currentGroupId =
     propGroupId || (urlGroupId ? parseInt(urlGroupId, 10) : undefined);
+
+  // Use React Query hooks
+  const { data: userRoleData } = useUserRole(shouldCheckRole ? currentGroupId : undefined);
+  const editGroupMutation = useEditGroup();
+  const { data: groupInfoData } = useGroupInfo(currentGroupId);
 
   const handleAddGroup = async (
     values: FormikValues,
@@ -949,13 +1034,11 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       );
 
       if (effectiveIsModify && userRole === "ADMIN") {
-        // Handle edit group logic
         await handleEditGroup(values);
       } else if (!effectiveIsModify) {
-        // Handle create group logic
         const submittedValues = {
           ...values,
-          bots: showAssistants ? values.bots : [], // Empty array if assistants not enabled
+          bots: showAssistants ? values.bots : [],
         };
         await handleAddGroup(submittedValues, onClose, showAssistants);
       } else {
@@ -965,35 +1048,24 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   });
 
   useEffect(() => {
-    const fetchRoomInfo = async () => {
-      // Only fetch room info when modifying and not from sidebar
-      if (
-        effectiveIsModify &&
-        !fromSidebar &&
-        !apiRequestMade &&
-        currentGroupId
-      ) {
-        try {
-          setApiRequestMade(true);
-
-          // Only fetch user role when modifying
-          if (shouldCheckRole) {
-            const roleResponse = await fetchUserRole(currentGroupId);
-            setUserRole(roleResponse);
-          }
-
-          // ... rest of the fetch logic ...
-        } catch (error: any) {
-          console.error("Error message:", error.message);
-          setApiRequestMade(false);
-        }
+    if (
+      effectiveIsModify &&
+      !fromSidebar &&
+      !apiRequestMade &&
+      currentGroupId &&
+      shouldCheckRole &&
+      userRoleData
+    ) {
+      setApiRequestMade(true);
+      if (userRoleData) {
+       setUserRole(userRoleData);
+      } else {
+        alert("Failed to fetch user role.");
+        setUserRole(null);
       }
-    };
+    }
+  }, [effectiveIsModify, currentGroupId, apiRequestMade, fromSidebar, shouldCheckRole, userRoleData]);
 
-    fetchRoomInfo();
-  }, [effectiveIsModify, currentGroupId, apiRequestMade, fromSidebar]);
-
-  // Reset state and enforce isModify=false when coming from sidebar
   useEffect(() => {
     if (fromSidebar) {
       setApiRequestMade(false);
@@ -1004,7 +1076,6 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
     }
   }, [fromSidebar]);
 
-  // Cleanup effect
   useEffect(() => {
     return () => {
       setShowAssistants(false);
@@ -1015,7 +1086,6 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
     };
   }, []);
 
-  // Reset state when effectiveIsModify or groupId changes
   useEffect(() => {
     setApiRequestMade(false);
     setShowAssistants(false);
@@ -1024,35 +1094,15 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
     formik.resetForm();
   }, [effectiveIsModify, propGroupId]);
 
-  const fetchUserRole = async (groupId: number) => {
-    try {
-      const response = await apiClient.get(
-        `/v1/group/get_role_in_group?groupId=${groupId}`
-      );
-      if (response.data.code === 200) {
-        return response.data.data; // "ADMIN" or "MEMBER"
-      }else{
-        alert(response.data.message || "Failed to fetch user role.");
-      }
-      return null;
-    } catch (error) {
-      console.error("Error fetching user role:", error);
-      return null;
-    }
-  };
-
-  // MODIFIED: function to handle edit group submission
-  const handleEditGroup = async (values: any) => {
+const handleEditGroup = async (values: any) => {
     if (!currentGroupId) {
       console.error("Cannot edit group: groupId is undefined");
       return;
     }
 
     try {
-      // Debug log the form values
       console.log("Edit form values:", values);
 
-      // Separate bots based on their status
       const addedBots = values.bots
         .filter((bot: FormBotWithStatus) => bot.status === "new")
         .map((bot: FormBotWithStatus) => ({
@@ -1065,20 +1115,16 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
           botPrompt: bot.prompt,
         }));
 
-      // Find deleted bots by comparing original bots with current bots
       const currentBotIds = values.bots
         .filter((bot: FormBotWithStatus) => bot.botId)
         .map((bot: FormBotWithStatus) => bot.botId);
 
-      // Calculate which bots were deleted (for debugging)
       const deletedBotIds = originalBots
         .filter((bot) => !currentBotIds.includes(bot.botId))
         .map((bot) => bot.botId);
 
       console.log("Deleted bot IDs:", deletedBotIds);
 
-      // For API, we need ALL existing bots that haven't been deleted in modifyChatBotVOS
-      // This includes both modified and unchanged bots
       const existingBots = values.bots
         .filter(
           (bot: FormBotWithStatus) =>
@@ -1095,38 +1141,38 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
           botName: bot.name,
           botPrompt: bot.prompt,
         }));
-      const feedbackBotVO: ChatBotFeedbackVO | undefined =
+
+      const feedbackBotVO =
         values.groupMode === "feedback"
-            ? {
-                  botId: values.feedbackBot.botId,
-                  botName: values.feedbackBot.name || "",
-                  botPrompt: values.feedbackBot.prompt || "",
-                  msgCountInterval:
-                      typeof values.feedbackBot.msgCountInterval === "number"
-                          ? values.feedbackBot.msgCountInterval
-                          : parseInt(String(values.feedbackBot?.msgCountInterval ?? 2), 10),
-                  timeInterval:
-                      typeof values.feedbackBot?.timeInterval === "number"
-                          ? values.feedbackBot.timeInterval
-                          : parseInt(String(values.feedbackBot?.timeInterval ?? 1), 10),
-              }
-            : undefined;
-      // Per API documentation
+          ? {
+              botId: values.feedbackBot.botId,
+              botName: values.feedbackBot.name || "",
+              botPrompt: values.feedbackBot.prompt || "",
+              msgCountInterval:
+                typeof values.feedbackBot.msgCountInterval === "number"
+                  ? values.feedbackBot.msgCountInterval
+                  : parseInt(String(values.feedbackBot?.msgCountInterval ?? 2), 10),
+              timeInterval:
+                typeof values.feedbackBot?.timeInterval === "number"
+                  ? values.feedbackBot.timeInterval
+                  : parseInt(String(values.feedbackBot?.timeInterval ?? 1), 10),
+            }
+          : undefined;
+
       const requestPayload = {
-        groupId: Number(currentGroupId), // Ensure groupId is a number
+        groupId: Number(currentGroupId),
         groupName: values.roomName,
         groupDescription: values.roomDescription,
-        // Include password only for private rooms or if it was previously set
         ...(values.roomType === "0" ? { password: values.roomPassword } : {}),
-        // Include bots only if assistants are enabled
-        ...(values.groupMode === "feedback" 
+        ...(values.groupMode === "feedback"
           ? {
-            modifyChatBotFeedbackVO: feedbackBotVO,
-            }:{}),
+              modifyChatBotFeedbackVO: feedbackBotVO,
+            }
+          : {}),
         ...(showAssistants && values.groupMode === "free"
           ? {
               addChatBotVOList: addedBots,
-              modifyChatBotVOS: existingBots, // All existing bots that haven't been deleted
+              modifyChatBotVOS: existingBots,
             }
           : {
               addChatBotVOList: [],
@@ -1136,66 +1182,48 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
 
       console.log("Edit request payload:", requestPayload);
 
-      const response = await apiClient.post(
-        "/v1/group/edit_group_info",
-        requestPayload
-      );
+      const response = await editGroupMutation.mutateAsync(requestPayload);
 
-      console.log("Edit response:", response.data);
+      console.log("Edit response:", response);
 
-      if (response.data.code === 200) {
-        // Verify the update by fetching the updated data
-        try {
-          const verifyResponse = await apiClient.get(
-            `/v1/group/get_group_info?groupId=${currentGroupId}`
-          );
-          console.log("Verification response:", verifyResponse.data);
-        } catch (verifyError) {
-          console.error("Failed to verify update:", verifyError);
+      if (response.code === 200) {
+        // Verify by checking the group info query data
+        if (groupInfoData) {
+          console.log("Verification response:", groupInfoData);
         }
 
         alert("Room successfully updated!");
         onClose();
       } else {
-        alert(response.data.message || "Failed to update room");
+        alert(response.message || "Failed to update room");
       }
     } catch (error: any) {
       console.error("Error updating group:", error);
-      alert(`Error: ${error.response?.data?.message || error.message}`);
-      
+      alert(`Error: ${error.message || "Failed to update room"}`);
     }
   };
 
-  // Helper function to check if any bot fields are empty
   const hasBotErrors = () => {
     if (!showAssistants) return false;
 
-    // Check for errors in the "bots" field
-    if (
-      formik.errors.bots &&
-      typeof formik.errors.bots === "object" &&
-      !Array.isArray(formik.errors.bots)
-    ) {
+    const { bots } = formik.errors;
+    if (!bots) return false;
+
+    if (typeof bots === "string") {
       return true;
     }
 
-    // Check for specific bot field errors
-    if (Array.isArray(formik.errors.bots)) {
-      return formik.errors.bots.some(
-        (error) => error && typeof error === "object"
-      );
+    if (Array.isArray(bots)) {
+      return bots.some((error) => error && typeof error === "object");
     }
 
     return false;
   };
 
-  // Toggle assistant checkbox handler
   const handleAssistantToggle = () => {
     setShowAssistants(!showAssistants);
 
-    // If turning off assistants, we don't need to validate the bot fields
     if (showAssistants) {
-      // Reset any bot-related errors when turning off assistants
       formik.setErrors({
         ...formik.errors,
         bots: undefined,
@@ -1204,127 +1232,87 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   };
 
   useEffect(() => {
-    const fetchRoomInfo = async () => {
-      if (isModify && !apiRequestMade && currentGroupId) {
-        try {
-          setApiRequestMade(true);
-
-          // First fetch user role
-          const roleResponse = await fetchUserRole(currentGroupId);
-          setUserRole(roleResponse); // Store the role
-          const isAdmin = roleResponse === "ADMIN";
-
-          const groupIdParam =
-            typeof currentGroupId === "string"
-              ? parseInt(currentGroupId, 10)
-              : currentGroupId;
-
-          const url = `/v1/group/get_group_info?groupId=${groupIdParam}`;
-
-          try {
-            const response = await apiClient.get<RoomInfoResponse>(url);
-
-            if (
-              response.status === 200 &&
-              response.data.code === 200 &&
-              response.data.data
-            ) {
-              const roomData = response.data.data;
-              const botList = roomData.chatBots || [];
-              setOriginalBots([...botList]);
-
-              const hasBots = botList.length > 0;
-
-              // Detect feedback mode via groupMode or presence of feedback bot info
-              const feedbackInfo =
-                (roomData as any).chatBotFeedbackVO ||
-                roomData.chatBotFeedback;
-              const isFeedbackMode =
-                roomData.groupMode === "feedback" || !!feedbackInfo;
-
-              let formattedBots: FormBotWithStatus[] = [];
-
-              if (!isFeedbackMode) {
-                if (hasBots) {
-                  formattedBots = botList.map((bot) => ({
-                    name: bot.botName,
-                    prompt: bot.botPrompt,
-                    context: bot.botContext,
-                    adminOnly: bot.accessType === 0,
-                    botId: bot.botId,
-                    status: "unchanged",
-                  }));
-
-                  // Only show assistants section if user is admin
-                  setShowAssistants(isAdmin && hasBots);
-                } else {
-                  formattedBots = [
-                    {
-                      name: "",
-                      prompt: "",
-                      context: 1,
-                      adminOnly: false,
-                      status: "new",
-                    },
-                  ];
-                  setShowAssistants(false);
-                }
-              } else {
-                // In feedback mode, do not show normal assistants
-                setShowAssistants(false);
-              }
-
-              // Pre-fill form values
-              formik.setValues({
-                roomName: roomData.groupName,
-                roomDescription: roomData.groupDescription || "",
-                roomType: roomData.groupType.toString(),
-                groupMode: isFeedbackMode ? "feedback" : "free",
-                roomPassword: roomData.password || "",
-                bots: isAdmin && !isFeedbackMode ? formattedBots : [],
-                feedbackBot:
-                  isFeedbackMode && feedbackInfo
-                    ? {
-                        name: feedbackInfo.botName || "",
-                        prompt: feedbackInfo.botPrompt || "",
-                        msgCountInterval:
-                          typeof feedbackInfo.msgCountInterval === "number"
-                            ? feedbackInfo.msgCountInterval
-                            : parseInt(String(feedbackInfo.msgCountInterval), 10),
-                        timeInterval:
-                          typeof feedbackInfo.timeInterval === "number"
-                            ? feedbackInfo.timeInterval
-                            : parseInt(String(feedbackInfo.timeInterval), 10),
-                        botId: feedbackInfo.botId,
-                      }
-                    : {
-                        name: "",
-                        prompt: "",
-                        msgCountInterval: 2,
-                        timeInterval: 1,
-                        botId: undefined,
-                      },
-              });
-            } else {
-              console.error(
-                "API returned successfully but with unexpected format or error code"
-              );
-            }
-          } catch (apiError) {
-            console.error("API request failed:", apiError);
-            setApiRequestMade(false);
-          }
-        } catch (error: any) {
-          console.error("Error message:", error.message);
-          setApiRequestMade(false);
+    if (isModify && !apiRequestMade && currentGroupId && groupInfoData?.code === 200) {
+      setApiRequestMade(true);
+      
+      const roomData = groupInfoData.data;
+      if (!roomData) return;
+      
+      const botList = roomData.chatBots || [];
+      setOriginalBots([...botList]);
+      
+      const hasBots = botList.length > 0;
+      const isAdmin = userRole === "ADMIN";
+      
+      const feedbackInfo = (roomData as any).chatBotFeedbackVO || roomData.chatBotFeedback;
+      const isFeedbackMode = roomData.groupMode === "feedback" || !!feedbackInfo;
+      
+      let formattedBots: FormBotWithStatus[] = [];
+      
+      if (!isFeedbackMode) {
+        if (hasBots) {
+          formattedBots = botList.map((bot: any) => ({
+            name: bot.botName,
+            prompt: bot.botPrompt,
+            context: bot.botContext,
+            adminOnly: bot.accessType === 0,
+            botId: bot.botId,
+            status: "unchanged" as const,
+          }));
+          setShowAssistants(isAdmin && hasBots);
+        } else {
+          formattedBots = [
+            {
+              name: "",
+              prompt: "",
+              context: 1,
+              adminOnly: false,
+              status: "new" as const,
+            },
+          ];
+          setShowAssistants(false);
         }
+      } else {
+        setShowAssistants(false);
       }
-    };
+      
+      formik.setValues({
+        roomName: roomData.groupName,
+        roomDescription: roomData.groupDescription || "",
+        roomType: roomData.groupType.toString(),
+        groupMode: isFeedbackMode ? "feedback" : "free",
+        roomPassword: roomData.password || "",
+        bots: isAdmin && !isFeedbackMode ? formattedBots : [],
+        feedbackBot:
+          isFeedbackMode && feedbackInfo
+            ? {
+                name: feedbackInfo.botName || "",
+                prompt: feedbackInfo.botPrompt || "",
+                msgCountInterval:
+                  typeof feedbackInfo.msgCountInterval === "number"
+                    ? feedbackInfo.msgCountInterval
+                    : typeof feedbackInfo.msgCountInterval === "string"
+                    ? parseInt(feedbackInfo.msgCountInterval, 10)
+                    : 2,
+                timeInterval:
+                  typeof feedbackInfo.timeInterval === "number"
+                    ? feedbackInfo.timeInterval
+                    : typeof feedbackInfo.timeInterval === "string"
+                    ? parseInt(feedbackInfo.timeInterval, 10)
+                    : 1,
+                botId: feedbackInfo.botId,
+              }
+            : {
+                name: "",
+                prompt: "",
+                msgCountInterval: 2,
+                timeInterval: 1,
+                botId: undefined,
+              },
+      });
+    }
+  }, [isModify, currentGroupId, apiRequestMade, groupInfoData, userRole, formik]);
 
-    fetchRoomInfo();
-  }, [isModify, currentGroupId, apiRequestMade, formik]);
-
-  // MODIFIED: Track changes in bot fields to update their status
   const handleBotFieldChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     index: number
@@ -1332,13 +1320,10 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
 
-    // Call the standard formik handler to update the value
     formik.handleChange(e);
 
-    // Get the current bot
     const bot = formik.values.bots[index];
 
-    // If this is an existing bot (has botId), mark it as modified
     if (bot && bot.botId && bot.status === "unchanged") {
       console.log(
         `Marking bot at index ${index} as modified: ${name} changed to ${
@@ -1357,18 +1342,26 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   };
 
   return (
-    <Overlay>
-      <Modal>
-        <ModalHeader
-          icon={MdGroup}
-          title={effectiveIsModify ? "Edit Room" : "Create New Room"}
-          onClose={onClose}
-        />
+    <ModalBackdrop onClick={onClose}  className="modal-backdrop-right">
+      <Modal onClick={(e) => e.stopPropagation()}>
+        {/* 右上角关闭按钮 */}
+        <ModalCloseButton onClick={onClose} aria-label="Close">
+          <FiX size={24} />
+        </ModalCloseButton>
+
+        {/* 顶部标题 - 固定在顶部不滚动 */}
+        <HeaderSection>
+          <HeaderTitle>{effectiveIsModify ? "Edit Room" : "Create New Room"}</HeaderTitle>
+          <HeaderSubTitle>{effectiveIsModify ? "Update your room details." : "Create a new room for your group."}</HeaderSubTitle>
+        </HeaderSection>
+
+        {/* 可滚动的内容区域 */}
+        <ModalContent>
         <FormikProvider value={formik}>
           <Form onSubmit={formik.handleSubmit}>
             <InputGroup>
-              <Label htmlFor="roomName">Group Name</Label>
-              <SmallInput
+              <InputLabel htmlFor="roomName">Group Name</InputLabel>
+              <SharedInput
                 id="roomName"
                 name="roomName"
                 placeholder="Explore Generative AI"
@@ -1379,13 +1372,13 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                 disabled={effectiveIsModify}
                 $hasError={!!(formik.touched.roomName && formik.errors.roomName)}
               />
-              {formik.touched.roomName && formik.errors.roomName && (
-                <ErrorMessage>{formik.errors.roomName}</ErrorMessage>
-              )}
+              <ErrorText $visible={!!(formik.touched.roomName && formik.errors.roomName)}>
+                {(formik.touched.roomName && formik.errors.roomName) ? formik.errors.roomName : ' '}
+              </ErrorText>
             </InputGroup>
 
             <InputGroup>
-              <Label htmlFor="roomDescription">Description</Label>
+              <InputLabel htmlFor="roomDescription">Description</InputLabel>
               <SmallTextareaContainer>
                 <AutoResizeTextarea
                   name="roomDescription"
@@ -1402,14 +1395,13 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   disabled={shouldCheckRole && userRole !== "ADMIN"}
                 />
               </SmallTextareaContainer>
-              {formik.touched.roomDescription &&
-                formik.errors.roomDescription && (
-                  <ErrorMessage>{formik.errors.roomDescription}</ErrorMessage>
-                )}
+              <ErrorText $visible={!!(formik.touched.roomDescription && formik.errors.roomDescription)}>
+                {(formik.touched.roomDescription && formik.errors.roomDescription) ? formik.errors.roomDescription : " "}
+              </ErrorText>
             </InputGroup>
 
             <InputGroup>
-              <Label>Group Type</Label>
+              <InputLabel>Group Type</InputLabel>
               <RadioGroup>
                 <RadioCard
                   checked={formik.values.roomType === "1"}
@@ -1464,12 +1456,13 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
 
             {formik.values.roomType === "0" && (
               <InputGroup>
-                <Label htmlFor="roomPassword">Password</Label>
-                <Input
+                <InputLabel htmlFor="roomPassword">Password</InputLabel>
+                <SharedInput
                   id="roomPassword"
                   name="roomPassword"
                   type="password"
                   autoComplete="new-password"
+                  placeholder="Enter password"
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   value={formik.values.roomPassword}
@@ -1477,13 +1470,13 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                     !!(formik.touched.roomPassword && formik.errors.roomPassword)
                   }
                 />
-                {formik.touched.roomPassword && formik.errors.roomPassword && (
-                  <ErrorMessage>{formik.errors.roomPassword}</ErrorMessage>
-                )}
+                <ErrorText $visible={!!(formik.touched.roomPassword && formik.errors.roomPassword)}>
+                  {(formik.touched.roomPassword && formik.errors.roomPassword) ? formik.errors.roomPassword : " "}
+                </ErrorText>
               </InputGroup>
             )}
             <InputGroup>
-              <Label>Group Mode</Label>
+              <InputLabel>Group Mode</InputLabel>
               <RadioGroup>
                 <RadioCard
                   checked={formik.values.groupMode === "free"}
@@ -1529,9 +1522,9 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   </RadioContent>
                 </RadioCard>
               </RadioGroup>
-              {formik.touched.groupMode && formik.errors.groupMode && (
-                <ErrorMessage>{formik.errors.groupMode}</ErrorMessage>
-              )}
+              <ErrorText $visible={!!(formik.touched.groupMode && formik.errors.groupMode)}>
+                {(formik.touched.groupMode && formik.errors.groupMode) ? formik.errors.groupMode : " "}
+              </ErrorText>
             </InputGroup>
             
             {(!effectiveIsModify || userRole === "ADMIN") && (formik.values.groupMode === "free") &&(
@@ -1577,7 +1570,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                             }}
                           />
                           <SmallInputContainer>
-                            <SmallInput
+                            <SharedInput
                               name={`bots[${index}].name`}
                               placeholder="Assistant Name"
                               value={bot.name}
@@ -1594,14 +1587,14 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                                 )
                               }
                             />
-                            {formik.touched.bots?.[index]?.name &&
+                            <ErrorText $visible={!!(
+                              formik.touched.bots?.[index]?.name &&
                               formik.errors.bots?.[index] &&
                               typeof formik.errors.bots[index] === "object" &&
-                              (formik.errors.bots[index] as any).name && (
-                                <BotFieldErrorMessage>
-                                  {(formik.errors.bots[index] as any).name}
-                                </BotFieldErrorMessage>
-                              )}
+                              (formik.errors.bots[index] as any).name
+                            )}>
+                         
+                            </ErrorText>
                           </SmallInputContainer>
                           <SmallTextareaContainer>
                             <AutoResizeTextarea
@@ -1617,14 +1610,14 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                                 )
                               }
                             />
-                            {formik.touched.bots?.[index]?.prompt &&
+                            <ErrorText $visible={!!(
+                              formik.touched.bots?.[index]?.prompt &&
                               formik.errors.bots?.[index] &&
                               typeof formik.errors.bots[index] === "object" &&
-                              (formik.errors.bots[index] as any).prompt && (
-                                <BotFieldErrorMessage>
-                                  {(formik.errors.bots[index] as any).prompt}
-                                </BotFieldErrorMessage>
-                              )}
+                              (formik.errors.bots[index] as any).prompt
+                            )}>
+                  
+                            </ErrorText>
                           </SmallTextareaContainer>
                           <ToggleSwitchContainer>
                             <ToggleSwitch>
@@ -1656,15 +1649,13 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                             </ToggleSwitch>
                           </ToggleSwitchContainer>
                           <SmallInputContainer>
-                            <SmallInput
+                            <SharedInput
                               type="number"
                               name={`bots[${index}].context`}
                               placeholder="Context"
-                              value={bot.context}
+                              value={String(bot.context)}
                               onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
-                              min={1}
-                              max={20}
                               $hasError={
                                 !!(
                                   formik.touched.bots?.[index]?.context &&
@@ -1675,14 +1666,14 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                                 )
                               }
                             />
-                            {formik.touched.bots?.[index]?.context &&
+                            <ErrorText $visible={!!(
+                              formik.touched.bots?.[index]?.context &&
                               formik.errors.bots?.[index] &&
                               typeof formik.errors.bots[index] === "object" &&
-                              (formik.errors.bots[index] as any).context && (
-                                <BotFieldErrorMessage>
-                                  {(formik.errors.bots[index] as any).context}
-                                </BotFieldErrorMessage>
-                              )}
+                              (formik.errors.bots[index] as any).context
+                            )}>
+                          
+                            </ErrorText>
                           </SmallInputContainer>
                         </AddAssistantRow>
                       ))}
@@ -1705,12 +1696,12 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                 />
 
                 {hasBotErrors() && (
-                  <ErrorMessage>All assistant fields are required</ErrorMessage>
+                  <ErrorText>All assistant fields are required</ErrorText>
                 )}
 
-                {typeof formik.errors.bots === "string" && (
-                  <ErrorMessage>{formik.errors.bots}</ErrorMessage>
-                )}
+                <ErrorText $visible={typeof formik.errors.bots === "string"}>
+                  {typeof formik.errors.bots === "string" ? formik.errors.bots : " "}
+                </ErrorText>
               </FieldArrayContainer>
             )}
 
@@ -1741,7 +1732,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                   <div />
 
                   <SmallInputContainer>
-                    <SmallInput
+                    <SharedInput
                       name="feedbackBot.name"
                       disabled={effectiveIsModify}
                       placeholder="Assistant Name"
@@ -1755,12 +1746,12 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                         )
                       }
                     />
-                    {(formik.touched as any).feedbackBot?.name &&
-                      (formik.errors.feedbackBot as any)?.name && (
-                        <BotFieldErrorMessage>
-                          {(formik.errors.feedbackBot as any).name}
-                        </BotFieldErrorMessage>
-                      )}
+                    <ErrorText $visible={!!(
+                      (formik.touched as any).feedbackBot?.name &&
+                      (formik.errors.feedbackBot as any)?.name
+                    )}>
+                      {(formik.errors.feedbackBot as any)?.name || " "}
+                    </ErrorText>
                   </SmallInputContainer>
 
                   <SmallTextareaContainer>
@@ -1777,16 +1768,16 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                         )
                       }
                     />
-                    {(formik.touched as any).feedbackBot?.prompt &&
-                      (formik.errors.feedbackBot as any)?.prompt && (
-                        <BotFieldErrorMessage>
-                          {(formik.errors.feedbackBot as any).prompt}
-                        </BotFieldErrorMessage>
-                      )}
+                    <ErrorText $visible={!!(
+                      (formik.touched as any).feedbackBot?.prompt &&
+                      (formik.errors.feedbackBot as any)?.prompt
+                    )}>
+                      {(formik.errors.feedbackBot as any)?.prompt || " "}
+                    </ErrorText>
                   </SmallTextareaContainer>
 
                   <SmallInputContainer>
-                    <SmallInput
+                    <SharedInput
                       type="number"
                       name="feedbackBot.msgCountInterval"
                       placeholder="Message Count Interval"
@@ -1795,8 +1786,6 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                       }
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
-                      min={2}
-                      max={20}
                       $hasError={
                         !!(
                           (formik.touched as any).feedbackBot?.msgCountInterval &&
@@ -1804,16 +1793,16 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                         )
                       }
                     />
-                    {(formik.touched as any).feedbackBot?.msgCountInterval &&
-                      (formik.errors.feedbackBot as any)?.msgCountInterval && (
-                        <BotFieldErrorMessage>
-                          {(formik.errors.feedbackBot as any).msgCountInterval}
-                        </BotFieldErrorMessage>
-                      )}
+                    <ErrorText $visible={!!(
+                      (formik.touched as any).feedbackBot?.msgCountInterval &&
+                      (formik.errors.feedbackBot as any)?.msgCountInterval
+                    )}>
+                      {(formik.errors.feedbackBot as any)?.msgCountInterval || " "}
+                    </ErrorText>
                   </SmallInputContainer>
 
                   <SmallInputContainer>
-                    <SmallInput
+                    <SharedInput
                       type="number"
                       name="feedbackBot.timeInterval"
                       placeholder="Time Interval"
@@ -1822,8 +1811,6 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                       }
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
-                      min={1}
-                      max={30}
                       $hasError={
                         !!(
                           (formik.touched as any).feedbackBot?.timeInterval &&
@@ -1831,35 +1818,40 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
                         )
                       }
                     />
-                    {(formik.touched as any).feedbackBot?.timeInterval &&
-                      (formik.errors.feedbackBot as any)?.timeInterval && (
-                        <BotFieldErrorMessage>
-                          {(formik.errors.feedbackBot as any).timeInterval}
-                        </BotFieldErrorMessage>
-                      )}
+                    <ErrorText $visible={!!(
+                      (formik.touched as any).feedbackBot?.timeInterval &&
+                      (formik.errors.feedbackBot as any)?.timeInterval
+                    )}>
+                      {(formik.errors.feedbackBot as any)?.timeInterval || " "}
+                    </ErrorText>
                   </SmallInputContainer>
                 </FeedbackAssistantRow>
               </FieldArrayContainer>
             )}
 
             {(!effectiveIsModify || userRole === "ADMIN") && (
-              <ButtonContainer>
-                <Button
-                  variant="cancel"
-                  onClick={onClose}
-                  disabled={isSubmitting}
-                >
-                  Cancel
-                </Button>
-                <Button variant="primary" disabled={isSubmitting} type="submit">
-                  {effectiveIsModify ? "Update Room" : "Create Room"}
-                </Button>
-              </ButtonContainer>
+              <ModalButtonContainer>
+                <FixedButtonContainer>
+                  <Button
+                    variant="cancel"
+                    onClick={onClose}
+                    disabled={isSubmitting}
+                  >
+                    Cancel
+                  </Button>
+                </FixedButtonContainer>
+                <FixedButtonContainer>
+                  <Button disabled={isSubmitting} type="submit">
+                    {effectiveIsModify ? "Update Room" : "Create Room"}
+                  </Button>
+                </FixedButtonContainer>
+              </ModalButtonContainer>
             )}
           </Form>
         </FormikProvider>
+        </ModalContent>
       </Modal>
-    </Overlay>
+    </ModalBackdrop>
   );
 };
 

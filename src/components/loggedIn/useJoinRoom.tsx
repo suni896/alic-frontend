@@ -1,11 +1,6 @@
 import { useState, useCallback } from "react";
-import apiClient from "../loggedOut/apiClient"; // 调整路径
+import { useJoinGroup } from "../../hooks/queries/useGroup";
 import { useUser } from "./UserContext";
-
-interface JoinGroupResponse {
-  code: number;
-  message: string;
-}
 
 export interface RoomGroup {
   groupId: number;
@@ -20,6 +15,7 @@ export interface RoomGroup {
 
 export function useJoinRoom() {
   const { userInfo } = useUser();
+  const joinGroupMutation = useJoinGroup();
 
   const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
   const [showErrorModal, setShowErrorModal] = useState<boolean>(false);
@@ -28,42 +24,30 @@ export function useJoinRoom() {
   const [joinSuccess, setJoinSuccess] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [redirectPath, setRedirectPath] = useState<string | null>(null);
-  const [isProcessing, setIsProcessing] = useState(false);
 
   const joinGroup = useCallback(
     async (groupId: number, password?: string): Promise<boolean> => {
-      setIsProcessing(true);
       try {
-        const response = await apiClient.post<JoinGroupResponse>(
-          "/v1/group/add_group_member",
-          {
-            groupId,
-            joinMemberID: userInfo?.userId,
-            password: password || undefined,
-          }
-        );
+        const response = await joinGroupMutation.mutateAsync({
+          groupId,
+          joinMemberID: userInfo?.userId,
+          password: password || undefined,
+        });
 
-        if (response.data.code === 200 || response.data.code === 1009) {
+        if (response.code === 200 || response.code === 1009) {
           setJoinSuccess(true);
-          // alert("Successfully joined group");
-          // setShowErrorModal(true);
           setRedirectPath(`/my-room/${groupId}`);
-          return true; // 返回成功状态
+          return true;
         } else {
-          alert(
-            response.data.message || "Failed to join group."
-          );
+          alert(response.message || "Failed to join group.");
           return false;
         }
       } catch (error: any) {
         alert(error.message || "Failed to join group");
-        // setShowErrorModal(true);
         return false;
-      } finally {
-        setIsProcessing(false);
       }
     },
-    [userInfo?.userId]
+    [userInfo?.userId, joinGroupMutation]
   );
 
   const handleJoinClick = useCallback(
@@ -119,7 +103,7 @@ export function useJoinRoom() {
     joinSuccess,
     redirectPath,
     setRedirectPath,
-    isProcessing,
+    isProcessing: joinGroupMutation.isPending,
     isPasswordEmpty: !password.trim(),
   };
 }

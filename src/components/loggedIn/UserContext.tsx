@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import apiClient from "../loggedOut/apiClient";
+import React, { createContext, useContext } from "react";
+import { useUserInfo } from "../../hooks/queries/useUser";
 
 interface UserInformation {
   userId: number;
@@ -17,57 +17,21 @@ interface UserContextType {
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-// In-memory cache for user info
-let userInfoCache: UserInformation | null = null;
-
 export const UserProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [userInfo, setUserInfo] = useState<UserInformation | null>(null);
-  const [isUserInfoLoading, setIsLoading] = useState(true);
-  const [userInfoError, setUserInfoError] = useState<string | null>(null);
+  const { data, isLoading, error, refetch } = useUserInfo();
 
-  const fetchUserInformation = async () => {
-    // Check if user info is already cached
-    if (userInfoCache) {
-      setUserInfo(userInfoCache);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      const response = await apiClient.get("/v1/user/get_user_info");
-
-      if (response.data.code === 200) {
-        setUserInfo(response.data.data);
-        userInfoCache = response.data.data; // Cache the user info
-        setUserInfoError(null);
-      } else {
-        setUserInfoError(response.data.message || "Failed to fetch user info");
-      }
-    } catch (err) {
-      userInfoCache = null;
-      setUserInfoError(
-        err instanceof Error ? err.message : "An unexpected error occurred"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchUserInformation();
-  }, []);
+  const userInfo = data?.code === 200 ? data.data : null;
+  const userInfoError = error?.message || (data?.code !== 200 ? data?.message || null : null);
 
   const refreshUserInfo = async () => {
-    userInfoCache = null;
-    await fetchUserInformation();
+    await refetch();
   };
 
   const value = {
     userInfo,
-    isUserInfoLoading,
+    isUserInfoLoading: isLoading,
     userInfoError,
     refreshUserInfo,
   };

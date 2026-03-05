@@ -43,6 +43,7 @@ const BaseButton = styled.button<StyledButtonProps>`
   font-size: var(--space-10);
   font-weight: var(--weight-medium);                 /* font-bold */
   border-radius: var(--radius-5);
+  border: 1px solid transparent;
   cursor: pointer;
   transition: all 0.2s ease;
   outline: none;

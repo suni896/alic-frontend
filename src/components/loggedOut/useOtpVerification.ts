@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import axios from "axios";
-import { API_BASE_URL } from "../../../config";
-
-axios.defaults.baseURL = API_BASE_URL;
+import { useVerifyCode, useResendCode } from "../../hooks/queries/useAuth";
 
 export interface OtpFormValues {
   email: string;
@@ -32,6 +29,8 @@ export const useOtpVerification = ({
   onVerifySuccess,
 }: UseOtpVerificationOptions) => {
   const [showError, setShowError] = useState(false);
+  const verifyCodeMutation = useVerifyCode();
+  const resendCodeMutation = useResendCode();
 
   const formik = useFormik<OtpFormValues>({
     initialValues: {
@@ -41,14 +40,14 @@ export const useOtpVerification = ({
     validationSchema: otpValidationSchema,
     onSubmit: async (values) => {
       try {
-        const response = await axios.post("/auth/verify_code", {
+        const response = await verifyCodeMutation.mutateAsync({
           email: values.email,
           verifiCode: values.otp,
           type: variant === "register" ? "1" : "3",
         });
 
-        if (response.data.code === 200) {
-          onVerifySuccess(response.data.data.token);
+        if (response.code === 200) {
+          onVerifySuccess(response.data.token);
           setShowError(false);
           formik.resetForm();
         } else {
@@ -59,10 +58,9 @@ export const useOtpVerification = ({
           document.getElementById("code-input-0")?.focus();
         }
       } catch (error) {
-        if (axios.isAxiosError(error)) {
+        if (error instanceof Error) {
           alert(
-            error.response?.data?.message ||
-              "Failed to verify OTP. Please try again."
+            error.message || "Failed to verify OTP. Please try again."
           );
         } else {
           alert("An unexpected error occurred. Please try again.");
@@ -78,19 +76,17 @@ export const useOtpVerification = ({
 
   const handleRequestNewCode = async () => {
     try {
-      const requestBody = {
+      const response = await resendCodeMutation.mutateAsync({
         userEmail: email,
         type: variant === "register" ? "1" : "3",
-      };
+      });
 
-      const response = await axios.post("/auth/sendmail", requestBody);
-
-      if (response.data.code === 200) {
+      if (response.code === 200) {
         alert("A new verification code has been sent to your email.");
         formik.setFieldValue("otp", "");
         document.getElementById("code-input-0")?.focus();
       } else {
-        alert(response.data.message || "Failed to send verification email.");
+        alert(response.message || "Failed to send verification email.");
       }
     } catch {
       alert("Failed to send new verification code. Please try again.");

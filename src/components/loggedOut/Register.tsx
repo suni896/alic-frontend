@@ -1,12 +1,9 @@
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import ContainerLayout from "./ContainerLayout";
-import { API_BASE_URL } from "../../../config";
+import { useSendRegisterEmail } from "../../hooks/queries/useAuth";
 import { Input, ErrorText, SubmitButton, HelperText, Title, FieldGroup, ForgotPassword, SigninForm, AuthForm, PasswordInput } from "../SharedComponents";
-
-axios.defaults.baseURL = API_BASE_URL;
 
 interface RegisterFormValues {
   email: string;
@@ -43,6 +40,7 @@ const validationSchema = Yup.object({
 
 const Register = ({ setEmail }: RegisterProps): JSX.Element => {
   const navigate = useNavigate();
+  const sendRegisterEmailMutation = useSendRegisterEmail();
 
   const formik = useFormik<RegisterFormValues>({
     initialValues: {
@@ -54,27 +52,23 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
     validationSchema,
     onSubmit: async (values) => {
       try {
-        const response = await axios.post("/auth/sendmail", {
+        const response = await sendRegisterEmailMutation.mutateAsync({
           userEmail: values.email,
           userName: values.username,
           password: values.password,
-          type: "1",
         });
 
-        if (response.data.code === 200) {
+        if (response.code === 200) {
           alert("Verification email sent successfully!");
           setEmail(values.email);
           navigate("/verify-register");
         } else {
-          alert(response.data.message || "Failed to send verification email.");
+          alert(response.message || "Failed to send verification email.");
         }
       } catch (error: unknown) {
-        if (axios.isAxiosError(error)) {
-          console.error("Axios error:", error.response?.data || error.message);
-          alert(
-            error.response?.data?.message ||
-              "Failed to send verification email. Please try again."
-          );
+        if (error instanceof Error) {
+          console.error("Send email error:", error.message);
+          alert(error.message || "Failed to send verification email. Please try again.");
         } else {
           console.error("Unexpected error:", error);
           alert("An unexpected error occurred. Please try again.");
@@ -99,7 +93,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
               $hasError={formik.touched.email && !!formik.errors.email}
             />
             {formik.touched.email && formik.errors.email ? (
-              <ErrorText>{formik.errors.email}</ErrorText>
+              <ErrorText $visible>{formik.errors.email}</ErrorText>
             ) : (
               <HelperText>We'll never share your email.</HelperText>
             )}
@@ -117,7 +111,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
               $hasError={formik.touched.username && !!formik.errors.username}
             />
             {formik.touched.username && formik.errors.username ? (
-              <ErrorText>{formik.errors.username}</ErrorText>
+              <ErrorText $visible>{formik.errors.username}</ErrorText>
             ) : (
               <HelperText>Username can only contain English letters and numbers</HelperText>
             )}
@@ -134,7 +128,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
               $hasError={formik.touched.password && !!formik.errors.password}
             />
             {formik.touched.password && formik.errors.password ? (
-              <ErrorText>{formik.errors.password}</ErrorText>
+              <ErrorText $visible>{formik.errors.password}</ErrorText>
             ) : (
               <HelperText>Password must be between 6 and 20 characters.</HelperText>
             )}
@@ -151,7 +145,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
               $hasError={formik.touched.confirmPassword && !!formik.errors.confirmPassword}
             />
             {formik.touched.confirmPassword && formik.errors.confirmPassword ? (
-              <ErrorText>{formik.errors.confirmPassword}</ErrorText>
+              <ErrorText $visible>{formik.errors.confirmPassword}</ErrorText>
             ) : (
               <HelperText>Password must be between 6 and 20 characters.</HelperText>
             )}

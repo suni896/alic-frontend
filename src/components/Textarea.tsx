@@ -5,26 +5,26 @@ interface InputProps {
     $hasError?: boolean;
 }
 
+// 与 SharedComponents.tsx 中的 StyledInput 样式保持一致
 const SmallTextarea = styled.textarea<InputProps>`
-  font-size: 0.875rem;
-  padding: 0.5rem 0.75rem;
-  margin: 0;
-  height: 2.5rem;
+  /* 水平 padding 保持，垂直 padding 减小 */
+  padding: 0.5rem var(--space-4);
+  font-size: var(--space-10);
+  color: var(--slate-grey);
   min-height: 2.5rem;
+  height: 2.5rem;
   max-height: 10rem;
   resize: none;
   overflow-y: auto;
   box-sizing: border-box;
-  font-family: "Roboto", sans-serif;
-  border: 2px solid ${(props) => (props.$hasError ? "var(--error-red)" : "#e5e7eb")};
-  border-radius: 12px;
-  color: #1f2937;
-  background-color: #f9fafb;
+  font-family: var(--font-sans);
+  border: 1px solid ${(props) => (props.$hasError ? "var(--error-red)" : "var(--input-bg)")};
+  border-radius: var(--radius-5);
+  background-color: var(--input-bg);
+  width: 100%;
   outline: none;
   transition: all 0.2s ease;
-  line-height: 1.4;
-  
-  /* 确保垂直对齐 */
+  line-height: 1.5;
   vertical-align: top;
   
   /* 移除默认的 textarea 样式 */
@@ -33,17 +33,10 @@ const SmallTextarea = styled.textarea<InputProps>`
   appearance: none;
 
   &:focus {
-    border-color: ${(props) => (props.$hasError ? "var(--error-red)" : "#016532")};
-    background-color: white;
-    box-shadow: 0 0 0 3px
-      ${(props) =>
-        props.$hasError ? "rgba(239, 68, 68, 0.1)" : "rgba(1, 101, 50, 0.1)"};
+    outline: none;
+    border-color: ${(props) => (props.$hasError ? "var(--error-red)" : "var(--emerald-green)")};
   }
 
-  &::placeholder {
-    color: var(--input);
-    line-height: 1.4;
-  }
 
   &:disabled {
     background-color: #f3f4f6;
@@ -51,20 +44,6 @@ const SmallTextarea = styled.textarea<InputProps>`
     cursor: not-allowed;
   }
 
-  @media (max-width: 800px) {
-    font-size: 0.75rem;
-    padding: 0.4rem 0.6rem;
-    height: 2.25rem;
-    min-height: 2.25rem;
-    max-height: 8rem;
-  }
-
-  @media (max-width: 600px) {
-    font-size: 0.7rem;
-    height: 2rem;
-    min-height: 2rem;
-    max-height: 6rem;
-  }
 `;
 
 // 自动调整高度的 Textarea 组件
@@ -92,7 +71,7 @@ const AutoResizeTextarea: React.FC<{
       // 最大高度 (10rem = 160px)
       const maxHeight = 160;
       
-      // 确保至少保持与 SmallInput 相同的基础高度
+      // 确保至少保持基础高度
       const newHeight = Math.max(baseHeight, Math.min(contentHeight, maxHeight));
       
       textarea.style.height = `${newHeight}px`;
@@ -127,4 +106,5 @@ const AutoResizeTextarea: React.FC<{
     />
   );
 };
+
 export default AutoResizeTextarea;

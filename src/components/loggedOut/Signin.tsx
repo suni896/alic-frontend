@@ -2,14 +2,10 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
 import ContainerLayout from "./ContainerLayout";
-import axios from "axios";
-import apiClient from "./apiClient";
 import { useUser } from "../loggedIn/UserContext";
-import { API_BASE_URL } from "../../../config";
+import { useLogin } from "../../hooks/queries/useAuth";
 // 导入区域（将默认导入改为命名导入）
 import { Input, ErrorText, SubmitButton, Title, FieldGroup, ForgotPassword, HelperText, SigninForm, AuthForm, PasswordInput } from "../SharedComponents";
-
-axios.defaults.baseURL = API_BASE_URL;
 
 const validationSchema = Yup.object({
   email: Yup.string()
@@ -33,6 +29,8 @@ interface FormValues {
 const Signin = (): JSX.Element => {
   const navigate = useNavigate();
   const { refreshUserInfo } = useUser();
+  const loginMutation = useLogin();
+  
   const formik = useFormik<FormValues>({
     initialValues: {
       email: "",
@@ -41,30 +39,24 @@ const Signin = (): JSX.Element => {
     validationSchema,
     onSubmit: async (values) => {
       try {
-        const response = await apiClient.post("/auth/login", {
+        const response = await loginMutation.mutateAsync({
           password: values.password,
           userEmail: values.email,
         });
 
-        if (response.data.code === 200) {
+        if (response.code === 200) {
           // On successful login, the server sets the JWT_Token cookie
-          const jwtToken = response.data.data["Bearer Token"];
+          const jwtToken = response.data["Bearer Token"];
           localStorage.setItem("jwtToken", jwtToken);
           await refreshUserInfo();
           navigate("/search-rooms");
-          console.log(response.data.code);
         } else {
-          alert(
-            response.data.message || "Failed to log in. Please try again."
-          );
+          alert(response.message || "Failed to log in. Please try again.");
         }
       } catch (error: unknown) {
-        if (axios.isAxiosError(error)) {
-          console.error("Axios error:", error.response?.data || error.message);
-          alert(
-            error.response?.data?.message ||
-              "Failed to log in. Please try again."
-          );
+        if (error instanceof Error) {
+          console.error("Login error:", error.message);
+          alert(error.message || "Failed to log in. Please try again.");
         } else {
           console.error("Unexpected error:", error);
           alert("An unexpected error occurred. Please try again.");
@@ -99,7 +91,7 @@ const Signin = (): JSX.Element => {
                 $hasError={formik.touched.email && !!formik.errors.email}
               />
               {formik.touched.email && formik.errors.email ? (
-                <ErrorText>{formik.errors.email}</ErrorText>
+                <ErrorText $visible>{formik.errors.email}</ErrorText>
               ) : (
                 <HelperText>We'll never share your email.</HelperText>
               )}
@@ -116,7 +108,7 @@ const Signin = (): JSX.Element => {
                 $hasError={formik.touched.password && !!formik.errors.password}
               />
               {formik.touched.password && formik.errors.password ? (
-                <ErrorText>{formik.errors.password}</ErrorText>
+                <ErrorText $visible>{formik.errors.password}</ErrorText>
               ) : (
                 <HelperText>
                   Password must be between 6 and 20 characters.

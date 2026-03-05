@@ -2,12 +2,8 @@
 import React from "react";
 import ContainerLayout from "./ContainerLayout";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
-import { API_BASE_URL } from "../../../config";
 import { SubmitButton, Title, ConfirmationText, EmailHighlight, CodeInputContainer, CodeInput, SigninForm, AuthForm, ForgotPassword, ErrorMessage } from "../SharedComponents";
 import { useOtpVerification } from "./useOtpVerification";
-
-axios.defaults.baseURL = API_BASE_URL;
 
 interface VerifyOTPRegisterProps {
   onVerifySuccess: (token: string) => void;

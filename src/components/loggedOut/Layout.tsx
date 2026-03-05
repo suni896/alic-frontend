@@ -9,10 +9,22 @@ const StyledAppBar = styled(AppBar)`
 `;
 
 const MainContent = styled.main<{ $hasNavbar: boolean }>`
-  margin-top: ${(props) => (props.$hasNavbar ? "80px" : "0")}; /* 与 Navbar 高度匹配 */
-  height: ${(props) => (props.$hasNavbar ? "calc(100vh - 80px)" : "100vh")};
+  margin-top: ${(props) => (props.$hasNavbar ? "3.5rem" : "0")};
+  height: ${(props) => (props.$hasNavbar ? "calc(100vh - 3.5rem)" : "100vh")};
   overflow-y: hidden;
   width: 100%;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    margin-top: ${(props) => (props.$hasNavbar ? "4.5rem" : "0")};
+    height: ${(props) => (props.$hasNavbar ? "calc(100vh - 4.5rem)" : "100vh")};
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    margin-top: ${(props) => (props.$hasNavbar ? "5rem" : "0")};
+    height: ${(props) => (props.$hasNavbar ? "calc(100vh - 5rem)" : "100vh")};
+  }
 `;
 
 interface Props {

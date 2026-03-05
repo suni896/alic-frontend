@@ -2,14 +2,10 @@ import React, { useState } from "react";
 import ContainerLayout from "./ContainerLayout";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import VerifyOTP from "./VerifyOTP";
-import { API_BASE_URL } from "../../../config";
+import { useSendResetEmail, useResetPassword } from "../../hooks/queries/useAuth";
 import { Input, HelperText, ErrorText, SubmitButton, SigninForm, Title, FieldGroup, ForgotPassword, AuthForm, PasswordInput } from "../SharedComponents";
-
-
-axios.defaults.baseURL = API_BASE_URL;
 
 interface ResetPasswordFormValues {
   email: string;
@@ -43,6 +39,8 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
   const [step, setStep] = useState(1);
   const [token, setToken] = useState<string | null>(null);
   const navigate = useNavigate();
+  const sendResetEmailMutation = useSendResetEmail();
+  const resetPasswordMutation = useResetPassword();
 
   const sendmailFormik = useFormik<ResetPasswordFormValues>({
     initialValues: {
@@ -53,17 +51,16 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
       if (step === 1) {
         // Step 1: Send reset email
         try {
-          const response = await axios.post("/auth/sendmail", {
+          const response = await sendResetEmailMutation.mutateAsync({
             userEmail: values.email,
-            type: "3", // Reset Password
           });
 
-          if (response.data.code === 200) {
+          if (response.code === 200) {
             alert("Reset email sent successfully! Check your inbox.");
             setEmail(values.email);
             setStep(2); // Move to OTP verification
           } else {
-            alert(response.data.message || "Failed to send reset email.");
+            alert(response.message || "Failed to send reset email.");
           }
         } catch (error) {
           console.error("Error sending reset email:", error);
@@ -82,18 +79,18 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
     onSubmit: async (values) => {
       if (token) {
         try {
-          const response = await axios.post("/auth/reset", {
+          const response = await resetPasswordMutation.mutateAsync({
             newPassword: values.password,
             token: token,
             type: "3",
             userEmail: sendmailFormik.values.email,
           });
 
-          if (response.data.code === 200) {
+          if (response.code === 200) {
             alert("Password reset successfully!");
             navigate("/"); // Redirect to home
           } else {
-            alert(response.data.message || "Failed to reset password.");
+            alert(response.message || "Failed to reset password.");
           }
         } catch (error) {
           console.error("Error resetting password:", error);
@@ -128,7 +125,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
                   $hasError={sendmailFormik.touched.email && !!sendmailFormik.errors.email}
                 />
                 {sendmailFormik.touched.email && sendmailFormik.errors.email ? (
-                  <ErrorText>{sendmailFormik.errors.email}</ErrorText>
+                  <ErrorText $visible>{sendmailFormik.errors.email}</ErrorText>
                 ) : (
                   <HelperText>We'll never share your email.</HelperText>
                 )}
@@ -170,7 +167,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
               />
 
               {resetPasswordFormik.touched.password && resetPasswordFormik.errors.password ? (
-                <ErrorText>{resetPasswordFormik.errors.password}</ErrorText>
+                <ErrorText $visible>{resetPasswordFormik.errors.password}</ErrorText>
               ) : (
                 <HelperText>Password must be between 6 and 20 characters.</HelperText>
               )}
@@ -190,7 +187,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
                 }
               />
               {resetPasswordFormik.touched.confirmPassword && resetPasswordFormik.errors.confirmPassword ? (
-                <ErrorText>{resetPasswordFormik.errors.confirmPassword}</ErrorText>
+                <ErrorText $visible>{resetPasswordFormik.errors.confirmPassword}</ErrorText>
               ) : (
                 <HelperText>Password must be between 6 and 20 characters.</HelperText>
               )}

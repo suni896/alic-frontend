@@ -1,9 +1,9 @@
 import React, { useEffect, useState, useCallback } from "react";
-import styled, { keyframes } from "styled-components";
+import styled from "styled-components";
 import {
   IoMdPersonAdd,
 } from "react-icons/io";
-import { FiTag } from "react-icons/fi";
+import { FiTag, FiX } from "react-icons/fi";
 import { CiSearch } from "react-icons/ci";
 import { useLocation, useNavigate } from "react-router-dom";
 import { MdPeopleAlt, MdKeyboardArrowLeft, MdKeyboardArrowRight } from "react-icons/md";
@@ -11,17 +11,15 @@ import CreateRoomComponent from "./CreateRoomComponent";
 import { FaTag } from "react-icons/fa";
 import JoinRooms from "./JoinRooms";
 import CreateNewTag from "./CreateNewTag";
-import axios from "axios";
-import apiClient from "../loggedOut/apiClient";
-import { UserInformation } from "./types";
 import { useUser } from "./UserContext";
 import { useRoomContext } from "./RoomContext";
+import type { Tag } from "./RoomContext";
 import { RoomGroup } from "./useJoinRoom";
 import { MdGroup } from "react-icons/md";
 import LabeledInputWithCount from "../Input";
-import { HorizontalLine } from "../common/HorizontalLine";
 import logo from "../../assets/alicloggreen.png";
 import {
+  HorizontalLine,
   PaginationContainer,
   PageButton,
   PaginationCenter,
@@ -35,74 +33,197 @@ import {
 } from "../SharedComponents";
 
 const Logo = styled.img`
-  width: 8rem;
-  height: 3.25rem;
+  width: 6rem;
+  height: 2.5rem;
   align-items: center;
-  margin: 0 4rem 0 0;
+  margin: 0 2rem 0 0;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: 7rem;
+    height: 3rem;
+    margin: 0 3rem 0 0;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: 8rem;
+    height: 3.25rem;
+    margin: 0 4rem 0 0;
+  }
 `;
+
 const SidebarContainer = styled.div`
-  width: 16rem;
+  width: 100vw;
   height: 100vh;
   background-color: var(--white);
   padding: var(--space-2);
   display: flex;
   flex-direction: column;
-  position: fixed; /* 保持固定定位 */
-  left: 0; /* 固定在左侧 */
-  top: 0; 
-  z-index: 9999; /* 确保侧边栏在其他内容之上 */
-  border-right: 1px solid var(--color-line); /* 右侧灰色边框 */
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 9999;
+  border-right: 1px solid var(--color-line);
+  transform: translateX(-100%);
+  transition: transform 0.3s ease;
+
+  &.open {
+    transform: translateX(0);
+  }
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: 14rem;
+    transform: translateX(0);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: 16rem;
+    transform: translateX(0);
+  }
 `;
+
 const LogoContainer = styled.div`
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 5rem;
+  height: 3.5rem;
   width: 100%;
+  position: relative;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    height: 4.5rem;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    height: 5rem;
+  }
+`;
+
+const CloseButton = styled.button`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  right: var(--space-3);
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  padding: var(--space-1);
+  cursor: pointer;
+  color: var(--slate-grey);
+  font-size: var(--space-5);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    display: none;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    display: none;
+  }
+
+  &:hover {
+    color: var(--emerald-green);
+  }
 `;
 
 const SearchContainer = styled.div`
-  width: 95%;            
-  height: var(--space-8);           
-  padding: var(--space-4);
-  margin: var(--space-3);      
+  width: 95%;
+  height: auto;
+  padding: var(--space-3);
+  margin: var(--space-2);
   background-color: var(--input-bg);
-  border-radius: var(--radius-5);   
-  display: inline-flex;    /* inline-flex */
+  border-radius: var(--radius-5);
+  display: inline-flex;
   justify-content: space-between;
   align-items: center;
   box-sizing: border-box;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    height: var(--space-8);
+    padding: var(--space-4);
+    margin: var(--space-3);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    height: var(--space-8);
+    padding: var(--space-4);
+    margin: var(--space-3);
+  }
 `;
 
 const SearchWrapper = styled.div`
   display: flex;
   justify-content: flex-start;
   align-items: center;
-  gap: var(--space-3);             
+  gap: var(--space-2);
   height: 100%;
   flex: 1;
   position: relative;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    gap: var(--space-3);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    gap: var(--space-3);
+  }
 `;
 
 const SearchIcon = styled(CiSearch)`
-  font-size: var(--space-5);
-  color: var(--input);   
+  font-size: var(--space-4);
+  color: var(--input);
   z-index: 1;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-5);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: var(--space-5);
+  }
 `;
 
 const ToggleContainer = styled.div`
   display: flex;
   align-items: center;
   padding: var(--space-2);
-  margin: var(--space-3);
+  margin: var(--space-2);
   gap: var(--space-2);
   width: 95%;
-  height: var(--space-8);
+  height: var(--space-7);
   background-color: var(--color-line);
   border-radius: var(--radius-5);
   border: 1px solid var(--color-line);
   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   box-sizing: border-box;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    padding: var(--space-2);
+    margin: var(--space-3);
+    height: var(--space-8);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    padding: var(--space-2);
+    margin: var(--space-3);
+    height: var(--space-8);
+  }
 `;
 
 const ToggleButton = styled.button<ToggleButtonProps>`
@@ -111,25 +232,40 @@ const ToggleButton = styled.button<ToggleButtonProps>`
   justify-content: center;
   flex: 1;
   height: 90%;
-  padding: var(--space-3);
-  border: 1px solid ${({ $isActive }) => ($isActive ? "var(--white)" : "transparent")};
+  padding: var(--space-2);
+  border: 1px solid ${({ $isActive }) => ($isActive ? "var(--emerald-green)" : "transparent")};
   border-radius: var(--radius-5);
   font-family: var(--font-sans);
-  font-weight: 600;
-  font-size: var(--space-4);
+  font-weight: var(--weight-semibold);
+  font-size: var(--space-3);
   word-wrap: break-word;
   word-break: break-word;
-  background-color: ${({ $isActive }) => ($isActive ? "var(--white)" : "transparent")};
-  color: ${({ $isActive }) => ($isActive ? "var(--slate-grey)" : "var(--slate-500)")};
+  background-color: ${({ $isActive }) => ($isActive ? "var(--white)" : "var(--gray-200-slate)")};
+  color: ${({ $isActive }) => ($isActive ? "var(--emerald-green)" : "var(--slate-grey)")};
   cursor: pointer;
   transition: background-color 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  box-shadow: ${({ $isActive }) =>
-    $isActive ? "0 1px 3px var(--shadow-10)" : "none"};
   outline: none;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    padding: var(--space-3);
+    font-size: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    padding: var(--space-3);
+    font-size: var(--space-4);
+  }
 
   &:hover {
     background-color: ${({ $isActive }) => ($isActive ? "var(--white)" : "var(--gray-200-slate)")};
-    border-color: ${({ $isActive }) => ($isActive ? "var(--white)" : "var(--gray-200-slate)")};
+    border-color: ${({ $isActive }) => ($isActive ? "var(--emerald-green)" : "var(--gray-200-slate)")};
+    color: ${({ $isActive }) => ($isActive ? "var(--emerald-green)" : "var(--slate-grey)")};
+  }
+  &:focus {
+    outline: none;
+    background-color: ${({ $isActive }) => ($isActive ? "var(--white)" : "var(--gray-200-slate)")};
     color: ${({ $isActive }) => ($isActive ? "var(--emerald-green)" : "var(--slate-grey)")};
   }
 `;
@@ -138,51 +274,112 @@ interface ToggleButtonProps {
   $isActive: boolean;
 }
 
-
-
-
 const GroupIcon = styled(MdGroup)`
   color: var(--muted-6b7280);
-  font-size: var(--space-5);
-  margin-right: var(--space-4);
-  align-self: flex-start;   /* 与 RoomTitle 顶部对齐 */
+  font-size: var(--space-4);
+  margin-right: var(--space-3);
+  align-self: flex-start;
   flex-shrink: 0;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-5);
+    margin-right: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: var(--space-5);
+    margin-right: var(--space-4);
+  }
 `;
 const Tag = styled(FiTag)`
   color: var(--muted-6b7280);
-  font-size: var(--space-5);
-  margin-right: var(--space-4);
-  align-self: flex-start;   /* 与 RoomTitle 顶部对齐 */
+  font-size: var(--space-4);
+  margin-right: var(--space-3);
+  align-self: flex-start;
   flex-shrink: 0;
-`;
 
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-5);
+    margin-right: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: var(--space-5);
+    margin-right: var(--space-4);
+  }
+`;
 
 const PlusButtonOverlayContainer = styled.div`
   background-color: var(--white);
   z-index: 20;
-  width: 14rem;
-  padding: var(--space-4);
+  width: 100%;
+  padding: var(--space-3);
   display: flex;
   flex-direction: column;
   gap: var(--space-1);
   margin: var(--space-1) 0;
+  box-sizing: border-box;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: 14rem;
+    padding: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: 14rem;
+    padding: var(--space-4);
+  }
 `;
 const PlusButtonTitleContainer = styled.div`
   position: relative;
-  width: 14rem; 
-  height: var(--space-7); 
+  width: 100%;
+  height: var(--space-6);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: 14rem;
+    height: var(--space-7);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: 14rem;
+    height: var(--space-7);
+  }
 `;
 const PlusButtonOptionContainer = styled.div`
   position: relative;
   display: flex;
   align-items: center;
-  width: 13rem;
-  height: 2rem;
+  width: 100%;
+  height: 1.75rem;
   cursor: pointer;
-  gap: var(--space-5);
+  gap: var(--space-4);
   transition: background-color 0.2s ease, transform 0.1s ease;
   border-radius: var(--radius-5);
-  padding: 0 var(--space-3) ;
+  padding: 0 var(--space-3);
+  box-sizing: border-box;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: 13rem;
+    height: 2rem;
+    gap: var(--space-5);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: 13rem;
+    height: 2rem;
+    gap: var(--space-5);
+  }
+
   &:hover {
     background-color: var(--color-line);
   }
@@ -198,86 +395,113 @@ const PlusButtonOptionContainer = styled.div`
 
 const StyledIoMdPersonAdd = styled(IoMdPersonAdd)`
   color: var(--slate-grey);
-  font-size: var(--space-9);
+  font-size: var(--space-4);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-9);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: var(--space-9);
+  }
 `;
 
 const StyledMdPeopleAlt = styled(MdPeopleAlt)`
   color: var(--slate-grey);
-  font-size: var(--space-9);
+  font-size: var(--space-4);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-9);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: var(--space-9);
+  }
 `;
 
 const StyledFiTag = styled(FaTag)`
-  font-size: var(--space-5);
+  font-size: var(--space-4);
   color: var(--slate-grey);
   position: relative;
   margin-left: var(--space-1);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-5);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: var(--space-5);
+  }
 `;
 
 const StyledPlusButtonTitleText = styled.span`
   font-family: var(--font-roboto-serif);
   font-weight: var(--weight-medium);
-  font-size: var(--space-5);
+  font-size: var(--space-4);
   color: var(--slate-grey);
   text-overflow: ellipsis;
   white-space: nowrap;
-  overflow: hidden;  
+  overflow: hidden;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-5);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: var(--space-5);
+  }
 `;
 
 const StyledPlusButtonOptionText = styled.span`
   font-family: var(--font-roboto-serif);
-  font-weight: var(--weight-medium);  
-  color: var(--slate-grey);       
-  font-size: var(--space-10);  
-  font-weight: var(--weight-medium); 
+  font-weight: var(--weight-medium);
+  color: var(--slate-grey);
+  font-size: var(--space-4);
   text-overflow: ellipsis;
   white-space: nowrap;
-  overflow: hidden;  
-`;
+  overflow: hidden;
 
-const spin = keyframes`
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-`;
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-10);
+  }
 
-const SpinnerWrapper = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px;
-`;
-const Spinner = styled.div`
-  width: 20px;
-  height: 20px;
-  border: 2px solid #e2e8f0;
-  border-top: 2px solid #3b82f6;
-  border-radius: 50%;
-  animation: ${spin} 1s linear infinite;
-`;
-
-const LoadingContainer = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 16px;
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: var(--space-10);
+  }
 `;
 
 const ErrorMessage = styled.p`
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--space-3);
   font-weight: 500;
   color: black;
 
-  @media (max-width: 600px) {
-    font-size: 0.75rem;
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: var(--space-4);
   }
 `;
-
-const LoadingSpinner = () => (
-  <SpinnerWrapper>
-    <Spinner />
-  </SpinnerWrapper>
-);
-
+interface UserInformation {
+    userId: number;
+    userEmail: string;
+    userName: string;
+    userPortrait: string;
+  }
 interface PlusButtonOverlayProps {
   userInfo?: UserInformation | null;
   onTagCreated?: () => void;
@@ -348,43 +572,28 @@ const PlusButtonOverlay: React.FC<PlusButtonOverlayProps> = ({
   );
 };
 
-interface Tag {
-  tagId: number;
-  tagName: string;
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
-interface TagListResponse {
-  code: number;
-  message: string;
-  data: {
-    pageSize: number;
-    pageNum: number;
-    pages: number;
-    total: number;
-    data: Tag[];
-  };
-}
-
-function Sidebar() {
+function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const { userInfo } = useUser();
-  const { sidebarRooms, sidebarRoomsPagination, setSidebarRoomListRequest } =
-    useRoomContext();
+  const {
+    sidebarRooms,
+    sidebarRoomsPagination,
+    tags,
+    tagsPagination,
+    setSidebarRoomListRequest,
+    setTagListRequest,
+    refreshTags,
+  } = useRoomContext();
   const [roomSearch, setRoomSearch] = useState("");
   const [tagSearch, setTagSearch] = useState("");
-  const [tags, setTags] = useState<Tag[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   // 将子组件的状态提升到这里
   const [isCreateRoomOverlayVisible, setIsCreateRoomOverlayVisible] = useState(false);
   const [isJoinRoomsOverlayVisible, setIsJoinRoomsOverlayVisible] = useState(false);
   const [isCreateTagOverlayVisible, setIsCreateTagOverlayVisible] = useState(false);
-
-  const [tagsPagination, setTagsPagination] = useState({
-    pageSize: 10,
-    pageNum: 1,
-    total: 0,
-    pages: 0,
-  });
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -462,9 +671,12 @@ function Sidebar() {
       });
     } else {
       const clampedPage = Math.max(1, Math.min(page, tagsPagination.pages));
-      setTagsPagination((prev) => ({
+      setTagListRequest((prev) => ({
         ...prev,
-        pageNum: clampedPage,
+        pageRequestVO: {
+          ...prev.pageRequestVO,
+          pageNum: clampedPage,
+        },
       }));
     }
   };
@@ -503,16 +715,18 @@ function Sidebar() {
   useEffect(() => {
     if (activeTab === "myRooms") {
       fetchRooms();
-    } else {
-      fetchTags();
     }
-  }, [
-    sidebarRoomsPagination.pageNum,
-    tagsPagination.pageNum,
-    roomSearch,
-    tagSearch,
-    activeTab,
-  ]);
+  }, [sidebarRoomsPagination.pageNum, roomSearch, activeTab]);
+
+  useEffect(() => {
+    setTagListRequest({
+      keyword: tagSearch,
+      pageRequestVO: {
+        pageSize: tagsPagination.pageSize,
+        pageNum: tagsPagination.pageNum,
+      },
+    });
+  }, [tagSearch]);
 
   const fetchRooms = async () => {
     setSidebarRoomListRequest({
@@ -525,74 +739,16 @@ function Sidebar() {
     });
   };
 
-  const fetchTags = async () => {
-    setIsLoading(true);
-    setError(null);
 
-    try {
-      const requestData = {
-        keyword: tagSearch || undefined,
-        pageRequestVO: {
-          pageSize: tagsPagination.pageSize,
-          pageNum: tagsPagination.pageNum,
-        },
-      };
-
-      console.log("Fetching tags with params:", requestData);
-
-      const response = await apiClient.post<TagListResponse>(
-        "/v1/tag/get_tag_list",
-        requestData
-      );
-
-      console.log("Tag API response:", response.data);
-
-      if (response.data.code === 200) {
-        const fetchedTags = response.data.data.data;
-        setTags(fetchedTags);
-        setTagsPagination({
-          pageSize: response.data.data.pageSize,
-          pageNum: response.data.data.pageNum,
-          total: response.data.data.total,
-          pages: response.data.data.pages,
-        });
-      } else {
-        setError(
-          `API returned error code: ${response.data.code}, message: ${response.data.message}`
-        );
-      }
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          "Axios error in fetchTags:",
-          error.response?.data || error.message
-        );
-        setError(
-          error.response?.data?.message ||
-            "Failed to fetch tags. Please try again."
-        );
-      } else {
-        console.error("Unexpected error in fetchTags:", error);
-        setError(
-          "An unexpected error occurred while fetching tags. Please try again."
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const refreshTags = useCallback(() => {
-    setTagsPagination((prev) => ({
-      ...prev,
-      pageNum: 1,
-    }));
-    fetchTags();
-  }, [fetchTags]);
 
   return (
-    <SidebarContainer>
-      <LogoContainer><Logo src={logo} alt="EduHK Logo" /></LogoContainer>
+    <SidebarContainer className={isOpen ? 'open' : ''}>
+      <LogoContainer>
+        <Logo src={logo} alt="EduHK Logo" />
+        <CloseButton onClick={onClose} aria-label="Close sidebar">
+          <FiX size={24} />
+        </CloseButton>
+      </LogoContainer>
       <HorizontalLine/>
       <PlusButtonOverlay
         userInfo={userInfo}
@@ -637,7 +793,6 @@ function Sidebar() {
         </ToggleButton>
       </ToggleContainer>
 
-      {error && <ErrorMessage>{error}</ErrorMessage>}
       <SearchContainer>
         <SearchWrapper>
           <SearchIcon />
@@ -659,11 +814,7 @@ function Sidebar() {
         </SearchWrapper>
       </SearchContainer>
 
-      {isLoading ? (
-        <LoadingContainer>
-          <LoadingSpinner />
-        </LoadingContainer>
-      ) : (
+
         <>
           {activeTab === "myRooms" && (
             <>
@@ -682,7 +833,7 @@ function Sidebar() {
                         </RoomInfoContainer>
                       </RoomContainer>
                     ))
-                  : !isLoading && <ErrorMessage>No rooms found.</ErrorMessage>}
+                  : <ErrorMessage>No rooms found.</ErrorMessage>}
               </RoomList>
               <PaginationContainer>
                 
@@ -746,7 +897,7 @@ function Sidebar() {
                         </RoomInfoContainer>
                       </RoomContainer>
                     ))
-                  : !isLoading && <ErrorMessage>No tags found.</ErrorMessage>}
+                  : <ErrorMessage>No tags found.</ErrorMessage>}
               </RoomList>
               <PaginationContainer>
                 <PageButton
@@ -783,7 +934,6 @@ function Sidebar() {
             </>
           )}
         </>
-      )}
     </SidebarContainer>
   );
 };

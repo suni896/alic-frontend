@@ -3,7 +3,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Urbanist:wght@400;500;600;700;800&display=swap');
+
 :root {
+  /* ================= Typography ================= */
   --font-sans: 'Inter', system-ui, Avenir, Helvetica, Arial, sans-serif;
   --font-roboto: 'Roboto', Arial, Helvetica, sans-serif;
   --font-roboto-serif: 'Roboto', serif;
@@ -13,7 +15,8 @@
   --font-monospace: monospace;
   --font-urbanist: 'Urbanist', 'Inter', system-ui, sans-serif;
   --font-inherit: inherit;
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
+
+  /* ================= Font Weights ================= */
   --weight-regular: 400;
   --weight-medium: 500;
   --weight-semibold: 600;
@@ -21,14 +24,8 @@
   --weight-extrabold: 800;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  /* Base palette you provided */
+  /* ================= Visual (Primitive Colors) ================= */
   --ash-grey: #cad2c5;
   --muted-teal: #84a98c;
   --deep-teal: #52796f;
@@ -69,17 +66,18 @@
   --gray-650: #9e9e9e;
   --gray-700: #555555;
   --gray-666: #666666;
-  --border-d9d9d970: #d9d9d970; /* semi-transparent hex */
+  --border-d9d9d970: #d9d9d970;
   --slate-500: #64748b;
+  --slate-600: #475569;
+  --slate-700: #334155;
   --cool-gray-400: #9ca3af;
-  --neutral-50-uppercase: #F5F5F5; /* 保留项目中的大写写法 */
+  --neutral-50-uppercase: #F5F5F5;
 
-  /* Project color catalog: brand & greens */
+  /* ================= Brand Colors ================= */
   --brand-green: #016532;
   --brand-green-dark: #014a24;
   --brand-green-darker: #014a28;
   --brand-green-pressed: #014d28;
-  --emerald-green: #10b981; /* 已存在，保留语义 */
   --emerald-600: #059669;
   --success-500: #28a745;
   --success-600: #218838;
@@ -92,21 +90,20 @@
   --whatsapp-teal-dark: #075e54;
   --material-green-500: #4caf50;
 
-  /* Project color catalog: blues */
+  /* ================= Status Colors ================= */
+  --success-green: #22c55e;
+  --info-blue: #3b82f6;
+  --warning-orange: #f59e0b;
   --google-blue: #4285f4;
   --indigo-500: #6366f1;
   --blue-500: #2196f3;
   --blue-accent-500: #3b82f6;
   --lightblue: #add8e6;
-
-  /* Project color catalog: oranges & yellows */
   --orange-500: #ff9800;
   --orange-brand: #fc5600;
   --amber-500: #ffc107;
   --alert-yellow: #fff3cd;
   --alert-yellow-border: #ffeaa7;
-
-  /* Project color catalog: reds & danger */
   --danger-red: #dc3545;
   --error-red: #ef4444;
   --red-600: #b91c1c;
@@ -116,17 +113,15 @@
   --material-red-500: #f44336;
   --pink-200: #fecaca;
   --pink-50: #fef2f2;
-
-  /* Project color catalog: browns */
   --brown-600: #856404;
 
-  /* Project color catalog: other used tokens */
+  /* ================= Component Colors ================= */
   --card-border-gray: #e2e8f0;
   --navbar-border-gray: #d9d9d9;
   --primary-text: #333333;
   --secondary-text: #666666;
 
-  /* Project color catalog: rgba & effects */
+  /* ================= Effects ================= */
   --overlay-dark-60: rgba(0, 0, 0, 0.6);
   --overlay-white-10: rgba(255, 255, 255, 0.1);
   --shadow-10: rgba(0, 0, 0, 0.1);
@@ -140,26 +135,29 @@
   --shadow-indigo-08: rgba(16, 24, 40, 0.08);
   --shadow-indigo-04: rgba(16, 24, 40, 0.04);
 
-  /* Theme tokens mapped to the palette */
+  /* ================= Semantic Tokens ================= */
   --color-bg: var(--ash-grey);
-  --color-card: #ffffff;
-  --input-bg: #f3f4f6;
-  --input: var(--cool-gray-400); /* 等同 #9ca3af */
-  --color-text: var(--charcoal-blue);
+  --color-card: var(--white);
+  --input-bg: var(--neutral-110);
+  --input: var(--cool-gray-400);
+  --color-text: var(--slate-500);
   --color-muted-text: var(--deep-teal);
   --color-border: var(--muted-teal);
   --color-accent: var(--deep-teal);
   --color-accent-hover: var(--dark-slate-grey);
-  --color-line: #f5f5f5; 
+  --color-line: var(--neutral-50);
 
+  /* ================= Shadows ================= */
   --shadow-soft: 0 10px 30px rgba(0,0,0,0.06);
-  --radius-12: 12px;
-  --radius-5: 5px;
-  --radius-3: 3px;
 
-  /* --space-1: 2px */
+  /* ================= Border Radius ================= */
+  --radius-12: 0.75rem;
+  --radius-5: 0.3125rem;
+  --radius-3: 0.1875rem;
+
+  /* ================= Spacing ================= */
   --space-1: 0.125rem;
-  --space-2: 0.25rem; 
+  --space-2: 0.25rem;
   --space-3: 0.5rem;
   --space-4: 0.75rem;
   --space-5: 1rem;
@@ -170,63 +168,165 @@
   --space-10: 0.8rem;
   --space-11: 2.75rem;
   --space-12: 3rem;
+
+  /* ================= Breakpoints (Responsive) ================= */
+  --bp-sm: 30rem;    /* 480px - Mobile Large */
+  --bp-md: 48rem;    /* 768px - Tablet */
+  --bp-lg: 64rem;    /* 1024px - Laptop */
+  --bp-xl: 80rem;    /* 1280px - Desktop */
+  --bp-2xl: 96rem;   /* 1536px - Large Desktop */
 }
 
+/* ================= Base Elements ================= */
 a {
-  font-weight: 500;
-  color: var(--color-accent);
+  /* ================= Typography ================= */
+  font-weight: var(--weight-medium);
   text-decoration: inherit;
+
+  /* ================= Visual ================= */
+  color: var(--color-accent);
 }
+
 a:hover {
   color: var(--color-accent-hover);
 }
 
 body {
-  margin: 0;
+  /* ================= Layout ================= */
   display: flex;
   place-items: center;
-  min-width: 320px;
-  /* min-height: 100vh; */
-  color: var(--color-text);
-  background-color: white;
-  display: block;
+
+  /* ================= Box Model ================= */
+  margin: 0;
+  min-width: 20rem;
+
+  /* ================= Typography ================= */
+  font-family: var(--font-sans);
+  font-size: var(--space-4);
   line-height: 1.6;
+
+  /* ================= Visual ================= */
+  color: var(--color-text);
+  background-color: var(--white);
+}
+
+/* ================= Responsive Typography ================= */
+@media (min-width: var(--bp-md)) {
+  body {
+    font-size: var(--space-5);
+  }
+}
+
+@media (min-width: var(--bp-xl)) {
+  body {
+    font-size: var(--space-5);
+  }
 }
 
 h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+  /* ================= Typography ================= */
+  font-size: var(--space-6);
+  line-height: 1.2;
+}
+
+@media (min-width: var(--bp-md)) {
+  h1 {
+    font-size: var(--space-7);
+    line-height: 1.1;
+  }
+}
+
+@media (min-width: var(--bp-lg)) {
+  h1 {
+    font-size: var(--space-8);
+  }
+}
+
+h2 {
+  /* ================= Typography ================= */
+  font-size: var(--space-5);
+  line-height: 1.3;
+}
+
+@media (min-width: var(--bp-md)) {
+  h2 {
+    font-size: var(--space-6);
+  }
+}
+
+h3 {
+  /* ================= Typography ================= */
+  font-size: var(--space-5);
+  line-height: 1.4;
+}
+
+h4, h5, h6 {
+  /* ================= Typography ================= */
+  font-size: var(--space-4);
+  line-height: 1.4;
 }
 
 button {
-  border-radius: 8px;
-  border: 1px solid var(--color-border);
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
+  /* ================= Layout ================= */
+  display: inline-block;
+  position: relative;
+
+  /* ================= Box Model ================= */
+  padding: var(--space-3) var(--space-5);
+
+  /* ================= Typography ================= */
   font-family: inherit;
+  font-size: var(--space-5);
+  font-weight: var(--weight-medium);
+
+  /* ================= Visual ================= */
   background-color: var(--color-card);
   color: var(--color-text);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-5);
+
+  /* ================= Animation ================= */
+  transition: border-color 0.25s ease;
+
+  /* ================= Interaction ================= */
   cursor: pointer;
-  transition: border-color 0.25s;
 }
+
 button:hover {
   border-color: var(--color-accent);
 }
+
 button:focus,
 button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
+/* ================= Modal Backdrop (Used by components) ================= */
+.modal-backdrop-right {
+  left: 0 !important;
+  width: 100vw !important;
+}
+
+@media (min-width: var(--bp-md)) {
+  .modal-backdrop-right {
+    left: 0 !important;
+    width: 100vw !important;
+  }
+}
+
+/* ================= Color Scheme (Light) ================= */
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    color: var(--color-text);
+    background-color: var(--white);
   }
+
   a:hover {
-    color: #747bff;
+    color: var(--color-accent-hover);
   }
+
   button {
-    background-color: #f9f9f9;
+    background-color: var(--neutral-120);
   }
 }

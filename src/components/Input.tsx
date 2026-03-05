@@ -19,8 +19,11 @@ type LabeledInputWithCountProps = {
 
 const StyledTextArea = styled.textarea<{ $hasError?: boolean }>`
   width: 100%;
-  padding: 0.875rem 1rem;
-  font-size: 1rem;
+
+  /* mobile - 基础样式 */
+  padding: 0.75rem 0.875rem;
+  font-size: 0.9rem;
+
   font-family: 'Roboto', sans-serif;
   background-color: var(--input-bg);
   transition: all 0.2s ease;
@@ -41,9 +44,10 @@ const StyledTextArea = styled.textarea<{ $hasError?: boolean }>`
     font-size: 0.8rem;
   }
 
-  @media (max-width: 500px) {
-    font-size: 0.9rem;
-    padding: 0.75rem 0.875rem;
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: 1rem;
+    padding: 0.875rem 1rem;
   }
 `;
 interface ModalInputProps {
@@ -56,8 +60,11 @@ const ModalInput = styled.input<ModalInputProps>`
   width: 100%;
   height: 100%;
   ${props => props.variant === 'unstyled' ? 'flex: 1; min-width: 0;' : ''}
-  padding: ${props => props.variant === 'unstyled' ? '0' : '0.875rem 1rem'};
-  font-size: var(--space-4);
+
+  /* mobile - 基础样式 */
+  padding: ${props => props.variant === 'unstyled' ? '0' : '0.75rem 0.875rem'};
+  font-size: 0.9rem;
+
   font-family: var(--font--roboto);
   border: ${props => props.variant === 'unstyled' ? 'none' : `0px solid ${props.$hasError ? "var(--error-red)" : "#e5e7eb"}`};
   background-color: ${props => props.variant === 'unstyled' ? 'transparent' : '#f9fafb'};
@@ -88,9 +95,10 @@ const ModalInput = styled.input<ModalInputProps>`
     font-size: 0.8rem;
   }
 
-  @media (max-width: 500px) {
-    font-size: 0.9rem;
-    ${props => props.variant === 'unstyled' ? 'padding: 0;' : 'padding: 0.75rem 0.875rem;'}
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-4);
+    padding: ${props => props.variant === 'unstyled' ? '0' : '0.875rem 1rem'};
   }
 `;
 

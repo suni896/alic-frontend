@@ -37,11 +37,21 @@ const Container = styled.div`
   width: 100%;
   box-sizing: border-box;
   position: relative;
-  height: calc(100vh - 5rem);
+  height: calc(100vh - 3.5rem);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   font-family: var(--font-sans);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    height: calc(100vh - 4.5rem);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    height: calc(100vh - 5rem);
+  }
 `;
 
 
@@ -52,28 +62,52 @@ const Footer = styled.div`
   align-items: center;
   gap: var(--space-1);
   position: relative;
-  height: 1rem;
+  height: auto;
   width: 100%;
   background-color: white;
-  padding: var(--space-6) 0;
-  margin-top: var(--space-5);
+  padding: var(--space-3) 0;
+  margin-top: var(--space-2);
   flex-shrink: 0;
   font-family: var(--font-sans);
   font-weight: var(--weight-regular);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    padding: var(--space-5) 0;
+    margin-top: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    padding: var(--space-6) 0;
+    margin-top: var(--space-5);
+  }
 `;
 
 // 在本地定义一个固定宽度版本，覆盖 SharedComponents 的 PaginationCenter（保持最多页码展示宽度）
 const PaginationCenterFixed = styled(PaginationCenter)`
   flex: 0;
-  gap: var(--space-2);
-  min-width: calc(6 * (var(--space-9) + var(--space-3)) + 5 * var(--space-2));
+  gap: var(--space-1);
+  min-width: calc(4 * (var(--space-8) + var(--space-2)) + 3 * var(--space-1));
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    gap: var(--space-2);
+    min-width: calc(5 * (var(--space-9) + var(--space-3)) + 4 * var(--space-2));
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    gap: var(--space-2);
+    min-width: calc(6 * (var(--space-9) + var(--space-3)) + 5 * var(--space-2));
+  }
 `;
 
 function SearchRooms() {
   const { mainAreaRooms, mainAreaRoomsPagination, setMainAreaRoomListRequest } =
     useRoomContext();
   const [currentPage] = useState(1);
-  const [roomsPerPage] = useState(20);
+  const [roomsPerPage] = useState(6);
   const [isCreateRoomOpen, setIsCreateRoomOpen] = useState(false);
   const [searchKeyword] = useState("");
   const [loading] = useState(false);
@@ -161,7 +195,7 @@ function SearchRooms() {
           {loading ? (
             <LoadingContainer>Loading...</LoadingContainer>
           ) : mainAreaRooms.length === 0 ? (
-            <EmptyState>No rooms found</EmptyState>
+            <EmptyState title="No rooms found"></EmptyState>
           ) : (
             mainAreaRooms.map((room, index) => (
               // 卡片：参考 feed 页签样式

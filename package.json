@@ -14,6 +14,8 @@
     "@emotion/styled": "^11.14.0",
     "@fontsource/roboto": "^5.1.1",
     "@mui/material": "^6.3.1",
+    "@tanstack/react-query": "^5.90.21",
+    "@tanstack/react-query-devtools": "^5.91.3",
     "@types/react-router-dom": "^5.3.3",
     "@types/sockjs-client": "^1.5.4",
     "@types/stompjs": "^2.3.9",

@@ -9,6 +9,7 @@ interface LeftSectionProps {
 
 // Styled Component: LeftSectionContainer
 const LeftSectionContainer = styled.div<{ $currentImage: string }>`
+  display: none;
   flex: 1.2;
   height: 100%;
   position: relative;
@@ -22,16 +23,40 @@ const LeftSectionContainer = styled.div<{ $currentImage: string }>`
   background-size: cover;
   background-repeat: no-repeat;
   background-position: left center;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    display: block;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    display: block;
+  }
 `;
 
 const CornerLogo = styled.img`
   position: absolute;
-  top: 1rem;
-  left: 1rem;
+  top: 0.75rem;
+  left: 0.75rem;
   z-index: 3;
-  width: 5rem;
+  width: 3.5rem;
   height: auto;
   pointer-events: none;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    top: 1rem;
+    left: 1rem;
+    width: 4rem;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    top: 1rem;
+    left: 1rem;
+    width: 5rem;
+  }
 `;
 
 const OverlayTitle = styled.div`
@@ -43,11 +68,21 @@ const OverlayTitle = styled.div`
   color: var(--white);
   font-family: var(--font-urbanist);
   font-weight: var(--weight-bold);
-  font-size: 3.5rem;
+  font-size: 2rem;
   text-align: center;
-  white-space: nowrap;        /* 不换行 */
-  width: max-content;         /* 根据内容长度拉伸宽度 */
+  white-space: nowrap;
+  width: max-content;
   text-align: left;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: 2.5rem;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: 3.5rem;
+  }
 `;
 
 const LeftSection: React.FC<LeftSectionProps> = ({

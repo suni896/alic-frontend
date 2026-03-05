@@ -16,41 +16,87 @@ const Container = styled.div`
   justify-content: center;
   align-items: center;
   background: var(--color-bg);
-  overflow-y: auto;
+  overflow: hidden;
 `;
 
 const Wrapper = styled.div`
   display: flex;
   box-sizing: border-box;
-  width: 90vw;
-  height: 85vh;
+  width: 100%;
+  height: 100%;
   background: var(--color-card);
-  border-radius: var(--radius-12);
-  box-shadow: var(--shadow-soft);
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: 90vw;
+    height: 85vh;
+    border-radius: var(--radius-12);
+    box-shadow: var(--shadow-soft);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: 90vw;
+    height: 85vh;
+    border-radius: var(--radius-12);
+    box-shadow: var(--shadow-soft);
+  }
 `;
 
 // Styled Component: RightSection
 const RightSection = styled.div`
-  flex: 0.8;
+  flex: 1;
   display: flex;
-  justify-content: center;      /* 子内容居中 */
-  align-items: center;          /* 垂直居中 */
+  justify-content: center;
+  align-items: flex-start;
   box-sizing: border-box;
-  width: 30%;
+  width: 100%;
   height: 100%;
-  padding: 0;                   /* 边距由嵌套容器提供 */
+  padding: 0;
   overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    flex: 0.8;
+    width: 30%;
+    align-items: center;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    flex: 0.8;
+    width: 30%;
+    align-items: center;
+  }
 `;
 
 const RightContent = styled.div`
   display: flex;
   flex-direction: column;
-  align-items: flex-start;      /* 容器内元素左对齐 */
-  width: 85%;
+  align-items: flex-start;
+  width: 90%;
   min-height: 100%;
   box-sizing: border-box;
-  padding: var(--space-7) var(--space-12);           /* 统一内边距，形成边距效果 */
-  gap: var(--space-5);                    /* 元素间垂直间距 */
+  padding: var(--space-4) var(--space-4);
+  gap: var(--space-3);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: 85%;
+    padding: var(--space-6) var(--space-8);
+    gap: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: 85%;
+    padding: var(--space-7) var(--space-12);
+    gap: var(--space-5);
+  }
 `;
 
 const ContainerLayout = ({ children }: { children: React.ReactNode }) => {

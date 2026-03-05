@@ -1,25 +1,49 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { CiSearch } from "react-icons/ci";
-import { MdLock, MdPublic, MdGroup, MdDescription } from "react-icons/md";
+import { MdLock, MdPublic, MdGroup } from "react-icons/md";
 import { BiLoaderAlt } from "react-icons/bi";
-import styled, { css, keyframes } from "styled-components";
-import axios from "axios";
-import apiClient from "../loggedOut/apiClient";
+import styled, { keyframes } from "styled-components";
 import { useNavigate } from "react-router-dom";
-import { useJoinRoom, RoomGroup } from "./useJoinRoom";
+import { useJoinRoom } from "./useJoinRoom";
 import Button from "../button";
 import LabeledInputWithCount from "../Input";
-import ModalHeader from "../Header";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-// 导入区域（将默认导入改为命名导入）
-import { PasswordInput } from "../SharedComponents";
+import { FiX } from "react-icons/fi";
+import { useGroupList } from "../../hooks/queries/useGroup";
+
+import {
+  ModalBackdrop,
+  ModalContainer,
+  ModalCloseButton,
+  HeaderSection,
+  HeaderTitle,
+  HeaderSubTitle,
+  InputLabel,
+  ButtonContainer,
+  FixedButtonContainer,
+  PasswordInput,
+  IntegrationCard,
+  CardTop,
+  CardHeader,
+  HeaderLeft,
+  Avatar,
+  AvatarImg,
+  NameBlock,
+  NameText,
+  StatusRow,
+  StatusDot,
+  StatusText,
+  RoomInfo,
+  InfoItem,
+  InfoItemText,
+  CardDescription,
+  ActionButton,
+  ErrorText,
+  EmptyState,
+} from "../SharedComponents";
 
 // Animations
-const fadeIn = keyframes`
-  from { opacity: 0; transform: translateY(20px); }
-  to { opacity: 1; transform: translateY(0); }
-`;
 
 const spin = keyframes`
   0% { transform: rotate(0deg); }
@@ -31,40 +55,36 @@ const slideIn = keyframes`
   to { opacity: 1; transform: scale(1); }
 `;
 
-const OverlayContainer = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 3000;
-  animation: ${fadeIn} 0.3s ease-out;
-`;
 
 const Container = styled.div`
-  background: white;
-  width: 90%;
-  max-width: 900px;
-  height: 80vh;
-  border-radius: 16px;
-  position: absolute;
-  top:5px;
+  background: var(--white);
+  width: 95%;
+  max-width: 35rem;
+  height: 90vh;
+  max-height: 90vh;
+  border-radius: var(--radius-12);
+  position: relative;
   overflow: hidden;
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 25px 50px -12px var(--shadow-25);
   animation: ${slideIn} 0.3s ease-out;
   display: flex;
   flex-direction: column;
-  padding: 2.5rem;
+  padding: var(--space-4);
+  cursor: default;
 
-  @media (max-width: 700px) {
-    width: 95%;
-    height: 90vh;
-    border-radius: 12px;
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: 35rem;
+    height: 80vh;
+    max-height: 38rem;
+    padding: var(--space-6);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: 35rem;
+    height: 38rem;
+    padding: var(--space-7);
   }
 `;
 
@@ -76,158 +96,105 @@ const ContentArea = styled.div`
 `;
 
 const SearchContainer = styled.div`
-  padding: 1.5rem 2rem;
-  background: #f8f9fa;
-  border-bottom: 1px solid #e9ecef;
+  padding: var(--space-3);
+  background: var(--input-bg);
+  border-bottom: 1px solid var(--border-d9d9d970);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    padding: var(--space-4) var(--space-6);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    padding: var(--space-5) var(--space-7);
+  }
 `;
 
 const SearchWrapper = styled.div`
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: var(--space-3);
+  height: 100%;
+  flex: 1;
+  margin: 0;
   position: relative;
-  max-width: 500px;
-  margin: 0 auto;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    gap: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    gap: var(--space-4);
+  }
 `;
 
 const SearchIcon = styled(CiSearch)`
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1.5rem;
-  color: #6c757d;
+  position: static;
+  transform: none;
+  font-size: var(--space-4);
+  color: var(--input);
   z-index: 1;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-5);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: var(--space-5);
+  }
 `;
 
 const RoomListContainer = styled.div`
   flex: 1;
   overflow-y: auto;
-  padding: 1rem 2rem 2rem;
-  
+  padding: var(--space-3);
+
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
-  
+
   &::-webkit-scrollbar-track {
-    background: #f1f3f4;
+    background: transparent;
   }
-  
+
   &::-webkit-scrollbar-thumb {
-    background: #c1c8cd;
-    border-radius: 3px;
+    background: var(--gray-300);
+    border-radius: 2px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-400);
+  }
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    padding: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    padding: var(--space-4);
   }
   
-  &::-webkit-scrollbar-thumb:hover {
-    background: #a8b2ba;
+  @media (min-width: 48rem) {
+    padding: var(--space-4) var(--space-7) var(--space-7);
   }
 `;
 
 const RoomList = styled.div<{ $blur: boolean }>`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
-  max-width: 800px;
+  gap: var(--space-4);
+  max-width: 50rem;
   margin: 0 auto;
-
-  ${({ $blur }) =>
-    $blur &&
-    css`
-      filter: blur(5px);
-      pointer-events: none;
-    `}
-`;
-
-const RoomCard = styled.div`
-  background: white;
-  border: 1px solid #e9ecef;
-  border-radius: 12px;
-  padding: 1.5rem;
-  transition: all 0.2s ease;
-  animation: ${fadeIn} 0.3s ease-out;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-    border-color: #016532;
-  }
-`;
-
-const RoomHeader = styled.div`
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-`;
-
-const RoomTitle = styled.h3`
-  margin: 0;
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #212529;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-`;
-
-const RoomType = styled.div<{ $isPrivate: boolean }>`
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0.25rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.75rem;
-  font-weight: 500;
-  background: ${props => props.$isPrivate ? '#fff3cd' : '#d1edff'};
-  color: ${props => props.$isPrivate ? '#856404' : '#0c5460'};
-`;
-
-const RoomInfo = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  color: #6c757d;
-  font-size: 0.9rem;
-`;
-
-const InfoItem = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-`;
-
-const RoomDescription = styled.p`
-  margin: 0 0 1rem 0;
-  color: #495057;
-  line-height: 1.5;
-  font-size: 0.95rem;
-`;
-
-const JoinButton = styled.button<{ $isJoined?: boolean }>`
-  padding: 0.75rem 2rem;
-  background: ${props => props.$isJoined ? '#28a745' : '#386641'};
-  color: var(--white);
-  border: none;
-  border-radius: 8px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  font-size: 0.9rem;
-  min-width: 100px;
-
-  &:hover {
-    background: ${props => props.$isJoined ? '#218838' : '#2e573e'};
-    transform: translateY(-1px);
-  }
-
-  &:active {
-    transform: translateY(0);
-  }
-
-  @media (max-width: 500px) {
-    padding: 0.6rem 1.5rem;
-    font-size: 0.85rem;
-  }
+  width: 100%;
+  
 `;
 
 const LoadingContainer = styled.div`
@@ -235,176 +202,79 @@ const LoadingContainer = styled.div`
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height: 200px;
+  height: 12.5rem;
   gap: 1rem;
 `;
 
 const LoadingSpinner = styled(BiLoaderAlt)`
   font-size: 2rem;
-  color: #016532;
+  color: var(--emerald-green);
   animation: ${spin} 1s linear infinite;
 `;
 
 const LoadingText = styled.p`
-  color: #6c757d;
+  color: var(--muted-6b7280);
   margin: 0;
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 3rem 1rem;
-  color: #6c757d;
-`;
-
-const EmptyStateIcon = styled(CiSearch)`
-  font-size: 4rem;
-  color: #dee2e6;
-  margin-bottom: 1rem;
+  font-family: var(--font-sans);
 `;
 
 const ErrorContainer = styled.div`
   background: #f8d7da;
   color: #721c24;
   text-align: center;
-  padding: 1rem;
-  margin: 1rem 0;
+  padding: var(--space-4);
+  margin: var(--space-4) 0;
   border: 1px solid #f5c6cb;
-  border-radius: 8px;
+  border-radius: var(--radius-5);
+  font-family: var(--font-sans);
 `;
 
-// Modal styles remain similar but with improved design
-const Overlay = styled.div`
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 4000;
-  animation: ${fadeIn} 0.2s ease-out;
-`;
-
-const Modal = styled.div`
-  position: absolute;
-  top: 70px;
-  background: white;
+// 密码弹窗样式
+const PasswordModalContainer = styled(ModalContainer)`
+  position: relative;
+  background: var(--white);
   border: none;
-  border-radius: 16px;
-  padding: 2.5rem;
-  width: 28%;
-  max-width: 480px;
-  min-width: 320px;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-  animation: slideIn 0.3s ease-out;
-  
-  @keyframes slideIn {
-    from {
-      transform: translateY(-20px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
-  }
-
-  @media (max-width: 1200px) {
-    width: 35%;
-  }
-  @media (max-width: 1000px) {
-    width: 45%;
-  }
-  @media (max-width: 700px) {
-    width: 55%;
-    padding: 2rem;
-  }
-  @media (max-width: 500px) {
-    width: 70%;
-    padding: 1.5rem;
-  }
-  @media (max-width: 400px) {
-    width: 85%;
-    padding: 1.25rem;
-  }
-`;
-
-const PasswordInputContainer = styled.div`
-  width: 90%;
-  margin: 0 auto 1.5rem auto;
-  display: block;
-`;
-
-const ButtonContainer = styled.div`
+  border-radius: var(--radius-12);
+  padding: var(--space-7);
+  width: 25rem;
+  height: 18rem;
+  box-shadow: 0 25px 50px -12px var(--shadow-25);
   display: flex;
-  gap: 0.75rem;
-  margin-top: 2rem;
-  justify-content: center;
-  height: 40px;
-  
-  @media (max-width: 500px) {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
+  flex-direction: column;
+  cursor: default;
+`;
+
+const PasswordInputWrapper = styled.div`
+  margin: var(--space-6) 0;
 `;
 
 const ErrorMessage = styled.div`
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: 1.5rem;
+  font-size: var(--space-5);
+  font-weight: var(--weight-semibold);
+  margin-bottom: var(--space-6);
   text-align: center;
+  font-family: var(--font-sans);
 `;
 
 const ErrorModalButton = styled.button<{ $success?: boolean }>`
-  padding: 0.75rem 1.5rem;
-  background: ${props => props.$success ? '#28a745' : '#dc3545'};
+  padding: var(--space-3) var(--space-6);
+  background: ${props => props.$success ? 'var(--emerald-green)' : '#dc3545'};
   color: white;
   border: none;
-  border-radius: 8px;
-  font-weight: 600;
+  border-radius: var(--radius-5);
+  font-weight: var(--weight-semibold);
   cursor: pointer;
   transition: all 0.2s ease;
   display: block;
   margin: 0 auto;
+  font-family: var(--font-sans);
 
   &:hover {
-    background: ${props => props.$success ? '#218838' : '#c82333'};
+    filter: brightness(0.95);
   }
 `;
 
-const ErrorText = styled.p`
-  font-size: 0.8rem;
-  color: #fc5600;
-  margin-top: 0;
-  margin-bottom: 3px;
-  min-height: 1.5em; /* 预留固定高度 */
-  // line-height: 1.2;
 
-  @media (max-width: 740px) {
-    font-size: 0.7rem;
-    min-height: 1.1em;
-  }
-
-  @media (max-height: 720px) {
-    margin: 0;
-    min-height: 1em;
-  }
-`;
-
-interface GroupListResponse {
-  code: number;
-  message: string;
-  data: {
-    pageNum: number;
-    pageSize: number;
-    total: number;
-    pages: number;
-    data: RoomGroup[];
-  };
-}
 
 interface CreateRoomComponentProps {
   onClose: () => void;
@@ -425,34 +295,28 @@ const passwordValidationSchema = Yup.object({
     .required("Password is required"),
 });
 
-const roomsCache = new Map<string, RoomGroup[]>();
+
 
 const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
-  const [rooms, setRooms] = useState<RoomGroup[]>([]);
   const [roomSearch, setRoomSearch] = useState<string>("");
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  
+  // Use React Query instead of manual fetching with cache
+  const { data: groupListData, isLoading, error } = useGroupList({
+    keyword: roomSearch || undefined,
+    groupDemonTypeEnum: "ALLROOM",
+    pageRequestVO: {
+      pageSize: 100, // Fetch more rooms at once
+      pageNum: 1,
+    },
+  });
 
-  // Add useRef to reference the container
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  // Add click outside handler
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(event.target as Node)
-      ) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [onClose]);
+  // 处理 Overlay 点击关闭
+  const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
 
   const {
     handleJoinClick,
@@ -493,117 +357,42 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
     }
   }, [redirectPath, navigate, setRedirectPath, onClose]);
 
-  const fetchAllRooms = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    if (roomsCache.has(roomSearch)) {
-      setRooms(roomsCache.get(roomSearch)!);
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const allRooms: RoomGroup[] = [];
-      let currentPage = 1;
-      let totalPages = 1;
-
-      while (currentPage <= totalPages) {
-        const requestData = {
-          keyword: roomSearch || undefined,
-          groupDemonTypeEnum: "ALLROOM",
-          pageRequestVO: {
-            pageSize: 10,
-            pageNum: currentPage,
-          },
-        };
-
-        const response = await apiClient.post<GroupListResponse>(
-          "/v1/group/get_group_list",
-          requestData
-        );
-
-        if (response.data.code === 200) {
-          const { data } = response.data.data;
-
-          if (data && data.length > 0) {
-            allRooms.push(...data);
-          }
-
-          totalPages = response.data.data.pages;
-          currentPage++;
-        } else {
-          throw new Error(
-            `API error: ${response.data.message || "Unknown error"}`
-          );
-        }
-      }
-
-      setRooms(allRooms);
-      roomsCache.set(roomSearch, allRooms);
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        setError(
-          error.response?.data?.message ||
-            "Failed to fetch rooms. Please try again."
-        );
-      } else {
-        setError(
-          "An unexpected error occurred while fetching rooms. Please try again."
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setRoomSearch(e.target.value);
   };
 
-  // Debounced search effect
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (roomSearch.trim() !== "") {
-        fetchAllRooms();
-      } else {
-        setRooms([]);
-      }
-    }, 300);
-
-    return () => clearTimeout(timeoutId);
-  }, [roomSearch]);
-
-  // Memoized filtered rooms for better performance
-  const displayRooms = useMemo(() => {
-    return rooms.filter(room => 
-      room.groupName.toLowerCase().includes(roomSearch.toLowerCase()) ||
-      room.groupDescription.toLowerCase().includes(roomSearch.toLowerCase())
-    );
-  }, [rooms, roomSearch]);
+  // Extract rooms from query data
+  const rooms = groupListData?.data?.data ?? [];
 
   return (
-    <OverlayContainer>
-      <Container ref={containerRef}>
-        <ModalHeader icon={MdGroup} title="Join Rooms" onClose={onClose} />
+    <ModalBackdrop onClick={handleOverlayClick}  className="modal-backdrop-right">
+      <Container onClick={(e) => e.stopPropagation()}>
+        <ModalCloseButton onClick={onClose} aria-label="Close">
+          <FiX size={24} />
+        </ModalCloseButton>
+        {/* 顶部标题 */}
+        <HeaderSection>
+          <HeaderTitle>Join Rooms</HeaderTitle>
+          <HeaderSubTitle>Search and join rooms to start chatting.</HeaderSubTitle>
+        </HeaderSection>
 
         <ContentArea>
         <SearchContainer>
           <SearchWrapper>
             <SearchIcon />
             <LabeledInputWithCount
-              variant="withIcon"
+              variant="unstyled"
               value={roomSearch}
               onChange={handleSearch}
               placeholder="Search rooms by name or description..."
               type="text"
-              showCount={false} // 搜索框通常不需要字数统计
+              showCount={false}
             />
           </SearchWrapper>
         </SearchContainer>
 
           <RoomListContainer>
-            {error && <ErrorContainer>{error}</ErrorContainer>}
+            {error && <ErrorContainer>{error.message || "Failed to fetch rooms"}</ErrorContainer>}
 
             {isLoading ? (
               <LoadingContainer>
@@ -612,58 +401,67 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
               </LoadingContainer>
             ) : (
               <RoomList $blur={showPasswordModal || showErrorModal}>
-                {displayRooms.length > 0 ? (
-                  displayRooms.map((room) => (
-                    <RoomCard key={room.groupId}>
-                      <RoomHeader>
-                        <RoomTitle>
-                          {room.groupName}
-                        </RoomTitle>
-                        <RoomType $isPrivate={room.groupType === 0}>
-                          {room.groupType === 0 ? <MdLock /> : <MdPublic />}
-                          {room.groupType === 0 ? 'Private' : 'Public'}
-                        </RoomType>
-                      </RoomHeader>
-                      
-                      <RoomInfo>
-                        <InfoItem>
-                          <MdGroup />
-                          {room.memberCount} members
-                        </InfoItem>
-                        <InfoItem>
-                          Admin: {room.adminName}
-                        </InfoItem>
-                      </RoomInfo>
+                {rooms.length > 0 ? (
+                  rooms.map((room) => (
+                    <IntegrationCard key={room.groupId}>
+                      <CardTop>
+                        <CardHeader>
+                          <HeaderLeft>
+                            <Avatar>
+                              <AvatarImg src="https://placehold.co/32x32" alt="" />
+                            </Avatar>
+                            <NameBlock>
+                              <NameText>{room.groupName}</NameText>
+                              <StatusRow>
+                                <StatusDot $joined={room.isJoined} />
+                                <StatusText>{room.isJoined ? "Joined" : "Not Joined"}</StatusText>
+                              </StatusRow>
+                            </NameBlock>
+                          </HeaderLeft>
+                          {/* Public/Private 状态展示在右上角 */}
+                          <StatusRow style={{ marginLeft: 'auto' }}>
+                            {room.groupType === 0 ? (
+                              <><MdLock size={14} color="var(--emerald-green)" /> <StatusText style={{ color: 'var(--emerald-green)' }}>Private</StatusText></>
+                            ) : (
+                              <><MdPublic size={14} color="var(--slate-500)" /> <StatusText>Public</StatusText></>
+                            )}
+                          </StatusRow>
+                        </CardHeader>
 
-                      {room.groupDescription && (
-                        <RoomDescription>
-                          <MdDescription style={{ marginRight: '0.5rem', verticalAlign: 'middle' }} />
-                          {room.groupDescription}
-                        </RoomDescription>
-                      )}
+                        <RoomInfo>
+                          <InfoItem>
+                            <MdGroup />
+                            <InfoItemText>{room.memberCount} members</InfoItemText>
+                          </InfoItem>
+                          <InfoItem>
+                            <InfoItemText>Admin: {room.adminName}</InfoItemText>
+                          </InfoItem>
+                        </RoomInfo>
 
-                      <JoinButton
-                        $isJoined={room.isJoined}
+                        <CardDescription>
+                          {room.groupDescription || "Join this room to start chatting."}
+                        </CardDescription>
+                      </CardTop>
+
+                      <ActionButton
                         onClick={() =>
                           handleJoinClick(room.groupId, room.groupType, room.isJoined)
                         }
                       >
-                        {room.isJoined ? 'JOINED' : 'JOIN'}
-                      </JoinButton>
-                    </RoomCard>
+                        {room.isJoined ? "Enter" : "Join"}
+                      </ActionButton>
+                    </IntegrationCard>
                   ))
                 ) : roomSearch.trim() !== "" ? (
-                  <EmptyState>
-                    <EmptyStateIcon />
-                    <h3>No rooms found</h3>
-                    <p>Try adjusting your search terms or browse all available rooms.</p>
-                  </EmptyState>
+                  <EmptyState
+                    title="No rooms found"
+                    description="Try adjusting your search terms or browse all available rooms."
+                  />
                 ) : (
-                  <EmptyState>
-                    <EmptyStateIcon />
-                    <h3>Start searching</h3>
-                    <p>Enter a room name or description to find groups to join.</p>
-                  </EmptyState>
+                  <EmptyState
+                    title="Start searching"
+                    description="Enter a room name or description to find groups to join."
+                  />
                 )}
               </RoomList>
             )}
@@ -671,14 +469,27 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
         </ContentArea>
 
         {(showPasswordModal || showErrorModal) && (
-          <Overlay>
+          <ModalBackdrop onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowPasswordModal(false);
+              setShowErrorModal(false);
+            }
+          }}>
             {showPasswordModal && (
-              <Modal>
-                <ModalHeader icon={MdLock} title="Enter Room Password" onClose={() => setShowPasswordModal(false)} />
-                {/* <CloseButton onClick={() => setShowPasswordModal(false)}>
-                </CloseButton> */}
-                {/* <PasswordTitle>Enter Room Password</PasswordTitle> */}
-                <PasswordInputContainer>
+              <PasswordModalContainer onClick={(e) => e.stopPropagation()}>
+                {/* 右上角关闭按钮 */}
+                <ModalCloseButton onClick={() => setShowPasswordModal(false)} aria-label="Close">
+                  <FiX size={24} />
+                </ModalCloseButton>
+
+                {/* 顶部标题 */}
+                <HeaderSection>
+                  <HeaderTitle>Enter Room Password</HeaderTitle>
+                  <HeaderSubTitle>This room requires a password to join.</HeaderSubTitle>
+                </HeaderSection>
+
+                <PasswordInputWrapper>
+                  <InputLabel>Password</InputLabel>
                   <PasswordInput
                     placeholder="Enter password"
                     value={passwordFormik.values.password}
@@ -695,27 +506,31 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
                     name="password"
                     $hasError={passwordFormik.touched.password && !!passwordFormik.errors.password}
                   />
-                </PasswordInputContainer>
-                <ErrorText>{passwordFormik.touched.password && passwordFormik.errors.password }</ErrorText>
+                  <ErrorText $visible={!!(passwordFormik.touched.password && passwordFormik.errors.password)}>
+                    {(passwordFormik.touched.password && passwordFormik.errors.password) ? passwordFormik.errors.password :  " "}
+                  </ErrorText>
+                </PasswordInputWrapper>
                 
                 <ButtonContainer>
-                  <Button variant="cancel" onClick={() => setShowPasswordModal(false)}>
-                    Cancel
-                  </Button>
-
-                  <Button 
-                    variant="primary" 
-                    onClick={() => passwordFormik.handleSubmit()} 
-                    disabled={!passwordFormik.isValid || !passwordFormik.values.password}
-                  >
-                    Join Room
-                  </Button>
+                  <FixedButtonContainer>
+                    <Button variant="cancel" onClick={() => setShowPasswordModal(false)}>
+                      Cancel
+                    </Button>
+                  </FixedButtonContainer>
+                  <FixedButtonContainer>
+                    <Button 
+                      onClick={() => passwordFormik.handleSubmit()} 
+                      disabled={!passwordFormik.isValid || !passwordFormik.values.password}
+                    >
+                      Join Room
+                    </Button>
+                  </FixedButtonContainer>
                 </ButtonContainer>
-              </Modal>
+              </PasswordModalContainer>
             )}
             {showErrorModal && (
-              <Modal>
-                <ErrorMessage style={{ color: joinSuccess ? "#28a745" : "#dc3545" }}>
+              <PasswordModalContainer onClick={(e) => e.stopPropagation()}>
+                <ErrorMessage style={{ color: joinSuccess ? "var(--emerald-green)" : "#dc3545" }}>
                   {errorMessage}
                 </ErrorMessage>
                 <ErrorModalButton
@@ -729,12 +544,12 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
                 >
                   OK
                 </ErrorModalButton>
-              </Modal>
+              </PasswordModalContainer>
             )}
-          </Overlay>
+          </ModalBackdrop>
         )}
       </Container>
-    </OverlayContainer>
+    </ModalBackdrop>
   );
 };
 

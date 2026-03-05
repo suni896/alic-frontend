@@ -64,8 +64,11 @@ interface Message {
 // 全局样式
 const GlobalStyle = createGlobalStyle`
   .highlight-message {
-    background-color:rgba(205, 255, 219, 0.24) !important;
-    border: 1px solid #016532 !important;
+    /* ================= Visual ================= */
+    background-color: rgba(205, 255, 219, 0.24) !important;
+    border: 1px solid var(--emerald-green) !important;
+    
+    /* ================= Animation ================= */
     animation: pulse 0.5s ease-in-out;
   }
   
@@ -78,218 +81,368 @@ const GlobalStyle = createGlobalStyle`
 
 // 样式组件
 const Container = styled.div`
-  background: white;
+  /* ================= Layout ================= */
+  display: flex;
+  flex-direction: column;
+
+  /* ================= Box Model ================= */
   width: 100%;
-  padding-top: 20px;
-  padding-left: 30px;
-  padding-right: 20px;
+  height: calc(100vh - 3.5rem);
+  padding: var(--space-2) var(--space-3);
   box-sizing: border-box;
-  // position: fixed;
-  height: calc(100vh - 80px);
-  border-left: 1px solid var(--color-line); /* 左侧灰色边框 */
+
+  /* ================= Visual ================= */
+  background: var(--white);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    height: calc(100vh - 4.5rem);
+    padding: var(--space-4) var(--space-5) var(--space-4) var(--space-6);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    height: calc(100vh - 5rem);
+    padding: var(--space-5) var(--space-7) var(--space-5) var(--space-8);
+    border-left: 1px solid var(--color-line);
+  }
 `;
 
 const RenderedChatContainer = styled.div`
-  width: calc(100% - 40px);
-  height: calc(100vh - 80px - 20px - 11rem - 5px);
+  /* ================= Layout ================= */
   overflow-y: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
-  background: var(--color-line);
-  border-radius: 8px;
-  font-size: 1rem;
+  flex: 1;
 
+  /* ================= Box Model ================= */
+  width: 100%;
+  padding: 0 var(--space-2);
+
+  /* ================= Visual ================= */
+  background: var(--white);
+  border-radius: var(--radius-5);
+
+  /* ================= Scrollbar ================= */
   &::-webkit-scrollbar {
-    width: 8px;
+    width: var(--space-1);
   }
 
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
+    background: var(--gray-100);
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #888;
-    border-radius: 4px;
+    background: var(--gray-400);
+    border-radius: var(--radius-3);
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: #555;
+    background: var(--gray-500);
+  }
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: calc(100% - var(--space-6));
+    padding: 0 var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: calc(100% - var(--space-8));
+    padding: 0 var(--space-5);
   }
 `;
 
 // 消息容器 - 支持悬浮显示功能按钮
 const MessageContainer = styled.div<{ $isOwnMessage: boolean }>`
-  margin-bottom: 1rem;
-  padding: 1rem;
-  background-color: ${(props) => (props.$isOwnMessage ? "#dcf8c6" : "white")};
-  border-radius: 8px;
+  /* ================= Layout ================= */
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
   position: relative;
-  
+
+  /* ================= Box Model ================= */
+  margin-bottom: var(--space-2);
+  padding: var(--space-2);
+  gap: var(--space-2);
+
+  /* ================= Visual ================= */
+  background-color: ${(props) => (props.$isOwnMessage ? "var(--emerald-green-100)" : "var(--white)")};
+  border-radius: var(--radius-5);
+  box-shadow: var(--shadow-soft);
+
+  /* ================= Interaction ================= */
   &:hover .message-actions {
     opacity: 1;
     visibility: visible;
+  }
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    margin-bottom: var(--space-4);
+    padding: var(--space-4);
+    gap: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    margin-bottom: var(--space-5);
+    padding: var(--space-5);
+    gap: var(--space-5);
   }
 `;
 
 // 消息操作按钮容器
 const MessageActions = styled.div`
-  position: absolute;
-  top: 8px;
-  right: 8px;
+  /* ================= Layout ================= */
   display: flex;
-  gap: 4px;
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  
+  /* ================= Box Model ================= */
+  gap: var(--space-2);
+  padding: var(--space-2);
+  
+  /* ================= Visual ================= */
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: var(--radius-3);
+  box-shadow: var(--shadow-soft);
+  
+  /* ================= Animation ================= */
   opacity: 0;
   visibility: hidden;
   transition: all 0.2s ease-in-out;
-  background: rgba(255, 255, 255, 0.9);
-  border-radius: 6px;
-  padding: 4px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 `;
 
 // 操作按钮
 const ActionButton = styled.button`
-  background: none;
-  border: none;
-  padding: 6px;
-  border-radius: 4px;
-  cursor: pointer;
+  /* ================= Layout ================= */
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #666;
+  
+  /* ================= Box Model ================= */
+  padding: var(--space-2);
+  
+  /* ================= Visual ================= */
+  background: none;
+  border: none;
+  border-radius: var(--radius-3);
+  color: var(--muted-6b7280);
+  
+  /* ================= Animation ================= */
   transition: all 0.2s ease-in-out;
   
+  /* ================= Interaction ================= */
+  cursor: pointer;
+  
   &:hover {
-    background-color: #f0f0f0;
-    color: #333;
+    background-color: var(--gray-100);
+    color: var(--color-text);
   }
   
   svg {
-    width: 16px;
-    height: 16px;
+    width: var(--space-4);
+    height: var(--space-4);
   }
 `;
 
 // 回复预览容器
-const ReplyPreview = styled.div`
-  background: #f8f9fa;
-  border-left: 3px solid #016532;
-  padding: 8px 12px;
-  margin-bottom: 8px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  // transition: all 0.2s ease-in-out;
+const ReplyPreview = styled.div<{ $clickable?: boolean }>`
+  /* ================= Layout ================= */
+  cursor: ${(props) => (props.$clickable ? 'pointer' : 'default')};
   
+  /* ================= Box Model ================= */
+  margin-bottom: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  
+  /* ================= Visual ================= */
+  background: var(--gray-50);
+  border-left: 3px solid var(--emerald-green);
+  border-radius: var(--radius-3);
+  opacity: ${(props) => (props.$clickable ? 1 : 0.7)};
+  
+  /* ================= Interaction ================= */
   &:hover {
-    background: #e8f5e8;
-    border-left-color: #014a28;
+    background: ${(props) => (props.$clickable ? 'var(--color-own-message)' : 'var(--gray-50)')};
+    border-left-color: ${(props) => (props.$clickable ? 'var(--emerald-green-dark)' : 'var(--emerald-green)')};
   }
 `;
 
 const ReplyHeader = styled.div`
-  font-weight: 600;
-  color: #016532;
-  margin-bottom: 4px;
-  font-size: 0.8rem;
+  /* ================= Layout ================= */
+  margin-bottom: var(--space-2);
+  
+  /* ================= Typography ================= */
+  font-size: var(--space-4);
+  font-weight: var(--weight-semibold);
+  
+  /* ================= Visual ================= */
+  color: var(--emerald-green);
 `;
 
 const ReplyContent = styled.div`
-  color: #666;
+  /* ================= Layout ================= */
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 300px;
+  word-break: break-word;
+  
+  /* ================= Box Model ================= */
+  max-width: 12rem;
+  
+  /* ================= Visual ================= */
+  color: var(--color-text);
+
+  /* ================= Typography ================= */
+  font-size: var(--space-4);
+  
+  @media (min-width: 30rem) {
+    max-width: 15rem;
+  }
+  
+  @media (min-width: 48rem) {
+    max-width: 18.75rem;
+  }
 `;
 
 // 回复输入框容器
 const ReplyInputContainer = styled.div`
+  /* ================= Layout ================= */
   display: flex;
   align-items: center;
-  background: #f0f9f0;
-  padding: 0px 12px;
-  border-radius: 6px;
-  border-left: 3px solid #016532;
+  
+  /* ================= Box Model ================= */
   height: 2.3rem;
+  padding: 0 var(--space-4);
+  
+  /* ================= Visual ================= */
+  background: var(--color-own-message);
+  border-left: 3px solid var(--emerald-green);
+  border-radius: var(--radius-3);
 `;
 
 // 复制成功提示组件
 const CopySuccessToast = styled.div<{ $show: boolean }>`
+  /* ================= Layout ================= */
   position: fixed;
-  top: 60px;
-  right: 20px;
-  background-color: #4caf50;
-  color: white;
-  padding: 12px 20px;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  top: 3.75rem;
+  right: var(--space-5);
   z-index: 10000;
-  font-size: 14px;
-  font-weight: 500;
+  
+  /* ================= Box Model ================= */
+  padding: var(--space-4) var(--space-6);
+  
+  /* ================= Typography ================= */
+  font-size: var(--space-4);
+  font-weight: var(--weight-medium);
+  
+  /* ================= Visual ================= */
+  background-color: var(--success-green);
+  color: var(--white);
+  border-radius: var(--radius-3);
+  box-shadow: var(--shadow-medium);
+  
+  /* ================= Animation ================= */
   opacity: ${props => props.$show ? 1 : 0};
   visibility: ${props => props.$show ? 'visible' : 'hidden'};
-  transform: translateY(${props => props.$show ? '0' : '-20px'});
+  transform: translateY(${props => props.$show ? '0' : '-1.25rem'});
   transition: all 0.3s ease-in-out;
 `;
 
 // 清除上下文成功提示样式
 const ClearContextToast = styled.div<{ $show: boolean }>`
+  /* ================= Layout ================= */
   position: fixed;
   top: 8vh;
   left: 50%;
-  background-color: #ff9800;
-  color: white;
-  padding: 12px 20px;
-  border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   z-index: 10000;
-  font-size: 14px;
-  font-weight: 500;
+  
+  /* ================= Box Model ================= */
+  padding: var(--space-4) var(--space-6);
+  
+  /* ================= Typography ================= */
+  font-size: var(--space-4);
+  font-weight: var(--weight-medium);
+  
+  /* ================= Visual ================= */
+  background-color: var(--warning-orange);
+  color: var(--white);
+  border-radius: var(--radius-3);
+  box-shadow: var(--shadow-medium);
+  
+  /* ================= Animation ================= */
   opacity: ${props => props.$show ? 1 : 0};
   visibility: ${props => props.$show ? 'visible' : 'hidden'};
-  transform: translateY(${props => props.$show ? '0' : '-20px'});
+  transform: translateY(${props => props.$show ? '0' : '-1.25rem'});
   transition: all 0.3s ease-in-out;
 `;
 
 // 清除上下文图标样式
 const ClearContextIcon = styled(LuRotateCcw)`
-  font-size: 1.6rem;
-  cursor: pointer;
+  /* ================= Layout ================= */
   display: block;
-  color: #333;
+  
+  /* ================= Typography ================= */
+  font-size: 1.6rem;
+  
+  /* ================= Visual ================= */
+  color: var(--black);
+  
+  /* ================= Interaction ================= */
+  cursor: pointer;
 `;
 
 // 上下文清除提示消息样式
 const ContextClearedMessage = styled.div`
+  /* ================= Layout ================= */
   text-align: center;
-  padding: 8px 16px;
-  margin: 8px 0;
-  background-color: #fff3cd;
-  border: 1px solid #ffeaa7;
-  border-radius: 6px;
-  color: #856404;
-  font-size: 0.85rem;
+  
+  /* ================= Box Model ================= */
+  margin: var(--space-3) 0;
+  padding: var(--space-3) var(--space-5);
+  
+  /* ================= Typography ================= */
+  font-size: var(--space-4);
   font-style: italic;
+  
+  /* ================= Visual ================= */
+  background-color: var(--warning-light);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius-3);
+  color: var(--warning-text);
 `;
 
 const ReplyInputText = styled.span`
+  /* ================= Layout ================= */
   flex: 1;
-  font-size: 0.85rem;
-  color: #333;
+  
+  /* ================= Typography ================= */
+  font-size: var(--space-4);
+  
+  /* ================= Visual ================= */
+  color: var(--color-text);
 `;
 
 const CancelReplyButton = styled.button`
+  /* ================= Layout ================= */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* ================= Box Model ================= */
+  padding: var(--space-2);
+  
+  /* ================= Visual ================= */
   background: none;
   border: none;
+  border-radius: var(--radius-3);
+  color: var(--muted-6b7280);
+  
+  /* ================= Animation ================= */
+  transition: all 0.2s ease;
+  
+  /* ================= Interaction ================= */
   cursor: pointer;
-  padding: 4px;
-  color: #666;
-  border-radius: 4px;
   
   &:hover {
     background-color: rgba(0, 0, 0, 0.1);
@@ -297,118 +450,180 @@ const CancelReplyButton = styled.button`
 `;
 
 const MessageContent = styled.div`
+  /* ================= Layout ================= */
   flex: 1;
   min-width: 0;
 `;
 
 const UserName = styled.div`
-  font-weight: 600;
-  font-size: 0.9rem;
-  color: #1a202c;
-  margin-bottom: 0.25rem;
+  /* ================= Layout ================= */
+  margin-bottom: var(--space-2);
+  
+  /* ================= Typography ================= */
+  font-size: var(--space-4);
+  font-weight: var(--weight-semibold);
   line-height: 1.2;
+  
+  /* ================= Visual ================= */
+  color: var(--primary-text);
 `;
 
 const MessageText = styled.div`
+  /* ================= Layout ================= */
   word-break: break-word;
-  font-size: 0.85rem;
-  color: #333;
+  
+  /* ================= Typography ================= */
+  font-size: var(--space-4);
+  
+  /* ================= Visual ================= */
+  color: var(--color-text);
 `;
 
 const TimeStamp = styled.div`
-  font-size: 0.8rem;
-  color: #666;
-  margin-top: 0.5rem;
+  /* ================= Layout ================= */
+  margin-top: var(--space-3);
+  
+  /* ================= Typography ================= */
+  font-size: var(--space-3);
   line-height: 1;
+  
+  /* ================= Visual ================= */
+  color: var(--muted-6b7280);
 `;
 
 const SendMessageContainer = styled.div`
+  /* ================= Layout ================= */
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  width: 100%;
-  height: 11rem;
-  margin-top: 5px;
   position: relative;
+  z-index: 1;
+
+  /* ================= Box Model ================= */
+  width: 100%;
+  height: 7rem;
+  margin-top: var(--space-1);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    height: 8rem;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    height: 11rem;
+  }
 `;
 
 const MessageInputWrapper = styled.div<{ $disabled?: boolean }>`
-  border: 0.5px solid;
-  border-radius: 8px;
-  width: 98%;
+  /* ================= Layout ================= */
   position: relative;
-  
-  border-color: ${(props) => (props.$disabled ? "#ccc" : "#d3d3d3")};
-  background-color: ${(props) => (props.$disabled ? "var(--color-line)" : "var(--white)")};
-  padding: 0.5rem 1rem 0.5rem 1rem;
+
+  /* ================= Box Model ================= */
+  width: 100%;
+  padding: var(--space-1) var(--space-2);
   box-sizing: border-box;
 
+  /* ================= Visual ================= */
+  border: 0.5px solid;
+  border-color: ${(props) => (props.$disabled ? "var(--gray-300)" : "var(--gray-200)")};
+  background-color: ${(props) => (props.$disabled ? "var(--color-line)" : "var(--white)")};
+  border-radius: var(--radius-3);
+
+  /* ================= Animation ================= */
+  transition: all 0.2s ease;
+
   &:focus-within {
-    border-color: ${(props) => (props.$disabled ? "#ccc" : "transparent")};
-    outline: ${(props) => (props.$disabled ? 'none' : '2px solid #016532')};
+    border-color: ${(props) => (props.$disabled ? "var(--gray-300)" : "transparent")};
+    outline: ${(props) => (props.$disabled ? 'none' : '2px solid var(--emerald-green)')};
+  }
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: 99%;
+    padding: var(--space-2) var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: 98%;
+    padding: var(--space-3) var(--space-5);
   }
 `;
 
 const MessageInput = styled.textarea<{ $disabled?: boolean; $isReplying?: boolean }>`
-  background-color: transparent;
+  /* ================= Layout ================= */
+  resize: none;
+  overflow-y: auto;
+  
+  /* ================= Box Model ================= */
   width: 100%;
   min-height: ${props => props.$isReplying ? '3.5rem' : '5.8rem'};
   max-height: ${props => props.$isReplying ? '3.5rem' : '5.8rem'};
   height: ${props => props.$isReplying ? '3.5rem' : '5.8rem'};
-  resize: none;
-  overflow-y: auto;
-  border: none;
-  // border-radius: 8px;
-  color: ${(props) => (props.$disabled ? "#999" : "black")};
   padding: 0;
-  cursor: ${(props) => (props.$disabled ? "not-allowed" : "text")};
-  font-size: 0.85rem;
-  line-height: 1.5;
   box-sizing: border-box;
+  
+  /* ================= Typography ================= */
+  font-size: var(--space-4);
+  line-height: 1.5;
   font-family: inherit;
-  // transition: all 0.2s ease-in-out;
+  
+  /* ================= Visual ================= */
+  background-color: transparent;
+  border: none;
+  color: ${(props) => (props.$disabled ? "var(--gray-400)" : "var(--black)")};
+  
+  /* ================= Interaction ================= */
+  cursor: ${(props) => (props.$disabled ? "not-allowed" : "text")};
  
   &:focus {
     outline: none;
   } 
  
   &::placeholder {
-    color: ${(props) => (props.$disabled ? "#ccc" : "#999")};
+    color: ${(props) => (props.$disabled ? "var(--color-text)" : "var(--color-text)")};
     opacity: 1;
   }
 `;
 
 const Avatar = styled.img`
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  margin-right: 12px;
-  object-fit: cover;
+  /* ================= Layout ================= */
   flex-shrink: 0;
   align-self: flex-start;
-  margin-top: 2px;
+  
+  /* ================= Box Model ================= */
+  width: 2rem;
+  height: 2rem;
+  margin-right: var(--space-2);
+  margin-top: var(--space-1);
+  
+  /* ================= Visual ================= */
+  border-radius: 50%;
+  object-fit: cover;
 
-  @media (max-width: 1000px) {
-    width: 30px;
-    height: 30px;
-  }
-  @media (max-width: 700px) {
-    margin-right: 5px;
-  }
-  @media (max-width: 400px) {
-    width: 23px;
-    height: 23px;
+  @media (min-width: 48rem) {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-right: var(--space-4);
   }
 `;
 
 const LoadingSpinner = styled.div`
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #016532;
+  /* ================= Layout ================= */
+  margin-left: var(--space-3);
+  
+  /* ================= Box Model ================= */
+  width: var(--space-4);
+  height: var(--space-4);
+  
+  /* ================= Visual ================= */
+  border: 2px solid var(--gray-100);
+  border-top: 2px solid var(--emerald-green);
   border-radius: 50%;
-  width: 16px;
-  height: 16px;
+  
+  /* ================= Animation ================= */
   animation: spin 1s linear infinite;
-  margin-left: 8px;
   transition: opacity 0.3s ease-in-out;
 
   @keyframes spin {
@@ -422,64 +637,116 @@ const LoadingSpinner = styled.div`
 `;
 
 const HeaderContent = styled.div`
+  /* ================= Layout ================= */
   display: flex;
   align-items: center;
-  color: #333;
-  
+
+  /* ================= Visual ================= */
+  color: var(--color-text);
 `;
 
 const NewMessageNotification = styled.div`
+  /* ================= Layout ================= */
   position: absolute;
-  right: 20px;
-  bottom: 11rem + 1vh + 6px;
-  background-color: #016532;
-  color: white;
-  padding: 6px 12px;
-  border-radius: 20px;
-  cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  right: var(--space-3);
+  bottom: calc(8rem + 1vh + var(--space-1));
   z-index: 1000;
+
+  /* ================= Box Model ================= */
+  padding: var(--space-1) var(--space-3);
+
+  /* ================= Visual ================= */
+  background-color: var(--emerald-green);
+  color: var(--white);
+  border-radius: var(--radius-12);
+  box-shadow: var(--shadow-soft);
+
+  /* ================= Interaction ================= */
+  cursor: pointer;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    right: var(--space-4);
+    bottom: calc(9rem + 1vh + var(--space-2));
+    padding: var(--space-2) var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    right: var(--space-5);
+    bottom: calc(11rem + 1vh + var(--space-2));
+    padding: var(--space-2) var(--space-4);
+  }
 `;
 
 // 连接状态提示组件
 const ConnectionStatus = styled.div<{ $status: 'connected' | 'connecting' | 'disconnected' | 'reconnecting' }>`
-  position: fixed;
-  top: 8vh;
-  left: 50%;
-  transform: translateX(-50%);
-  padding: 10px 20px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  z-index: 10000;
+  /* ================= Layout ================= */
   display: flex;
   align-items: center;
-  gap: 8px;
+  position: fixed;
+  top: 6vh;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+
+  /* ================= Box Model ================= */
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+
+  /* ================= Typography ================= */
+  font-size: var(--space-3);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    top: 7vh;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    top: 8vh;
+    gap: var(--space-3);
+    padding: var(--space-3) var(--space-6);
+    font-size: var(--space-4);
+  }
+  font-weight: var(--weight-medium);
+  
+  /* ================= Visual ================= */
+  border-radius: var(--radius-3);
+  box-shadow: var(--shadow-medium);
+  
+  /* ================= Animation ================= */
   transition: all 0.3s ease-in-out;
 
   ${props => {
     switch (props.$status) {
       case 'connected':
-        return 'background-color: #4caf50; color: white; opacity: 0; visibility: hidden;';
+        return 'background-color: var(--success-green); color: var(--white); opacity: 0; visibility: hidden;';
       case 'connecting':
-        return 'background-color: #2196f3; color: white;';
+        return 'background-color: var(--info-blue); color: var(--white);';
       case 'disconnected':
-        return 'background-color: #f44336; color: white;';
+        return 'background-color: var(--error-red); color: var(--white);';
       case 'reconnecting':
-        return 'background-color: #ff9800; color: white;';
+        return 'background-color: var(--warning-orange); color: var(--white);';
       default:
-        return 'background-color: #9e9e9e; color: white;';
+        return 'background-color: var(--gray-400); color: var(--white);';
     }
   }}
 `;
 
 const StatusDot = styled.span<{ $status: 'connected' | 'connecting' | 'disconnected' | 'reconnecting' }>`
-  width: 8px;
-  height: 8px;
+  /* ================= Box Model ================= */
+  width: var(--space-2);
+  height: var(--space-2);
+  
+  /* ================= Visual ================= */
+  background-color: var(--white);
   border-radius: 50%;
-  background-color: white;
 
+  /* ================= Animation ================= */
   ${props => props.$status === 'connecting' || props.$status === 'reconnecting' ? `
     animation: pulse-dot 1.5s ease-in-out infinite;
   ` : ''}
@@ -491,80 +758,132 @@ const StatusDot = styled.span<{ $status: 'connected' | 'connecting' | 'disconnec
 `;
 
 const IconWrapper = styled.div`
-  position: relative;
-  width: 2.2rem;
-  height: 2.2rem;
-  border-radius: 50%;
-  background-color: var(--white);
+  /* ================= Layout ================= */
   display: flex;
   align-items: center;
   justify-content: center;
+  position: relative;
+  
+  /* ================= Box Model ================= */
+  width: 2.2rem;
+  height: 2.2rem;
+  margin: 0 var(--space-2);
+  
+  /* ================= Visual ================= */
+  background-color: var(--white);
+  border-radius: 50%;
+  
+  /* ================= Animation ================= */
   transition: all 0.2s ease-in-out;
-  margin: 0 0.2em;
+  
+  /* ================= Interaction ================= */
+  cursor: pointer;
   
   &:hover {
-    background-color: #cccccc;
+    background-color: var(--gray-300);
   }
 `;
 
 const BotIcon = styled.img`
+  /* ================= Layout ================= */
+  display: block;
+  
+  /* ================= Box Model ================= */
   width: 1.6rem;
   height: 1.6rem;
+  
+  /* ================= Interaction ================= */
   cursor: pointer;
-  display: block;
 `;
 
 const SendIcon = styled(LuSend)`
-  font-size: 1.6rem;
-  cursor: pointer;
+  /* ================= Layout ================= */
   display: block;
-  color: #333;
+  
+  /* ================= Typography ================= */
+  font-size: 1.6rem;
+  
+  /* ================= Visual ================= */
+  color: var(--black);
+  
+  /* ================= Interaction ================= */
+  cursor: pointer;
 `;
 
 const IconContainer = styled.div`
+  /* ================= Layout ================= */
   display: flex;
-  height: 2rem;
   align-items: center;
-  margin-bottom: 0.4em;
-  gap: 0.2em;
-  padding: 0.2em 0.4em;
-  border-radius: 20px;
+  
+  /* ================= Box Model ================= */
+  height: 2rem;
+  gap: var(--space-2);
+  margin-bottom: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  
+  /* ================= Visual ================= */
+  border-radius: var(--radius-12);
 `;
 
 const PopupContainer = styled.div`
+  /* ================= Layout ================= */
   position: absolute;
   bottom: 100%;
-  left: 60px;
+  left: 3.75rem;
   transform: translateX(-25%);
-  width: 250px;
-  max-height: 300px;
-  background: white;
-  border: 1px solid #016532;
-  border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   overflow-y: auto;
   z-index: 1000;
-  margin-bottom: 5px;
+  
+  /* ================= Box Model ================= */
+  width: 15.625rem;
+  max-height: 18.75rem;
+  margin-bottom: var(--space-2);
+  
+  /* ================= Visual ================= */
+  background: var(--white);
+  border: 1px solid var(--emerald-green);
+  border-radius: var(--radius-5);
+  box-shadow: var(--shadow-soft);
 `;
 
 const PopupHeader = styled.div`
+  /* ================= Layout ================= */
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px;
-  border-bottom: 1px solid #d3d3d3;
   position: sticky;
   top: 0;
-  background: white;
+  
+  /* ================= Box Model ================= */
+  padding: var(--space-3);
+  
+  /* ================= Visual ================= */
+  background: var(--white);
+  border-bottom: 1px solid var(--gray-200);
 `;
 
 const CloseButton = styled.button`
+  /* ================= Layout ================= */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  /* ================= Box Model ================= */
+  padding: var(--space-2);
+  
+  /* ================= Typography ================= */
+  font-size: 1.2rem;
+  
+  /* ================= Visual ================= */
   background: none;
   border: none;
+  color: var(--color-text);
+  
+  /* ================= Animation ================= */
+  transition: all 0.2s ease;
+  
+  /* ================= Interaction ================= */
   cursor: pointer;
-  font-size: 1.2rem;
-  padding: 4px;
-  color: #333;
 
   &:hover {
     background: var(--color-line);
@@ -573,17 +892,30 @@ const CloseButton = styled.button`
 `;
 
 const BotList = styled.div`
+  /* ================= Layout ================= */
   display: flex;
   flex-direction: column;
-  color: #333;
+  
+  /* ================= Visual ================= */
+  color: var(--color-text);
 `;
 
 const BotItem = styled.div`
-  padding: 12px;
-  border-bottom: 1px solid #f0f0f0;
+  /* ================= Layout ================= */
   display: flex;
   justify-content: space-between;
   align-items: center;
+  
+  /* ================= Box Model ================= */
+  padding: var(--space-4);
+  
+  /* ================= Visual ================= */
+  border-bottom: 1px solid var(--gray-100);
+  
+  /* ================= Animation ================= */
+  transition: all 0.2s ease;
+  
+  /* ================= Interaction ================= */
   cursor: pointer;
 
   &:hover {
@@ -592,12 +924,56 @@ const BotItem = styled.div`
 `;
 
 const BotName = styled.span`
-  font-size: 14px;
+  /* ================= Typography ================= */
+  font-size: var(--space-4);
 `;
 
 const AccessType = styled.span`
-  font-size: 12px;
-  color: #666;
+  /* ================= Typography ================= */
+  font-size: var(--space-3);
+  
+  /* ================= Visual ================= */
+  color: var(--muted-6b7280);
+`;
+
+// 消息提示组件
+const NoMoreMessagesHint = styled.div`
+  /* ================= Layout ================= */
+  text-align: center;
+  
+  /* ================= Box Model ================= */
+  padding: var(--space-2);
+  
+  /* ================= Visual ================= */
+  color: var(--muted-6b7280);
+`;
+
+// 回复消息状态提示
+const ReplyStatusHint = styled.div`
+  /* ================= Layout ================= */
+  margin-top: var(--space-2);
+  
+  /* ================= Typography ================= */
+  font-size: var(--space-3);
+  
+  /* ================= Visual ================= */
+  color: var(--gray-400);
+`;
+
+// Markdown 段落
+const MarkdownParagraph = styled.p`
+  /* ================= Box Model ================= */
+  margin: 0.5em 0;
+`;
+
+// Markdown 代码
+const MarkdownCode = styled.code`
+  /* ================= Box Model ================= */
+  padding: 2px var(--space-2);
+  
+  /* ================= Visual ================= */
+  background-color: var(--color-line);
+  border-radius: var(--radius-3);
 `;
 
 // Bot列表弹窗组件
@@ -1644,9 +2020,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
       <RenderedChatContainer ref={chatContainerRef} onScroll={handleScroll}>
         {hasNoMoreMessages && (
-          <div style={{ textAlign: "center", padding: "5px", color: "#666" }}>
+          <NoMoreMessagesHint>
             No more messages
-          </div>
+          </NoMoreMessagesHint>
         )}
         {messages.map((msg, index) => (
           <React.Fragment key={msg.infoId}>
@@ -1675,10 +2051,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                       scrollToMessage(msg.replyToMessage.infoId);
                     }
                   }}
-                  style={{
-                    cursor: msg.replyToMessage && !msg.replyLoading ? 'pointer' : 'default',
-                    opacity: msg.replyToMessage && !msg.replyLoading ? 1 : 0.7
-                  }}
+                  $clickable={!!msg.replyToMessage && !msg.replyLoading}
                 >
                   <ReplyHeader>
                     回复 {msg.replyToMessage 
@@ -1695,9 +2068,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                     }
                   </ReplyContent>
                   {!msg.replyToMessage && !msg.replyLoading && (
-                    <div style={{ fontSize: '12px', color: '#999', marginTop: '4px' }}>
+                    <ReplyStatusHint>
                       该消息未加载，无法跳转
-                    </div>
+                    </ReplyStatusHint>
                   )}
                 </ReplyPreview>
               )}
@@ -1708,17 +2081,10 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                   rehypePlugins={[rehypeRaw]}
                   components={{
                     p: (props) => (
-                      <p {...props} style={{ margin: "0.5em 0" }} />
+                      <MarkdownParagraph {...props} />
                     ),
                     code: (props) => (
-                      <code
-                        {...props}
-                        style={{
-                          backgroundColor: "var(--color-line)",
-                          padding: "2px 4px",
-                          borderRadius: "4px",
-                        }}
-                      />
+                      <MarkdownCode {...props} />
                     ),
                   }}
                 >

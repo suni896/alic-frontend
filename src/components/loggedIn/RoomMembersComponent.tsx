@@ -1,314 +1,412 @@
 import React, { useEffect, useState } from "react";
-import { MdOutlineKeyboardDoubleArrowRight, MdPeopleAlt } from "react-icons/md";
+import { createPortal } from "react-dom";
+import { MdOutlineKeyboardDoubleArrowRight } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { styled } from "styled-components";
 import apiClient from "../loggedOut/apiClient";
 import { useUser } from "./UserContext";
 import { AiOutlineMinusCircle } from "react-icons/ai";
-import { fetchUserRole } from "./fetchUserRole";
+import { useUserRole } from "../../hooks/queries/useGroup";
 import Button from "../button";
 import ConfirmationModal from "../ConfirmationModal";
+import {
+  HeaderSection,
+  HeaderTitle,
+} from "../SharedComponents";
 
 const Overlay = styled.div`
+  /* ================= Layout ================= */
+  display: flex;
+  justify-content: flex-end;
   position: fixed;
   top: 0;
   left: 0;
+  z-index: 2000;
+
+  /* ================= Box Model ================= */
   width: 100%;
   height: 100vh;
-  background-color: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: flex-end;
-  z-index: 2000;
-  
+
+  /* ================= Visual ================= */
+  background: rgba(17, 24, 39, 0.35);
 `;
 
 const MembersListContainer = styled.div`
-  height: 100vh;
-  width: 20%;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.1);
+  /* ================= Layout ================= */
+  display: flex;
+  flex-direction: column;
+  position: relative;
   
-  @media (max-width: 1000px) {
-    width: 22%;
+  /* ================= Box Model ================= */
+  width: 70%;
+  height: 100vh;
+
+  /* ================= Visual ================= */
+  background: var(--white);
+  box-shadow: -4px 0 var(--space-5) rgba(0, 0, 0, 0.1);
+  
+  @media (min-width: 48rem) {
+    width: 35%;
   }
-  @media (max-width: 800px) {
+  @media (min-width: 64rem) {
     width: 25%;
   }
-  @media (max-width: 700px) {
-    width: 35%;
+  @media (min-width: 80rem) {
+    width: 20%;
   }
 `;
 
 const TitleContainer = styled.div`
+  /* ================= Layout ================= */
   display: flex;
-  align-items: center;
-  width: 100%;
-  height: 60px;
-  background: linear-gradient(135deg, #016532 0%, #014a24 100%);
-  box-shadow: 0 2px 10px rgba(1, 101, 50, 0.3);
+  // flex-direction: column;
+  // justify-content: center;
+  // align-items: center;
   position: relative;
   
-  &::after {
-    content: '';
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-  }
+  /* ================= Box Model ================= */
+  width: 100%;
+  height: 4rem;
+  padding: var(--space-6) 0 0 var(--space-6);
+
+  /* ================= Visual ================= */
+  background: var(--white);
+  // border-bottom: 1px solid var(--color-line);
 `;
 
-const MembersLogo = styled(MdPeopleAlt)`
-  color: var(--white);
-  font-size: clamp(1.5rem, 5vw, 2rem);
-  margin-left: 1rem;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
-  
-  @media (max-width: 1000px) {
-    margin-left: 2%;
-  }
-`;
-
-const Title = styled.p`
-  color: var(--white);
-  font-size: 1.2rem;
-  font-weight: 600;
-  margin-left: 5%;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.2);
-  letter-spacing: 0.5px;
-
-  @media (max-width: 1000px) {
-    font-size: 1rem;
-  }
-  @media (max-width: 500px) {
-    font-size: 0.9rem;
-  }
-`;
 
 const BottomContainer = styled.div`
-  width: 100%;
-  background-color: white;
+  /* ================= Layout ================= */
   display: flex;
   flex-direction: column;
   align-items: center;
   position: relative;
-  height: 100vh;
-  overflow-x: hidden; /* 防止水平滚动 */
-  // overflow-y: auto;   /* 保持垂直滚动 */
+  flex-shrink: 0;
+  
+  /* ================= Box Model ================= */
+  width: 100%;
+  padding: var(--space-4) 0;
+  
+  /* ================= Visual ================= */
+  background-color: var(--white);
+  border-top: 1px solid var(--color-line);
+  overflow-x: hidden;
 `;
 
 const ListContainer = styled.div`
-  width: 90%;
-  height: 65%;
-  margin-top: 2rem;
+  /* ================= Layout ================= */
   display: flex;
+  flex: 1;          /* 吃掉剩余空间 */
+  overflow-y: auto; /* 菜单滚动 */
   flex-direction: column;
-  gap: 0.75rem;
-  overflow-y: auto;
-  overflow-x: hidden; /* 防止水平滚动 */
-  padding: 0 0.5rem;
+  overflow-x: hidden;
   
-  /* Custom scrollbar */
+  /* ================= Box Model ================= */
+  width: 90%;
+  // margin-top: var(--space-8);
+  padding: 0 var(--space-3);
+  gap: var(--space-3);
+  
+  /* ================= Visual ================= */
+  background-color: var(--white);
   &::-webkit-scrollbar {
     width: 6px;
   }
   
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
+    background: var(--gray-100);
+    border-radius: var(--radius-3);
   }
   
   &::-webkit-scrollbar-thumb {
-    background: #c1c1c1;
-    border-radius: 3px;
+    background: var(--gray-300);
+    border-radius: var(--radius-3);
     
     &:hover {
-      background: #a8a8a8;
+      background: var(--gray-400);
     }
   }
 `;
 
 const LineSeparator = styled.hr`
-  margin: 1.5rem 0;
-  width: 90%;
+  /* ================= Layout ================= */
   border: none;
+  
+  /* ================= Box Model ================= */
+  width: 90%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, #e2e8f0, transparent);
+  margin: var(--space-3) 0;
+
+  /* ================= Visual ================= */
+  background: linear-gradient(90deg, transparent, var(--gray-200), transparent);
 `;
 
 
 const CloseArrow = styled(MdOutlineKeyboardDoubleArrowRight)`
+  /* ================= Layout ================= */
+  margin-top: var(--space-4);
+
+  /* ================= Typography ================= */
   font-size: 1.5rem;
-  position: fixed;
-  bottom: 4vh;
-  color: #6b7280;
-  cursor: pointer;
+
+  /* ================= Visual ================= */
+  color: var(--gray-500);
+
+  /* ================= Animation ================= */
   transition: all 0.3s ease;
+
+  /* ================= Interaction ================= */
+  cursor: pointer;
   
   &:hover {
-    color: var(--slate-grey);
-    transform: translateX(4px);
+    color: var(--emerald-green);
   }
 `;
 
 const MemberContainer = styled.div`
+  /* ================= Layout ================= */
   display: flex;
-  width: 90%;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem;
-  background: white;
-  border-radius: 12px;
-  border: 1px solid #e2e8f0;
-  transition: all 0.3s ease;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   
+  /* ================= Box Model ================= */
+  width: 90%;
+  padding: var(--space-3);
+  
+  /* ================= Visual ================= */
+  background: var(--white);
+  border-radius: var(--radius-5);
+  border: 1px solid var(--gray-200);
+  box-shadow: 0 1px var(--space-2) rgba(0, 0, 0, 0.05);
+
+  /* ================= Animation ================= */
+  transition: all 0.3s ease;
+  
+  /* ================= Interaction ================= */
   &:hover {
-    background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
-    border-color: #016532;
+    background: linear-gradient(135deg, var(--gray-50) 0%, var(--white) 100%);
+    border-color: var(--emerald-green);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(1, 101, 50, 0.1);
+    box-shadow: 0 var(--space-2) var(--space-4) rgba(1, 101, 50, 0.1);
   }
 `;
 
 const MemberInfo = styled.div`
+  /* ================= Layout ================= */
   display: flex;
   align-items: center;
-  font-size: 0.9rem;
   flex: 1;
   min-width: 0;
-  
-  @media (max-width: 900px) {
-    font-size: 0.8rem;
+
+  /* ================= Typography ================= */
+  /* mobile - 基础样式 */
+  font-size: var(--space-3);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-3);
   }
-  @media (max-width: 700px) {
-    font-size: 0.7rem;
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: var(--space-4);
   }
 `;
 
 const LoadingIndicator = styled.div`
+  /* ================= Layout ================= */
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100px;
+
+  /* ================= Box Model ================= */
   width: 100%;
-  color: #6b7280;
-  font-family: 'Roboto', sans-serif;
-  font-size: 1rem;
+  height: 5rem;
+
+  /* ================= Typography ================= */
+  font-family: var(--font-roboto);
+  font-size: var(--space-4);
+
+  /* ================= Visual ================= */
+  color: var(--gray-500);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    height: 5.5rem;
+    font-size: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    height: 6.25rem;
+    font-size: var(--space-5);
+  }
 `;
 
 const Avatar = styled.img`
-  width: 44px;
-  height: 44px;
+  /* ================= Layout ================= */
+  display: block;
+
+  /* ================= Box Model ================= */
+  /* mobile - 基础样式 */
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-right: var(--space-2);
+
+  /* ================= Visual ================= */
   border-radius: 50%;
-  margin-right: 12px;
   object-fit: cover;
-  border: 2px solid #e2e8f0;
+  border: 2px solid var(--gray-200);
+
+  /* ================= Animation ================= */
   transition: all 0.3s ease;
-  
+
+  /* ================= Interaction ================= */
   &:hover {
-    border-color: #016532;
+    border-color: var(--emerald-green);
     transform: scale(1.05);
   }
 
-  @media (max-width: 1000px) {
-    width: 36px;
-    height: 36px;
-    margin-right: 10px;
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: 2rem;
+    height: 2rem;
+    margin-right: var(--space-2);
   }
-  @media (max-width: 700px) {
-    width: 32px;
-    height: 32px;
-    margin-right: 8px;
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: 2.25rem;
+    height: 2.25rem;
+    margin-right: var(--space-3);
   }
-  @media (max-width: 400px) {
-    width: 28px;
-    height: 28px;
-    margin-right: 6px;
+
+  /* large desktop >= 1280px */
+  @media (min-width: 80rem) {
+    width: 2.75rem;
+    height: 2.75rem;
+    margin-right: var(--space-4);
   }
 `;
 
 const Username = styled.div`
+  /* ================= Layout ================= */
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  min-width: 0;
   flex: 1;
+  min-width: 0;
 `;
 
 const UserNameText = styled.p`
-  margin: 0;
-  font-weight: 600;
-  color: #1a202c;
-  font-size: 0.9rem;
+  /* ================= Layout ================= */
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+
+  /* ================= Box Model ================= */
+  margin: 0;
   max-width: 100%;
-  
-  @media (max-width: 900px) {
-    font-size: 0.8rem;
-  }
-  @media (max-width: 700px) {
-    font-size: 0.75rem;
+
+  /* ================= Typography ================= */
+  /* mobile - 基础样式 */
+  font-size: var(--space-3);
+
+  /* ================= Visual ================= */
+  color: var(--primary-text);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-4);
   }
 `;
 
 const AdminLabel = styled.span`
-  color: #dc2626;
-  font-size: 0.7rem;
-  font-weight: 700;
-  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
-  padding: 0.2rem 0.5rem;
-  border-radius: 12px;
-  border: 1px solid #fca5a5;
-  margin-top: 0.25rem;
+  /* ================= Layout ================= */
+  display: inline-block;
+
+  /* ================= Box Model ================= */
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+
+  /* ================= Typography ================= */
+  font-size: var(--space-3);
+  font-weight: var(--weight-bold);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+
+  /* ================= Visual ================= */
+  color: var(--emerald-green);
+  background: var(--white);
+  border-radius: var(--radius-5);
+  border: 1px solid var(--emerald-green);
 `;
 
 const MemberLabel = styled.span`
-  color: #6b7280;
-  font-size: 0.7rem;
-  font-weight: 500;
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
-  padding: 0.2rem 0.5rem;
-  border-radius: 12px;
-  border: 1px solid #d1d5db;
-  margin-top: 0.25rem;
+  /* ================= Layout ================= */
+  display: inline-block;
+
+  /* ================= Box Model ================= */
+  margin-top: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+
+  /* ================= Typography ================= */
+  font-size: var(--space-3);
+  font-weight: var(--weight-medium);
   text-transform: uppercase;
   letter-spacing: 0.5px;
+
+  /* ================= Visual ================= */
+  color: var(--gray-500);
+  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  border-radius: var(--radius-5);
+  border: 1px solid #d1d5db;
 `;
 
 const ButtonContainer = styled.div`
+  /* ================= Layout ================= */
   display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  height: 40px;
-  position: fixed;
-  bottom: 10vh;
+  justify-content: center;
+  
+  /* ================= Box Model ================= */
+  height: 2.5rem;
+  gap: var(--space-4);
 `;
 
 const RemoveIcon = styled(AiOutlineMinusCircle)<{ isSelected: boolean }>`
-  margin-left: 8px;
-  cursor: pointer;
-  font-size: 22px;
-  color: ${(props) => (props.isSelected ? "#dc2626" : "#9ca3af")};
-  transition: all 0.3s ease;
+  /* ================= Layout ================= */
+  display: block;
   flex-shrink: 0;
-  padding: 4px;
+
+  /* ================= Box Model ================= */
+  /* mobile - 基础样式 */
+  margin-left: var(--space-2);
+  padding: var(--space-1);
+
+  /* ================= Typography ================= */
+  /* mobile - 基础样式 */
+  font-size: 1.25rem;
+
+  /* ================= Visual ================= */
+  color: ${(props) => (props.isSelected ? "var(--error-red)" : "var(--gray-400)")};
   border-radius: 50%;
-  
+
+  /* ================= Animation ================= */
+  transition: all 0.3s ease;
+
+  /* ================= Interaction ================= */
+  cursor: pointer;
+
   &:hover {
-    color: ${(props) => (props.isSelected ? "#b91c1c" : "#6b7280")};
-    background-color: ${(props) => (props.isSelected ? "#fee2e2" : "#f3f4f6")};
+    color: ${(props) => (props.isSelected ? "var(--error-red-dark)" : "var(--gray-500)")};
+    background-color: ${(props) => (props.isSelected ? "var(--error-red-light)" : "var(--gray-100)")};
     transform: scale(1.1);
   }
 
-  @media (max-width: 1100px) {
-    margin-left: 4px;
-    font-size: 20px;
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    margin-left: var(--space-3);
+    font-size: 1.375rem;
   }
 `;
 
@@ -337,21 +435,20 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
   const { groupId } = useParams();
   const [isExiting, setIsExiting] = useState<boolean>(false);
   const [showConfirmation, setShowConfirmation] = useState<boolean>(false);
-  const [userRole, setUserRole] = useState<"ADMIN" | "MEMBER" | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const [isRemoveMode, setIsRemoveMode] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
   const navigate = useNavigate();
 
+  // Use React Query hook (13.6)
+  const { data: roleData } = useUserRole(groupId ? Number(groupId) : undefined);
+
+  // Sync role data to state
   useEffect(() => {
-    const initialize = async () => {
-      if (groupId) {
-        const role = await fetchUserRole(Number(groupId));
-        setUserRole(role);
-        console.log(role);
-      }
-    };
-    initialize();
-  }, [groupId]);
+    if (roleData) {
+      setUserRole(roleData);
+    }
+  }, [roleData]);
 
   useEffect(() => {
     const fetchGroupMembers = async () => {
@@ -471,7 +568,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
     return "Exit Group";
   };
 
-  return (
+  const modalContent = (
     <>
       <Overlay
         onClick={(e) => {
@@ -482,11 +579,12 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
       >
         <MembersListContainer>
           <TitleContainer>
-            <MembersLogo />
-            <Title>Group Members</Title>
+            <HeaderSection>
+              {/* <MembersLogo /> */}
+              <HeaderTitle >Members</HeaderTitle>
+            </HeaderSection>
           </TitleContainer>
-          <BottomContainer>
-            <ListContainer>
+          <ListContainer>
               {loading ? (
                 <LoadingIndicator>Loading members...</LoadingIndicator>
               ) : error ? (
@@ -519,7 +617,9 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
                   </MemberContainer>
                 ))
               )}
-            </ListContainer>
+          </ListContainer>
+          <BottomContainer>
+            
             <LineSeparator />
             <ButtonContainer>
               <Button variant="primary" onClick={handleActionButton} disabled={isExiting}>
@@ -547,6 +647,8 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
       )}
     </>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default RoomMembersComponent;

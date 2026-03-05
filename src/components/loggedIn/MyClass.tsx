@@ -1,16 +1,21 @@
-import React, { useState, useEffect, useRef } from "react";
-import { FiTag } from "react-icons/fi";
+import React, { useState, useEffect } from "react";
+import { FiX } from "react-icons/fi";
 import styled from "styled-components";
 import { CiSearch } from "react-icons/ci";
 import { useLocation, useParams } from "react-router-dom";
-import apiClient from "../loggedOut/apiClient";
-import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useJoinRoom } from "./useJoinRoom";
-import { RoomInfoResponse } from "./CreateRoomComponent";
 import Button from "../button";
 import LabeledInputWithCount from "../Input";
-import ModalHeader from "../Header";
+
+import { 
+  useTagGroups, 
+  useAvailableGroups, 
+  useRemoveRoomsFromTag, 
+  useAddRoomsToTag,
+  usePrefetchGroupInfo,
+} from '../../hooks/queries/useTag';
+import type { AvailableGroup, TagInfoGroup } from '../../api/tag.api';
 import {
   PageButton as PagerButton,
   PaginationCenter,
@@ -35,6 +40,14 @@ import {
   InfoItemText,
   CardDescription,
   ActionButton,
+  ModalBackdrop,
+  ModalContainer,
+  ModalCloseButton,
+  HeaderSection,
+  HeaderTitle,
+  HeaderSubTitle,
+  ButtonContainer,
+  FixedButtonContainer,
 } from "../SharedComponents";
 import {
   MdKeyboardArrowLeft,
@@ -52,60 +65,44 @@ const Container = styled.div`
   width: 100%;
   box-sizing: border-box;
   position: relative;
-  height: calc(100vh - 5rem);
+  height: calc(100vh - 3.5rem);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   font-family: var(--font-sans);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    height: calc(100vh - 4.5rem);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    height: calc(100vh - 5rem);
+  }
 `;
 
 const TopContainer = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2vh 4vw;
+  padding: var(--space-2) var(--space-3);
   width: 100%;
-  height: 12vh;
+  height: auto;
+  min-height: 3rem;
   box-sizing: border-box;
-  // background-color: lightblue;
-`;
 
-const TitleContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 10px;
-`;
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    padding: var(--space-3) var(--space-4);
+    min-height: 4rem;
+  }
 
-const HeaderContainer = styled.div`
-  display: flex;
-  align-items: center;
-  width: 20%;
-  // justify-content: space-between;
-`;
-
-const ButtonContainer = styled.div`
-  display: flex;
-  align-items: center;
-  gap: 0.8rem;
-  height: 2.5rem;
-  overflow: hidden;
-`;
-const Title = styled.p`
-  font-family: var(--font-sans);
-  font-weight: var(--weight-bold);
-  font-size: var(--space-7);
-  color: var(--color-text);
-  letter-spacing: -0.5px;
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  margin-right: 2rem;
-`;
-
-const Tag = styled(FiTag)`
-  color: var(--color-text);
-  font-size: var(--space-7);
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    padding: 2vh 4vw;
+    height: 12vh;
+  }
 `;
 
 const Footer = styled.div`
@@ -114,20 +111,50 @@ const Footer = styled.div`
   align-items: center;
   gap: var(--space-1);
   position: relative;
-  height: 1rem;
+  height: auto;
   width: 100%;
   background-color: white;
-  padding: var(--space-6) 0;
-  margin-top: var(--space-5);
+  padding: var(--space-3) 0;
+  margin-top: var(--space-2);
   flex-shrink: 0;
   font-family: var(--font-sans);
   font-weight: var(--weight-regular);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    padding: var(--space-5) 0;
+    margin-top: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    padding: var(--space-6) 0;
+    margin-top: var(--space-5);
+  }
 `;
 
 const PaginationCenterFixed = styled(PaginationCenter)`
   flex: 0;
-  gap: var(--space-2);
-  min-width: calc(6 * (var(--space-9) + var(--space-3)) + 5 * var(--space-2));
+  gap: var(--space-1);
+  min-width: calc(4 * (var(--space-8) + var(--space-2)) + 3 * var(--space-1));
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    gap: var(--space-2);
+    min-width: calc(5 * (var(--space-9) + var(--space-3)) + 4 * var(--space-2));
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    gap: var(--space-2);
+    min-width: calc(6 * (var(--space-9) + var(--space-3)) + 5 * var(--space-2));
+  }
+`;
+
+// MyClass 专用的房间容器，减去 TopContainer 占用的空间
+const MyClassRoomsContainer = styled(SharedSearchRoomsContainer)`
+  max-height: calc(100% - 14vh);
+  height: 100%;  /* 填满父容器剩余空间 */
 `;
 
 const SelectableCard = styled(IntegrationCard)<{ $selected?: boolean }>`
@@ -156,58 +183,37 @@ const EditSelectBadge = styled.button<{ $selected?: boolean }>`
   position: absolute;
   top: var(--space-3);
   right: var(--space-3);
-  width: var(--space-6);
-  height: var(--space-6);
-  border-radius: 999px;
-  border: 1px solid #e2e8f0;
-  background: #ffffff;
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 50%;
+  outline: none;
+  border: 1px solid ${props => (props.$selected ? "var(--emerald-green)" : "#cbd5e1")};
+  background: ${props => (props.$selected ? "var(--emerald-green)" : "#ffffff")};
   display: inline-flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  color: ${props => (props.$selected ? "#016532" : "#94a3b8")};
+  color: ${props => (props.$selected ? "#ffffff" : "transparent")};
   z-index: 2;
+  transition: all 0.2s ease;
+  padding: 0;
+
+  &:hover {
+    outline: none;
+    transform: scale(1.05);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  svg {
+    width: 0.875rem;
+    height: 0.875rem;
+    fill: currentColor;
+  }
 `;
 
-
-interface TagGroupItem {
-  groupId: number;
-  groupName: string;
-  isBinded: boolean;
-}
-
-interface TagGroupListResponse {
-  code: number;
-  message: string;
-  data: TagGroupItem[];
-}
-
-interface TagInfoGroup {
-  groupId: number;
-  groupName: string;
-  groupAdmin: number;
-  groupDescription: string;
-}
-
-interface TagGroups {
-  pageNum: number;
-  pageSize: number;
-  pages: number;
-  total: number;
-  data: TagInfoGroup[];
-}
-
-interface TagInfoData {
-  tagId: number;
-  tagName: string;
-  tagGroups: TagGroups;
-}
-
-interface TagInfoResponse {
-  code: number;
-  message: string;
-  data: TagInfoData;
-}
 
 interface MyClassProps {
   title?: string;
@@ -220,76 +226,57 @@ interface LocationState {
   tagId?: number;
 }
 
-const Overlay = styled.div`
-  position: fixed;
-  top: 7vh;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
-`;
 
-const Modal = styled.div`
-  background: white;
-  border: none;
-  border-radius: 16px;
-  padding: 2.5rem;
-  width: 440px;
-  max-width: 500px;
-  min-width: 320px;
+const StyledModalContainer = styled(ModalContainer)`
+  background: var(--white);
+  width: 90%;
+  max-width: 28rem;
+  height: 80vh;
+  max-height: 38rem;
+  border-radius: var(--radius-12);
   position: relative;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-  height: 450px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px var(--shadow-25);
   display: flex;
   flex-direction: column;
-
-  @media (max-width: 1200px) {
-    width: 35%;
-  }
-  @media (max-width: 1000px) {
-    width: 45%;
-  }
-  @media (max-width: 700px) {
-    width: 55%;
-  }
-  @media (max-width: 600px) {
-    width: 70%;
-    padding: 1.5rem;
-  }
-  @media (max-width: 400px) {
-    width: 85%;
-    padding: 1rem;
+  padding: var(--space-5);
+  cursor: default;
+  
+  @media (min-width: 48rem) {
+    width: 28rem;
+    height: 38rem;
+    padding: var(--space-7);
   }
 `;
 
-const ErrorModal = styled(Modal)`
-  width: 25%;
+const ErrorModalContainer = styled(StyledModalContainer)`
+  width: 90%;
+  max-width: 25rem;
+  min-width: auto;
+  height: auto;
+  min-height: 12rem;
   text-align: center;
-  padding: 2rem;
 `;
 
 const ErrorCloseButton = styled.button`
   margin-top: 1.5rem;
-  padding: 0.5rem 2rem;
-  background-color: #016532;
+  padding: var(--space-3) var(--space-6);
+  background-color: var(--emerald-green);
   color: white;
   border: none;
-  border-radius: 8px;
+  border-radius: var(--radius-5);
   cursor: pointer;
+  font-family: var(--font-sans);
+  font-weight: var(--weight-semibold);
 
   &:hover {
-    background-color: #014a24;
+    filter: brightness(0.95);
   }
 `;
 
 const SearchContainer = styled.div`
-  padding: 1.5rem 2rem;
-  background: #white;
-  // border-bottom: 1px solid #e9ecef;
+  padding: var(--space-5) var(--space-7);
+  background: var(--white);
   position: relative;
   height: 40px;
 `;
@@ -306,45 +293,47 @@ const SearchIcon = styled(CiSearch)`
   top: 50%;
   transform: translateY(-50%);
   font-size: 1.5rem;
-  color: #6c757d;
+  color: var(--muted-6b7280);
   z-index: 1;
 `;
 
 const RoomList = styled.ul`
-  list-style: none;
-  padding: 1rem;
-  height: 600px;
+  padding: var(--space-4) var(--space-7) var(--space-7);
+  height: 20rem;
   overflow-y: auto;
-  margin: 2vh 0;
-  background: white;
+  background: var(--white);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-  border-radius: 8px;
-  width: 400px;
-  max-width: 100%;
-  @media (max-width: 1000px) {
-    padding: 0.8rem;
+  border-radius: var(--radius-5);
+  width: 25rem;
+  position: relative;
+  &::-webkit-scrollbar {
+    width: 6px;
   }
-  @media (max-width: 700px) {
-    padding: 0.5rem;
+  
+  &::-webkit-scrollbar-track {
+    background: transparent;
   }
-  @media (max-width: 400px) {
-    padding: 0.3rem;
+  
+  &::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+    border-radius: 3px;
   }
+
 `;
 
 const AddRoomContainer = styled.div`
   display: flex;
   height: 15px;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.75rem;
-  margin-bottom: 0.5rem;
-  background-color: #f8fafc;
-  border-radius: 8px;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  margin-bottom: var(--space-2);
+  background-color: var(--input-bg);
+  border-radius: var(--radius-5);
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: #f1f5f9;
+    background-color: var(--gray-100);
   }
 
   &:first-child {
@@ -357,87 +346,73 @@ const AddRoomContainer = styled.div`
 `;
 
 const AddRoomTitle = styled.p`
-  font-family: Roboto;
-  font-size: 1.1rem;
-  color: black;
+  font-family: var(--font-roboto);
+  font-size: var(--space-5);
+  color: var(--text-primary);
   margin: 0;
 `;
 
 const BindedRoomTitle = styled(AddRoomTitle)`
-  color: #888;
-  // font-style: italic;
+  color: var(--gray-500);
 `;
 
 const Checkbox = styled.input.attrs({ type: "checkbox" })`
-  width: 1rem;
-  height: 1rem;
-  background-color: white;
   appearance: none;
-  border: 1px solid black;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid var(--emerald-green);
+  border-radius: 4px;
+  background-color: white;
   cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
 
   &:checked {
-    background-color: white;
-    border-color: #016532;
+    background-color: var(--emerald-green);
   }
 
   &:checked::after {
     content: "✓";
-    color: #016532;
-    font-size: 16px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    top: -2px;
-    left: 0px;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    font-size: 0.875rem;
+    font-weight: bold;
+  }
+
+  &:hover {
+    border-color: var(--emerald-green);
+    box-shadow: 0 0 0 2px rgba(1, 101, 50, 0.1);
   }
 `;
 
 const ErrorMessage = styled.p`
-  color: red;
+  color: var(--error-red);
   text-align: center;
-  margin: 0.5rem 0;
+  margin: var(--space-2) 0;
   width: 100%;
+  font-family: var(--font-sans);
 `;
 
 const NoRoomsMessage = styled.p`
   text-align: center;
   width: 100%;
-  margin-top: 2rem;
-  font-size: 1.1rem;
-  color: #666;
+  margin-top: var(--space-8);
 
-  @media (max-width: 500px) {
-    font-size: 0.8rem;
+  /* mobile - 基础样式 */
+  font-size: var(--space-4);
+
+  color: var(--muted-6b7280);
+  font-family: var(--font-sans);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-5);
   }
-`;
-
-const OverlayButtonContainer = styled.div`
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 1rem;
-  justify-content: center;
-  height: 40px;
-  
-  @media (max-width: 500px) {
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-`;
-
-// 新增：用于限定按钮长度的容器
-const FixedButtonContainer = styled.div`
-  width: 6rem;           /* 固定宽度，按需调整 */
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  flex-shrink: 0;
-`;
-
-const TagIcon = styled(FiTag)`
-  color: #white;
-  font-size: 1.5rem;
 `;
 
 interface AddRoomProps {
@@ -457,81 +432,9 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
   const [selectedRooms, setSelectedRooms] = useState<{
     [key: number]: boolean;
   }>({});
-  const [tagGroups, setTagGroups] = useState<TagGroupItem[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  // Add useRef to reference the modal container
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  // Add click outside handler
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        modalRef.current &&
-        !modalRef.current.contains(event.target as Node)
-      ) {
-        onClose();
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [onClose]);
-
-  useEffect(() => {
-    fetchTagGroups();
-  }, [roomSearch, tagId]);
-
-  const fetchTagGroups = async () => {
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const requestData = {
-        tagId: tagId,
-        keyword: roomSearch || undefined,
-      };
-
-      console.log("Fetching tag groups with params:", requestData);
-
-      const response = await apiClient.post<TagGroupListResponse>(
-        "/v1/tag/get_group_list_for_tag",
-        requestData
-      );
-
-      console.log("Tag groups API response:", response.data);
-
-      if (response.data.code === 200) {
-        // Store all groups
-        setTagGroups(response.data.data);
-      } else {
-        setError(
-          `API returned error code: ${response.data.code}, message: ${response.data.message}`
-        );
-      }
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          "Axios error in fetchTagGroups:",
-          error.response?.data || error.message
-        );
-        setError(
-          error.response?.data?.message ||
-            "Failed to fetch groups. Please try again."
-        );
-      } else {
-        console.error("Unexpected error in fetchTagGroups:", error);
-        setError(
-          "An unexpected error occurred while fetching groups. Please try again."
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  // Use custom hook (13.6) - already has cache config (13.15)
+  const { data: tagGroups = [], isLoading, error } = useAvailableGroups(tagId, roomSearch);
 
   const handleCheckboxChange = (groupId: number, isBinded: boolean) => {
     if (!isBinded) {
@@ -551,33 +454,42 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
   };
 
   return (
-    <Overlay>
-      <Modal ref={modalRef}>
-      <ModalHeader icon={TagIcon} title="Add Room to Tag" onClose={onClose} />
+    <ModalBackdrop onClick={onClose}  className="modal-backdrop-right">
+      <StyledModalContainer onClick={(e) => e.stopPropagation()}>
+        {/* 右上角关闭按钮 */}
+        <ModalCloseButton onClick={onClose} aria-label="Close">
+          <FiX size={24} />
+        </ModalCloseButton>
+
+        {/* 顶部标题 */}
+        <HeaderSection>
+          <HeaderTitle>Add Room to Tag</HeaderTitle>
+          <HeaderSubTitle>Select rooms to add to this tag.</HeaderSubTitle>
+        </HeaderSection>
+
         <SearchContainer>
           <SearchWrapper>
-          <SearchIcon />
+            <SearchIcon />
             <LabeledInputWithCount
-                  variant="withIcon"
-                  value={roomSearch}
-                  onChange={(e) => setRoomSearch(e.target.value)}
-                  disabled={isProcessing}
-                  placeholder="Search in MY ROOMS"
-                  type="text"
-                  showCount={false} // 搜索框通常不需要字数统计
-
+              variant="withIcon"
+              value={roomSearch}
+              onChange={(e) => setRoomSearch(e.target.value)}
+              disabled={isProcessing}
+              placeholder="Search in MY ROOMS"
+              type="text"
+              showCount={false}
             />
-            </SearchWrapper>
+          </SearchWrapper>
         </SearchContainer>
         <RoomList>
           {isLoading ? (
-            <p>Loading...</p>
+            <NoRoomsMessage>Loading...</NoRoomsMessage>
           ) : error ? (
-            <ErrorMessage>{error}</ErrorMessage>
+            <ErrorMessage>{error.message}</ErrorMessage>
           ) : tagGroups.length === 0 ? (
             <NoRoomsMessage>No rooms found</NoRoomsMessage>
           ) : (
-            tagGroups.map((room) => (
+            tagGroups.map((room: AvailableGroup) => (
               <AddRoomContainer key={room.groupId}>
                 <Checkbox
                   type="checkbox"
@@ -604,16 +516,15 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
             <ErrorMessage>Processing your request...</ErrorMessage>
           )}
         </RoomList>
-        <OverlayButtonContainer>
+        <ButtonContainer>
           <FixedButtonContainer>
             <Button onClick={handleAddRooms} disabled={isProcessing}>
               {isProcessing ? "Adding..." : "Add"}
             </Button>
           </FixedButtonContainer>
-        </OverlayButtonContainer>
-        
-      </Modal>
-    </Overlay>
+        </ButtonContainer>
+      </StyledModalContainer>
+    </ModalBackdrop>
   );
 };
 
@@ -624,14 +535,15 @@ interface ErrorPopupProps {
 
 const ErrorPopup: React.FC<ErrorPopupProps> = ({ message, onClose }) => {
   return (
-    <Overlay>
-      <ErrorModal>
+    <ModalBackdrop onClick={onClose} className="modal-backdrop-right">
+      <ErrorModalContainer onClick={(e) => e.stopPropagation()}>
         <ErrorMessage>{message}</ErrorMessage>
         <ErrorCloseButton onClick={onClose}>Close</ErrorCloseButton>
-      </ErrorModal>
-    </Overlay>
+      </ErrorModalContainer>
+    </ModalBackdrop>
   );
 };
+
 
 const MyClass: React.FC<MyClassProps> = ({
   title: propTitle,
@@ -646,11 +558,7 @@ const MyClass: React.FC<MyClassProps> = ({
 
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [isAddRoomVisible, setIsAddRoomVisible] = useState(false);
-  const [tagGroups, setTagGroups] = useState<TagInfoGroup[]>([]);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isAddingRooms, setIsAddingRooms] = useState(false);
+
   const [errorPopup, setErrorPopup] = useState<string | null>(null);
   const [selectedRoomsToRemove, setSelectedRoomsToRemove] = useState<{
     [key: number]: boolean;
@@ -668,6 +576,30 @@ const MyClass: React.FC<MyClassProps> = ({
     setRedirectPath,
   } = useJoinRoom();
 
+  // Use custom hook (13.6) - already has cache config (13.15)
+  const { data: tagGroupsData, isLoading, error } = useTagGroups(
+    tagId, 
+    { pageNum: pagination.pageNum, pageSize: pagination.pageSize }
+  );
+
+  // Extract data and pagination from response
+  const tagGroups = tagGroupsData?.data ?? [];
+
+  // Update pagination when data changes
+  useEffect(() => {
+    if (tagGroupsData) {
+      setPagination({
+        pageSize: tagGroupsData.pageSize,
+        pageNum: tagGroupsData.pageNum,
+        total: tagGroupsData.total,
+        pages: tagGroupsData.pages,
+      });
+    }
+  }, [tagGroupsData]);
+
+  // Prefetch hook for group info (replaces direct fetchGroupInfo call)
+  const prefetchGroupInfo = usePrefetchGroupInfo();
+
   useEffect(() => {
     if (redirectPath) {
       navigate(redirectPath);
@@ -675,107 +607,19 @@ const MyClass: React.FC<MyClassProps> = ({
     }
   }, [redirectPath, navigate, setRedirectPath]);
 
-  useEffect(() => {
-    fetchTagGroups();
-  }, [tagId, currentPage, isEditMode]);
-
-  const fetchRoomInfo = async (groupId: number) => {
-    try {
-      const url = `/v1/group/get_group_info?groupId=${groupId}`;
-
-      try {
-        const response = await apiClient.get<RoomInfoResponse>(url);
-
-        if (
-          response.status === 200 &&
-          response.data.code === 200 &&
-          response.data.data
-        ) {
-          return response.data.data;
-        } else {
-          console.error(
-            "API returned successfully but with unexpected format or error code"
-          );
-        }
-      } catch (apiError) {
-        console.error("API request failed:", apiError);
-      }
-    } catch (error: any) {
-      console.error("Error message:", error.message);
-    }
-  };
-
   const handleRoomClick = async (groupId: number) => {
     if (isEditMode) return;
 
-    const roomDetails = await fetchRoomInfo(groupId);
-    if (roomDetails) {
-      //tag中的room默认已加入
-      handleJoinClick(groupId, roomDetails.groupType, true);
-    }
-  };
+    // Use prefetch hook to get group info (13.3: Component never calls API directly)
+    const info = await prefetchGroupInfo(groupId);
 
-  const fetchTagGroups = async () => {
-    if (!tagId) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const requestData = {
-        tagId: tagId,
-        pageRequestVO: {
-          pageNum: currentPage,
-          pageSize: pagination.pageSize,
-        },
-      };
-
-      console.log("Fetching tag groups with params:", requestData);
-
-      const response = await apiClient.post<TagInfoResponse>(
-        "/v1/tag/get_tag_info",
-        requestData
-      );
-
-      console.log("Tag groups API response:", response.data);
-
-      if (response.data.code === 200) {
-        setTagGroups(response.data.data.tagGroups.data);
-        setPagination({
-          pageSize: response.data.data.tagGroups.pageSize,
-          pageNum: response.data.data.tagGroups.pageNum,
-          total: response.data.data.tagGroups.total,
-          pages: response.data.data.tagGroups.pages,
-        });
-      } else {
-        setError(
-          `API returned error code: ${response.data.code}, message: ${response.data.message}`
-        );
-      }
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          "Axios error in fetchTagGroups:",
-          error.response?.data || error.message
-        );
-        setError(
-          error.response?.data?.message ||
-            "Failed to fetch groups. Please try again."
-        );
-      } else {
-        console.error("Unexpected error in fetchTagGroups:", error);
-        setError(
-          "An unexpected error occurred while fetching groups. Please try again."
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
+    //tag中的room默认已加入
+    handleJoinClick(groupId, info.groupType, true);
   };
 
   const handlePageChange = (page: number): void => {
     if (page > 0 && page <= pagination.pages) {
-      setCurrentPage(page);
+      setPagination(prev => ({ ...prev, pageNum: page }));
     }
   };
 
@@ -818,6 +662,9 @@ const MyClass: React.FC<MyClassProps> = ({
     }));
   };
 
+  // Use custom mutation hook (13.6)
+  const removeRoomsMutation = useRemoveRoomsFromTag();
+
   const toggleEditMode = async (): Promise<void> => {
     if (isLoading) return; // Prevent toggle while loading
 
@@ -827,142 +674,57 @@ const MyClass: React.FC<MyClassProps> = ({
         .filter((key) => selectedRoomsToRemove[parseInt(key)])
         .map((key) => parseInt(key));
 
-      if (roomIdsToRemove.length > 0) {
-        await removeRoomsFromTag(roomIdsToRemove);
+      if (roomIdsToRemove.length > 0 && tagId) {
+        await removeRoomsMutation.mutateAsync({ 
+          tagId: tagId.toString(), 
+          roomIds: roomIdsToRemove 
+        });
       }
     }
 
     // Clear selections when toggling modes
     setSelectedRoomsToRemove({});
     setIsEditMode(!isEditMode);
-    setCurrentPage(1);
+    setPagination(prev => ({ ...prev, pageNum: 1 }));
   };
 
-  const removeRoomsFromTag = async (groupIds: number[]): Promise<void> => {
-    if (!tagId || groupIds.length === 0) return;
-
-    setIsLoading(true);
-    setError(null);
-
-    try {
-      const requestData = {
-        groupIdList: groupIds,
-        tagId: tagId,
-      };
-
-      console.log("Removing rooms from tag with params:", requestData);
-
-      const response = await apiClient.post(
-        "/v1/tag/remove_group",
-        requestData
-      );
-
-      console.log("Remove group API response:", response.data);
-
-      if (response.data.code === 200) {
-        // Refresh the group list after successful removal
-        fetchTagGroups();
-      } else {
-        setError(
-          `API returned error code: ${response.data.code}, message: ${response.data.message}`
-        );
-      }
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          "Axios error in removeRoomsFromTag:",
-          error.response?.data || error.message
-        );
-        setError(
-          error.response?.data?.message ||
-            "Failed to remove rooms. Please try again."
-        );
-      } else {
-        console.error("Unexpected error in removeRoomsFromTag:", error);
-        setError(
-          "An unexpected error occurred while removing rooms. Please try again."
-        );
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleAddRooms = async (selectedRoomIds: number[]): Promise<void> => {
+  // Use custom mutation hook (13.6)
+  const addRoomsMutation = useAddRoomsToTag();
+  
+  // Handle add rooms with custom error handling
+  const handleAddRoomsWithError = (selectedRoomIds: number[]): void => {
     if (!tagId || selectedRoomIds.length === 0) {
       console.error("Tag ID or selected room IDs are missing");
       return;
     }
-
-    setIsAddingRooms(true);
-    setError(null);
-
-    try {
-      const requestData = {
-        groupIdList: selectedRoomIds,
-        tagId: tagId,
-        tagName: title,
-      };
-
-      console.log("Adding rooms to tag with params:", requestData);
-
-      const response = await apiClient.post("/v1/tag/add_group", requestData);
-
-      console.log("Add group API response:", response.data);
-
-      if (response.data.code === 200) {
-        // Refresh the tag groups after adding
-        fetchTagGroups();
-        // Close the modal only after successful API call
-        setIsAddRoomVisible(false);
-      } else if (response.data.code === 1001) {
-        // Parameter validation error
-        setErrorPopup(
-          "Parameters are invalid for tag binding group. Please check your inputs and try again."
-        );
-      } else {
-        setError(
-          `API returned error code: ${response.data.code}, message: ${response.data.message}`
-        );
+    
+    addRoomsMutation.mutate(
+      { tagId, title, roomIds: selectedRoomIds },
+      {
+        onSuccess: () => {
+          // Close the modal only after successful API call
+          setIsAddRoomVisible(false);
+        },
+        onError: (error) => {
+          if (error.message.includes('Parameters are invalid')) {
+            setErrorPopup(
+              "Parameters are invalid for tag binding group. Please check your inputs and try again."
+            );
+          } else {
+            console.error("Failed to add rooms:", error.message);
+          }
+        },
       }
-    } catch (error: unknown) {
-      if (axios.isAxiosError(error)) {
-        console.error(
-          "Axios error in addRooms:",
-          error.response?.data || error.message
-        );
-
-        // Check for parameter validation error in the caught error
-        if (error.response?.data?.code === 1001) {
-          setErrorPopup(
-            "Parameters are invalid for tag binding group. Please check your inputs and try again."
-          );
-        } else {
-          setError(
-            error.response?.data?.message ||
-              "Failed to add rooms. Please try again."
-          );
-        }
-      } else {
-        console.error("Unexpected error in addRooms:", error);
-        setError(
-          "An unexpected error occurred while adding rooms. Please try again."
-        );
-      }
-    } finally {
-      setIsAddingRooms(false);
-    }
+    );
   };
+
+
+
+
 
   return (
     <Container>
       <TopContainer>
-        <HeaderContainer>
-          <TitleContainer>
-            <Tag />
-            <Title>{title}</Title>
-          </TitleContainer>
-        </HeaderContainer>
         {/* 将按钮移到顶部 */}
         <ButtonContainer>
 
@@ -975,7 +737,6 @@ const MyClass: React.FC<MyClassProps> = ({
                   setSelectedRoomsToRemove({});
                   setIsEditMode(false);
                 }}
-                $isLoading={isLoading}
               >
                 Cancel
               </Button>
@@ -987,7 +748,7 @@ const MyClass: React.FC<MyClassProps> = ({
                 $isEditMode={isEditMode}
                 $isLoading={isLoading}
               >
-                {isLoading ? "Processing..." : "Submit"}
+                Submit
               </Button>
             </FixedButtonContainer>
           </>
@@ -997,7 +758,6 @@ const MyClass: React.FC<MyClassProps> = ({
               <Button
                 variant="cancel"
                 onClick={() => setIsAddRoomVisible(true)}
-                $isLoading={isLoading}
               >
                 + Add Room
               </Button>
@@ -1006,7 +766,6 @@ const MyClass: React.FC<MyClassProps> = ({
               <Button
                 onClick={toggleEditMode}
                 $isEditMode={isEditMode}
-                $isLoading={isLoading}
               >
                 Edit
               </Button>
@@ -1018,9 +777,9 @@ const MyClass: React.FC<MyClassProps> = ({
 
         {isAddRoomVisible && (
           <AddRoomOverlay
-            onAddRooms={handleAddRooms}
+            onAddRooms={handleAddRoomsWithError}
             onClose={() => setIsAddRoomVisible(false)}
-            isProcessing={isAddingRooms}
+            isProcessing={addRoomsMutation.isPending}
             tagId={tagId}
           />
         )}
@@ -1032,13 +791,15 @@ const MyClass: React.FC<MyClassProps> = ({
         )}
       </TopContainer>
 
-      <SharedSearchRoomsContainer>
+      <MyClassRoomsContainer>
         {isLoading ? (
           <LoadingContainer>Loading...</LoadingContainer>
+        ) : error ? (
+          <EmptyState title="Error" description={error.message} />
         ) : tagGroups.length === 0 ? (
-          <EmptyState>No rooms found</EmptyState>
+          <EmptyState title="No rooms found" description="You haven't joined any rooms yet. Create a new room or join existing ones." />
         ) : (
-          tagGroups.map((room) => {
+          tagGroups.map((room: TagInfoGroup) => {
             const isSelected = !!selectedRoomsToRemove[room.groupId];
             return (
               <SelectableCard key={room.groupId} $selected={isEditMode && isSelected}>
@@ -1090,30 +851,30 @@ const MyClass: React.FC<MyClassProps> = ({
             );
           })
         )}
-      </SharedSearchRoomsContainer>
+      </MyClassRoomsContainer>
       <Footer>
         <PagerButton
           onClick={() => handlePageChange(1)}
-          disabled={currentPage === 1}
+          disabled={pagination.pageNum === 1}
         >
           <MdKeyboardDoubleArrowLeft/>
         </PagerButton>
 
         <PagerButton
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
+          onClick={() => handlePageChange(pagination.pageNum - 1)}
+          disabled={pagination.pageNum === 1}
         >
           <MdKeyboardArrowLeft/>
         </PagerButton>
 
         <PaginationCenterFixed>
-          {getPageItems(currentPage, pagination.pages).map((item, idx) =>
+          {getPageItems(pagination.pageNum, pagination.pages).map((item, idx) =>
             item === "ellipsis" ? (
               <EllipsisBlock key={`mc-ellipsis-${idx}`}>...</EllipsisBlock>
             ) : (
               <PageNumber
                 key={`mc-page-${item}`}
-                $active={currentPage === item}
+                $active={pagination.pageNum === item}
                 onClick={() => handlePageChange(item)}
               >
                 {item}
@@ -1123,15 +884,15 @@ const MyClass: React.FC<MyClassProps> = ({
         </PaginationCenterFixed>
 
         <PagerButton
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === pagination.pages}
+          onClick={() => handlePageChange(pagination.pageNum + 1)}
+          disabled={pagination.pageNum === pagination.pages}
         >
           <MdKeyboardArrowRight/>
         </PagerButton>
 
         <PagerButton
           onClick={() => handlePageChange(pagination.pages)}
-          disabled={currentPage === pagination.pages}
+          disabled={pagination.pageNum === pagination.pages}
         >
           <MdKeyboardDoubleArrowRight/>
         </PagerButton>
