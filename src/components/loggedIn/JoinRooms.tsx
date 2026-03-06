@@ -219,12 +219,12 @@ const LoadingText = styled.p`
 `;
 
 const ErrorContainer = styled.div`
-  background: #f8d7da;
-  color: #721c24;
+  background: var(--error-red-light);
+  color: var(--error-red-dark);
   text-align: center;
   padding: var(--space-4);
   margin: var(--space-4) 0;
-  border: 1px solid #f5c6cb;
+  border: 1px solid var(--error-red);
   border-radius: var(--radius-5);
   font-family: var(--font-sans);
 `;
@@ -258,7 +258,7 @@ const ErrorMessage = styled.div`
 
 const ErrorModalButton = styled.button<{ $success?: boolean }>`
   padding: var(--space-3) var(--space-6);
-  background: ${props => props.$success ? 'var(--emerald-green)' : '#dc3545'};
+  background: ${props => props.$success ? 'var(--emerald-green)' : 'var(--error-red)'};
   color: white;
   border: none;
   border-radius: var(--radius-5);
@@ -300,7 +300,10 @@ const passwordValidationSchema = Yup.object({
 const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
   const [roomSearch, setRoomSearch] = useState<string>("");
   const navigate = useNavigate();
-  
+
+  // Only fetch when user has entered a search keyword
+  const hasSearched = roomSearch.trim() !== "";
+
   // Use React Query instead of manual fetching with cache
   const { data: groupListData, isLoading, error } = useGroupList({
     keyword: roomSearch || undefined,
@@ -309,7 +312,7 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
       pageSize: 100, // Fetch more rooms at once
       pageNum: 1,
     },
-  });
+  }, hasSearched);
 
   // 处理 Overlay 点击关闭
   const handleOverlayClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -530,7 +533,7 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
             )}
             {showErrorModal && (
               <PasswordModalContainer onClick={(e) => e.stopPropagation()}>
-                <ErrorMessage style={{ color: joinSuccess ? "var(--emerald-green)" : "#dc3545" }}>
+                <ErrorMessage style={{ color: joinSuccess ? "var(--emerald-green)" : "var(--error-red)" }}>
                   {errorMessage}
                 </ErrorMessage>
                 <ErrorModalButton

@@ -14,11 +14,11 @@ import {
 } from '../../api/group.api';
 
 // Query: Get group list
-export function useGroupList(params: GetGroupListRequest) {
+export function useGroupList(params: GetGroupListRequest, enabled?: boolean) {
   return useQuery({
     queryKey: ['groupList', params],
     queryFn: () => fetchGroupList(params),
-    enabled: !!params.groupDemonTypeEnum,
+    enabled: enabled !== undefined ? enabled : !!params.groupDemonTypeEnum,
   });
 }
 

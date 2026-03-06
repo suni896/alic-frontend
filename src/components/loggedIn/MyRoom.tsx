@@ -286,21 +286,24 @@ const ReplyContent = styled.div`
   text-overflow: ellipsis;
   white-space: nowrap;
   word-break: break-word;
-  
+
   /* ================= Box Model ================= */
+  /* mobile - 基础样式 */
   max-width: 12rem;
-  
+
   /* ================= Visual ================= */
   color: var(--color-text);
 
   /* ================= Typography ================= */
   font-size: var(--space-4);
-  
-  @media (min-width: 30rem) {
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
     max-width: 15rem;
   }
-  
-  @media (min-width: 48rem) {
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
     max-width: 18.75rem;
   }
 `;

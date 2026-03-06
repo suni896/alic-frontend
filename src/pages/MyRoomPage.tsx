@@ -15,6 +15,12 @@ const Container = styled.div`
     width: 100vw;
     
     @media (min-width: 48rem) {
+      margin-left: 14rem;
+      width: calc(100vw - 14rem);
+    }
+
+    /* desktop >= 1024px */
+    @media (min-width: 64rem) {
       margin-left: 16rem;
       width: calc(100vw - 16rem);
     }

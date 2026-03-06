@@ -24,7 +24,7 @@ const StyledTextArea = styled.textarea<{ $hasError?: boolean }>`
   padding: 0.75rem 0.875rem;
   font-size: 0.9rem;
 
-  font-family: 'Roboto', sans-serif;
+  font-family: var(--font-roboto);
   background-color: var(--input-bg);
   transition: all 0.2s ease;
   box-sizing: border-box;
@@ -105,7 +105,7 @@ const ModalInput = styled.input<ModalInputProps>`
 const ErrorMessage = styled.div`
   color: var(--error-red);
   font-size: 0.875rem;
-  font-family: 'Roboto', sans-serif;
+  font-family: var(--font-roboto);
   margin-top: 0.5rem;
   display: flex;
   align-items: center;
@@ -122,7 +122,7 @@ const CharacterCount = styled.div`
   color: var(--muted-6b7280);
   text-align: right;
   margin-top: 0.25rem;
-  font-family: 'Roboto', sans-serif;
+  font-family: var(--font-roboto);
 `;
 
 

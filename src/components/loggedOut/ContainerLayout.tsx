@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import LeftSection from "./LeftSection";
-import coverImage from "../../assets/banner.png";
+import coverImage from "../../assets/banner.webp";
 
 import { useEffect } from "react";
 import { useState } from "react";

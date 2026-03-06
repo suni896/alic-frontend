@@ -3,10 +3,13 @@ import { createPortal } from "react-dom";
 import { MdOutlineKeyboardDoubleArrowRight } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { styled } from "styled-components";
-import apiClient from "../loggedOut/apiClient";
 import { useUser } from "./UserContext";
 import { AiOutlineMinusCircle } from "react-icons/ai";
-import { useUserRole } from "../../hooks/queries/useGroup";
+import { useUserRole, useGroupMemberList, useRemoveGroupMember } from "../../hooks/queries/useGroup";
+import type { GroupMember } from "../../api/group.api";
+
+// Keep for backwards compatibility with MyRoom.tsx
+export const membersCache = new Map<number, GroupMember[]>();
 import Button from "../button";
 import ConfirmationModal from "../ConfirmationModal";
 import {
@@ -358,9 +361,9 @@ const MemberLabel = styled.span`
 
   /* ================= Visual ================= */
   color: var(--gray-500);
-  background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+  background: linear-gradient(135deg, var(--gray-100) 0%, var(--gray-200) 100%);
   border-radius: var(--radius-5);
-  border: 1px solid #d1d5db;
+  border: 1px solid var(--gray-300);
 `;
 
 const ButtonContainer = styled.div`
@@ -410,16 +413,7 @@ const RemoveIcon = styled(AiOutlineMinusCircle)<{ isSelected: boolean }>`
   }
 `;
 
-export const membersCache = new Map<number, GroupMember[]>();
 
-export interface GroupMember {
-  userId: number;
-  userEmail: string;
-  userName: string;
-  userPortrait: string;
-  groupMemberType: "ADMIN" | "MEMBER";
-  selected?: boolean;
-}
 
 interface RoomMembersComponentProps {
   onClose: () => void;
@@ -450,43 +444,23 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
     }
   }, [roleData]);
 
-  useEffect(() => {
-    const fetchGroupMembers = async () => {
-      const cachedMembers = membersCache.get(Number(groupId));
-      console.log("fetched members", groupId, cachedMembers);
-      if (cachedMembers) {
-        setMembers(cachedMembers);
-        setLoading(false);
-        return;
-      }
-      try {
-        setLoading(true);
-        const response = await apiClient.get(
-          `/v1/group/get_group_member_list?groupId=${groupId}`
-        );
+  // Use React Query hook
+  const { data: membersData, isLoading, error: queryError, refetch: refetchMembers } = useGroupMemberList(
+    groupId ? Number(groupId) : undefined
+  );
 
-        console.log("get_group_member_list response", response);
-        if (response.data.code === 200) {
-          const fetchedMembers = response.data.data;
-          setMembers(fetchedMembers);
-          membersCache.set(Number(groupId), fetchedMembers); // Cache the result
-          console.log("fetched members", groupId, fetchedMembers);
-        } else {
-          throw new Error(
-            response.data.message || "Failed to fetch group members"
-          );
-        }
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "An unknown error occurred"
-        );
-        console.error("Error fetching group members: ", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchGroupMembers();
-  }, [groupId]);
+  // Sync query data to state
+  useEffect(() => {
+    if (membersData?.code === 200) {
+      setMembers(membersData.data);
+    }
+    if (queryError) {
+      setError(queryError instanceof Error ? queryError.message : "An unknown error occurred");
+    }
+    setLoading(isLoading);
+  }, [membersData, queryError, isLoading]);
+
+  const removeGroupMemberMutation = useRemoveGroupMember();
 
   const handleExitGroup = async () => {
     if (!groupId) return;
@@ -498,34 +472,25 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
         console.log("admin");
         // Remove selected members
         for (const memberId of selectedMembers) {
-          await apiClient.post("/v1/group/remove_group_member", {
+          await removeGroupMemberMutation.mutateAsync({
             groupId: Number(groupId),
             removeMemberId: memberId,
           });
         }
 
         // Refresh member list
-        const response = await apiClient.get(
-          `/v1/group/get_group_member_list?groupId=${groupId}`
-        );
-        if (response.data.code === 200) {
-          setMembers(response.data.data);
-          membersCache.delete(Number(groupId));
-        }
+        await refetchMembers();
 
         setIsRemoveMode(false);
         setSelectedMembers([]);
       } else {
         // Exit group for self
-        const response = await apiClient.post("/v1/group/remove_group_member", {
+        await removeGroupMemberMutation.mutateAsync({
           groupId: Number(groupId),
-          removeMemberId: userInfo?.userId,
+          removeMemberId: userInfo?.userId!,
         });
 
-        if (response.data.code === 200) {
-          membersCache.delete(Number(groupId));
-          navigate("/search-rooms");
-        }
+        navigate("/search-rooms");
       }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Operation failed");

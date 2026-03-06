@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "styled-components";
+import alicLogo from "../../assets/alic.png";
 
 interface LeftSectionProps {
   currentImage: string;
@@ -90,7 +91,7 @@ const LeftSection: React.FC<LeftSectionProps> = ({
 }) => {
   return (
     <LeftSectionContainer $currentImage={currentImage}>
-      <CornerLogo src="/alic.png" alt="ALIC Logo" />
+      <CornerLogo src={alicLogo} alt="ALIC Logo" />
       <OverlayTitle>Welcome to ALIC</OverlayTitle>
     </LeftSectionContainer>
   );

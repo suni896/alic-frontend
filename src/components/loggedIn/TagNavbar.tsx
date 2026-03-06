@@ -1,37 +1,12 @@
-import { useState, useEffect } from "react";
+
 import { MdKeyboardArrowLeft } from "react-icons/md";
 import { FiMenu, FiTag } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { styled } from "styled-components";
-import apiClient from "../loggedOut/apiClient";
 import { UserProfile } from "../UserProfile";
+import { useTagGroups } from "../../hooks/queries/useTag";
 
-interface TagInfoGroup {
-  groupId: number;
-  groupName: string;
-  groupAdmin: number;
-  groupDescription: string;
-}
 
-interface TagGroups {
-  pageNum: number;
-  pageSize: number;
-  pages: number;
-  total: number;
-  data: TagInfoGroup[];
-}
-
-interface TagInfoData {
-  tagId: number;
-  tagName: string;
-  tagGroups: TagGroups;
-}
-
-interface TagInfoResponse {
-  code: number;
-  message: string;
-  data: TagInfoData;
-}
 
 const Container = styled.div`
   position: fixed;
@@ -49,8 +24,8 @@ const Container = styled.div`
 
   /* tablet >= 768px */
   @media (min-width: 48rem) {
-    left: 16rem;
-    width: calc(100vw - 16rem);
+    left: 14rem;
+    width: calc(100vw - 14rem);
     height: 4.5rem;
     border-left: 1px solid var(--color-line);
   }
@@ -239,39 +214,14 @@ interface TagNavbarProps {
 }
 
 const TagNavbar: React.FC<TagNavbarProps> = ({ tagId, onMenuClick }) => {
-  const [tagData, setTagData] = useState<TagInfoData | null>(null);
+
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const fetchTagData = async () => {
-      if (tagId) {
-        const requestData = {
-          tagId: tagId,
-          pageRequestVO: {
-            pageNum: 1,
-            pageSize: 1,
-          },
-        };
-
-        try {
-          const response = await apiClient.post<TagInfoResponse>(
-            "/v1/tag/get_tag_info",
-            requestData
-          );
-          if (response.data.code === 200) {
-            console.log("Tags data:", response.data.data);
-            setTagData(response.data.data);
-          }
-        } catch (error) {
-          console.error("Error fetching tag data:", error);
-        }
-      } else {
-        console.log("No groupId provided");
-      }
-    };
-
-    fetchTagData();
-  }, [tagId]);
+  // Use React Query to fetch tag data
+  const { data: tagData } = useTagGroups(
+    tagId || undefined,
+    { pageNum: 1, pageSize: 1 }
+  );
 
   return (
     <Container>
@@ -281,7 +231,7 @@ const TagNavbar: React.FC<TagNavbarProps> = ({ tagId, onMenuClick }) => {
         </MenuButton>
         <BackArrow onClick={() => navigate("/search-rooms")} />
         <TagIcon />
-        <Title>{tagData?.tagName}</Title>
+        <Title>{tagData?.tagName || ''}</Title>
       </TitleContainer>
       <RightContainer>
         <VerticalDivider />

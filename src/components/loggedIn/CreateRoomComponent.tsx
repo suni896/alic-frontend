@@ -157,16 +157,16 @@ const RadioCard = styled.label<{ checked: boolean; disabled?: boolean }>`
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  border: 1px solid ${(props) => (props.checked ? "var(--emerald-green)" : "#e5e7eb")};
+  border: 1px solid ${(props) => (props.checked ? "var(--emerald-green)" : "var(--gray-200)")};
   border-radius: 12px;
-  background-color: ${(props) => (props.checked ? "#f0fdf4" : "#f9fafb")};
+  background-color: ${(props) => (props.checked ? "var(--green-50)" : "var(--gray-50)")};
   cursor: ${(props) => (props.disabled ? "not-allowed" : "pointer")};
   transition: all 0.2s ease;
   opacity: ${(props) => (props.disabled ? 0.6 : 1)};
 
   &:hover:not(:disabled) {
-    border-color: ${(props) => (props.checked ? "var(--emerald-green)" : "#9ca3af")};
-    background-color: ${(props) => (props.checked ? "#f0fdf4" : "#f3f4f6")};
+    border-color: ${(props) => (props.checked ? "var(--emerald-green)" : "var(--gray-400)")};
+    background-color: ${(props) => (props.checked ? "var(--green-50)" : "var(--gray-100)")};
   }
 
   input {
@@ -177,7 +177,7 @@ const RadioCard = styled.label<{ checked: boolean; disabled?: boolean }>`
 const RadioIcon = styled.div<{ checked: boolean }>`
   width: 1.25rem;
   height: 1.25rem;
-  border: 1px solid ${(props) => (props.checked ? "var(--emerald-green)" : "#d1d5db")};
+  border: 1px solid ${(props) => (props.checked ? "var(--emerald-green)" : "var(--gray-300)")};
   border-radius: 50%;
   background-color: ${(props) => (props.checked ? "var(--emerald-green)" : "transparent")};
   position: relative;
@@ -209,16 +209,16 @@ const RadioTitle = styled.div`
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-roboto);
   font-weight: 600;
   font-size: 0.875rem;
-  color: #1f2937;
+  color: var(--color-text);
 `;
 
 const RadioDescription = styled.div`
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-roboto);
   font-size: 0.75rem;
-  color: #6b7280;
+  color: var(--muted-6b7280);
 `;
 
 const CheckboxContainer = styled.div`
@@ -226,14 +226,14 @@ const CheckboxContainer = styled.div`
   align-items: center;
   gap: 0.75rem;
   padding: 1rem;
-  background-color: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background-color: var(--gray-50);
+  border: 1px solid var(--gray-200);
   border-radius: 12px;
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: #f1f5f9;
-    border-color: #cbd5e1;
+    background-color: var(--gray-100);
+    border-color: var(--gray-300);
   }
 `;
 
@@ -267,7 +267,7 @@ const CheckboxInput = styled.input`
 `;
 
 const CheckboxLabel = styled.label`
-  font-family: "Roboto", sans-serif;
+  font-family: var(--font-roboto);
   font-weight: 500;
   font-size: 0.875rem;
   color: var(--slate-grey);
@@ -287,7 +287,7 @@ const FieldArrayContainer = styled.div`
   padding: 1.5rem;
   background: var(--white);
   border-radius: var(--radius-12);
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--gray-200);
 `;
 
 const AssistantHeader = styled.div`
@@ -296,20 +296,20 @@ const AssistantHeader = styled.div`
   gap: 0.75rem;
   margin-bottom: 1.5rem;
   padding-bottom: 1rem;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 2px solid var(--gray-200);
 `;
 
 const AssistantTitle = styled.h3`
   margin: 0;
   font-size: 1.1rem;
   font-weight: 600;
-  color: #1e293b;
+  color: var(--color-text);
 `;
 
 const ColumnHeader = styled.div`
   font-weight: 600;
   font-size: 0.875rem;
-  color: #475569;
+  color: var(--gray-600);
   text-align: left;
   display: flex;
   align-items: center;
@@ -333,10 +333,10 @@ const HelpIcon = styled.span`
   height: 1rem;
   font-size: 0.75rem;
   line-height: 1;
-  color: #64748b;
-  border: 1px solid #cbd5e1;
+  color: var(--muted-6b7280);
+  border: 1px solid var(--gray-300);
   border-radius: 9999px;
-  background-color: #f1f5f9;
+  background-color: var(--gray-100);
   cursor: 
 `;
 
@@ -351,11 +351,11 @@ const AddAssistantRow = styled.div`
   gap: 0.6rem;
   align-items: start;
   padding: 0.75rem 0;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--gray-200);
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: #e0f2fe;
+    background-color: var(--blue-100);
     border-radius: 8px;
     margin: 0 -0.5rem;
     padding: 0.75rem 0.5rem;
@@ -388,11 +388,11 @@ const FeedbackAssistantRow = styled.div`
   gap: 0.3rem;
   align-items: start;
   padding: 0.5rem 0;
-  border-bottom: 1px solid #e2e8f0;
+  border-bottom: 1px solid var(--gray-200);
   transition: background-color 0.2s ease;
 
   &:hover {
-    background-color: #e0f2fe;
+    background-color: var(--blue-100);
     border-radius: 8px;
     margin: 0 -0.5rem;
     padding: 0.5rem 0.5rem;
@@ -423,7 +423,7 @@ const HeaderRow = styled.div`
   gap: 0.3rem;
   padding: 0.5rem 0;
   margin-bottom: 0.75rem;
-  border-bottom: 1px solid #cbd5e1;
+  border-bottom: 1px solid var(--gray-300);
   align-items: center;
 
   /* tablet >= 768px */
@@ -518,7 +518,7 @@ const ToggleSwitch = styled.label`
   span {
     width: 3rem;
     height: 1.5rem;
-    background-color: #d1d5db;
+    background-color: var(--gray-300);
     border-radius: 0.75rem;
     position: relative;
     transition: background-color 0.3s ease;
@@ -538,7 +538,7 @@ const ToggleSwitch = styled.label`
   }
 
   input:checked + span {
-    background-color: #016532;
+    background-color: var(--emerald-green);
 
     &::before {
       transform: translateX(1.5rem);
@@ -582,10 +582,10 @@ const ToggleSwitch = styled.label`
   }
 
   /* desktop >= 1024px */
-  @media (min-width: 64rem)      width: 3rem;
-      height: 1 {
+  @media (min-width: 64rem) {
     span {
-.5rem;
+      width: 3rem;
+      height: 1.5rem;
 
       &::before {
         width: 1rem;
@@ -603,7 +603,7 @@ const ToggleSwitch = styled.label`
 
 const RemoveIcon = styled(IoIosRemoveCircleOutline)`
   font-size: 1.2rem;
-  color: #ef4444;
+  color: var(--error-red);
   cursor: pointer;
   justify-self: center;
   align-self: center;
@@ -614,7 +614,7 @@ const RemoveIcon = styled(IoIosRemoveCircleOutline)`
   justify-content: center;
 
   &:hover {
-    color: #dc2626;
+    color: var(--error-red-dark);
     transform: scale(1.1);
   }
 
@@ -654,7 +654,7 @@ const AddIconContainer = styled.div`
 
 const AddIcon = styled(IoIosAddCircleOutline)`
   font-size: 1.2rem;
-  color: #10b981;
+  color: var(--emerald-green);
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
@@ -664,7 +664,7 @@ const AddIcon = styled(IoIosAddCircleOutline)`
   height: 1.2rem;
 
   &:hover {
-    color: #059669;
+    color: var(--emerald-green-dark);
     transform: scale(1.1);
   }
 
@@ -679,29 +679,11 @@ const AddIcon = styled(IoIosAddCircleOutline)`
     font-size: 1.5rem;
     height: 1.5rem;
   }
-
-  /* mobile - 基础样式 */
-  font-size: 1rem;
-  height: 2rem;
-
-  /* tablet >= 768px */
-  @media (min-width: 48rem) {
-    font-size: 1.2rem;
-    height: 2.25rem;
-  }
-
-  /* desktop >= 1024px */
-  @media (min-width: 64rem) {
-    font-size: 1.5rem;
-    height: 2.5rem;
-  }
 `;
 
 const ModalButtonContainer = styled(ButtonContainer)`
   margin-top: 2rem;
 `;
-
-
 
 const validationSchema = (showAssistants: boolean) =>
   Yup.object().shape({

@@ -1437,10 +1437,11 @@ export const ModalBackdrop = styled.div`
   display: flex;
   justify-content: center;
   align-items: center;
-  
+
   /* ================= Box Model ================= */
   inset: 0;
-  
+  z-index: 10000;
+
   /* ================= Visual ================= */
   background: rgba(17, 24, 39, 0.35);
   z-index: 10000;

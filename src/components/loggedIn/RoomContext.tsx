@@ -7,6 +7,7 @@ import React, {
   SetStateAction,
 } from "react";
 import { useSidebarRooms, useMainAreaRooms, useTags, useCreateRoom } from "../../hooks/queries/useRoom";
+import { useUser } from "./UserContext";
 import axios from "axios";
 
 interface RoomGroup {
@@ -83,6 +84,9 @@ const RoomContext = createContext<RoomContextType | undefined>(undefined);
 export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const { userInfo } = useUser();
+  const isLoggedIn = !!userInfo;
+
   const [sidebarRoomListRequest, setSidebarRoomListRequest] = useState<GetGroupListRequest>({
     keyword: "",
     groupDemonTypeEnum: "JOINEDROOM",
@@ -107,10 +111,19 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
     },
   });
 
-  // Use React Query hooks
-  const { data: sidebarRoomsData } = useSidebarRooms(sidebarRoomListRequest);
-  const { data: mainAreaRoomsData } = useMainAreaRooms(mainAreaRoomListRequest);
-  const { data: tagsData, refetch: refetchTags } = useTags(tagListRequest);
+  // Use React Query hooks - only enable when user is logged in
+  const { data: sidebarRoomsData } = useSidebarRooms({
+    ...sidebarRoomListRequest,
+    enabled: isLoggedIn,
+  });
+  const { data: mainAreaRoomsData } = useMainAreaRooms({
+    ...mainAreaRoomListRequest,
+    enabled: isLoggedIn,
+  });
+  const { data: tagsData, refetch: refetchTags } = useTags({
+    ...tagListRequest,
+    enabled: isLoggedIn,
+  });
   const createRoomMutation = useCreateRoom();
 
   // Extract data and pagination

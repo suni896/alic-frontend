@@ -6,9 +6,9 @@ import { useNavigate } from "react-router-dom";
 import { styled } from "styled-components";
 import CreateRoomComponent, { RoomInfoResponse } from "./CreateRoomComponent";
 import RoomMembersComponent from "./RoomMembersComponent";
-import apiClient from "../loggedOut/apiClient";
 import { FiTag} from "react-icons/fi";
-import { useUserRole } from "../../hooks/queries/useGroup";
+import { useUserRole, useGroupInfo } from "../../hooks/queries/useGroup";
+import { useTagBindedToGroup } from "../../hooks/queries/useTag";
 
 interface TagData {
   tagId: number;
@@ -400,50 +400,26 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId, onMenuClick }) => {
     }
   }, [roleData]);
 
+  // Use React Query hooks
+  const { data: tagDataResponse } = useTagBindedToGroup(groupId);
+  const { data: groupInfoData } = useGroupInfo(groupId);
+
+  // Sync data to state
   useEffect(() => {
-    const fetchTagData = async () => {
-      if (groupId) {
-        try {
-          const response = await apiClient.get(
-            `/v1/tag/get_tag_binded_group_list?groupId=${groupId}`
-          );
-          if (response.data.code === 200) {
-            setTagData(response.data.data);
-          }
-        } catch (error) {
-          console.error("Error fetching tag data:", error);
-        }
-      } else {
-        console.log("No groupId provided");
-      }
-    };
-
-    const fetchRoomInfo = async (groupId: number) => {
-      try {
-        const url = `/v1/group/get_group_info?groupId=${groupId}`;
-        const response = await apiClient.get<RoomInfoResponse>(url);
-
-        if (
-          response.status === 200 &&
-          response.data.code === 200 &&
-          response.data.data
-        ) {
-          setRoomData(response.data);
-        } else {
-          console.error(
-            "API returned successfully but with unexpected format or error code"
-          );
-        }
-      } catch (apiError) {
-        console.error("API request failed:", apiError);
-      }
-    };
-
-    fetchTagData();
-    if (groupId) {
-      fetchRoomInfo(groupId);
+    if (tagDataResponse?.code === 200) {
+      setTagData(tagDataResponse.data);
     }
-  }, [groupId]);
+  }, [tagDataResponse]);
+
+  useEffect(() => {
+    if (groupInfoData?.code === 200 && groupInfoData.data) {
+      setRoomData({
+        code: groupInfoData.code,
+        message: groupInfoData.message,
+        data: groupInfoData.data,
+      });
+    }
+  }, [groupInfoData]);
 
   return (
     <Container>

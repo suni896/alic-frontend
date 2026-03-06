@@ -33,3 +33,14 @@ export const updateUserInfo = async (data: UpdateUserInfoRequest): Promise<Updat
   const response = await apiClient.post<UpdateUserInfoResponse>('/v1/user/edit_user_info', data);
   return response.data;
 };
+
+export interface LogoutResponse {
+  code: number;
+  message: string;
+  data?: unknown;
+}
+
+export const logout = async (): Promise<LogoutResponse> => {
+  const response = await apiClient.post<LogoutResponse>('/v1/user/logout');
+  return response.data;
+};

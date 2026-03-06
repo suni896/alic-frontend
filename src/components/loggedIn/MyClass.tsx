@@ -187,13 +187,13 @@ const EditSelectBadge = styled.button<{ $selected?: boolean }>`
   height: 1.25rem;
   border-radius: 50%;
   outline: none;
-  border: 1px solid ${props => (props.$selected ? "var(--emerald-green)" : "#cbd5e1")};
-  background: ${props => (props.$selected ? "var(--emerald-green)" : "#ffffff")};
+  border: 1px solid ${props => (props.$selected ? "var(--emerald-green)" : "var(--gray-300)")};
+  background: ${props => (props.$selected ? "var(--emerald-green)" : "var(--white)")};
   display: inline-flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  color: ${props => (props.$selected ? "#ffffff" : "transparent")};
+  color: ${props => (props.$selected ? "var(--white)" : "transparent")};
   z-index: 2;
   transition: all 0.2s ease;
   padding: 0;
@@ -583,16 +583,16 @@ const MyClass: React.FC<MyClassProps> = ({
   );
 
   // Extract data and pagination from response
-  const tagGroups = tagGroupsData?.data ?? [];
+  const tagGroups = tagGroupsData?.tagGroups.data ?? [];
 
   // Update pagination when data changes
   useEffect(() => {
-    if (tagGroupsData) {
+    if (tagGroupsData?.tagGroups) {
       setPagination({
-        pageSize: tagGroupsData.pageSize,
-        pageNum: tagGroupsData.pageNum,
-        total: tagGroupsData.total,
-        pages: tagGroupsData.pages,
+        pageSize: tagGroupsData.tagGroups.pageSize,
+        pageNum: tagGroupsData.tagGroups.pageNum,
+        total: tagGroupsData.tagGroups.total,
+        pages: tagGroupsData.tagGroups.pages,
       });
     }
   }, [tagGroupsData]);

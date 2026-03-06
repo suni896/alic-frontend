@@ -4,34 +4,57 @@ import { PiSignOutBold, PiPersonBold } from "react-icons/pi";
 import { RxCross2 } from "react-icons/rx";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "./loggedIn/UserContext";
-import apiClient from "./loggedOut/apiClient";
+import { useLogout } from "../hooks/queries/useUser";
 import UserNameEdit from "./loggedIn/UserNameEdit";
 import { ModalCloseButton, HorizontalLine } from "./SharedComponents";
 
 // ============ Styled Components ============
 
 const ProfileContainer = styled.div`
+  /* ================= Layout ================= */
   display: inline-flex;
-  justify-content: flex-start;
   align-items: center;
-  gap: var(--space-4);
   cursor: pointer;
-  width: 14rem;
+  position: relative;
+
+  /* ================= Box Model ================= */
+  /* mobile - 基础样式 */
+  gap: 0;
+
+  /* ================= Visual ================= */
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    justify-content: flex-start;
+    gap: var(--space-4);
+    width: 14rem;
+  }
 `;
 
 const Avatar = styled.img`
-  width: var(--space-12);
-  height: var(--space-12);
-  position: relative;
-  border-radius: var(--radius-12);
+  /* ================= Box Model ================= */
+  /* mobile - 基础样式 */
+    width: var(--space-12);
+    height: var(--space-12);
+
+  /* ================= Visual ================= */
+  border-radius: 50%;
   object-fit: cover;
+
 `;
 
 const ProfileContent = styled.div`
-  display: flex;
-  justify-content: flex-start;
-  align-items: center;
+  /* ================= Layout ================= */
+  display: none;
+
+  /* ================= Box Model ================= */
   gap: var(--space-5);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+  }
 `;
 
 const UserTextStack = styled.div`
@@ -229,6 +252,7 @@ export const ProfilePopUp: React.FC<ProfilePopUpProps> = ({ onClose }) => {
   const navigate = useNavigate();
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
+  const logoutMutation = useLogout();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -244,15 +268,15 @@ export const ProfilePopUp: React.FC<ProfilePopUpProps> = ({ onClose }) => {
 
   const handleLogout = async () => {
     try {
-      const response = await apiClient.post("/v1/user/logout");
-      if (response.data.code === 200) {
+      const response = await logoutMutation.mutateAsync();
+      if (response.code === 200) {
         localStorage.clear();
         document.cookie =
           "jwtToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=None";
         alert("Successfully logged out!");
         navigate("/");
       } else {
-        alert(response.data.message || "Failed to log out");
+        alert(response.message || "Failed to log out");
       }
     } catch (error) {
       console.error("Error logging out", error);
@@ -370,10 +394,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({ showBackdrop = true })
             <UserName>{userInfo.userName}</UserName>
             <UserEmail>{userInfo.userEmail}</UserEmail>
           </UserTextStack>
-          {profileOpen && (
-            <ProfilePopUp onClose={() => setProfileOpen(false)} />
-          )}
         </ProfileContent>
+        {profileOpen && (
+          <ProfilePopUp onClose={() => setProfileOpen(false)} />
+        )}
       </ProfileContainer>
     );
   };

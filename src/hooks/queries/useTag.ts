@@ -5,7 +5,8 @@ import {
   fetchGroupInfo,
   removeRoomsFromTag,
   addGroupToTag,
-  type TagGroupsWithPagination,
+  fetchTagBindedToGroup,
+  type TagInfoData,
   type AvailableGroup,
   type PaginationParams,
 } from '../../api/tag.api';
@@ -19,7 +20,7 @@ export function useTagGroups(
   tagId: string | number | undefined, 
   pagination: PaginationParams
 ) {
-  return useQuery<TagGroupsWithPagination, Error>({
+  return useQuery<TagInfoData, Error>({
     queryKey: ['tagGroups', tagId?.toString(), pagination],
     queryFn: () => fetchTagGroups(tagId!.toString(), pagination),
     enabled: !!tagId,
@@ -80,5 +81,14 @@ export function useAddRoomsToTag() {
       // Invalidate tag groups to refresh the list
       queryClient.invalidateQueries({ queryKey: ['tagGroups'] });
     },
+  });
+}
+
+// Query: Get tags binded to a group
+export function useTagBindedToGroup(groupId: number | undefined) {
+  return useQuery({
+    queryKey: ['tagBindedToGroup', groupId],
+    queryFn: () => fetchTagBindedToGroup(groupId!),
+    enabled: !!groupId,
   });
 }

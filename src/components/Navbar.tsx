@@ -20,7 +20,16 @@ const Container = styled.div`
   border-bottom: 1px solid var(--color-line);
   box-sizing: border-box;
   
+  /* tablet >= 768px */
   @media (min-width: 48rem) {
+    left: 14rem;
+    width: calc(100vw - 14rem);
+    height: 4.5rem;
+    border-left: 1px solid var(--color-line);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
     left: 16rem;
     width: calc(100vw - 16rem);
     height: 5rem;
@@ -68,6 +77,7 @@ const RightContainer = styled.div`
 
 
 const SearchContainer = styled.div`
+  /* mobile - 基础样式 */
   width: 12rem;
   height: 2.5rem;
   padding: var(--space-3) var(--space-4);
@@ -77,18 +87,21 @@ const SearchContainer = styled.div`
   justify-content: space-between;
   align-items: center;
   box-sizing: border-box;
-  
-  @media (min-width: 30rem) {
-    width: 16rem;
-  }
-  
+
+  /* tablet >= 768px */
   @media (min-width: 48rem) {
-    width: 20rem;
+    width: 16rem;
     height: 3rem;
     padding: var(--space-5);
   }
-  
+
+  /* desktop >= 1024px */
   @media (min-width: 64rem) {
+    width: 20rem;
+  }
+
+  /* large desktop >= 1280px */
+  @media (min-width: 80rem) {
     width: 24rem;
   }
 `;

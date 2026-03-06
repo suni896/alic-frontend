@@ -131,6 +131,7 @@ export interface GroupMember {
   userName: string;
   userEmail: string;
   userPortrait: string;
+  groupMemberType: "ADMIN" | "MEMBER";
 }
 
 export interface GetGroupMemberListResponse {

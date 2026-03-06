@@ -28,15 +28,7 @@ export interface TagInfoGroup {
 export interface TagInfoResponse {
   code: number;
   message: string;
-  data: {
-    tagGroups: {
-      data: TagInfoGroup[];
-      pageNum: number;
-      pageSize: number;
-      total: number;
-      pages: number;
-    };
-  };
+  data: TagInfoData;
 }
 
 export interface PaginationParams {
@@ -52,10 +44,16 @@ export interface TagGroupsWithPagination {
   pages: number;
 }
 
+export interface TagInfoData {
+  tagId: number;
+  tagName: string;
+  tagGroups: TagGroupsWithPagination;
+}
+
 export const fetchTagGroups = async (
   tagId: string,
   pagination: PaginationParams
-): Promise<TagGroupsWithPagination> => {
+): Promise<TagInfoData> => {
   const requestData = {
     tagId,
     pageRequestVO: pagination,
@@ -67,7 +65,7 @@ export const fetchTagGroups = async (
   );
 
   if (response.data.code === 200) {
-    return response.data.data.tagGroups;
+    return response.data.data;
   }
   
   throw new Error(
@@ -237,5 +235,17 @@ export interface GetTagListResponse {
 
 export const fetchTagList = async (data: GetTagListRequest): Promise<GetTagListResponse> => {
   const response = await apiClient.post<GetTagListResponse>('/v1/tag/get_tag_list', data);
+  return response.data;
+};
+
+// Get tag binded to a specific group
+export interface TagBindedResponse {
+  code: number;
+  message: string;
+  data: Tag[];
+}
+
+export const fetchTagBindedToGroup = async (groupId: number): Promise<TagBindedResponse> => {
+  const response = await apiClient.get<TagBindedResponse>(`/v1/tag/get_tag_binded_group_list?groupId=${groupId}`);
   return response.data;
 };

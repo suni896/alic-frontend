@@ -8,28 +8,32 @@ import {
 import { fetchTagList, type GetTagListRequest } from '../../api/tag.api';
 
 // Query: Get sidebar rooms (JOINEDROOM)
-export function useSidebarRooms(params: GetGroupListRequest) {
+export function useSidebarRooms(params: GetGroupListRequest & { enabled?: boolean }) {
+  const { enabled, ...requestParams } = params;
   return useQuery({
-    queryKey: ['sidebarRooms', params],
-    queryFn: () => fetchGroupList(params),
-    enabled: !!params.groupDemonTypeEnum,
+    queryKey: ['sidebarRooms', requestParams],
+    queryFn: () => fetchGroupList(requestParams),
+    enabled: enabled !== false && !!requestParams.groupDemonTypeEnum,
   });
 }
 
 // Query: Get main area rooms (PUBLICROOM)
-export function useMainAreaRooms(params: GetGroupListRequest) {
+export function useMainAreaRooms(params: GetGroupListRequest & { enabled?: boolean }) {
+  const { enabled, ...requestParams } = params;
   return useQuery({
-    queryKey: ['mainAreaRooms', params],
-    queryFn: () => fetchGroupList(params),
-    enabled: !!params.groupDemonTypeEnum,
+    queryKey: ['mainAreaRooms', requestParams],
+    queryFn: () => fetchGroupList(requestParams),
+    enabled: enabled !== false && !!requestParams.groupDemonTypeEnum,
   });
 }
 
 // Query: Get tags list
-export function useTags(params: GetTagListRequest) {
+export function useTags(params: GetTagListRequest & { enabled?: boolean }) {
+  const { enabled, ...requestParams } = params;
   return useQuery({
-    queryKey: ['tags', params],
-    queryFn: () => fetchTagList(params),
+    queryKey: ['tags', requestParams],
+    queryFn: () => fetchTagList(requestParams),
+    enabled: enabled !== false,
   });
 }
 
