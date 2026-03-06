@@ -879,7 +879,7 @@ export const IntegrationCard = styled.div`
   flex-direction: column;
   justify-content: flex-start;
   align-items: flex-start;
-  
+
   /* ================= Box Model ================= */
   width: 85%;
   max-height: 100%;  /* 不超过 grid 行高度 */

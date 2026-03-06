@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { FiX } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-import Button from "../button";
+import Button from "../ui/Button";
 import { useCreateTag } from "../../hooks/queries/useTagMutations";
 import {
   ModalBackdrop,
@@ -16,7 +16,7 @@ import {
   FixedButtonContainer,
   Input as SharedInput,
   ErrorText,
-} from "../SharedComponents";
+} from "../ui/SharedComponents";
 
 interface CreateNewTagProps {
   onClose: () => void;
@@ -102,6 +102,7 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({
           <HeaderTitle>Create New Tag</HeaderTitle>
           <HeaderSubTitle>Create a new tag for your class.</HeaderSubTitle>
         </HeaderSection>
+
 
         {/* Tag Name 字段 */}
         <InputLabel>Tag Name</InputLabel>

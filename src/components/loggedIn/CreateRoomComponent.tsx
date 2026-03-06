@@ -11,8 +11,8 @@ import { MdLock, MdPublic } from "react-icons/md";
 import { FiX } from "react-icons/fi";
 import { useParams } from "react-router-dom";
 import { useRoomContext } from "./RoomContext";
-import Button from "../button";
-import AutoResizeTextarea from "../Textarea";
+import Button from "../ui/Button";
+import AutoResizeTextarea from "../ui/Textarea";
 import { useUserRole, useEditGroup, useGroupInfo } from "../../hooks/queries/useGroup";
 import {
   ModalCloseButton,
@@ -25,7 +25,7 @@ import {
   Input as SharedInput,
   ErrorText,
   ModalBackdrop
-} from "../SharedComponents";
+} from "../ui/SharedComponents";
 
 
 

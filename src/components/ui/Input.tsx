@@ -110,7 +110,7 @@ const ErrorMessage = styled.div`
   display: flex;
   align-items: center;
   gap: 0.25rem;
-  
+
   &::before {
     content: "⚠";
     font-size: 0.75rem;

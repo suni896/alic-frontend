@@ -5,8 +5,8 @@ import { CiSearch } from "react-icons/ci";
 import { useLocation, useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useJoinRoom } from "./useJoinRoom";
-import Button from "../button";
-import LabeledInputWithCount from "../Input";
+import Button from "../ui/Button";
+import LabeledInputWithCount from "../ui/Input";
 
 import { 
   useTagGroups, 
@@ -48,7 +48,7 @@ import {
   HeaderSubTitle,
   ButtonContainer,
   FixedButtonContainer,
-} from "../SharedComponents";
+} from "../ui/SharedComponents";
 import {
   MdKeyboardArrowLeft,
   MdKeyboardArrowRight,
@@ -164,7 +164,11 @@ const SelectableCard = styled(IntegrationCard)<{ $selected?: boolean }>`
     props.$selected
       ? "0 0 0 2px rgba(1, 101, 50, 0.15)"
       : "0 1px 2px rgba(16, 24, 40, 0.04)"};
-  overflow: hidden;
+
+  /* tablet >= 768px: only apply overflow hidden on larger screens */
+  @media (min-width: 48rem) {
+    overflow: hidden;
+  }
 
   &::after {
     content: "";

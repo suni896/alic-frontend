@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { styled } from "styled-components";
 import { useLocation, useParams } from "react-router-dom";
-import Layout from "../components/loggedOut/Layout";
+import Layout from "../components/ui/Layout";
 import Sidebar from "../components/loggedIn/Sidebar";
 import MyClass from "../components/loggedIn/MyClass";
 import TagNavbar from "../components/loggedIn/TagNavbar";

@@ -1,4 +1,4 @@
-import apiClient from '../components/loggedOut/apiClient';
+import apiClient from '../lib/apiClient';
 import type { RoomGroup } from '../components/loggedIn/useJoinRoom';
 
 export interface ChatBotVO {

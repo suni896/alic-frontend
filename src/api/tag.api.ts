@@ -1,4 +1,4 @@
-import apiClient from '../components/loggedOut/apiClient';
+import apiClient from '../lib/apiClient';
 
 export interface CreateTagRequest {
   tagName: string;

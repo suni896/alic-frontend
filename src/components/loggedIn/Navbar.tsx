@@ -1,9 +1,9 @@
 import { useState } from "react";
 import styled from "styled-components";
-import LabeledInputWithCount from "./Input";
+import LabeledInputWithCount from "../ui/Input";
 import { CiSearch } from "react-icons/ci";
 import { FiMenu } from "react-icons/fi";
-import { useRoomContext } from "./loggedIn/RoomContext";
+import { useRoomContext } from "./RoomContext";
 import { UserProfile, ProfileBackdrop } from "./UserProfile";
 
 const Container = styled.div`

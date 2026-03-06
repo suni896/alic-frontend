@@ -26,7 +26,7 @@ const SmallTextarea = styled.textarea<InputProps>`
   transition: all 0.2s ease;
   line-height: 1.5;
   vertical-align: top;
-  
+
   /* 移除默认的 textarea 样式 */
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -63,17 +63,17 @@ const AutoResizeTextarea: React.FC<{
     if (textarea) {
       // 重置高度为 auto 以获取实际内容高度
       textarea.style.height = 'auto';
-      
+
       // 基础高度 (2.5rem = 40px)
       const baseHeight = 40;
       // 内容高度
       const contentHeight = textarea.scrollHeight;
       // 最大高度 (10rem = 160px)
       const maxHeight = 160;
-      
+
       // 确保至少保持基础高度
       const newHeight = Math.max(baseHeight, Math.min(contentHeight, maxHeight));
-      
+
       textarea.style.height = `${newHeight}px`;
     }
   };

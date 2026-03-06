@@ -1,6 +1,6 @@
 // ResetPasswordPage.tsx
 import React from "react";
-import Layout from "../components/loggedOut/Layout";
+import Layout from "../components/ui/Layout";
 import ResetPassword from "../components/loggedOut/ResetPassword";
 
 interface ResetPasswordPageProps {

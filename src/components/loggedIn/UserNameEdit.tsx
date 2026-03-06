@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { FiX } from 'react-icons/fi';
-import Button from '../button';
-import { useUser } from './UserContext';
-import { useUpdateUserInfo } from '../../hooks/queries/useUserMutations';
-import { Input as SharedInput } from '../SharedComponents';
+import Button from '../ui/Button';
+import { useUserInfo, useUpdateUserInfo } from '../../hooks/queries/useUser';
+import { Input as SharedInput } from '../ui/SharedComponents';
 import {
   ModalBackdrop,
   ModalContainer,
@@ -16,7 +15,7 @@ import {
   ButtonContainer,
   FixedButtonContainer,
   ErrorText,
-} from '../SharedComponents';
+} from '../ui/SharedComponents';
 
 
 interface UserNameEditProps {
@@ -25,7 +24,7 @@ interface UserNameEditProps {
 }
 
 export const UserNameEdit: React.FC<UserNameEditProps> = ({ onClose, onSuccess }) => {
-  const { userInfo, refreshUserInfo } = useUser();
+  const { userInfo, refreshUserInfo } = useUserInfo();
   const [username, setUsername] = useState(userInfo?.userName || '');
   const [error, setError] = useState('');
   const updateUserInfoMutation = useUpdateUserInfo();

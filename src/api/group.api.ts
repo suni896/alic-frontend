@@ -1,4 +1,4 @@
-import apiClient from '../components/loggedOut/apiClient';
+import apiClient from '../lib/apiClient';
 import type { RoomGroup } from '../components/loggedIn/useJoinRoom';
 
 export interface JoinGroupRequest {
@@ -158,5 +158,63 @@ export interface RemoveGroupMemberResponse {
 
 export const removeGroupMember = async (data: RemoveGroupMemberRequest): Promise<RemoveGroupMemberResponse> => {
   const response = await apiClient.post<RemoveGroupMemberResponse>('/v1/group/remove_group_member', data);
+  return response.data;
+};
+
+// Chat bot interfaces
+export interface ChatBot {
+  botId: number;
+  botName: string;
+  accessType: number;
+}
+
+export interface GetGroupChatBotListResponse {
+  code: number;
+  message: string;
+  data: ChatBot[];
+}
+
+export const fetchGroupChatBotList = async (groupId: number): Promise<GetGroupChatBotListResponse> => {
+  const response = await apiClient.get<GetGroupChatBotListResponse>(`/v1/group/get_group_chat_bot_list?groupId=${groupId}`);
+  return response.data;
+};
+
+export interface GetGroupChatBotInfoResponse {
+  code: number;
+  message: string;
+  data: ChatBot;
+}
+
+export const fetchGroupChatBotInfo = async (botId: number): Promise<GetGroupChatBotInfoResponse> => {
+  const response = await apiClient.get<GetGroupChatBotInfoResponse>(`/v1/group/get_group_chat_bot_info?botId=${botId}`);
+  return response.data;
+};
+
+// Clear history interfaces
+export interface ClearHistoryResponse {
+  code: number;
+  message: string;
+  data: string[]; // 时间戳数组
+}
+
+export const fetchClearHistory = async (groupId: number): Promise<ClearHistoryResponse> => {
+  const response = await apiClient.get<ClearHistoryResponse>(`/v1/group/clearHistory?groupId=${groupId}`);
+  return response.data;
+};
+
+// Clear AI context
+export interface ClearAIContextRequest {
+  groupId: number;
+  clearContextTime: string;
+}
+
+export interface ClearAIContextResponse {
+  code: number;
+  message: string;
+  data?: unknown;
+}
+
+export const clearAIContext = async (data: ClearAIContextRequest): Promise<ClearAIContextResponse> => {
+  const response = await apiClient.post<ClearAIContextResponse>('/v1/group/clear_ai_context', data);
   return response.data;
 };

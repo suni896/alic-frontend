@@ -5,7 +5,7 @@ import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
 import VerifyOTP from "./VerifyOTP";
 import { useSendResetEmail, useResetPassword } from "../../hooks/queries/useAuth";
-import { Input, HelperText, ErrorText, SubmitButton, SigninForm, Title, FieldGroup, ForgotPassword, AuthForm, PasswordInput } from "../SharedComponents";
+import { Input, HelperText, ErrorText, SubmitButton, SigninForm, Title, FieldGroup, ForgotPassword, AuthForm, PasswordInput } from "../ui/SharedComponents";
 
 interface ResetPasswordFormValues {
   email: string;

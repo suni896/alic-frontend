@@ -1,4 +1,4 @@
-import apiClient from '../components/loggedOut/apiClient';
+import apiClient from '../lib/apiClient';
 
 export interface UserInformation {
   userId: number;
@@ -42,5 +42,24 @@ export interface LogoutResponse {
 
 export const logout = async (): Promise<LogoutResponse> => {
   const response = await apiClient.post<LogoutResponse>('/v1/user/logout');
+  return response.data;
+};
+
+// Get user info in group context
+export interface UserInGroup {
+  userId: number;
+  userName: string;
+  userPortrait: string;
+  userEmail: string;
+}
+
+export interface GetUserInfoInGroupResponse {
+  code: number;
+  message: string;
+  data: UserInGroup;
+}
+
+export const fetchUserInfoInGroup = async (userId: number): Promise<GetUserInfoInGroupResponse> => {
+  const response = await apiClient.get<GetUserInfoInGroupResponse>(`/v1/user/get_user_info_in_group?userId=${userId}`);
   return response.data;
 };

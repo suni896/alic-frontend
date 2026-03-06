@@ -11,12 +11,12 @@ import CreateRoomComponent from "./CreateRoomComponent";
 import { FaTag } from "react-icons/fa";
 import JoinRooms from "./JoinRooms";
 import CreateNewTag from "./CreateNewTag";
-import { useUser } from "./UserContext";
+import { useUserInfo } from "../../hooks/queries/useUser";
 import { useRoomContext } from "./RoomContext";
 import type { Tag } from "./RoomContext";
 import { RoomGroup } from "./useJoinRoom";
 import { MdGroup } from "react-icons/md";
-import LabeledInputWithCount from "../Input";
+import LabeledInputWithCount from "../ui/Input";
 import logo from "../../assets/alicloggreen.png";
 import {
   HorizontalLine,
@@ -30,7 +30,7 @@ import {
   RoomInfoContainer,
   RoomTitle,
   RoomDesc,
-} from "../SharedComponents";
+} from "../ui/SharedComponents";
 
 const Logo = styled.img`
   width: 6rem;
@@ -578,7 +578,7 @@ interface SidebarProps {
 }
 
 function Sidebar({ isOpen = false, onClose }: SidebarProps) {
-  const { userInfo } = useUser();
+  const { userInfo } = useUserInfo();
   const {
     sidebarRooms,
     sidebarRoomsPagination,

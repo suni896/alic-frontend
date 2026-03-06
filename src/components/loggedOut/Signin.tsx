@@ -2,9 +2,9 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
 import ContainerLayout from "./ContainerLayout";
-import { useUser } from "../loggedIn/UserContext";
+import { useUserInfo } from "../../hooks/queries/useUser";
 import { useLogin } from "../../hooks/queries/useAuth";
-import { Input, ErrorText, SubmitButton, Title, FieldGroup, ForgotPassword, HelperText, SigninForm, AuthForm, PasswordInput } from "../SharedComponents";
+import { Input, ErrorText, SubmitButton, Title, FieldGroup, ForgotPassword, HelperText, SigninForm, AuthForm, PasswordInput } from "../ui/SharedComponents";
 
 const validationSchema = Yup.object({
   email: Yup.string()
@@ -27,7 +27,7 @@ interface FormValues {
 
 const Signin = (): JSX.Element => {
   const navigate = useNavigate();
-  const { refreshUserInfo } = useUser();
+  const { refreshUserInfo } = useUserInfo();
   const loginMutation = useLogin();
   
   const formik = useFormik<FormValues>({

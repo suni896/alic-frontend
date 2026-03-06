@@ -1,5 +1,5 @@
 import React from "react";
-import Navbar from "../Navbar";
+import Navbar from "../loggedIn/Navbar";
 import styled from "styled-components";
 import { AppBar } from "@mui/material";
 

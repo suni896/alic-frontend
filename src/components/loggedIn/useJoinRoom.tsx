@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useJoinGroup } from "../../hooks/queries/useGroup";
-import { useUser } from "./UserContext";
+import { useUserInfo } from "../../hooks/queries/useUser";
 
 export interface RoomGroup {
   groupId: number;
@@ -14,7 +14,7 @@ export interface RoomGroup {
 }
 
 export function useJoinRoom() {
-  const { userInfo } = useUser();
+  const { userInfo } = useUserInfo();
   const joinGroupMutation = useJoinGroup();
 
   const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);

@@ -3,7 +3,7 @@ import { MdKeyboardArrowLeft } from "react-icons/md";
 import { FiMenu, FiTag } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { styled } from "styled-components";
-import { UserProfile } from "../UserProfile";
+import { UserProfile } from "../loggedIn/UserProfile";
 import { useTagGroups } from "../../hooks/queries/useTag";
 
 

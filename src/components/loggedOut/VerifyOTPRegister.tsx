@@ -2,7 +2,7 @@
 import React from "react";
 import ContainerLayout from "./ContainerLayout";
 import { useNavigate } from "react-router-dom";
-import { SubmitButton, Title, ConfirmationText, EmailHighlight, CodeInputContainer, CodeInput, SigninForm, AuthForm, ForgotPassword, ErrorMessage } from "../SharedComponents";
+import { SubmitButton, Title, ConfirmationText, EmailHighlight, CodeInputContainer, CodeInput, SigninForm, AuthForm, ForgotPassword, ErrorMessage } from "../ui/SharedComponents";
 import { useOtpVerification } from "./useOtpVerification";
 
 interface VerifyOTPRegisterProps {

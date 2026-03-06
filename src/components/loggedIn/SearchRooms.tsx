@@ -29,7 +29,7 @@ import {
   PaginationCenter,      // 新增
   PageNumber,            // 新增
   EllipsisBlock,         // 新增
-} from "../SharedComponents";
+} from "../ui/SharedComponents";
 
 // 样式区域（紧随已有样式组件之后）
 const Container = styled.div`

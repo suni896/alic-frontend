@@ -1,5 +1,5 @@
 import React from "react";
-import Layout from "../components/loggedOut/Layout";
+import Layout from "../components/ui/Layout";
 import Register from "../components/loggedOut/Register";
 
 interface RegisterPageProps {

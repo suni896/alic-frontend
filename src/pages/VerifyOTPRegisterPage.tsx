@@ -1,5 +1,5 @@
 import React from "react";
-import Layout from "../components/loggedOut/Layout";
+import Layout from "../components/ui/Layout";
 import VerifyOTPRegister from "../components/loggedOut/VerifyOTPRegister";
 
 interface VerifyOTPRegisterPageProps {

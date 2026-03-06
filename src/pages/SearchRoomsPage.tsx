@@ -1,8 +1,8 @@
 import { useState } from "react";
 import SearchRooms from "../components/loggedIn/SearchRooms";
-import Layout from "../components/loggedOut/Layout";
+import Layout from "../components/ui/Layout";
 import Sidebar from "../components/loggedIn/Sidebar";
-import Navbar from "../components/Navbar";
+import Navbar from "../components/loggedIn/Navbar";
 import { styled } from "styled-components";
 
 // Container

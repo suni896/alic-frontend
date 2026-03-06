@@ -5,8 +5,8 @@ import { BiLoaderAlt } from "react-icons/bi";
 import styled, { keyframes } from "styled-components";
 import { useNavigate } from "react-router-dom";
 import { useJoinRoom } from "./useJoinRoom";
-import Button from "../button";
-import LabeledInputWithCount from "../Input";
+import Button from "../ui/Button";
+import LabeledInputWithCount from "../ui/Input";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { FiX } from "react-icons/fi";
@@ -41,7 +41,7 @@ import {
   ActionButton,
   ErrorText,
   EmptyState,
-} from "../SharedComponents";
+} from "../ui/SharedComponents";
 
 // Animations
 

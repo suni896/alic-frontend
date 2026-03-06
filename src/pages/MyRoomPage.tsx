@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { useLocation, useParams } from "react-router-dom";
 import Sidebar from "../components/loggedIn/Sidebar";
 import MyRoom from "../components/loggedIn/MyRoom";
-import Layout from "../components/loggedOut/Layout";
+import Layout from "../components/ui/Layout";
 import RoomNavbar from "../components/loggedIn/RoomNavbar";
 
 // Container

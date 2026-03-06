@@ -3,7 +3,7 @@ import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
 import ContainerLayout from "./ContainerLayout";
 import { useSendRegisterEmail } from "../../hooks/queries/useAuth";
-import { Input, ErrorText, SubmitButton, HelperText, Title, FieldGroup, ForgotPassword, SigninForm, AuthForm, PasswordInput } from "../SharedComponents";
+import { Input, ErrorText, SubmitButton, HelperText, Title, FieldGroup, ForgotPassword, SigninForm, AuthForm, PasswordInput } from "../ui/SharedComponents";
 
 interface RegisterFormValues {
   email: string;

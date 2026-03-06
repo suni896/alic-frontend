@@ -7,7 +7,7 @@ import React, {
   SetStateAction,
 } from "react";
 import { useSidebarRooms, useMainAreaRooms, useTags, useCreateRoom } from "../../hooks/queries/useRoom";
-import { useUser } from "./UserContext";
+import { useUserInfo } from "../../hooks/queries/useUser";
 import axios from "axios";
 
 interface RoomGroup {
@@ -84,7 +84,7 @@ const RoomContext = createContext<RoomContextType | undefined>(undefined);
 export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { userInfo } = useUser();
+  const { userInfo } = useUserInfo();
   const isLoggedIn = !!userInfo;
 
   const [sidebarRoomListRequest, setSidebarRoomListRequest] = useState<GetGroupListRequest>({

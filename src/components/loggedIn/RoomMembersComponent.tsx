@@ -3,19 +3,19 @@ import { createPortal } from "react-dom";
 import { MdOutlineKeyboardDoubleArrowRight } from "react-icons/md";
 import { useNavigate, useParams } from "react-router-dom";
 import { styled } from "styled-components";
-import { useUser } from "./UserContext";
+import { useUserInfo } from "../../hooks/queries/useUser";
 import { AiOutlineMinusCircle } from "react-icons/ai";
 import { useUserRole, useGroupMemberList, useRemoveGroupMember } from "../../hooks/queries/useGroup";
 import type { GroupMember } from "../../api/group.api";
 
 // Keep for backwards compatibility with MyRoom.tsx
 export const membersCache = new Map<number, GroupMember[]>();
-import Button from "../button";
-import ConfirmationModal from "../ConfirmationModal";
+import Button from "../ui/Button";
+import ConfirmationModal from "../loggedIn/ConfirmationModal";
 import {
   HeaderSection,
   HeaderTitle,
-} from "../SharedComponents";
+} from "../ui/SharedComponents";
 
 const Overlay = styled.div`
   /* ================= Layout ================= */
@@ -422,7 +422,7 @@ interface RoomMembersComponentProps {
 const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
   onClose,
 }) => {
-  const { userInfo } = useUser();
+  const { userInfo } = useUserInfo();
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);

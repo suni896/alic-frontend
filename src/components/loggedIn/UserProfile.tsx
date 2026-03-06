@@ -3,10 +3,10 @@ import styled, { keyframes } from "styled-components";
 import { PiSignOutBold, PiPersonBold } from "react-icons/pi";
 import { RxCross2 } from "react-icons/rx";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "./loggedIn/UserContext";
-import { useLogout } from "../hooks/queries/useUser";
-import UserNameEdit from "./loggedIn/UserNameEdit";
-import { ModalCloseButton, HorizontalLine } from "./SharedComponents";
+import { useUserInfo } from "../../hooks/queries/useUser";
+import { useLogout } from "../../hooks/queries/useUser";
+import UserNameEdit from "../loggedIn/UserNameEdit";
+import { ModalCloseButton, HorizontalLine } from "../ui/SharedComponents";
 
 // ============ Styled Components ============
 
@@ -333,7 +333,7 @@ interface UserInfoDisplayProps {
 }
 
 export const UserInfoDisplay: React.FC<UserInfoDisplayProps> = ({ onClick }) => {
-  const { userInfo } = useUser();
+  const { userInfo } = useUserInfo();
 
   if (!userInfo) return null;
 
@@ -360,7 +360,7 @@ interface UserProfileProps {
 }
 
 export const UserProfile: React.FC<UserProfileProps> = ({ showBackdrop = true }) => {
-  const { userInfo, isUserInfoLoading, userInfoError } = useUser();
+  const { userInfo, isUserInfoLoading, userInfoError } = useUserInfo();
   const [profileOpen, setProfileOpen] = useState(false);
 
   const renderEmptyState = () => (

@@ -2,7 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import { MdWarning } from "react-icons/md";
 import { FiX } from "react-icons/fi";
-import Button from "./button";
+import Button from "../ui/Button";
 import {
   ModalBackdrop,
   ModalContainer,
@@ -12,7 +12,7 @@ import {
   HeaderSubTitle,
   ButtonContainer,
   FixedButtonContainer,
-} from "./SharedComponents";
+} from "../ui/SharedComponents";
 
 interface ConfirmationModalProps {
   isOpen: boolean;

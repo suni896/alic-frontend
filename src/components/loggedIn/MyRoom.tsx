@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { queryClient } from "../../lib/queryClient";
 import { membersCache } from "./RoomMembersComponent";
 import SockJS from "sockjs-client";
 import Stomp from "stompjs";
 import styled, { createGlobalStyle } from "styled-components";
 import { LuSend, LuX, LuReply, LuCopy, LuRotateCcw } from "react-icons/lu";
 import botIcon from "../../assets/chat-gpt.png";
-import apiClient from "../loggedOut/apiClient";
-import { useUser } from "./UserContext";
+import { useUserInfo } from "../../hooks/queries/useUser";
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkBreaks from "remark-breaks";
@@ -14,14 +14,19 @@ import remarkGfm from "remark-gfm";
 import { useInputTracking } from "../../hooks/useInputTracking";
 import sensors, { eventQueue, flushEvents } from "../../utils/tracker";
 import { API_BASE_URL } from "../../../config";
-
-
-// 添加清除历史接口响应类型
-interface ClearHistoryResponse {
-  code: number;
-  message: string;
-  data: string[]; // 时间戳数组
-}
+import {
+  useGroupChatBotList,
+  useClearHistory,
+  useClearAIContext,
+} from "../../hooks/queries/useChat";
+import { useGroupInfo } from "../../hooks/queries/useGroup";
+import { 
+  fetchGroupChatBotInfo, 
+  fetchGroupMemberList,
+  type ChatBot 
+} from "../../api/group.api";
+import { fetchUserInfoInGroup } from "../../api/user.api";
+import { fetchMsgByIds, fetchHistoryMsg } from "../../api/chat.api";
 
 interface MyRoomProps {
   title?: string;
@@ -31,11 +36,8 @@ interface MyRoomProps {
   onBotSelect?: (botName: string, botId: number) => void;
 }
 
-interface Bot {
-  botId: number;
-  botName: string;
-  accessType: number;
-}
+// Use ChatBot from API types
+interface Bot extends ChatBot {}
 
 interface User {
   userId: number;
@@ -985,29 +987,14 @@ const BotListPopUp: React.FC<MyRoomProps> = ({
   onBotSelect,
   groupId,
 }) => {
-  const [bots, setBots] = useState<Bot[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { userInfo } = useUser();
+  const { userInfo } = useUserInfo();
   const [isAdmin, setIsAdmin] = useState(false);
-  // const [groupMode, setGroupMode] = useState<'free' | 'feedback' | undefined>('free');
+  
+  // Use React Query hook
+  const { data: botsData, isLoading } = useGroupChatBotList(groupId);
+  const bots = botsData?.code === 200 ? botsData.data : [];
 
   useEffect(() => {
-    const fetchBots = async () => {
-      try {
-        setIsLoading(true);
-        const response = await apiClient.get(
-          `/v1/group/get_group_chat_bot_list?groupId=${groupId}`
-        );
-        if (response.data.code === 200) {
-          setBots(response.data.data);
-        }
-      } catch (error) {
-        console.error("Error fetching bots:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     const checkIfAdmin = (): boolean => {
       if (!groupId || !userInfo?.userId) return false;
       try {
@@ -1024,8 +1011,7 @@ const BotListPopUp: React.FC<MyRoomProps> = ({
     };
 
     setIsAdmin(checkIfAdmin());
-    fetchBots();
-  }, [groupId]);
+  }, [groupId, userInfo?.userId]);
 
   return (
     <PopupContainer>
@@ -1062,17 +1048,15 @@ const BotListPopUp: React.FC<MyRoomProps> = ({
   );
 };
 
-// 缓存
-const botsCache = new Map<number, Bot>();
+// WebSocket client cache
 const clientCache = new Map<number, Stomp.Client | null>();
-const usersCache = new Map<number, User>();
 
 // 主组件
 const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   // 状态管理
   const [hasNewMessage, setHasNewMessage] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  const { userInfo } = useUser();
+  const { userInfo } = useUserInfo();
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState("");
   const stompClientRef = useRef<Stomp.Client | null>(null);
@@ -1092,28 +1076,17 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [groupMode, setGroupMode] = useState<'free' | 'feedback'>('free');
 
-  // 获取上下文清除历史记录
-  const fetchClearHistory = useCallback(async (groupId: number) => {
-    try {
-      const url = `/v1/group/clearHistory?groupId=${groupId}`;
-      const response = await apiClient.get<ClearHistoryResponse>(url);
-      
-      if (
-        response.status === 200 &&
-        response.data.code === 200 &&
-        response.data.data &&
-        response.data.data.length > 0
-      ) {
-        // 保存所有清除时间
-        setContextClearedTimes(response.data.data);
-      } else {
-        setContextClearedTimes([]);
-      }
-    } catch (error) {
-      console.error('Failed to fetch clear history:', error);
+  // Use React Query hook for clear history
+  const { data: clearHistoryData } = useClearHistory(groupId);
+  
+  // Sync clear history data to state
+  useEffect(() => {
+    if (clearHistoryData?.code === 200 && clearHistoryData.data && clearHistoryData.data.length > 0) {
+      setContextClearedTimes(clearHistoryData.data);
+    } else {
       setContextClearedTimes([]);
     }
-  }, []);
+  }, [clearHistoryData]);
 
   // 连接状态管理
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected' | 'reconnecting'>('disconnected');
@@ -1146,33 +1119,17 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     setIsAdmin(checkIfAdmin());
   }, [checkIfAdmin]);
 
+  // Use React Query hook for group info
+  const { data: groupInfoData } = useGroupInfo(groupId);
+  
+  // Sync group mode to state
   useEffect(() => {
-    const fetchGroupMode = async () => {
-      if (!groupId) return;
-      try {
-        const url = `/v1/group/get_group_info?groupId=${groupId}`;
-        const response = await apiClient.get(url);
-        if (response.status === 200 && response.data?.code === 200 && response.data?.data) {
-          const data = response.data.data;
-          const isFeedback = data.groupMode;
-          setGroupMode(isFeedback);
-        } else {
-          setGroupMode('free');
-        }
-      } catch (error) {
-        console.error('Failed to fetch group mode:', error);
-        setGroupMode('free');
-      }
-    };
-    fetchGroupMode();
-  }, [groupId]);
-
-  // 在组件初始化时获取清除历史
-  useEffect(() => {
-    if (groupId) {
-      fetchClearHistory(groupId);
+    if (groupInfoData?.code === 200 && groupInfoData.data) {
+      setGroupMode(groupInfoData.data.groupMode || 'free');
+    } else {
+      setGroupMode('free');
     }
-  }, [groupId, fetchClearHistory]);
+  }, [groupInfoData]);
 
   // 回复功能处理函数
   const handleReplyToMessage = (message: Message) => {
@@ -1224,6 +1181,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     });
   };
 
+  // Clear AI Context Mutation
+  const clearAiContextMutation = useClearAIContext();
+
   // 清除AI上下文函数
   const handleClearContext = async () => {
     if (!groupId) return;
@@ -1231,26 +1191,21 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     try {
       const clearContextTime = new Date().toISOString();
       
-      const response = await apiClient.post('/v1/group/clear_ai_context', {
-        groupId: groupId,
-        clearContextTime: clearContextTime
+      await clearAiContextMutation.mutateAsync({
+        groupId,
+        clearContextTime
       });
       
-      if (response.data.code === 200) {
-        // 添加新的清除时间到数组中
-        setContextClearedTimes(prev => [...prev, clearContextTime]);
-        
-        // 显示成功提示
-        setShowClearContextToast(true);
-        setTimeout(() => {
-          setShowClearContextToast(false);
-        }, 3000);
-        
-        console.log('AI context cleared successfully');
-      } else {
-        console.error('Failed to clear AI context:', response.data.message);
-        alert('Failed to clear AI context. Please try again.');
-      }
+      // 添加新的清除时间到数组中
+      setContextClearedTimes(prev => [...prev, clearContextTime]);
+      
+      // 显示成功提示
+      setShowClearContextToast(true);
+      setTimeout(() => {
+        setShowClearContextToast(false);
+      }, 3000);
+      
+      console.log('AI context cleared successfully');
     } catch (error) {
       console.error('Error clearing AI context:', error);
       alert('Failed to clear AI context. Please try again.');
@@ -1306,73 +1261,67 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
   // 获取Bot信息
   const fetchBotInfo = async (botId: number): Promise<Bot> => {
-    if (botsCache.has(botId)) {
-      return botsCache.get(botId)!;
-    }
-
     try {
-      setIsLoading(true);
-      const response = await apiClient.get(
-        `/v1/group/get_group_chat_bot_info?botId=${botId}`
-      );
-      if (response.data.code === 200) {
-        botsCache.set(botId, response.data.data);
-        return response.data.data;
-      }
+      return await queryClient.fetchQuery({
+        queryKey: ['groupChatBotInfo', botId],
+        queryFn: () => fetchGroupChatBotInfo(botId),
+        staleTime: 1000 * 60 * 5, // 5 minutes
+      });
     } catch (error) {
       console.error("Error fetching bots:", error);
-    } finally {
-      setIsLoading(false);
+      return {
+        botId,
+        botName: `Bot ${botId}`,
+        accessType: 0,
+      };
     }
-    return {
-      botId,
-      botName: `Bot ${botId}`,
-      accessType: 0,
-    };
   };
 
   // 获取用户信息
   const fetchUserInfo = async (userId: number): Promise<User> => {
-    if (usersCache.has(userId)) {
-      return usersCache.get(userId)!;
-    }
-
     try {
-      const response = await apiClient.get(
-        `/v1/user/get_user_info_in_group?userId=${userId}`
-      );
-      if (response.data.code === 200) {
-        usersCache.set(userId, response.data.data);
-        return response.data.data;
-      }
+      const response = await queryClient.fetchQuery({
+        queryKey: ['userInfoInGroup', userId],
+        queryFn: () => fetchUserInfoInGroup(userId),
+        staleTime: 1000 * 60 * 5, // 5 minutes
+      });
+      return response.data;
     } catch (error) {
       console.error("Error fetching group members:", error);
+      return {
+        userId,
+        userName: `User ${userId}`,
+        userPortrait: "/default-avatar.png",
+        userEmail: "",
+      };
     }
-    return {
-      userId,
-      userName: `User ${userId}`,
-      userPortrait: "/default-avatar.png",
-      userEmail: "",
-    };
   };
 
   // 批量获取消息
   const fetchMultipleMessages = async (messageIds: number[]): Promise<Message[]> => {
     try {
       console.log('批量获取消息:', messageIds);
-      const response = await apiClient.post('/v1/chat/getMsgByIds', {
-        groupId: groupId,
+      const response = await fetchMsgByIds({
+        groupId: groupId!,
         msgIds: messageIds
       });
       
-      console.log('批量获取响应:', response.data);
+      console.log('批量获取响应:', response);
       
-      if (response.data.data && Array.isArray(response.data.data)) {
-        const messages = response.data.data;
+      if (response.data && Array.isArray(response.data)) {
+        const apiMessages = response.data;
+        
+        // 转换为组件 Message 类型
+        const messages: Message[] = apiMessages.map(apiMsg => ({
+          ...apiMsg,
+          msgType: 0, // 默认消息类型
+          name: apiMsg.name || '',
+          portrait: apiMsg.portrait || '',
+        }));
         
         // 批量处理发送者信息
         await Promise.all(
-          messages.map(async (msg: Message) => {
+          messages.map(async (msg) => {
             if (msg.senderType === "CHATBOT") {
               const botInfo = await fetchBotInfo(msg.senderId);
               msg.name = botInfo.botName;
@@ -1399,27 +1348,37 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     const prevMessages = messages.length;
     setIsLoading(true);
     try {
-      const response = await apiClient.post(`/v1/chat/getHistoryMsg`, {
-        groupId: groupId,
+      const response = await fetchHistoryMsg({
+        groupId: groupId!,
         lastMsgId: loadMore ? messages[0]?.infoId : -1,
         pageSize: 20,
       });
 
-      const newMessages = response.data.data as Message[];
-      setHasNoMoreMessages(newMessages.length < 20);
+      const apiMessages = response.data;
+      setHasNoMoreMessages(apiMessages.length < 20);
       
-      // 处理消息的用户/Bot信息
-      await Promise.all(
-        newMessages.map(async (msg) => {
-          if (msg.senderType === "CHATBOT") {
-            const botInfo = await fetchBotInfo(msg.senderId);
-            msg.name = botInfo.botName;
-            msg.portrait = botIcon;
+      // 转换为组件 Message 类型并处理用户/Bot信息
+      const newMessages: Message[] = await Promise.all(
+        apiMessages.map(async (apiMsg) => {
+          let name = apiMsg.name || '';
+          let portrait = apiMsg.portrait || '';
+          
+          if (apiMsg.senderType === "CHATBOT") {
+            const botInfo = await fetchBotInfo(apiMsg.senderId);
+            name = botInfo.botName;
+            portrait = botIcon;
           } else {
-            const userInfo = await fetchUserInfo(msg.senderId);
-            msg.name = userInfo.userName;
-            msg.portrait = userInfo.userPortrait;
+            const userInfo = await fetchUserInfo(apiMsg.senderId);
+            name = userInfo.userName;
+            portrait = userInfo.userPortrait;
           }
+          
+          return {
+            ...apiMsg,
+            msgType: 0, // 默认消息类型
+            name,
+            portrait,
+          };
         })
       );
 
@@ -1847,11 +1806,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
       const fetchMembers = async () => {
         try {
-          const response = await apiClient.get(
-            `/v1/group/get_group_member_list?groupId=${groupId}`
-          );
-          if (response.data.code === 200) {
-            membersCache.set(Number(groupId), response.data.data);
+          const response = await fetchGroupMemberList(groupId!);
+          if (response.code === 200) {
+            membersCache.set(Number(groupId), response.data);
             // 在membersCache更新后立即更新isAdmin状态
             setIsAdmin(checkIfAdmin());
           }
