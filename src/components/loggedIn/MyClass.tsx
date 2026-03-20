@@ -683,6 +683,7 @@ const MyClass: React.FC<MyClassProps> = ({
           tagId: tagId.toString(), 
           roomIds: roomIdsToRemove 
         });
+        alert("Rooms removed successfully!");
       }
     }
 
@@ -706,7 +707,8 @@ const MyClass: React.FC<MyClassProps> = ({
       { tagId, title, roomIds: selectedRoomIds },
       {
         onSuccess: () => {
-          // Close the modal only after successful API call
+          // Show success message and close the modal
+          alert("Rooms added successfully!");
           setIsAddRoomVisible(false);
         },
         onError: (error) => {

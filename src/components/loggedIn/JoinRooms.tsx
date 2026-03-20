@@ -325,12 +325,8 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
     handleJoinClick,
     showPasswordModal,
     setShowPasswordModal,
-    showErrorModal,
-    setShowErrorModal,
     password,
     setPassword,
-    errorMessage,
-    joinSuccess,
     redirectPath,
     setRedirectPath,
     handlePasswordSubmit,
@@ -403,7 +399,7 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
                 <LoadingText>Searching for rooms...</LoadingText>
               </LoadingContainer>
             ) : (
-              <RoomList $blur={showPasswordModal || showErrorModal}>
+              <RoomList $blur={showPasswordModal}>
                 {rooms.length > 0 ? (
                   rooms.map((room) => (
                     <IntegrationCard key={room.groupId}>
@@ -471,11 +467,10 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
           </RoomListContainer>
         </ContentArea>
 
-        {(showPasswordModal || showErrorModal) && (
+        {showPasswordModal && (
           <ModalBackdrop onClick={(e) => {
             if (e.target === e.currentTarget) {
               setShowPasswordModal(false);
-              setShowErrorModal(false);
             }
           }}>
             {showPasswordModal && (
@@ -529,24 +524,6 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
                     </Button>
                   </FixedButtonContainer>
                 </ButtonContainer>
-              </PasswordModalContainer>
-            )}
-            {showErrorModal && (
-              <PasswordModalContainer onClick={(e) => e.stopPropagation()}>
-                <ErrorMessage style={{ color: joinSuccess ? "var(--emerald-green)" : "var(--error-red)" }}>
-                  {errorMessage}
-                </ErrorMessage>
-                <ErrorModalButton
-                  $success={joinSuccess}
-                  onClick={() => {
-                    setShowErrorModal(false);
-                    if (joinSuccess) {
-                      onClose();
-                    }
-                  }}
-                >
-                  OK
-                </ErrorModalButton>
               </PasswordModalContainer>
             )}
           </ModalBackdrop>

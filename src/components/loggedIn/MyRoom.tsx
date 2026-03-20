@@ -953,6 +953,78 @@ const NoMoreMessagesHint = styled.div`
   color: var(--muted-6b7280);
 `;
 
+// @ 提及弹窗组件
+const MentionPopup = styled.div<{ $top: number; $left: number }>`
+  /* ================= Layout ================= */
+  position: absolute;
+  top: ${props => props.$top}px;
+  left: ${props => props.$left}px;
+  z-index: 1000;
+  
+  /* ================= Box Model ================= */
+  min-width: 200px;
+  max-width: 300px;
+  max-height: 200px;
+  overflow-y: auto;
+  
+  /* ================= Visual ================= */
+  background: var(--white);
+  border: 1px solid var(--gray-200);
+  border-radius: var(--radius-8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+`;
+
+const MentionHeader = styled.div`
+  /* ================= Box Model ================= */
+  padding: var(--space-2) var(--space-3);
+  
+  /* ================= Visual ================= */
+  border-bottom: 1px solid var(--gray-100);
+  
+  /* ================= Typography ================= */
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted-6b7280);
+`;
+
+const MentionItem = styled.div<{ $disabled?: boolean }>`
+  /* ================= Layout ================= */
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  /* ================= Box Model ================= */
+  padding: var(--space-2) var(--space-3);
+  
+  /* ================= Typography ================= */
+  font-size: 0.875rem;
+  cursor: ${props => props.$disabled ? 'not-allowed' : 'pointer'};
+  opacity: ${props => props.$disabled ? 0.5 : 1};
+  
+  /* ================= Visual ================= */
+  border-bottom: 1px solid var(--gray-50);
+  
+  &:hover {
+    background: ${props => props.$disabled ? 'transparent' : 'var(--gray-50)'};
+  }
+  
+  &:last-child {
+    border-bottom: none;
+  }
+`;
+
+const MentionBotName = styled.span`
+  /* ================= Typography ================= */
+  font-weight: 500;
+  color: var(--color-text);
+`;
+
+const MentionAccessType = styled.span`
+  /* ================= Typography ================= */
+  font-size: 0.75rem;
+  color: var(--muted-6b7280);
+`;
+
 // 回复消息状态提示
 const ReplyStatusHint = styled.div`
   /* ================= Layout ================= */
@@ -1067,6 +1139,17 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const messageInputRef = useRef<HTMLTextAreaElement>(null);
   const [selectedBot, setSelectedBot] = useState<number | null>(null);
   const [isBotClicked, setIsBotClicked] = useState(false);
+  
+  // @ 提及相关状态
+  const [showMentionPopup, setShowMentionPopup] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
+  const [cursorPosition, setCursorPosition] = useState(0);
+  const mentionStartIndexRef = useRef<number>(-1);
+  
+  // 获取 Bot 列表用于 @ 提及
+  const { data: botsData, isLoading: isLoadingBots } = useGroupChatBotList(groupId);
+  const bots = botsData?.code === 200 ? botsData.data : [];
 
   // 回复功能状态
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
@@ -1942,9 +2025,158 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
   const handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void = (e) => {
     const textarea = e.target;
-    setInputMessage(textarea.value);
+    const value = textarea.value;
+    const cursorPos = textarea.selectionStart || 0;
+    
+    setInputMessage(value);
+    setCursorPosition(cursorPos);
     textarea.scrollTop = textarea.scrollHeight;
+    
+    // 检测 @ 提及
+    const textBeforeCursor = value.slice(0, cursorPos);
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    
+    if (lastAtIndex !== -1) {
+      // 检查 @ 后面是否有空格（如果有空格，说明已经完成提及）
+      const textAfterAt = textBeforeCursor.slice(lastAtIndex + 1);
+      const hasSpaceAfterAt = textAfterAt.includes(' ');
+      
+      if (!hasSpaceAfterAt) {
+        // 显示提及弹窗
+        mentionStartIndexRef.current = lastAtIndex;
+        setMentionQuery(textAfterAt.toLowerCase());
+        setShowMentionPopup(true);
+        
+        // 计算弹窗位置在光标附近
+        if (messageInputRef.current) {
+          const coords = getCaretCoordinates(messageInputRef.current, lastAtIndex);
+          const wrapperRect = messageInputRef.current.parentElement?.getBoundingClientRect();
+          
+          if (wrapperRect) {
+            // 计算相对于 MessageInputWrapper 的位置
+            const lineHeight = 24; // 一行的高度
+            const relativeLeft = coords.left;
+            const relativeTop = coords.top + lineHeight; // 在光标下方一行显示
+            
+            setMentionPosition({
+              top: relativeTop,
+              left: Math.min(relativeLeft, wrapperRect.width - 220) // 不要超出右边
+            });
+          }
+        }
+      } else {
+        setShowMentionPopup(false);
+        // 检查刚刚输入的内容是否完成了一个精准匹配（用户输入了空格）
+        if (value.slice(cursorPos - 1, cursorPos) === ' ') {
+          checkExactMentionMatch(value);
+        }
+      }
+    } else {
+      setShowMentionPopup(false);
+      // 弹窗关闭时也检查一次精准匹配
+      checkExactMentionMatch(value);
+    }
   };
+  
+  // 获取 textarea 中字符的像素位置
+  const getCaretCoordinates = (textarea: HTMLTextAreaElement, position: number) => {
+    const div = document.createElement('div');
+    const style = getComputedStyle(textarea);
+    
+    // 复制 textarea 的样式到 div
+    div.style.cssText = `
+      position: absolute;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      visibility: hidden;
+      font: ${style.font};
+      padding: ${style.padding};
+      border: ${style.border};
+      width: ${textarea.clientWidth}px;
+      line-height: ${style.lineHeight};
+      font-family: ${style.fontFamily};
+      font-size: ${style.fontSize};
+      letter-spacing: ${style.letterSpacing};
+    `;
+    
+    // 设置内容到光标位置
+    const textBeforeCursor = textarea.value.slice(0, position);
+    const textNode = document.createTextNode(textBeforeCursor);
+    const span = document.createElement('span');
+    span.textContent = textarea.value.slice(position) || '.';
+    
+    div.appendChild(textNode);
+    div.appendChild(span);
+    document.body.appendChild(div);
+    
+    const { offsetLeft: left, offsetTop: top } = span;
+    document.body.removeChild(div);
+    
+    return { left, top };
+  };
+
+  // 处理选择提及的 Bot
+  const handleMentionSelect = (botName: string, botId: number, accessType: number) => {
+    if (accessType === 0 && !isAdmin) {
+      alert("Only admins can mention this bot");
+      return;
+    }
+    
+    if (mentionStartIndexRef.current !== -1) {
+      const beforeMention = inputMessage.slice(0, mentionStartIndexRef.current);
+      const afterQuery = inputMessage.slice(cursorPosition);
+      
+      setInputMessage(`${beforeMention}@${botName} ${afterQuery}`);
+      setSelectedBot(botId); // 保存选中的 botId
+      setShowMentionPopup(false);
+      mentionStartIndexRef.current = -1;
+      
+      // 聚焦输入框
+      setTimeout(() => {
+        if (messageInputRef.current) {
+          const newCursorPos = beforeMention.length + botName.length + 2; // +2 for @ and space
+          messageInputRef.current.selectionStart = newCursorPos;
+          messageInputRef.current.selectionEnd = newCursorPos;
+          messageInputRef.current.focus();
+        }
+      }, 0);
+    }
+  };
+  
+  // 检测输入文本中是否有精准匹配的 @BotName，自动设置 botId
+  const checkExactMentionMatch = useCallback((text: string) => {
+    // 查找所有 @BotName 模式
+    const mentionPattern = /@([\w\u4e00-\u9fa5]+)/g;
+    let match;
+    
+    while ((match = mentionPattern.exec(text)) !== null) {
+      const botName = match[1];
+      const matchedBot = bots.find(b => b.botName === botName);
+      
+      if (matchedBot) {
+        // 精准匹配上了，设置选中的 bot
+        console.log(`自动匹配到 Bot: ${matchedBot.botName} (ID: ${matchedBot.botId})`);
+        setSelectedBot(matchedBot.botId);
+      }
+    }
+  }, [bots]);
+  
+  // 点击外部关闭提及弹窗
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showMentionPopup) {
+        const target = event.target as HTMLElement;
+        if (!target.closest('[data-mention-popup]')) {
+          setShowMentionPopup(false);
+          // 关闭弹窗时检查是否有精准匹配
+          checkExactMentionMatch(inputMessage);
+        }
+      }
+    };
+    
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showMentionPopup, inputMessage, checkExactMentionMatch]);
 
   // 初始化滚动
   useEffect(() => {
@@ -2141,6 +2373,13 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               handleTyping(e.target.value);
             }}
             onKeyDown={e => {
+              // ESC 键关闭提及弹窗
+              if (e.key === "Escape" && showMentionPopup) {
+                e.preventDefault();
+                setShowMentionPopup(false);
+                return;
+              }
+              
               if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
                 e.preventDefault();
                 const { selectionStart, selectionEnd, value } = e.currentTarget;
@@ -2166,6 +2405,38 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             }
             rows={4}
           />
+          
+          {/* @ 提及弹窗 */}
+          {showMentionPopup && groupMode === 'free' && (
+            <MentionPopup $top={mentionPosition.top} $left={mentionPosition.left} data-mention-popup>
+              <MentionHeader>
+                Available Bots
+                {isLoadingBots && <span style={{ marginLeft: '8px' }}>加载中...</span>}
+              </MentionHeader>
+              {bots
+                .filter(bot => bot.botName.toLowerCase().includes(mentionQuery))
+                .map(bot => (
+                  <MentionItem
+                    key={bot.botId}
+                    $disabled={bot.accessType === 0 && !isAdmin}
+                    onClick={() => handleMentionSelect(bot.botName, bot.botId, bot.accessType)}
+                  >
+                    <MentionBotName>@{bot.botName}</MentionBotName>
+                    <MentionAccessType>
+                      ({bot.accessType === 0 ? 'Admin Only' : 'Public'})
+                    </MentionAccessType>
+                  </MentionItem>
+                ))}
+              {bots.filter(bot => bot.botName.toLowerCase().includes(mentionQuery)).length === 0 && (
+                <MentionItem $disabled>
+                  <MentionBotName style={{ color: 'var(--muted-6b7280)' }}>
+                    没有匹配的 Bot
+                  </MentionBotName>
+                </MentionItem>
+              )}
+            </MentionPopup>
+          )}
+          
           {/* 回复预览 */}
         {replyingTo && (
           <ReplyInputContainer>

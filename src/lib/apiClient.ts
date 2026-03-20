@@ -10,9 +10,12 @@ const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    // 公开页面列表（不需要登录的页面）
+    const publicPaths = ["/", "/register", "/reset-password", "/verify-register"];
+    const currentPath = window.location.pathname;
+    
     if (
-      window.location.pathname != "/" &&
-      window.location.pathname != "" &&
+      !publicPaths.includes(currentPath) &&
       error.response?.status === 401
     ) {
       localStorage.clear();

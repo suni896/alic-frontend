@@ -1440,11 +1440,11 @@ export const ModalBackdrop = styled.div`
 
   /* ================= Box Model ================= */
   inset: 0;
-  z-index: 10000;
+  z-index: 99999;
 
   /* ================= Visual ================= */
   background: rgba(17, 24, 39, 0.35);
-  z-index: 10000;
+  z-index: 99999;
 `;
 
 // 弹窗容器

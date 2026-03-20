@@ -33,13 +33,15 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({
   const createTagMutation = useCreateTag();
 
   const handleCreateTag = async () => {
-    if (!tagName.trim()) {
+    const trimmedTagName = tagName.trim();
+    
+    if (!trimmedTagName) {
       setError("Tag name is required");
       return;
     }
 
-    if (!tagName.match(/^[A-Za-z0-9\s]{1,20}$/)) {
-      setError("Tag name must contain only letters, numbers, and spaces (1-20 characters)");
+    if (!trimmedTagName.match(/^[A-Za-z0-9]{1,20}$/)) {
+      setError("Tag name must contain only letters and numbers (1-20 characters)");
       return;
     }
 
@@ -47,7 +49,7 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({
 
     try {
       const response = await createTagMutation.mutateAsync({
-        tagName: tagName.trim(),
+        tagName: trimmedTagName,
       });
 
       console.log("API Response:", response);
@@ -57,6 +59,7 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({
           "Tag created successfully with ID:",
           response.data.tagId
         );
+        alert('Tag created successfully!');
         navigate(`/my-class/${response.data.tagId.toString()}`);
         onClose();
         if (onTagCreated) {

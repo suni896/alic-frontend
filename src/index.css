@@ -309,6 +309,7 @@ button:focus-visible {
 .modal-backdrop-right {
   left: 0 !important;
   width: 100vw !important;
+  z-index: 99999 !important; /* Ensure modal is above everything including sidebar (9999) */
 }
 
 @media (min-width: var(--bp-md)) {

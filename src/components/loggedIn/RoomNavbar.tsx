@@ -440,11 +440,12 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId, onMenuClick }) => {
           ))}
       </TitleContainer>
       <RightContainer>
-        <Settings onClick={() => setIsModifyRoomInfoVisible(true)} />
+        <Settings data-testid="room-settings-btn" onClick={() => setIsModifyRoomInfoVisible(true)} />
         {isModifyRoomInfoVisible && (
           <CreateRoomComponent
             onClose={() => setIsModifyRoomInfoVisible(false)}
             isModify={true}
+            groupId={groupId}
           />
         )}
         <Share />

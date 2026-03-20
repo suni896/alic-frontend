@@ -71,11 +71,10 @@ export const UserNameEdit: React.FC<UserNameEditProps> = ({ onClose, onSuccess }
       // 刷新用户信息
       await refreshUserInfo();
       
-      // 延迟关闭弹窗，让用户看到成功消息
-      setTimeout(() => {
-        onSuccess?.();
-        onClose();
-      }, 1500);
+      // 显示成功消息
+      alert('Username updated successfully!');
+      onSuccess?.();
+      onClose();
     } catch (error: any) {
       console.error('Failed to update username:', error);
       setError(error.message || 'Failed to update username, please try again later');

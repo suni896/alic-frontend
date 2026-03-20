@@ -18,11 +18,9 @@ export function useJoinRoom() {
   const joinGroupMutation = useJoinGroup();
 
   const [showPasswordModal, setShowPasswordModal] = useState<boolean>(false);
-  const [showErrorModal, setShowErrorModal] = useState<boolean>(false);
   const [selectedRoomId, setSelectedRoomId] = useState<number | null>(null);
   const [password, setPassword] = useState("");
   const [joinSuccess, setJoinSuccess] = useState(false);
-  const [errorMessage, setErrorMessage] = useState("");
   const [redirectPath, setRedirectPath] = useState<string | null>(null);
 
   const joinGroup = useCallback(
@@ -58,9 +56,8 @@ export function useJoinRoom() {
       // 如果用户已经加入群组，直接跳转
       if (isJoined) {
         console.log("Already joined this group");
+        alert("Already joined this group");
         setJoinSuccess(true);
-        setErrorMessage("Already joined this group");
-        setShowErrorModal(true);
         setRedirectPath(`/my-room/${groupId}`);
         return;
       }
@@ -78,11 +75,10 @@ export function useJoinRoom() {
 
   const handlePasswordSubmit = useCallback(() => {
     if (!password.trim()) {
-      setErrorMessage("Password is required");
-      setShowErrorModal(true);
+      alert("Password is required");
       return;
     }
-    
+
     if (selectedRoomId !== null) {
       joinGroup(selectedRoomId, password);
       setShowPasswordModal(false);
@@ -95,11 +91,8 @@ export function useJoinRoom() {
     handlePasswordSubmit,
     showPasswordModal,
     setShowPasswordModal,
-    showErrorModal,
-    setShowErrorModal,
     password,
     setPassword,
-    errorMessage,
     joinSuccess,
     redirectPath,
     setRedirectPath,

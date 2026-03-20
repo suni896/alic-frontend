@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { FaRobot } from "react-icons/fa";
 import { useFormik, FieldArray, FormikProvider, FormikValues } from "formik";
 import * as Yup from "yup";
@@ -31,6 +32,7 @@ import {
 
 const Modal = styled.div`
   position: relative;
+  z-index: 11001;
   width: 95%;
   max-width: 50rem;
   background: var(--white);
@@ -601,6 +603,32 @@ const ToggleSwitch = styled.label`
   }
 `;
 
+// 提示组件样式
+const Tooltip = styled.div<{ $show: boolean }>`
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 100000;
+  
+  padding: 1rem 1.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  text-align: center;
+  
+  background-color: var(--slate-grey);
+  color: var(--white);
+  border-radius: var(--radius-8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  
+  opacity: ${props => props.$show ? 1 : 0};
+  visibility: ${props => props.$show ? 'visible' : 'hidden'};
+  transition: all 0.3s ease-in-out;
+  
+  max-width: 300px;
+  line-height: 1.5;
+`;
+
 const RemoveIcon = styled(IoIosRemoveCircleOutline)`
   font-size: 1.2rem;
   color: var(--error-red);
@@ -902,6 +930,8 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
     fromSidebar ? "ADMIN" : null
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isFormInitialized, setIsFormInitialized] = useState(false);
+  const [showRemoveBotTooltip, setShowRemoveBotTooltip] = useState(false);
 
   // Determine the groupId to use - from props or URL params
   const currentGroupId =
@@ -1015,7 +1045,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
         }))
       );
 
-      if (effectiveIsModify && userRole === "ADMIN") {
+      if (effectiveIsModify && userRoleData === "ADMIN") {
         await handleEditGroup(values);
       } else if (!effectiveIsModify) {
         const submittedValues = {
@@ -1073,6 +1103,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
     setShowAssistants(false);
     setOriginalBots([]);
     setUserRole(null);
+    setIsFormInitialized(false);
     formik.resetForm();
   }, [effectiveIsModify, propGroupId]);
 
@@ -1214,8 +1245,8 @@ const handleEditGroup = async (values: any) => {
   };
 
   useEffect(() => {
-    if (isModify && !apiRequestMade && currentGroupId && groupInfoData?.code === 200) {
-      setApiRequestMade(true);
+    if (isModify && !isFormInitialized && currentGroupId && groupInfoData?.code === 200) {
+      setIsFormInitialized(true);
       
       const roomData = groupInfoData.data;
       if (!roomData) return;
@@ -1224,7 +1255,7 @@ const handleEditGroup = async (values: any) => {
       setOriginalBots([...botList]);
       
       const hasBots = botList.length > 0;
-      const isAdmin = userRole === "ADMIN";
+      const isAdmin = userRoleData === "ADMIN";
       
       const feedbackInfo = (roomData as any).chatBotFeedbackVO || roomData.chatBotFeedback;
       const isFeedbackMode = roomData.groupMode === "feedback" || !!feedbackInfo;
@@ -1293,7 +1324,8 @@ const handleEditGroup = async (values: any) => {
               },
       });
     }
-  }, [isModify, currentGroupId, apiRequestMade, groupInfoData, userRole, formik]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isModify, currentGroupId, isFormInitialized, groupInfoData, userRole]);
 
   const handleBotFieldChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -1323,7 +1355,7 @@ const handleEditGroup = async (values: any) => {
     }
   };
 
-  return (
+  const modalContent = (
     <ModalBackdrop onClick={onClose}  className="modal-backdrop-right">
       <Modal onClick={(e) => e.stopPropagation()}>
         {/* 右上角关闭按钮 */}
@@ -1374,7 +1406,7 @@ const handleEditGroup = async (values: any) => {
                       formik.errors.roomDescription
                     )
                   }
-                  disabled={shouldCheckRole && userRole !== "ADMIN"}
+                  disabled={shouldCheckRole && userRoleData !== "ADMIN"}
                 />
               </SmallTextareaContainer>
               <ErrorText $visible={!!(formik.touched.roomDescription && formik.errors.roomDescription)}>
@@ -1509,14 +1541,15 @@ const handleEditGroup = async (values: any) => {
               </ErrorText>
             </InputGroup>
             
-            {(!effectiveIsModify || userRole === "ADMIN") && (formik.values.groupMode === "free") &&(
+            {(!effectiveIsModify || userRoleData === "ADMIN") && (formik.values.groupMode === "free") &&(
               <CheckboxContainer>
                 <CheckboxInput
                   type="checkbox"
+                  id="ai-assistant-toggle"
                   checked={showAssistants}
                   onChange={handleAssistantToggle}
                 />
-                <CheckboxLabel>
+                <CheckboxLabel htmlFor="ai-assistant-toggle">
                   <AssistantIcon />
                   Add AI Assistant(s)
                 </CheckboxLabel>
@@ -1545,9 +1578,17 @@ const handleEditGroup = async (values: any) => {
                       {formik.values.bots.map((bot, index) => (
                         <AddAssistantRow key={index}>
                           <RemoveIcon
+                            data-testid="remove-bot-btn"
+                            title={formik.values.bots.length <= 1 ? "Uncheck 'Add AI Assistant(s)' to remove all bots" : "Remove this bot"}
                             onClick={() => {
                               if (formik.values.bots.length > 1) {
                                 arrayHelpers.remove(index);
+                              } else {
+                                // 只剩一个 Bot 时显示提示
+                                setShowRemoveBotTooltip(true);
+                                setTimeout(() => {
+                                  setShowRemoveBotTooltip(false);
+                                }, 3000);
                               }
                             }}
                           />
@@ -1662,6 +1703,7 @@ const handleEditGroup = async (values: any) => {
 
                       <AddIconContainer>
                         <AddIcon
+                          data-testid="add-bot-btn"
                           onClick={() =>
                             arrayHelpers.push({
                               name: "",
@@ -1687,7 +1729,7 @@ const handleEditGroup = async (values: any) => {
               </FieldArrayContainer>
             )}
 
-            {(!effectiveIsModify || userRole === "ADMIN") &&
+            {(!effectiveIsModify || userRoleData === "ADMIN") &&
             formik.values.groupMode === "feedback" &&
             (!effectiveIsModify || !!formik.values.feedbackBot?.botId) && (
               <FieldArrayContainer>
@@ -1811,7 +1853,7 @@ const handleEditGroup = async (values: any) => {
               </FieldArrayContainer>
             )}
 
-            {(!effectiveIsModify || userRole === "ADMIN") && (
+            {(!effectiveIsModify || userRoleData === "ADMIN") && (
               <ModalButtonContainer>
                 <FixedButtonContainer>
                   <Button
@@ -1833,7 +1875,22 @@ const handleEditGroup = async (values: any) => {
         </FormikProvider>
         </ModalContent>
       </Modal>
+      
+      {/* 删除 Bot 提示 */}
     </ModalBackdrop>
+  );
+
+  const tooltipContent = (
+    <Tooltip $show={showRemoveBotTooltip}>
+      Uncheck &quot;Add AI Assistant(s)&quot; to remove all bots
+    </Tooltip>
+  );
+
+  return (
+    <>
+      {createPortal(modalContent, document.body)}
+      {createPortal(tooltipContent, document.body)}
+    </>
   );
 };
 

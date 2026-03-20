@@ -761,22 +761,6 @@ function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         setIsCreateTagOverlayVisible={setIsCreateTagOverlayVisible}
       />
 
-      {/* 子组件独立渲染 */}
-      {isCreateRoomOverlayVisible && (
-        <CreateRoomComponent
-          onClose={() => setIsCreateRoomOverlayVisible(false)}
-          fromSidebar={true}
-        />
-      )}
-      {isJoinRoomsOverlayVisible && userInfo && (
-        <JoinRooms onClose={() => setIsJoinRoomsOverlayVisible(false)} />
-      )}
-      {isCreateTagOverlayVisible && (
-        <CreateNewTag
-          onClose={() => setIsCreateTagOverlayVisible(false)}
-          onTagCreated={refreshTags}
-        />
-      )}
       <HorizontalLine />
       <ToggleContainer>
         <ToggleButton
