@@ -5,6 +5,7 @@ import { useRoomContext } from "./RoomContext";
 import { useNavigate } from "react-router-dom";
 import { useJoinRoom } from "./useJoinRoom";
 import { MdGroup, MdKeyboardArrowLeft, MdKeyboardArrowRight, MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight} from "react-icons/md";
+import { generateGroupAvatar } from "../../utils/avatar";
 import {
   SearchRoomsContainer,
   LoadingContainer,
@@ -204,7 +205,7 @@ function SearchRooms() {
                   <CardHeader>
                     <HeaderLeft>
                       <Avatar>
-                        <AvatarImg src="https://placehold.co/32x32" alt="" />
+                        <AvatarImg src={generateGroupAvatar(room.groupName, 64)} alt={room.groupName} />
                       </Avatar>
                       <NameBlock>
                         <NameText>{room.groupName}</NameText>

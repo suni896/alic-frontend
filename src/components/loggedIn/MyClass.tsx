@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useJoinRoom } from "./useJoinRoom";
 import Button from "../ui/Button";
 import LabeledInputWithCount from "../ui/Input";
+import { generateGroupAvatar } from "../../utils/avatar";
 
 import { 
   useTagGroups, 
@@ -823,7 +824,7 @@ const MyClass: React.FC<MyClassProps> = ({
                   <CardHeader>
                     <HeaderLeft>
                       <Avatar>
-                        <AvatarImg src="https://placehold.co/32x32" alt="" />
+                        <AvatarImg src={generateGroupAvatar(room.groupName, 64)} alt={room.groupName} />
                       </Avatar>
                       <NameBlock>
                         <NameText>{room.groupName}</NameText>

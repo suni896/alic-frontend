@@ -967,23 +967,23 @@ export const Avatar = styled.div`
   overflow: hidden;
 
   /* ================= Box Model ================= */
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 3rem;
+  height: 3rem;
 
   /* ================= Visual ================= */
-  background: var(--indigo-500);
+  background: transparent;
   border-radius: var(--radius-12);
 
   /* tablet >= 768px */
   @media (min-width: 48rem) {
-    width: 2.5rem;
-    height: 2.5rem;
+    width: 3.5rem;
+    height: 3.5rem;
   }
 
   /* desktop >= 1024px */
   @media (min-width: 64rem) {
-    width: 3rem;
-    height: 3rem;
+    width: 4rem;
+    height: 4rem;
   }
 `;
 
@@ -994,23 +994,23 @@ export const AvatarImg = styled.img`
   top: 0.25rem;
 
   /* ================= Box Model ================= */
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
 
   /* tablet >= 768px */
   @media (min-width: 48rem) {
     left: 0.5rem;
     top: 0.5rem;
-    width: 2rem;
-    height: 2rem;
+    width: 2.5rem;
+    height: 2.5rem;
   }
 
   /* desktop >= 1024px */
   @media (min-width: 64rem) {
     left: 0.5rem;
     top: 0.5rem;
-    width: 2rem;
-    height: 2rem;
+    width: 3rem;
+    height: 3rem;
   }
 `;
 

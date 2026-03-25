@@ -11,6 +11,7 @@ import { useFormik } from "formik";
 import * as Yup from "yup";
 import { FiX } from "react-icons/fi";
 import { useGroupList } from "../../hooks/queries/useGroup";
+import { generateGroupAvatar } from "../../utils/avatar";
 
 import {
   ModalBackdrop,
@@ -380,7 +381,7 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
                         <CardHeader>
                           <HeaderLeft>
                             <Avatar>
-                              <AvatarImg src="https://placehold.co/32x32" alt="" />
+                              <AvatarImg src={generateGroupAvatar(room.groupName, 64)} alt={room.groupName} />
                             </Avatar>
                             <NameBlock>
                               <NameText>{room.groupName}</NameText>
