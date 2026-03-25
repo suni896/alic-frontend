@@ -556,7 +556,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
                 <div>Error: {error}</div>
               ) : (
                 members.map((member) => (
-                  <MemberContainer key={member.userId}>
+                  <MemberContainer key={member.userId} data-testid="member-item">
                     <MemberInfo>
                       <Avatar
                         src={`data:image/png;base64, ${member.userPortrait}`}
@@ -565,9 +565,9 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
                       <Username>
                         <UserNameText>{member.userName}</UserNameText>
                         {member.groupMemberType === "ADMIN" ? (
-                          <AdminLabel>admin</AdminLabel>
+                          <AdminLabel data-testid="admin-badge">admin</AdminLabel>
                         ) : (
-                          <MemberLabel>member</MemberLabel>
+                          <MemberLabel data-testid="member-badge">member</MemberLabel>
                         )}
                       </Username>
                     </MemberInfo>

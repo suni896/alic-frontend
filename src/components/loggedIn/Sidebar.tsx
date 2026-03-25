@@ -712,11 +712,21 @@ function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     return [1, "ellipsis", current, "ellipsis", total];
   };
 
+  // 只在搜索关键词或标签切换时重新获取房间列表
+  // 页码变化由 handlePageChange 处理，不需要在这里监听
   useEffect(() => {
     if (activeTab === "myRooms") {
-      fetchRooms();
+      setSidebarRoomListRequest({
+        keyword: roomSearch,
+        groupDemonTypeEnum: "JOINEDROOM",
+        pageRequestVO: {
+          pageSize: sidebarRoomsPagination.pageSize,
+          pageNum: 1, // 搜索时重置到第一页
+        },
+      });
     }
-  }, [sidebarRoomsPagination.pageNum, roomSearch, activeTab]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [roomSearch, activeTab]);
 
   useEffect(() => {
     setTagListRequest({
@@ -727,19 +737,6 @@ function Sidebar({ isOpen = false, onClose }: SidebarProps) {
       },
     });
   }, [tagSearch]);
-
-  const fetchRooms = async () => {
-    setSidebarRoomListRequest({
-      keyword: roomSearch,
-      groupDemonTypeEnum: "JOINEDROOM",
-      pageRequestVO: {
-        pageSize: sidebarRoomsPagination.pageSize,
-        pageNum: sidebarRoomsPagination.pageNum,
-      },
-    });
-  };
-
-
 
   return (
     <SidebarContainer className={isOpen ? 'open' : ''}>

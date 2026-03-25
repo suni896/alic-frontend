@@ -11,7 +11,7 @@ const StyledAppBar = styled(AppBar)`
 const MainContent = styled.main<{ $hasNavbar: boolean }>`
   margin-top: ${(props) => (props.$hasNavbar ? "3.5rem" : "0")};
   height: ${(props) => (props.$hasNavbar ? "calc(100vh - 3.5rem)" : "100vh")};
-  overflow-y: hidden;
+  overflow-y: auto;
   width: 100%;
 
   /* tablet >= 768px */

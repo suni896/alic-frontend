@@ -87,6 +87,7 @@ const Signin = (): JSX.Element => {
                 value={formik.values.email}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                onFocus={(e) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                 $hasError={formik.touched.email && !!formik.errors.email}
               />
               {formik.touched.email && formik.errors.email ? (
@@ -104,6 +105,7 @@ const Signin = (): JSX.Element => {
                 value={formik.values.password}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
+                onFocus={(e) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                 $hasError={formik.touched.password && !!formik.errors.password}
               />
               {formik.touched.password && formik.errors.password ? (

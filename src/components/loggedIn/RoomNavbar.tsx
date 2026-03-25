@@ -449,7 +449,7 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId, onMenuClick }) => {
           />
         )}
         <Share />
-        <Menu onClick={() => setIsRoomMembersVisible(true)} />
+        <Menu data-testid="room-members-btn" onClick={() => setIsRoomMembersVisible(true)} />
         {isRoomMembersVisible && (
           <RoomMembersComponent
             onClose={() => setIsRoomMembersVisible(false)}

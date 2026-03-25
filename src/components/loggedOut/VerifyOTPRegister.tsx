@@ -58,6 +58,11 @@ const VerifyOTPRegister = ({ onVerifySuccess, email }: VerifyOTPRegisterProps): 
                   // 失焦：标记 touched 并触发校验，让“Verification code is required”覆盖服务端错误
                   formik.setFieldTouched("otp", true, true);
                 }}
+                onFocus={(e) => {
+                  if (index === 0) {
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  }
+                }}
                 onKeyDown={(e) => {
                   if (e.key === "Backspace" && !formik.values.otp[index]) {
                     const prevInput = document.getElementById(`code-input-${index - 1}`);

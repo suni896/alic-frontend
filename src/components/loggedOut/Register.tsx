@@ -90,6 +90,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
               value={formik.values.email}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
+              onFocus={(e) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
               $hasError={formik.touched.email && !!formik.errors.email}
             />
             {formik.touched.email && formik.errors.email ? (
@@ -108,6 +109,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
               value={formik.values.username}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
+              onFocus={(e) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
               $hasError={formik.touched.username && !!formik.errors.username}
             />
             {formik.touched.username && formik.errors.username ? (
@@ -125,6 +127,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
               value={formik.values.password}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
+              onFocus={(e) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
               $hasError={formik.touched.password && !!formik.errors.password}
             />
             {formik.touched.password && formik.errors.password ? (
@@ -142,6 +145,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
               value={formik.values.confirmPassword}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
+              onFocus={(e) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
               $hasError={formik.touched.confirmPassword && !!formik.errors.confirmPassword}
             />
             {formik.touched.confirmPassword && formik.errors.confirmPassword ? (

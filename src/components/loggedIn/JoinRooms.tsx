@@ -248,33 +248,6 @@ const PasswordInputWrapper = styled.div`
   margin: var(--space-6) 0;
 `;
 
-const ErrorMessage = styled.div`
-  font-size: var(--space-5);
-  font-weight: var(--weight-semibold);
-  margin-bottom: var(--space-6);
-  text-align: center;
-  font-family: var(--font-sans);
-`;
-
-const ErrorModalButton = styled.button<{ $success?: boolean }>`
-  padding: var(--space-3) var(--space-6);
-  background: ${props => props.$success ? 'var(--emerald-green)' : 'var(--error-red)'};
-  color: white;
-  border: none;
-  border-radius: var(--radius-5);
-  font-weight: var(--weight-semibold);
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: block;
-  margin: 0 auto;
-  font-family: var(--font-sans);
-
-  &:hover {
-    filter: brightness(0.95);
-  }
-`;
-
-
 
 interface CreateRoomComponentProps {
   onClose: () => void;
@@ -472,9 +445,8 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
             if (e.target === e.currentTarget) {
               setShowPasswordModal(false);
             }
-          }}>
-            {showPasswordModal && (
-              <PasswordModalContainer onClick={(e) => e.stopPropagation()}>
+          }} className="modal-backdrop-right">
+            <PasswordModalContainer onClick={(e) => e.stopPropagation()}>
                 {/* 右上角关闭按钮 */}
                 <ModalCloseButton onClick={() => setShowPasswordModal(false)} aria-label="Close">
                   <FiX size={24} />
@@ -525,7 +497,6 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
                   </FixedButtonContainer>
                 </ButtonContainer>
               </PasswordModalContainer>
-            )}
           </ModalBackdrop>
         )}
       </Container>

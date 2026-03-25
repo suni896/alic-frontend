@@ -57,6 +57,12 @@ function VerifyOTP({ onVerifySuccess, type, email }: VerifyOTPProps): JSX.Elemen
                   onBlur={() => {
                     formik.setFieldTouched("otp", true, true);
                   }}
+                  onFocus={(e) => {
+                    // 第一个输入框聚焦时滚动到可视区域
+                    if (index === 0) {
+                      e.target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }
+                  }}
                   onKeyDown={(e) => {
                     if (e.key === "Backspace" && !formik.values.otp[index]) {
                       const prevInput = document.getElementById(`code-input-${index - 1}`);

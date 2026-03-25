@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { queryClient } from "../../lib/queryClient";
 import { membersCache } from "./RoomMembersComponent";
 import SockJS from "sockjs-client";
@@ -12,6 +13,7 @@ import rehypeRaw from "rehype-raw";
 import remarkBreaks from "remark-breaks";
 import remarkGfm from "remark-gfm";
 import { useInputTracking } from "../../hooks/useInputTracking";
+import { useKeyboardInsets } from "../../hooks/useKeyboardInsets";
 import sensors, { eventQueue, flushEvents } from "../../utils/tracker";
 import { API_BASE_URL } from "../../../config";
 import {
@@ -23,6 +25,7 @@ import { useGroupInfo } from "../../hooks/queries/useGroup";
 import { 
   fetchGroupChatBotInfo, 
   fetchGroupMemberList,
+  fetchUserRole,
   type ChatBot 
 } from "../../api/group.api";
 import { fetchUserInfoInGroup } from "../../api/user.api";
@@ -520,13 +523,14 @@ const SendMessageContainer = styled.div`
   }
 `;
 
-const MessageInputWrapper = styled.div<{ $disabled?: boolean }>`
+const MessageInputWrapper = styled.div<{ $disabled?: boolean; $keyboardHeight?: number }>`
   /* ================= Layout ================= */
   position: relative;
 
   /* ================= Box Model ================= */
   width: 100%;
   padding: var(--space-1) var(--space-2);
+  padding-bottom: ${props => props.$keyboardHeight ? `${props.$keyboardHeight + 8}px` : 'var(--space-1)'};
   box-sizing: border-box;
 
   /* ================= Visual ================= */
@@ -536,7 +540,7 @@ const MessageInputWrapper = styled.div<{ $disabled?: boolean }>`
   border-radius: var(--radius-3);
 
   /* ================= Animation ================= */
-  transition: all 0.2s ease;
+  transition: padding-bottom 0.2s ease;
 
   &:focus-within {
     border-color: ${(props) => (props.$disabled ? "var(--gray-300)" : "transparent")};
@@ -547,12 +551,14 @@ const MessageInputWrapper = styled.div<{ $disabled?: boolean }>`
   @media (min-width: 48rem) {
     width: 99%;
     padding: var(--space-2) var(--space-4);
+    padding-bottom: ${props => props.$keyboardHeight ? `${props.$keyboardHeight + 8}px` : 'var(--space-2)'};
   }
 
   /* desktop >= 1024px */
   @media (min-width: 64rem) {
     width: 98%;
     padding: var(--space-3) var(--space-5);
+    padding-bottom: ${props => props.$keyboardHeight ? `${props.$keyboardHeight + 8}px` : 'var(--space-3)'};
   }
 `;
 
@@ -1125,6 +1131,11 @@ const clientCache = new Map<number, Stomp.Client | null>();
 
 // 主组件
 const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
+  const navigate = useNavigate();
+  
+  // 键盘高度（移动端适配）
+  const [keyboardHeight, scrollToVisible] = useKeyboardInsets();
+
   // 状态管理
   const [hasNewMessage, setHasNewMessage] = useState(false);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -1213,6 +1224,30 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       setGroupMode('free');
     }
   }, [groupInfoData]);
+
+  // 检查用户是否已加入群组
+  const hasCheckedRoleRef = useRef(false);
+  useEffect(() => {
+    if (!groupId || hasCheckedRoleRef.current) return;
+    
+    const checkUserRole = async () => {
+      hasCheckedRoleRef.current = true;
+      try {
+        const response = await fetchUserRole(groupId);
+        // 如果 code 不是 200 或 data 为空/undefined，说明用户未加入群组
+        if (response.code !== 200 || !response.data) {
+          alert('You have not joined this group. Please join the group first.');
+          navigate('/search-rooms');
+        }
+      } catch (error) {
+        // API 调用失败（如 401/403）也说明用户未加入或无权限
+        alert('You have not joined this group. Please join the group first.');
+        navigate('/search-rooms');
+      }
+    };
+    
+    checkUserRole();
+  }, [groupId, navigate]);
 
   // 回复功能处理函数
   const handleReplyToMessage = (message: Message) => {
@@ -2361,13 +2396,14 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           )}
         </IconContainer>
         
-        <MessageInputWrapper $disabled={connectionStatus !== 'connected'}>
+        <MessageInputWrapper $disabled={connectionStatus !== 'connected'} $keyboardHeight={keyboardHeight}>
 
           <MessageInput
             $disabled={isLoading || connectionStatus !== 'connected'}
             $isReplying={!!replyingTo}
             ref={messageInputRef}
             value={inputMessage}
+            onFocus={scrollToVisible}
             onChange={(e) => {
               handleInputChange(e);
               handleTyping(e.target.value);

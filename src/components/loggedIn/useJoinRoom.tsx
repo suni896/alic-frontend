@@ -56,7 +56,6 @@ export function useJoinRoom() {
       // 如果用户已经加入群组，直接跳转
       if (isJoined) {
         console.log("Already joined this group");
-        alert("Already joined this group");
         setJoinSuccess(true);
         setRedirectPath(`/my-room/${groupId}`);
         return;
