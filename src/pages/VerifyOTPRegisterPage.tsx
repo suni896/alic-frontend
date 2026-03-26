@@ -1,5 +1,5 @@
 import React from "react";
-import Layout from "../components/loggedOut/Layout";
+import Layout from "../components/ui/Layout";
 import VerifyOTPRegister from "../components/loggedOut/VerifyOTPRegister";
 
 interface VerifyOTPRegisterPageProps {
@@ -9,7 +9,7 @@ interface VerifyOTPRegisterPageProps {
 
 const VerifyOTPRegisterPage: React.FC<VerifyOTPRegisterPageProps> = ({ email, onVerifySuccess }) => {
   return (
-    <Layout>
+    <Layout hideNavbar>
       <VerifyOTPRegister  email={ email } onVerifySuccess={ onVerifySuccess }/>
     </Layout>
   );
