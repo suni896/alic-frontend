@@ -1640,7 +1640,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       return;
     }
 
-    // 如果已经有连接且连接正常,复用
+    // 如果已经有连接且连接正常，复用
     if (groupId && clientCache.has(groupId)) {
       const cachedClient = clientCache.get(groupId);
       if (cachedClient !== undefined && cachedClient?.connected) {
