@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import LeftSection from "./LeftSection";
-import coverImage from "../../assets/cover.png";
+import coverImage from "../../assets/banner.webp";
 
 import { useEffect } from "react";
 import { useState } from "react";
@@ -10,41 +10,93 @@ const images = [coverImage];
 
 const Container = styled.div`
   display: flex;
-  height: calc(100vh - 7vh);
+  height: 100vh;
   width: 100vw;
   box-sizing: border-box;
   justify-content: center;
   align-items: center;
-  background: white;
-  overflow-y: scroll;
+  background: var(--color-bg);
+  overflow: hidden;
 `;
 
 const Wrapper = styled.div`
   display: flex;
   box-sizing: border-box;
-  width: 90vw;
-  height: 75vh;
-  max-width: 1300px;
-  background: white;
-  border: 1px solid #016532;
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  height: 100%;
+  background: var(--color-card);
+  border-radius: 0;
+  box-shadow: none;
+  overflow: hidden;
 
-  @media (max-width: 740px) {
-    height: 63vh;
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: 90vw;
+    height: 85vh;
+    border-radius: var(--radius-12);
+    box-shadow: var(--shadow-soft);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: 90vw;
+    height: 85vh;
+    border-radius: var(--radius-12);
+    box-shadow: var(--shadow-soft);
   }
 `;
 
+// Styled Component: RightSection
 const RightSection = styled.div`
   flex: 1;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: flex-start;
   box-sizing: border-box;
   width: 100%;
   height: 100%;
-  padding: 0.5rem 2rem;
+  padding: 0;
   overflow-y: auto;
-  
+  -webkit-overflow-scrolling: touch;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    flex: 0.8;
+    width: 30%;
+    align-items: center;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    flex: 0.8;
+    width: 30%;
+    align-items: center;
+  }
+`;
+
+const RightContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 90%;
+  min-height: 100%;
+  box-sizing: border-box;
+  padding: var(--space-4) var(--space-4);
+  gap: var(--space-3);
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: 85%;
+    padding: var(--space-6) var(--space-8);
+    gap: var(--space-4);
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: 85%;
+    padding: var(--space-7) var(--space-12);
+    gap: var(--space-5);
+  }
 `;
 
 const ContainerLayout = ({ children }: { children: React.ReactNode }) => {
@@ -66,7 +118,9 @@ const ContainerLayout = ({ children }: { children: React.ReactNode }) => {
           currentIndex={currentIndex}
           images={images || []}
         />
-        <RightSection>{children}</RightSection>
+        <RightSection>
+          <RightContent>{children}</RightContent>
+        </RightSection>
       </Wrapper>
     </Container>
   );

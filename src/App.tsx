@@ -9,7 +9,6 @@ import VerifyOTPRegisterPage from "./pages/VerifyOTPRegisterPage"
 import { useState } from "react";
 import SigninPage from "./pages/SigninPage";
 import MyRoomPage from "./pages/MyRoomPage";
-import { UserProvider } from "./components/loggedIn/UserContext";
 import { RoomProvider } from "./components/loggedIn/RoomContext";
 
 const Debugger: React.FC = () => {
@@ -25,8 +24,7 @@ function App() {
 
   return (
     <BrowserRouter>
-      <UserProvider>
-        <RoomProvider>
+      <RoomProvider>
           <Debugger />
           <Routes>
             <Route path="/" element={<SigninPage />} />
@@ -60,8 +58,7 @@ function App() {
             <Route path="/my-class/:tagId" element={<MyClassPage />} />
             <Route path="/my-room/:groupId" element={<MyRoomPage />} />
           </Routes>
-        </RoomProvider>
-      </UserProvider>
+      </RoomProvider>
     </BrowserRouter>
   );
 }

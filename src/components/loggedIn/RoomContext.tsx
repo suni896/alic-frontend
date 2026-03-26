@@ -3,11 +3,11 @@ import React, {
   createContext,
   useContext,
   useState,
-  useEffect,
   Dispatch,
   SetStateAction,
 } from "react";
-import apiClient from "../loggedOut/apiClient";
+import { useSidebarRooms, useMainAreaRooms, useTags, useCreateRoom } from "../../hooks/queries/useRoom";
+import { useUserInfo } from "../../hooks/queries/useUser";
 import axios from "axios";
 
 interface RoomGroup {
@@ -21,25 +21,18 @@ interface RoomGroup {
   isJoined: boolean;
 }
 
+export interface Tag {
+  tagId: number;
+  tagName: string;
+}
 
-interface RoomListRequest {
+import type { GetGroupListRequest } from '../../api/room.api';
+
+interface TagListRequest {
   keyword: string;
-  groupDemonTypeEnum: string;
   pageRequestVO: {
     pageSize: number;
     pageNum: number;
-  };
-}
-
-interface RoomListResponse {
-  code: number;
-  message: string;
-  data: {
-    pageSize: number;
-    pageNum: number;
-    pages: number;
-    total: number;
-    data: RoomGroup[];
   };
 }
 
@@ -50,15 +43,14 @@ interface Pagination {
   total: number;
 }
 
-// 类型区：扩展 CreateRoomRequest
 interface CreateRoomRequest {
   groupName: string;
   groupDescription: string;
   groupType: number;
   password?: string;
   chatBotVOList: ChatBotVO[];
-  groupMode: "free" | "feedback"; // 新增
-  chatBotFeedbackVO?: { // 新增（仅 feedback 模式会传）
+  groupMode: "free" | "feedback";
+  chatBotFeedbackVO?: {
     botName: string;
     botPrompt: string;
     msgCountInterval: number;
@@ -76,13 +68,15 @@ interface ChatBotVO {
 interface RoomContextType {
   sidebarRooms: RoomGroup[];
   mainAreaRooms: RoomGroup[];
+  tags: Tag[];
   sidebarRoomsPagination: Pagination;
-  // setSidebarRoomsPagination: Dispatch<SetStateAction<RoomListPagination>>;
   mainAreaRoomsPagination: Pagination;
-  // setMainAreaRoomsPagination: Dispatch<SetStateAction<RoomListPagination>>;
+  tagsPagination: Pagination;
   addRoom: (createRoomRequest: CreateRoomRequest) => Promise<void>;
-  setSidebarRoomListRequest: Dispatch<SetStateAction<RoomListRequest>>;
-  setMainAreaRoomListRequest: Dispatch<SetStateAction<RoomListRequest>>;
+  setSidebarRoomListRequest: Dispatch<SetStateAction<GetGroupListRequest>>;
+  setMainAreaRoomListRequest: Dispatch<SetStateAction<GetGroupListRequest>>;
+  setTagListRequest: Dispatch<SetStateAction<TagListRequest>>;
+  refreshTags: () => void;
 }
 
 const RoomContext = createContext<RoomContextType | undefined>(undefined);
@@ -90,107 +84,91 @@ const RoomContext = createContext<RoomContextType | undefined>(undefined);
 export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const [sidebarRooms, setSidebarRooms] = useState<RoomGroup[]>([]);
-  const [mainAreaRooms, setMainAreaRooms] = useState<RoomGroup[]>([]);
-  const [sidebarRoomsPagination, setSidebarRoomsPagination] =
-    useState<Pagination>({
-      pageSize: 10,
-      pageNum: 1,
-      pages: 1,
-      total: 0,
-    });
-  const [mainAreaRoomsPagination, setMainAreaRoomsPagination] =
-    useState<Pagination>({
-      pageSize: 20,
-      pageNum: 1,
-      pages: 1,
-      total: 0,
-    });
-  const [sidebarRoomListRequest, setSidebarRoomListRequest] = useState({
+  const { userInfo } = useUserInfo();
+  const isLoggedIn = !!userInfo;
+
+  const [sidebarRoomListRequest, setSidebarRoomListRequest] = useState<GetGroupListRequest>({
     keyword: "",
     groupDemonTypeEnum: "JOINEDROOM",
     pageRequestVO: {
-      pageSize: 10,
+      pageSize: 5,
       pageNum: 1,
     },
   });
-  const [mainAreaRoomListRequest, setMainAreaRoomListRequest] = useState({
+  const [mainAreaRoomListRequest, setMainAreaRoomListRequest] = useState<GetGroupListRequest>({
     keyword: "",
     groupDemonTypeEnum: "PUBLICROOM",
     pageRequestVO: {
-      pageSize: 20,
+      pageSize: 6,
+      pageNum: 1,
+    },
+  });
+  const [tagListRequest, setTagListRequest] = useState<TagListRequest>({
+    keyword: "",
+    pageRequestVO: {
+      pageSize: 8,
       pageNum: 1,
     },
   });
 
-  useEffect(() => {
-    fetchSidebarRooms();
-  }, [sidebarRoomListRequest]);
+  // Use React Query hooks - only enable when user is logged in
+  const { data: sidebarRoomsData } = useSidebarRooms({
+    ...sidebarRoomListRequest,
+    enabled: isLoggedIn,
+  });
+  const { data: mainAreaRoomsData } = useMainAreaRooms({
+    ...mainAreaRoomListRequest,
+    enabled: isLoggedIn,
+  });
+  const { data: tagsData, refetch: refetchTags } = useTags({
+    ...tagListRequest,
+    enabled: isLoggedIn,
+  });
+  const createRoomMutation = useCreateRoom();
 
-  useEffect(() => {
-    fetchMainAreaRooms();
-  }, [mainAreaRoomListRequest]);
+  // Extract data and pagination
+  const sidebarRooms = sidebarRoomsData?.code === 200 ? sidebarRoomsData.data.data : [];
+  const sidebarRoomsPagination = sidebarRoomsData?.code === 200 ? {
+    pageSize: sidebarRoomsData.data.pageSize,
+    pageNum: sidebarRoomsData.data.pageNum,
+    total: sidebarRoomsData.data.total,
+    pages: sidebarRoomsData.data.pages,
+  } : { pageSize: 5, pageNum: 1, total: 0, pages: 0 };
 
-  const fetchSidebarRooms = async () => {
-    const response = await apiClient.post<RoomListResponse>(
-      "/v1/group/get_group_list",
-      sidebarRoomListRequest
-    );
+  const mainAreaRooms = mainAreaRoomsData?.code === 200 ? mainAreaRoomsData.data.data : [];
+  const mainAreaRoomsPagination = mainAreaRoomsData?.code === 200 ? {
+    pageSize: mainAreaRoomsData.data.pageSize,
+    pageNum: mainAreaRoomsData.data.pageNum,
+    total: mainAreaRoomsData.data.total,
+    pages: mainAreaRoomsData.data.pages,
+  } : { pageSize: 6, pageNum: 1, total: 0, pages: 0 };
 
-    if (response.data.code === 200) {
-      const rooms = response.data.data.data;
-      setSidebarRooms(rooms);
-      setSidebarRoomsPagination({
-        pageSize: response.data.data.pageSize,
-        pageNum: response.data.data.pageNum,
-        total: response.data.data.total,
-        pages: response.data.data.pages,
-      });
-    } else {
-      console.error(
-        `API returned error code: ${response.data.code}, message: ${response.data.message}`
-      );
-    }
-  };
+  const tags = tagsData?.code === 200 ? tagsData.data.data : [];
+  const tagsPagination = tagsData?.code === 200 ? {
+    pageSize: tagsData.data.pageSize,
+    pageNum: tagsData.data.pageNum,
+    total: tagsData.data.total,
+    pages: tagsData.data.pages,
+  } : { pageSize: 7, pageNum: 1, total: 0, pages: 0 };
 
-  const fetchMainAreaRooms = async () => {
-    const response = await apiClient.post<RoomListResponse>(
-      "/v1/group/get_group_list",
-      mainAreaRoomListRequest
-    );
-
-    if (response.data.code === 200) {
-      const rooms = response.data.data.data;
-      setMainAreaRooms(rooms);
-      setMainAreaRoomsPagination({
-        pageSize: response.data.data.pageSize,
-        pageNum: response.data.data.pageNum,
-        total: response.data.data.total,
-        pages: response.data.data.pages,
-      });
-    } else {
-      console.error(
-        `API returned error code: ${response.data.code}, message: ${response.data.message}`
-      );
-    }
+  const refreshTags = () => {
+    setTagListRequest((prev) => ({
+      ...prev,
+      pageRequestVO: { ...prev.pageRequestVO, pageNum: 1 },
+    }));
+    refetchTags();
   };
 
   const addRoom = async (createRoomRequest: CreateRoomRequest) => {
     try {
-      const response = await apiClient.post(
-        "/v1/group/create_new_group",
-        createRoomRequest
-      );
+      const response = await createRoomMutation.mutateAsync(createRoomRequest);
   
-      if (response.data.code === 200 && response.data.data?.groupId) {
-        fetchSidebarRooms();
-        fetchMainAreaRooms();
+      if (response.code === 200 && response.data?.groupId) {
+        // Rooms will be refreshed automatically by the mutation's onSuccess
       } else {
-        alert(
-          response.data.message || "Failed to create group."
-        );
+        alert(response.message || "Failed to create group.");
         console.error(
-          `API returned error code: ${response.data.code}, message: ${response.data.message}`
+          `API returned error code: ${response.code}, message: ${response.message}`
         );
       }
     } catch (error: unknown) {
@@ -200,9 +178,9 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
           error.response?.data?.message ||
             "Failed to create group. Please try again."
         );
-      } else {
+      } else if (error instanceof Error) {
         console.error("Unexpected error:", error);
-        alert("An unexpected error occurred. Please try again.");
+        alert(error.message || "An unexpected error occurred. Please try again.");
       }
     }
   };
@@ -212,11 +190,15 @@ export const RoomProvider: React.FC<{ children: React.ReactNode }> = ({
       value={{
         sidebarRooms,
         mainAreaRooms,
+        tags,
         sidebarRoomsPagination: sidebarRoomsPagination,
         mainAreaRoomsPagination: mainAreaRoomsPagination,
+        tagsPagination: tagsPagination,
         addRoom,
         setSidebarRoomListRequest,
         setMainAreaRoomListRequest,
+        setTagListRequest,
+        refreshTags,
       }}
     >
       {children}
