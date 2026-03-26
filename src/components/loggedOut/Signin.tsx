@@ -1,9 +1,11 @@
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
 import ContainerLayout from "./ContainerLayout";
 import { useUserInfo } from "../../hooks/queries/useUser";
 import { useLogin } from "../../hooks/queries/useAuth";
+import { getUserInfo } from "../../api/user.api";
 import { Input, ErrorText, SubmitButton, Title, FieldGroup, ForgotPassword, HelperText, SigninForm, AuthForm, PasswordInput } from "../ui/SharedComponents";
 
 const validationSchema = Yup.object({
@@ -29,6 +31,34 @@ const Signin = (): JSX.Element => {
   const navigate = useNavigate();
   const { refreshUserInfo } = useUserInfo();
   const loginMutation = useLogin();
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // 检查用户是否已登录
+  useEffect(() => {
+    const checkAuthStatus = async () => {
+      const token = localStorage.getItem("jwtToken");
+      if (token) {
+        try {
+          // 验证 token 是否有效
+          const response = await getUserInfo();
+          if (response.code === 200) {
+            // Token 有效，跳转到搜索房间页面
+            navigate("/search-rooms");
+            return;
+          }
+        } catch (error) {
+          // Token 无效或过期，清除存储
+          console.log("Token invalid or expired, staying on login page");
+          localStorage.removeItem("jwtToken");
+          document.cookie =
+            "jwtToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=None";
+        }
+      }
+      setIsCheckingAuth(false);
+    };
+
+    checkAuthStatus();
+  }, [navigate]);
   
   const formik = useFormik<FormValues>({
     initialValues: {
@@ -72,6 +102,19 @@ const Signin = (): JSX.Element => {
     navigate("/reset-password");
   };
 
+  // 检查认证状态时显示 loading
+  if (isCheckingAuth) {
+    return (
+      <ContainerLayout>
+        <SigninForm>
+          <div style={{ textAlign: "center", padding: "2rem" }}>
+            <div>Loading...</div>
+          </div>
+        </SigninForm>
+      </ContainerLayout>
+    );
+  }
+
   return (
     <>
       <ContainerLayout>
@@ -87,7 +130,7 @@ const Signin = (): JSX.Element => {
                 value={formik.values.email}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                onFocus={(e) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                 $hasError={formik.touched.email && !!formik.errors.email}
               />
               {formik.touched.email && formik.errors.email ? (
@@ -105,7 +148,7 @@ const Signin = (): JSX.Element => {
                 value={formik.values.password}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
-                onFocus={(e) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                 $hasError={formik.touched.password && !!formik.errors.password}
               />
               {formik.touched.password && formik.errors.password ? (

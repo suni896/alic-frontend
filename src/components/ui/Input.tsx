@@ -53,31 +53,31 @@ const StyledTextArea = styled.textarea<{ $hasError?: boolean }>`
 interface ModalInputProps {
     $hasError?: boolean;
     disabled?: boolean;
-    variant?: 'default' | 'withIcon' | 'unstyled';
+    $variant?: 'default' | 'withIcon' | 'unstyled';
 }
 
 const ModalInput = styled.input<ModalInputProps>`
   width: 100%;
   height: 100%;
-  ${props => props.variant === 'unstyled' ? 'flex: 1; min-width: 0;' : ''}
+  ${props => props.$variant === 'unstyled' ? 'flex: 1; min-width: 0;' : ''}
 
   /* mobile - 基础样式 */
-  padding: ${props => props.variant === 'unstyled' ? '0' : '0.75rem 0.875rem'};
+  padding: ${props => props.$variant === 'unstyled' ? '0' : '0.75rem 0.875rem'};
   font-size: 0.9rem;
 
   font-family: var(--font--roboto);
-  border: ${props => props.variant === 'unstyled' ? 'none' : `0px solid ${props.$hasError ? "var(--error-red)" : "#e5e7eb"}`};
-  background-color: ${props => props.variant === 'unstyled' ? 'transparent' : '#f9fafb'};
+  border: ${props => props.$variant === 'unstyled' ? 'none' : `0px solid ${props.$hasError ? "var(--error-red)" : "#e5e7eb"}`};
+  background-color: ${props => props.$variant === 'unstyled' ? 'transparent' : '#f9fafb'};
   transition: all 0.2s ease;
   box-sizing: border-box;
-  padding-left: ${props => props.variant === 'withIcon' ? '2.5rem' : (props.variant === 'unstyled' ? '0' : '1rem')};
-  ${props => props.variant === 'unstyled' ? `
+  padding-left: ${props => props.$variant === 'withIcon' ? '2.5rem' : (props.$variant === 'unstyled' ? '0' : '1rem')};
+  ${props => props.$variant === 'unstyled' ? `
     line-height: 3rem;   /* 与 Navbar 搜索容器高度一致，文本垂直居中 */
   ` : ''}
 
   &:focus {
     outline: none;
-    ${props => props.variant === 'unstyled'
+    ${props => props.$variant === 'unstyled'
       ? `
         background-color: transparent;
         box-shadow: none;
@@ -98,7 +98,7 @@ const ModalInput = styled.input<ModalInputProps>`
   /* tablet >= 768px */
   @media (min-width: 48rem) {
     font-size: var(--space-4);
-    padding: ${props => props.variant === 'unstyled' ? '0' : '0.875rem 1rem'};
+    padding: ${props => props.$variant === 'unstyled' ? '0' : '0.875rem 1rem'};
   }
 `;
 
@@ -149,7 +149,7 @@ const LabeledInputWithCount: React.FC<LabeledInputWithCountProps> = ({
     maxLength,
     disabled,
     $hasError: !!error,
-    variant,
+    $variant: variant,
   };
 
   return (

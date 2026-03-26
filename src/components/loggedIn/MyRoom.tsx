@@ -1068,9 +1068,16 @@ const BotListPopUp: React.FC<MyRoomProps> = ({
   const { userInfo } = useUserInfo();
   const [isAdmin, setIsAdmin] = useState(false);
   
-  // Use React Query hook
-  const { data: botsData, isLoading } = useGroupChatBotList(groupId);
+  // Use React Query hook with refetch on mount
+  const { data: botsData, isLoading, refetch } = useGroupChatBotList(groupId);
   const bots = botsData?.code === 200 ? botsData.data : [];
+
+  // 组件挂载时强制刷新数据（避免缓存问题）
+  useEffect(() => {
+    if (groupId) {
+      refetch();
+    }
+  }, [groupId, refetch]);
 
   useEffect(() => {
     const checkIfAdmin = (): boolean => {
@@ -1380,11 +1387,13 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   // 获取Bot信息
   const fetchBotInfo = async (botId: number): Promise<Bot> => {
     try {
-      return await queryClient.fetchQuery({
+      const response = await queryClient.fetchQuery({
         queryKey: ['groupChatBotInfo', botId],
         queryFn: () => fetchGroupChatBotInfo(botId),
         staleTime: 1000 * 60 * 5, // 5 minutes
       });
+      // API 返回的是 GetGroupChatBotInfoResponse，需要提取 data 字段
+      return response.data;
     } catch (error) {
       console.error("Error fetching bots:", error);
       return {
@@ -1653,7 +1662,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         connectionStatusRef.current.currentGroupId !== groupId) {
       console.log(`🔄 切换房间: ${connectionStatusRef.current.currentGroupId} -> ${groupId}`);
       stompClientRef.current.disconnect(() => {
-        console.log("已断开之前的连接");
+        console.log("切换房间，已断开之前的连接");
       });
     }
 
@@ -1946,7 +1955,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     initRoom();
 
     return () => {
-      console.log(`🏠 MyRoom组件卸载 (groupId: ${groupId})`);
+
       isSubscribed = false;
       clearReconnectTimeout();
 
@@ -1954,19 +1963,24 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       // 连接会在切换房间时由manageWebSocketConnection管理
       // 或者在组件真正销毁时清理
 
-      // 只在组件完全卸载(不是重新渲染)时清理状态
-      if (!groupId) {
-        if (stompClientRef.current?.connected) {
-          stompClientRef.current.disconnect(() => {
-            console.log("✂️ 组件卸载,断开WebSocket");
-          });
-        }
-        connectionStatusRef.current = {
-          currentGroupId: null,
-          connectionPromise: null,
-          isConnecting: false,
-        };
+      // 组件卸载时清理：
+      // 1. 断开连接
+      if (stompClientRef.current?.connected) {
+        stompClientRef.current.disconnect(() => {
+          console.log("✂️ 组件卸载,断开WebSocket");
+        });
+
       }
+      // 2.从缓存中移除，下次进入时会重新建立连接（避免复用旧订阅）
+      if (groupId) {
+        console.log(`从缓存中移除 (groupId: ${groupId}), 重新建立连接`);
+        clientCache.delete(groupId);
+      } 
+      connectionStatusRef.current = {
+        currentGroupId: null,
+        connectionPromise: null,
+        isConnecting: false,
+      };
     };
   }, [groupId]); // 移除manageWebSocketConnection依赖,避免不必要的重新执行
 

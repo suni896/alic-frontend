@@ -311,7 +311,8 @@ const AssistantTitle = styled.h3`
 const ColumnHeader = styled.div`
   font-weight: 600;
   font-size: 0.875rem;
-  color: var(--gray-600);
+  font-family: var(--font-roboto);
+  color: var(--color-text);
   text-align: left;
   display: flex;
   align-items: center;
@@ -352,15 +353,13 @@ const AddAssistantRow = styled.div`
   grid-template-columns: 32px 0.8fr 1.3fr 80px 80px;
   gap: 0.6rem;
   align-items: start;
-  padding: 0.75rem 0;
+  padding: 0.75rem 0.5rem;
   border-bottom: 1px solid var(--gray-200);
   transition: background-color 0.2s ease;
+  border-radius: 8px;
 
   &:hover {
     background-color: var(--blue-100);
-    border-radius: 8px;
-    margin: 0 -0.5rem;
-    padding: 0.75rem 0.5rem;
   }
 
   &:last-child {
@@ -389,15 +388,13 @@ const FeedbackAssistantRow = styled.div`
   grid-template-columns: 24px 1fr 1fr 50px 50px;
   gap: 0.3rem;
   align-items: start;
-  padding: 0.5rem 0;
+  padding: 0.5rem 0.5rem;
   border-bottom: 1px solid var(--gray-200);
   transition: background-color 0.2s ease;
+  border-radius: 8px;
 
   &:hover {
     background-color: var(--blue-100);
-    border-radius: 8px;
-    margin: 0 -0.5rem;
-    padding: 0.5rem 0.5rem;
   }
 
   &:last-child {
@@ -408,14 +405,14 @@ const FeedbackAssistantRow = styled.div`
   @media (min-width: 48rem) {
     grid-template-columns: 28px 1fr 1fr 60px 60px;
     gap: 0.4rem;
-    padding: 0.75rem 0;
+    padding: 0.75rem 0.5rem;
   }
 
   /* desktop >= 1024px */
   @media (min-width: 64rem) {
     grid-template-columns: 32px 0.8fr 1.3fr 80px 80px;
     gap: 0.6rem;
-    padding: 0.75rem 0;
+    padding: 0.75rem 0.5rem;
   }
 `;
 
@@ -517,23 +514,25 @@ const ToggleSwitch = styled.label`
     display: none;
   }
 
+  /* mobile - 基础样式 */
   span {
-    width: 3rem;
-    height: 1.5rem;
+    width: 2rem;
+    height: 1rem;
     background-color: var(--gray-300);
-    border-radius: 0.75rem;
+    border-radius: 0.5rem;
     position: relative;
     transition: background-color 0.3s ease;
 
     &::before {
       content: "";
       position: absolute;
-      top: 0.125rem;
+      top: 50%;
       left: 0.125rem;
-      width: 1.25rem;
-      height: 1.25rem;
+      width: 0.75rem;
+      height: 0.75rem;
       background-color: white;
       border-radius: 50%;
+      transform: translateY(-50%);
       transition: transform 0.3s ease;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
@@ -543,25 +542,8 @@ const ToggleSwitch = styled.label`
     background-color: var(--emerald-green);
 
     &::before {
-      transform: translateX(1.5rem);
+      transform: translateY(-50%) translateX(1rem);
     }
-  }
-
-  /* mobile - 基础样式 */
-  span {
-    width: 2rem;
-    height: 1rem;
-
-    &::before {
-      width: 0.75rem;
-      height: 0.75rem;
-      top: 0.125rem;
-      left: 0.125rem;
-    }
-  }
-
-  input:checked + span::before {
-    transform: translateX(1rem);
   }
 
   /* tablet >= 768px */
@@ -569,17 +551,17 @@ const ToggleSwitch = styled.label`
     span {
       width: 2.5rem;
       height: 1.25rem;
+      border-radius: 0.625rem;
 
       &::before {
         width: 1rem;
         height: 1rem;
-        top: 0.125rem;
         left: 0.125rem;
       }
     }
 
     input:checked + span::before {
-      transform: translateX(1.25rem);
+      transform: translateY(-50%) translateX(1.25rem);
     }
   }
 
@@ -588,17 +570,17 @@ const ToggleSwitch = styled.label`
     span {
       width: 3rem;
       height: 1.5rem;
+      border-radius: 0.75rem;
 
       &::before {
-        width: 1rem;
-        height: 1rem;
-        top: 0.125rem;
+        width: 1.25rem;
+        height: 1.25rem;
         left: 0.125rem;
       }
     }
 
     input:checked + span::before {
-      transform: translateX(1.5rem);
+      transform: translateY(-50%) translateX(1.5rem);
     }
   }
 `;
@@ -1616,7 +1598,7 @@ const handleEditGroup = async (values: any) => {
                               typeof formik.errors.bots[index] === "object" &&
                               (formik.errors.bots[index] as any).name
                             )}>
-                         
+                              {(formik.errors.bots?.[index] as any)?.name || " "}
                             </ErrorText>
                           </SmallInputContainer>
                           <SmallTextareaContainer>
@@ -1639,7 +1621,7 @@ const handleEditGroup = async (values: any) => {
                               typeof formik.errors.bots[index] === "object" &&
                               (formik.errors.bots[index] as any).prompt
                             )}>
-                  
+                              {(formik.errors.bots?.[index] as any)?.prompt || " "}
                             </ErrorText>
                           </SmallTextareaContainer>
                           <ToggleSwitchContainer>
@@ -1676,6 +1658,8 @@ const handleEditGroup = async (values: any) => {
                               type="number"
                               name={`bots[${index}].context`}
                               placeholder="Context"
+                              min={1}
+                              max={20}
                               value={String(bot.context)}
                               onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
@@ -1805,6 +1789,8 @@ const handleEditGroup = async (values: any) => {
                       type="number"
                       name="feedbackBot.msgCountInterval"
                       placeholder="Message Count Interval"
+                      min={2}
+                      max={20}
                       value={
                         formik.values.feedbackBot?.msgCountInterval?.toString() ?? "2"
                       }
@@ -1830,6 +1816,8 @@ const handleEditGroup = async (values: any) => {
                       type="number"
                       name="feedbackBot.timeInterval"
                       placeholder="Time Interval"
+                      min={1}
+                      max={30}
                       value={
                         formik.values.feedbackBot?.timeInterval?.toString() ?? "1"
                       }

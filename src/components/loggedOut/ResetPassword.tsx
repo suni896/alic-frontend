@@ -122,7 +122,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
                   value={sendmailFormik.values.email}
                   onChange={sendmailFormik.handleChange}
                   onBlur={sendmailFormik.handleBlur}
-                  onFocus={(e) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                  onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                   $hasError={sendmailFormik.touched.email && !!sendmailFormik.errors.email}
                 />
                 {sendmailFormik.touched.email && sendmailFormik.errors.email ? (
@@ -161,7 +161,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
                 value={resetPasswordFormik.values.password}
                 onChange={resetPasswordFormik.handleChange}
                 onBlur={resetPasswordFormik.handleBlur}
-                onFocus={(e) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
+                onFocus={(e: React.FocusEvent<HTMLInputElement>) => e.target.scrollIntoView({ behavior: 'smooth', block: 'center' })}
                 $hasError={
                   resetPasswordFormik.touched.password &&
                   !!resetPasswordFormik.errors.password

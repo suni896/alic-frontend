@@ -47,7 +47,7 @@ const BackArrow = styled(MdKeyboardArrowLeft)`
   margin-right: var(--space-2);
 
   /* ================= Typography ================= */
-  font-size: var(--space-6);
+  font-size: var(--space-5);
 
   /* ================= Visual ================= */
   color: var(--color-text);
@@ -85,7 +85,7 @@ const Title = styled.h1`
 
   /* ================= Typography ================= */
   font-family: var(--font-roboto);
-  font-size: var(--space-4);
+  font-size: var(--space-3);
   font-weight: var(--weight-regular);
 
   /* ================= Visual ================= */
@@ -112,7 +112,7 @@ const TagIcon = styled(FiTag)`
   margin-right: var(--space-1);
 
   /* ================= Typography ================= */
-  font-size: var(--space-4);
+  font-size: var(--space-3);
 
   /* ================= Visual ================= */
   color: var(--color-text);

@@ -280,25 +280,38 @@ const ErrorCloseButton = styled.button`
 `;
 
 const SearchContainer = styled.div`
-  padding: var(--space-5) var(--space-7);
-  background: var(--white);
-  position: relative;
-  height: 40px;
+  width: 100%;
+  height: 2.5rem;
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--input-bg);
+  border-radius: var(--radius-5);
+  display: inline-flex;
+  justify-content: space-between;
+  align-items: center;
+  box-sizing: border-box;
+
+  @media (min-width: 48rem) {
+    height: 3rem;
+    padding: var(--space-5);
+  }
 `;
+
 const SearchWrapper = styled.div`
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: var(--space-4);
+  height: 100%;
+  flex: 1;
+  margin: 0;
   position: relative;
-  max-width: 500px;
-  margin: 0 auto;
-  height: 40px;
 `;
 
 const SearchIcon = styled(CiSearch)`
-  position: absolute;
-  left: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 1.5rem;
-  color: var(--muted-6b7280);
+  position: static;
+  transform: none;
+  font-size: var(--space-5);
+  color: var(--input);
   z-index: 1;
 `;
 
@@ -476,7 +489,7 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
           <SearchWrapper>
             <SearchIcon />
             <LabeledInputWithCount
-              variant="withIcon"
+              variant="unstyled"
               value={roomSearch}
               onChange={(e) => setRoomSearch(e.target.value)}
               disabled={isProcessing}

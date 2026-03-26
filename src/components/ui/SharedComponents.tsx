@@ -517,12 +517,15 @@ interface InputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   onKeyPress?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   $hasError?: boolean;
   className?: string;
   autoComplete?: string;
+  min?: number;
+  max?: number;
 }
 
 export const Input: React.FC<InputProps> = ({
@@ -533,12 +536,15 @@ export const Input: React.FC<InputProps> = ({
   value,
   onChange,
   onBlur,
+  onFocus,
   onKeyDown,
   onKeyPress,
   disabled = false,
   $hasError = false,
   className,
   autoComplete,
+  min,
+  max,
 }) => {
   return (
     <InputContainer className={className}>
@@ -550,11 +556,14 @@ export const Input: React.FC<InputProps> = ({
         value={value}
         onChange={onChange}
         onBlur={onBlur}
+        onFocus={onFocus}
         onKeyDown={onKeyDown}
         onKeyPress={onKeyPress}
         disabled={disabled}
         $hasError={$hasError}
         autoComplete={autoComplete}
+        min={min}
+        max={max}
       />
     </InputContainer>
   );
@@ -568,6 +577,7 @@ interface PasswordInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void;
+  onFocus?: (e: React.FocusEvent<HTMLInputElement>) => void;
   onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void;
   disabled?: boolean;
   $hasError?: boolean;
@@ -605,6 +615,13 @@ const StyledInput = styled.input<{ $hasError?: boolean }>`
   &:focus {
     outline: none;
     border-color: ${(props) => (props.$hasError ? "var(--error-red)" : "var(--emerald-green)")};
+  }
+
+  &:disabled {
+    background-color: var(--gray-200);
+    color: var(--gray-400);
+    cursor: not-allowed;
+    opacity: 0.7;
   }
 
   /* ================= Number Input Spinner ================= */
@@ -656,6 +673,15 @@ const ToggleButton = styled.button`
   
   /* ================= Interaction ================= */
   cursor: pointer;
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+
+    &:hover {
+      color: var(--muted-6b7280);
+    }
+  }
 `;
 
 // 新增：导出 PasswordInput 组件
@@ -666,6 +692,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
   value,
   onChange,
   onBlur,
+  onFocus,
   onKeyDown,
   disabled = false,
   $hasError = false,
@@ -687,6 +714,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
         value={value}
         onChange={onChange}
         onBlur={onBlur}
+        onFocus={onFocus}
         onKeyDown={onKeyDown}
         disabled={disabled}
         $hasError={$hasError}
