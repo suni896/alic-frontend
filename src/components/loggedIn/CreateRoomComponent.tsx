@@ -420,7 +420,7 @@ const HeaderRow = styled.div`
   display: grid;
   grid-template-columns: 24px 1fr 1fr 50px 50px;
   gap: 0.3rem;
-  padding: 0.5rem 0;
+  padding: 0.5rem 0.5rem;
   margin-bottom: 0.75rem;
   border-bottom: 1px solid var(--gray-300);
   align-items: center;
@@ -429,7 +429,7 @@ const HeaderRow = styled.div`
   @media (min-width: 48rem) {
     grid-template-columns: 28px 1fr 1fr 60px 60px;
     gap: 0.4rem;
-    padding: 0.75rem 0;
+    padding: 0.75rem 0.5rem;
     margin-bottom: 1rem;
   }
 
@@ -642,24 +642,9 @@ const RemoveIcon = styled(IoIosRemoveCircleOutline)`
 `;
 
 const AddIconContainer = styled.div`
-  display: grid;
-  grid-template-columns: 24px 1fr 1fr 50px 40px;
-  gap: 0.3rem;
-  margin-top: 0.75rem;
-  align-items: center;
-
-  /* tablet >= 768px */
-  @media (min-width: 48rem) {
-    grid-template-columns: 28px 1fr 1fr 60px 50px;
-    gap: 0.4rem;
-  }
-
-  /* desktop >= 1024px */
-  @media (min-width: 64rem) {
-    grid-template-columns: 32px 1fr 1.3fr 70px 60px;
-    gap: 0.6rem;
-    margin-top: 1rem;
-  }
+  display: flex;
+  padding: 0.75rem 0.5rem 0;
+  margin-top: 0;
 `;
 
 const AddIcon = styled(IoIosAddCircleOutline)`
@@ -667,11 +652,12 @@ const AddIcon = styled(IoIosAddCircleOutline)`
   color: var(--emerald-green);
   cursor: pointer;
   transition: all 0.2s ease;
+  height: 2rem;
+  width: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 100%;
-  height: 1.2rem;
+  flex-shrink: 0;
 
   &:hover {
     color: var(--emerald-green-dark);
@@ -682,12 +668,14 @@ const AddIcon = styled(IoIosAddCircleOutline)`
   @media (min-width: 48rem) {
     font-size: 1.5rem;
     height: 1.5rem;
+    width: 28px;
   }
 
   /* desktop >= 1024px */
   @media (min-width: 64rem) {
     font-size: 1.5rem;
     height: 1.5rem;
+    width: 32px;
   }
 `;
 

@@ -2430,6 +2430,12 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                 return;
               }
               
+              // 如果正在使用输入法（composition），不处理回车键
+              // 这是为了支持中文输入法：在拼音输入状态下按回车是确认输入，不是发送
+              if (e.nativeEvent.isComposing) {
+                return;
+              }
+              
               if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
                 e.preventDefault();
                 const { selectionStart, selectionEnd, value } = e.currentTarget;
