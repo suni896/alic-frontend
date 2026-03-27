@@ -7,13 +7,18 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "generate:api-types": "curl -sk https://112.74.92.135:443/v3/api-docs -o docs/openapi.json && echo '✅ API types updated from Swagger'",
+    "test:e2e": "npm run generate:api-types && npx playwright test",
+    "test:e2e:ui": "npm run generate:api-types && npx playwright test --ui"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@fontsource/roboto": "^5.1.1",
     "@mui/material": "^6.3.1",
+    "@tanstack/react-query": "^5.90.21",
+    "@tanstack/react-query-devtools": "^5.91.3",
     "@types/react-router-dom": "^5.3.3",
     "@types/sockjs-client": "^1.5.4",
     "@types/stompjs": "^2.3.9",
@@ -39,6 +44,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",
+    "@playwright/test": "^1.58.2",
+    "@types/node": "^25.4.0",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@vitejs/plugin-react": "^4.3.4",

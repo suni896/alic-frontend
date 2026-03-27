@@ -1,23 +1,82 @@
+/* ================= Root App Container ================= */
 #root {
-  max-width: 1280px;
+  /* ================= Layout ================= */
+  display: flex;
+  flex-direction: column;
+  
+  /* ================= Box Model ================= */
+  width: 100%;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 2rem;
+  padding: var(--space-4);
+  
+  /* ================= Typography ================= */
   text-align: center;
 }
 
+@media (min-width: 30rem) {
+  #root {
+    padding: var(--space-5);
+  }
+}
+
+@media (min-width: 48rem) {
+  #root {
+    max-width: var(--bp-md);
+    padding: var(--space-6);
+  }
+}
+
+@media (min-width: 64rem) {
+  #root {
+    max-width: var(--bp-lg);
+    padding: var(--space-7);
+  }
+}
+
+@media (min-width: 80rem) {
+  #root {
+    max-width: var(--bp-xl);
+  }
+}
+
+/* ================= Logo Component ================= */
 .logo {
-  height: 6em;
-  padding: 1.5em;
+  /* ================= Layout ================= */
+  display: inline-block;
+  
+  /* ================= Box Model ================= */
+  height: 4em;
+  padding: var(--space-4);
+  
+  /* ================= Animation ================= */
   will-change: filter;
-  transition: filter 300ms;
+  transition: filter 0.3s ease;
 }
+
+@media (min-width: 48rem) {
+  .logo {
+    height: 5em;
+    padding: var(--space-5);
+  }
+}
+
+@media (min-width: 64rem) {
+  .logo {
+    height: 6em;
+    padding: 1.5em;
+  }
+}
+
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+  filter: drop-shadow(0 0 2em var(--indigo-500));
 }
+
 .logo.react:hover {
   filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
+/* ================= Logo Spin Animation ================= */
 @keyframes logo-spin {
   from {
     transform: rotate(0deg);
@@ -33,10 +92,47 @@
   }
 }
 
+/* ================= Card Component (App Specific) ================= */
 .card {
-  padding: 2em;
+  /* ================= Layout ================= */
+  display: flex;
+  flex-direction: column;
+  
+  /* ================= Box Model ================= */
+  padding: var(--space-4);
+  gap: var(--space-3);
+  
+  /* ================= Visual ================= */
+  background: var(--color-card);
+  border: 1px solid var(--gray-200-slate);
+  border-radius: var(--radius-12);
+  box-shadow: var(--shadow-soft);
 }
 
+@media (min-width: 48rem) {
+  .card {
+    padding: var(--space-5);
+    gap: var(--space-4);
+  }
+}
+
+@media (min-width: 64rem) {
+  .card {
+    padding: var(--space-6);
+  }
+}
+
+/* ================= Docs Link ================= */
 .read-the-docs {
-  color: #888;
+  /* ================= Typography ================= */
+  font-size: var(--space-4);
+  
+  /* ================= Visual ================= */
+  color: var(--gray-600);
+}
+
+@media (min-width: 48rem) {
+  .read-the-docs {
+    font-size: var(--space-5);
+  }
 }

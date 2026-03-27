@@ -1,6 +1,6 @@
 // ResetPasswordPage.tsx
 import React from "react";
-import Layout from "../components/loggedOut/Layout";
+import Layout from "../components/ui/Layout";
 import ResetPassword from "../components/loggedOut/ResetPassword";
 
 interface ResetPasswordPageProps {
@@ -9,7 +9,7 @@ interface ResetPasswordPageProps {
 
 const ResetPasswordPage: React.FC<ResetPasswordPageProps> = ({ setEmail }) => {
   return (
-    <Layout>
+    <Layout hideNavbar>
       <ResetPassword setEmail={setEmail} />
     </Layout>
   );

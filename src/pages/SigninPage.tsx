@@ -1,10 +1,10 @@
-import Layout from "../components/loggedOut/Layout";
+import Layout from "../components/ui/Layout";
 import Signin from "../components/loggedOut/Signin";
 
 const SigninPage = () => {
   return (
     <>
-      <Layout>
+      <Layout hideNavbar>
         <Signin />
       </Layout>
     </>
