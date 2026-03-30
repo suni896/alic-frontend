@@ -7,6 +7,7 @@ interface SensorsDebug {
   testTrack: (eventName: string, data: Record<string, any>) => void;
   dumpQueue: () => number;
   clearQueue: () => number;
+  getQueueLastLength: () => number;
 }
 
 // 扩展sensors类型
@@ -14,6 +15,7 @@ declare module 'sa-sdk-javascript' {
   interface SensorsAnalyticsType {
     debug?: SensorsDebug;
     getPreLoginInfo?: () => any;
+    getQueueLastLength?: () => number;
   }
 }
 
@@ -130,7 +132,99 @@ const isDuplicateInQueue = (data: any): boolean => {
   return hasDuplicate;
 };
 
-// 这里原来有一个isContentContained函数，现在我们直接使用includes方法进行检查
+// 在队列中应用转折点过滤 - 实时保留转折点
+const applyTurningPointFilterInQueue = () => {
+  // 如果队列只有1条数据，不进行转折点过滤
+  if (eventQueue.length <= 1) {
+    return;
+  }
+  
+  const turningPoints: any[] = [];
+  
+  if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+    console.group('🔍 队列转折点过滤');
+    console.log(`队列长度: ${eventQueue.length}`);
+  }
+  
+  // 策略：保留所有局部极值点（转折点）和当前状态
+  for (let i = 0; i < eventQueue.length; i++) {
+    const current = eventQueue[i];
+    const prev = i > 0 ? eventQueue[i - 1] : null;
+    const next = i < eventQueue.length - 1 ? eventQueue[i + 1] : null;
+    
+    // 获取内容长度
+    const currentLength = current.content?.length || 0;
+    const prevLength = prev?.content?.length || 0;
+    const nextLength = next?.content?.length || 0;
+    
+    let isTurningPoint = false;
+    let turningType = '';
+    
+    // 规则1：最后一个元素总是保留（当前状态）
+    if (i === eventQueue.length - 1) {
+      isTurningPoint = true;
+      turningType = '当前状态';
+    }
+    // 规则2：第一个元素，如果后面有减少，则保留为局部最大值
+    else if (i === 0 && next) {
+      const nextChange = nextLength - currentLength;
+      
+      if (nextChange < 0) {
+        // 后面在减少，说明当前是局部最大值
+        isTurningPoint = true;
+        turningType = '增→减（局部最大值/首元素）';
+      }
+    }
+    // 规则3：检查是否为转折点（有前后元素）
+    else if (prev && next) {
+      const prevChange = currentLength - prevLength;
+      const nextChange = nextLength - currentLength;
+      
+      if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+        console.log(`🔍 检查转折点 [${i}]: prevChange=${prevChange}, nextChange=${nextChange}`);
+      }
+      
+      // 局部最小值：减 → 增 转折点
+      if (prevChange <= 0 && nextChange > 0) {
+        isTurningPoint = true;
+        turningType = '减→增（局部最小值）';
+      }
+      // 局部最大值：增 → 减 转折点
+      else if (prevChange >= 0 && nextChange < 0) {
+        isTurningPoint = true;
+        turningType = '增→减（局部最大值）';
+      }
+    }
+    
+    if (isTurningPoint) {
+      turningPoints.push(current);
+      
+      if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+        console.log(`✅ 保留${turningType}: 长度 ${prevLength} → ${currentLength} → ${nextLength}`);
+        if (config.DEBUG.SHOW_CONTENT_DETAILS) {
+          console.log(`   内容: "${current.content?.substring(0, 30)}${current.content?.length > 30 ? '...' : ''}"`);
+        }
+      }
+    } else {
+      if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+        console.log(`❌ 过滤非转折点: 长度 ${prevLength} → ${currentLength} → ${nextLength}`);
+        if (config.DEBUG.SHOW_CONTENT_DETAILS) {
+          console.log(`   内容: "${current.content?.substring(0, 30)}${current.content?.length > 30 ? '...' : ''}"`);
+        }
+      }
+    }
+  }
+  
+  // 替换队列内容
+  const originalLength = eventQueue.length;
+  eventQueue.length = 0;
+  eventQueue.push(...turningPoints);
+  
+  if (DEBUG_MODE && config.DEBUG.VERBOSE) {
+    console.log(`过滤完成: ${originalLength} → ${eventQueue.length} (保留率: ${(eventQueue.length / originalLength * 100).toFixed(1)}%)`);
+    console.groupEnd();
+  }
+};
 
 // 添加事件到队列
 const queueEvent = (data: any) => {
@@ -150,68 +244,12 @@ const queueEvent = (data: any) => {
     console.groupEnd();
   }
   
-      // 增强的重复检测
-    if (isDuplicateInQueue(data)) {
-      if (DEBUG_MODE && config.DEBUG.VERBOSE && config.DEBUG.SHOW_CONTENT_DETAILS) {
-        console.log(`🚫 内容被重复检测过滤: "${data.content?.substring(0, 30)}${data.content?.length > 30 ? '...' : ''}"`);
-      }
-      return;
+  // 增强的重复检测
+  if (isDuplicateInQueue(data)) {
+    if (DEBUG_MODE && config.DEBUG.VERBOSE && config.DEBUG.SHOW_CONTENT_DETAILS) {
+      console.log(`🚫 内容被重复检测过滤: "${data.content?.substring(0, 30)}${data.content?.length > 30 ? '...' : ''}"`);
     }
-  
-  // 新增规则：检查当前记录的数据是否包含队列中最后一条数据
-  if (config.FEATURES.CONTENT_CONTAIN_CHECK && eventQueue.length > 0 && data.content && eventQueue[eventQueue.length - 1].content) {
-    const lastEvent = eventQueue[eventQueue.length - 1];
-    const newContent = data.content;
-    const lastContent = lastEvent.content;
-    
-    // 检查操作类型
-    const isDeleteOperation = data.input_action === 'delete';
-    
-    // 内容包含关系检测
-    const newContainsLast = newContent.includes(lastContent);
-    const lastContainsNew = lastContent.includes(newContent);
-    
-    // 处理包含关系逻辑
-    if (newContainsLast || lastContainsNew) {
-      // 对于删除操作，只有当新内容包含旧内容时才替换
-      // 如果旧内容包含新内容，说明删除了部分内容，应该保留两条记录
-      if (isDeleteOperation && !newContainsLast && lastContainsNew) {
-              if (DEBUG_MODE && config.DEBUG.VERBOSE) {
-        if (config.DEBUG.SHOW_LENGTH_INFO) {
-          console.log(`🔄 删除操作: 旧内容(${lastContent.length}字符)包含新内容(${newContent.length}字符)，保留两条记录`);
-        } else {
-          console.log(`🔄 删除操作: 内容存在包含关系，保留两条记录`);
-        }
-        
-        if (config.DEBUG.SHOW_CONTENT_DETAILS) {
-          console.log(`🔍 旧内容: ${lastContent.substring(0, 30)}${lastContent.length > 30 ? '...' : ''}`);
-          console.log(`🔍 新内容: ${newContent.substring(0, 30)}${newContent.length > 30 ? '...' : ''}`);
-        }
-      }
-        // 不做任何替换，保留两条记录
-      } else {
-        // 对于增加操作或新内容包含旧内容的删除操作，替换最后一条数据
-        if (DEBUG_MODE && config.DEBUG.VERBOSE) {
-          if (config.DEBUG.SHOW_LENGTH_INFO) {
-            if (newContainsLast) {
-              console.log(`🔄 新内容(${newContent.length}字符)包含旧内容(${lastContent.length}字符)，替换最后事件`);
-            } else {
-              console.log(`🔄 旧内容(${lastContent.length}字符)包含新内容(${newContent.length}字符)，替换最后事件`);
-            }
-          } else {
-            console.log(`🔄 内容存在包含关系，替换最后事件`);
-          }
-          
-          if (config.DEBUG.SHOW_CONTENT_DETAILS) {
-            console.log(`🔍 旧内容: ${lastContent.substring(0, 30)}${lastContent.length > 30 ? '...' : ''}`);
-            console.log(`🔍 新内容: ${newContent.substring(0, 30)}${newContent.length > 30 ? '...' : ''}`);
-          }
-        }
-        
-        // 删除队列中的最后一条数据
-        eventQueue.pop();
-      }
-    }
+    return;
   }
   
   // 添加新事件到队列
@@ -219,7 +257,14 @@ const queueEvent = (data: any) => {
   
   if (DEBUG_MODE) {
     console.log(`📦 事件已加入队列: ${data.event}，队列长度: ${eventQueue.length}`);
-    
+  }
+  
+  // 应用转折点过滤 - 在队列中就保留转折点
+  if (config.FEATURES.TURNING_POINT_FILTER && eventQueue.length > 2) {
+    applyTurningPointFilterInQueue();
+  }
+  
+  if (DEBUG_MODE) {
     // 自动显示完整队列数据，方便调试
     autoDumpQueue();
   }
@@ -676,6 +721,13 @@ try {
 
   // 只有在埋点功能启用时才执行后续操作
   if (isTrackingEnabled) {
+    // 暴露获取队列最新记录长度的方法到sensors对象
+    (sensors as any).getQueueLastLength = () => {
+      if (eventQueue.length === 0) return 0;
+      const lastEvent = eventQueue[eventQueue.length - 1];
+      return lastEvent.content?.length || 0;
+    };
+    
     // 全面拦截所有可能的埋点GET请求
     
     // 1. 拦截XMLHttpRequest
@@ -752,6 +804,12 @@ try {
         testTrack: (eventName: string, data: Record<string, any>) => {
           console.log(`🧪 测试埋点: ${eventName}`, data);
           sensors.track(eventName, data);
+        },
+        // 新增：获取队列最新记录的内容长度
+        getQueueLastLength: () => {
+          if (eventQueue.length === 0) return 0;
+          const lastEvent = eventQueue[eventQueue.length - 1];
+          return lastEvent.content?.length || 0;
         },
         // 新增：打印当前队列内容 - 显示完整数据
         dumpQueue: () => {

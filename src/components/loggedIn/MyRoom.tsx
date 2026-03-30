@@ -15,6 +15,7 @@ import remarkGfm from "remark-gfm";
 import { useInputTracking } from "../../hooks/useInputTracking";
 import { useKeyboardInsets } from "../../hooks/useKeyboardInsets";
 import sensors, { eventQueue, flushEvents } from "../../utils/tracker";
+import { EtherpadDrawerWithButton } from "./EtherpadDrawer";
 import { API_BASE_URL } from "../../../config";
 import {
   useGroupChatBotList,
@@ -1176,6 +1177,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [contextClearedTimes, setContextClearedTimes] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [groupMode, setGroupMode] = useState<'free' | 'feedback'>('free');
+  const [roomName, setRoomName] = useState<string>('');
 
   // Use React Query hook for clear history
   const { data: clearHistoryData } = useClearHistory(groupId);
@@ -1189,15 +1191,14 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     }
   }, [clearHistoryData]);
 
+    // 使用埋点Hook - 已更新埋点规则（包含输入法组合事件处理）
+  const { handleTyping, handleSend: trackSend, handleMessageReceived, handleCompositionStart, handleCompositionEnd } = useInputTracking(groupId);
   // 连接状态管理
   const [connectionStatus, setConnectionStatus] = useState<'connected' | 'connecting' | 'disconnected' | 'reconnecting'>('disconnected');
   const reconnectAttemptsRef = useRef(0);
   const maxReconnectAttempts = 5;
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isOnlineRef = useRef(navigator.onLine);
-
-  // 埋点Hook
-  const { handleTyping, handleSend: trackSend, handleMessageReceived } = useInputTracking(groupId);
 
   // 检查用户是否为管理员
   const checkIfAdmin = useCallback((): boolean => {
@@ -1269,11 +1270,11 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
     const messageElement = document.querySelector(`[data-message-id="${messageId}"]`);
     if (messageElement && chatContainerRef.current) {
       // 高亮显示目标消息
-      messageElement.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'center' 
+      messageElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center'
       });
-      
+
       // 添加临时高亮效果
       messageElement.classList.add('highlight-message');
       setTimeout(() => {
@@ -1312,7 +1313,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   // 清除AI上下文函数
   const handleClearContext = async () => {
     if (!groupId) return;
-    
+
     try {
       const clearContextTime = new Date().toISOString();
       
@@ -1340,17 +1341,17 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   // 检查消息是否需要显示上下文清除提示
   const shouldShowContextClearedMessage = useCallback((message: Message, index: number) => {
     if (contextClearedTimes.length === 0) return null;
-    
+
     const messageTime = new Date(message.createTime).getTime();
     const nextMessage = messages[index + 1];
     const nextMessageTime = nextMessage ? new Date(nextMessage.createTime).getTime() : Date.now();
-    
+
     // 查找在当前消息之后、下一条消息之前的所有清除时间
     const relevantClearTimes = contextClearedTimes.filter(clearTime => {
       const clearedTime = new Date(clearTime).getTime();
       return messageTime < clearedTime && clearedTime <= nextMessageTime;
     });
-    
+
     // 如果没有下一条消息，检查是否有在当前消息之后的清除时间
     if (!nextMessage) {
       const futureClearTimes = contextClearedTimes.filter(clearTime => {
@@ -1359,7 +1360,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       });
       return futureClearTimes.length > 0 ? futureClearTimes : null;
     }
-    
+
     return relevantClearTimes.length > 0 ? relevantClearTimes : null;
   }, [contextClearedTimes, messages]);
 
@@ -1464,11 +1465,11 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       }
       console.log('响应中没有消息数据');
       return [];
-    } catch (error) {
+      } catch (error) {
       console.error('批量获取消息失败:', error);
       return [];
-    }
-  };
+      }
+    };
 
   // 获取消息历史
   const fetchMessageHistory = async (loadMore = false) => {
@@ -1542,17 +1543,17 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             if (replyMessages.length > 0) {
               // 创建消息ID到消息对象的映射
               const replyMessageMap = new Map(replyMessages.map(msg => [msg.infoId, msg]));
-              
-              setMessages(prevMsgs => 
+
+              setMessages(prevMsgs =>
                 prevMsgs.map(m => {
                   if (m.needsFetchReply && m.replyToMsgId && replyMessageMap.has(m.replyToMsgId)) {
                     const replyMessage = replyMessageMap.get(m.replyToMsgId)!;
                     console.log('更新消息回复信息:', m.infoId, '->', replyMessage.infoId);
-                    return { 
-                      ...m, 
-                      replyToMessage: replyMessage, 
-                      needsFetchReply: false, 
-                      replyLoading: false 
+                    return {
+                      ...m,
+                      replyToMessage: replyMessage,
+                      needsFetchReply: false,
+                      replyLoading: false
                     };
                   }
                   return m;
@@ -1560,9 +1561,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               );
             } else {
               // 批量获取失败，标记所有相关消息为无法获取
-              setMessages(prevMsgs => 
-                prevMsgs.map(m => 
-                  missingReplyIds.includes(m.replyToMsgId!) 
+              setMessages(prevMsgs =>
+                prevMsgs.map(m =>
+                  missingReplyIds.includes(m.replyToMsgId!)
                     ? { ...m, needsFetchReply: false, replyLoading: false }
                     : m
                 )
@@ -1570,9 +1571,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             }
           }).catch(error => {
             console.error('批量获取被回复消息出错:', error);
-            setMessages(prevMsgs => 
-              prevMsgs.map(m => 
-                missingReplyIds.includes(m.replyToMsgId!) 
+            setMessages(prevMsgs =>
+              prevMsgs.map(m =>
+                missingReplyIds.includes(m.replyToMsgId!)
                   ? { ...m, needsFetchReply: false, replyLoading: false }
                   : m
               )
@@ -1649,7 +1650,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         setConnectionStatus('connected');
         reconnectAttemptsRef.current = 0;
         connectionStatusRef.current.currentGroupId = groupId;
-        return;
+      return;
       } else {
         // 缓存的连接已失效,清除
         console.log('🗑️ 清除失效的缓存连接');
@@ -1726,17 +1727,17 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               }
 
               Promise.all([
-            receivedMessage.senderType === "CHATBOT"
-              ? fetchBotInfo(receivedMessage.senderId).then((botInfo) => {
-                  receivedMessage.name = botInfo.botName;
-                  receivedMessage.portrait = botIcon;
-                })
-              : fetchUserInfo(receivedMessage.senderId).then((userInfo) => {
-                  receivedMessage.name = userInfo.userName;
-                  receivedMessage.portrait = userInfo.userPortrait;
-                }),
+                receivedMessage.senderType === "CHATBOT"
+                  ? fetchBotInfo(receivedMessage.senderId).then((botInfo) => {
+                      receivedMessage.name = botInfo.botName;
+                      receivedMessage.portrait = botIcon;
+                    })
+                  : fetchUserInfo(receivedMessage.senderId).then((userInfo) => {
+                      receivedMessage.name = userInfo.userName;
+                      receivedMessage.portrait = userInfo.userPortrait;
+                    }),
           ]).then(() => {
-            setMessages((prev) => {
+              setMessages((prev) => {
               // Process replyToMsgId for the received message
               let processedMessage = { ...receivedMessage };
               if (receivedMessage.replyToMsgId) {
@@ -1748,7 +1749,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                   processedMessage.needsFetchReply = true;
                   processedMessage.replyLoading = true;
                   console.log('需要异步获取被回复消息:', receivedMessage.replyToMsgId);
-                  
+
                   // 异步获取被回复消息
                   fetchMultipleMessages([receivedMessage.replyToMsgId]).then(replyMessages => {
                     console.log('异步获取被回复消息结果:', replyMessages);
@@ -1759,11 +1760,11 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                         const updatedMessages = prevMsgs.map(m => {
                           if (m.infoId === receivedMessage.infoId) {
                             console.log('找到目标消息，更新回复信息:', m.infoId);
-                            return { 
-                              ...m, 
-                              replyToMessage: replyMessage, 
-                              needsFetchReply: false, 
-                              replyLoading: false 
+                            return {
+                              ...m,
+                              replyToMessage: replyMessage,
+                              needsFetchReply: false,
+                              replyLoading: false
                             };
                           }
                           return m;
@@ -1773,9 +1774,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                       });
                     } else {
                       console.log('获取被回复消息失败，标记为不可用');
-                      setMessages(prevMsgs => 
-                        prevMsgs.map(m => 
-                          m.infoId === receivedMessage.infoId 
+                      setMessages(prevMsgs =>
+                        prevMsgs.map(m =>
+                          m.infoId === receivedMessage.infoId
                             ? { ...m, needsFetchReply: false, replyLoading: false }
                             : m
                         )
@@ -1783,9 +1784,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                     }
                   }).catch(error => {
                     console.error('异步获取被回复消息出错:', error);
-                    setMessages(prevMsgs => 
-                      prevMsgs.map(m => 
-                        m.infoId === receivedMessage.infoId 
+                    setMessages(prevMsgs =>
+                      prevMsgs.map(m =>
+                        m.infoId === receivedMessage.infoId
                           ? { ...m, needsFetchReply: false, replyLoading: false }
                           : m
                       )
@@ -1793,32 +1794,32 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                   });
                 }
               }
-              
+
               const newMessages = [...prev, processedMessage]
                 .filter((v, i, a) => a.findIndex((t) => t.infoId === v.infoId) === i)
                 .sort((a, b) => a.infoId - b.infoId);
 
               console.log('📋 处理后的消息列表长度:', newMessages.length);
 
-              requestAnimationFrame(() => {
-                if (chatContainerRef.current) {
-                  const { scrollTop, scrollHeight, clientHeight } =
-                    chatContainerRef.current;
-                  const isNearBottom =
+                requestAnimationFrame(() => {
+                  if (chatContainerRef.current) {
+                    const { scrollTop, scrollHeight, clientHeight } =
+                      chatContainerRef.current;
+                    const isNearBottom =
                     scrollHeight - (scrollTop + clientHeight) < 300;
 
-                  if (isNearBottom) {
-                    chatContainerRef.current.scrollTop = scrollHeight;
-                    setHasNewMessage(false);
-                  } else {
-                    setHasNewMessage(true);
+                    if (isNearBottom) {
+                      chatContainerRef.current.scrollTop = scrollHeight;
+                      setHasNewMessage(false);
+                    } else {
+                      setHasNewMessage(true);
+                    }
                   }
-                }
-              });
+                });
 
-              return newMessages;
+                return newMessages;
             });
-          });
+              });
             });
 
             resolve();
@@ -2015,10 +2016,10 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         botId: selectedBot || 0,
         replyToMsgId: replyingTo?.infoId || null, // 添加回复消息ID
       };
-      
+
       setSelectedBot(null);
       setReplyingTo(null); // 清除回复状态
-      
+
       stompClientRef.current.send(
         `/app/chat/${groupId}`,
         {},
@@ -2259,6 +2260,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         </ConnectionStatus>
       )}
 
+      <EtherpadDrawerWithButton roomId={groupId} roomName={roomName} currentRoomId={groupId}>
       <RenderedChatContainer ref={chatContainerRef} onScroll={handleScroll}>
         {hasNoMoreMessages && (
           <NoMoreMessagesHint>
@@ -2267,10 +2269,10 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         )}
         {messages.map((msg, index) => (
           <React.Fragment key={msg.infoId}>
-            <MessageContainer
-              $isOwnMessage={msg.senderType === "USER" && msg.senderId === userInfo?.userId}
+          <MessageContainer
+            $isOwnMessage={msg.senderType === "USER" && msg.senderId === userInfo?.userId}
               data-message-id={msg.infoId}
-            >
+          >
             <Avatar
               src={
                 msg.senderType === "CHATBOT"
@@ -2283,10 +2285,10 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               <UserName>
                 {msg.senderId === userInfo?.userId ? "You" : `${msg.name}`}
               </UserName>
-              
+
               {/* 显示被回复消息的引用 */}
               {msg.replyToMsgId && (
-                <ReplyPreview 
+                <ReplyPreview
                   onClick={() => {
                     if (msg.replyToMessage && !msg.replyLoading) {
                       scrollToMessage(msg.replyToMessage.infoId);
@@ -2295,16 +2297,16 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                   $clickable={!!msg.replyToMessage && !msg.replyLoading}
                 >
                   <ReplyHeader>
-                    回复 {msg.replyToMessage 
+                    回复 {msg.replyToMessage
                       ? (msg.replyToMessage.senderId === userInfo?.userId ? "你" : msg.replyToMessage.name)
                       : "未知用户"
                     }
                   </ReplyHeader>
                   <ReplyContent>
-                    {msg.replyLoading 
-                      ? "正在加载被回复消息..." 
-                      : msg.replyToMessage 
-                        ? msg.replyToMessage.content 
+                    {msg.replyLoading
+                      ? "正在加载被回复消息..."
+                      : msg.replyToMessage
+                        ? msg.replyToMessage.content
                         : "被回复消息不可用"
                     }
                   </ReplyContent>
@@ -2315,7 +2317,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                   )}
                 </ReplyPreview>
               )}
-              
+
               <MessageText>
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm, remarkBreaks]}
@@ -2343,7 +2345,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                 })}
               </TimeStamp>
             </MessageContent>
-            
+
             {/* 消息操作按钮 */}
             <MessageActions className="message-actions">
               <ActionButton
@@ -2359,8 +2361,8 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                 <LuCopy />
               </ActionButton>
             </MessageActions>
-            </MessageContainer>
-            
+          </MessageContainer>
+
             {/* 显示上下文清除提示 */}
             {shouldShowContextClearedMessage(msg, index) && (
               <ContextClearedMessage>
@@ -2378,23 +2380,23 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
       )}
 
       <SendMessageContainer>
-        
+
         <IconContainer>
           {groupMode === 'free' && (
             <>
               <IconWrapper onClick={() => setIsBotClicked(!isBotClicked)}>
-                <BotIcon
-                  src={botIcon}
-                  alt="Bot Icon"
-                />
+        <BotIcon
+          src={botIcon}
+          alt="Bot Icon"
+        />
               </IconWrapper>
-              {isBotClicked && (
-                <BotListPopUp
-                  onClose={() => setIsBotClicked(false)}
-                  groupId={groupId}
-                  onBotSelect={handleBotSelect}
-                />
-              )}
+        {isBotClicked && (
+          <BotListPopUp
+            onClose={() => setIsBotClicked(false)}
+            groupId={groupId}
+            onBotSelect={handleBotSelect}
+          />
+        )}
             </>
           )}
           <IconWrapper onClick={sendMessage}>
@@ -2402,7 +2404,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           </IconWrapper>
           {isAdmin && (
             <IconWrapper>
-              <ClearContextIcon 
+              <ClearContextIcon
                 onClick={handleClearContext}
                 title="clear ai agent context"
               />
@@ -2412,7 +2414,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         
         <MessageInputWrapper $disabled={connectionStatus !== 'connected'} $keyboardHeight={keyboardHeight}>
 
-          <MessageInput
+        <MessageInput
             $disabled={isLoading || connectionStatus !== 'connected'}
             $isReplying={!!replyingTo}
             ref={messageInputRef}
@@ -2420,7 +2422,15 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             onFocus={scrollToVisible}
             onChange={(e) => {
               handleInputChange(e);
-              handleTyping(e.target.value);
+            handleTyping(e.target.value);
+          }}
+            onCompositionStart={() => {
+              // 输入法组合开始（拼音输入开始）
+              handleCompositionStart();
+            }}
+            onCompositionEnd={(e) => {
+              // 输入法组合结束（拼音转换为中文完成）
+              handleCompositionEnd((e.target as HTMLTextAreaElement).value);
             }}
             onKeyDown={e => {
               // ESC 键关闭提及弹窗
@@ -2449,9 +2459,9 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                 }, 0);
               } else if (e.key === "Enter") {
                 e.preventDefault();
-                sendMessage();
-              }
-            }}
+              sendMessage();
+            }
+          }}
             placeholder={
               connectionStatus !== 'connected'
                 ? "连接断开,无法发送消息..."
@@ -2506,7 +2516,8 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         )}
         </MessageInputWrapper>
       </SendMessageContainer>
-      
+      </EtherpadDrawerWithButton>
+
       {/* 复制成功提示 */}
       <CopySuccessToast $show={!!copySuccess}>
         {copySuccess}
