@@ -4,6 +4,9 @@ import styled from 'styled-components';
 import { LuX, LuFileText, LuMaximize2, LuMinimize2 } from 'react-icons/lu';
 import EtherpadComponent from './EtherpadComponent';
 
+// Etherpad 功能开关 - 通过环境变量控制
+const ENABLE_ETHERPAD = import.meta.env.VITE_ENABLE_ETHERPAD !== 'false';
+
 interface EtherpadDrawerProps {
   roomId?: number;
   roomName?: string;
@@ -19,72 +22,96 @@ interface EtherpadDrawerProps {
 }
 
 interface StyledProps {
-  isOpen: boolean;
+  $isOpen: boolean;
   width: string;
   height: string;
-  isFloating?: boolean;
-  top?: number;
-  left?: number;
-  isResizing?: boolean;
+  $isFloating?: boolean;
+  $top?: number;
+  $left?: number;
+  $isResizing?: boolean;
 }
 
 const DrawerContainer = styled.div<StyledProps>`
-  position: ${props => props.isFloating ? 'fixed' : 'fixed'} !important;
-  top: ${props => props.isFloating ? `${props.top}px` : '7vh'};
-  right: ${props => props.isFloating ? 'auto' : '0'};
-  left: ${props => props.isFloating ? `${props.left}px` : 'auto'};
-  width: ${props => props.width};
-  height: ${props => props.isFloating ? props.height : 'calc(100vh - 7vh)'};
-  background-color: white;
-  box-shadow: ${props => props.isFloating ? '0 4px 20px rgba(0, 0, 0, 0.25)' : '-2px 0 8px rgba(0, 0, 0, 0.15)'};
-  z-index: ${props => props.isFloating ? '9999' : '1000'} !important; /* Higher z-index in floating mode to cover all content including sidebar */
-  transform: ${props => props.isFloating ? 'none' : `translateX(${props.isOpen ? '0' : '100%'})`};
-  transition: ${props => {
-    if (props.isResizing) return 'none';
-    return props.isFloating ? 'box-shadow 0.2s ease' : 'transform 0.3s ease-in-out';
-  }};
-  display: ${props => props.isOpen ? 'flex' : 'none'};
+  /* ================= Layout ================= */
+  position: fixed !important;
+  display: ${props => props.$isOpen ? 'flex' : 'none'};
   flex-direction: column;
-  border: ${props => props.isFloating ? '1px solid #ddd' : 'none'};
-  border-left: ${props => props.isFloating ? '1px solid #ddd' : '1px solid #ddd'};
+  top: ${props => props.$isFloating ? `${props.$top}px` : '0'};
+  right: ${props => props.$isFloating ? 'auto' : '0'};
+  left: ${props => props.$isFloating ? `${props.$left}px` : 'auto'};
+  z-index: 9999;
+  transform: ${props => props.$isFloating ? 'none' : `translateX(${props.$isOpen ? '0' : '100%'})`};
+  
+  /* ================= Box Model ================= */
+  width: 100%;
+  height: ${props => props.$isFloating ? props.height : '100vh'};
+  min-width: auto;
+  min-height: 12.5rem;
   margin-top: 0;
   margin-bottom: 0;
-  border-radius: ${props => props.isFloating ? '8px' : '0'};
   overflow: hidden;
-  min-width: 300px;
-  min-height: 200px;
-  will-change: ${props => props.isResizing ? 'width, height, top, left' : 'auto'};
   
-  ${props => props.isFloating && !props.isResizing && `
+  /* ================= Visual ================= */
+  background: var(--color-background);
+  border: ${props => props.$isFloating ? '1px solid var(--color-line)' : 'none'};
+  border-left: 1px solid var(--color-line);
+  border-radius: ${props => props.$isFloating ? 'var(--radius-8)' : '0'};
+  box-shadow: ${props => props.$isFloating ? 'var(--shadow-soft)' : 'var(--shadow-soft)'};
+  
+  /* ================= Animation ================= */
+  transition: ${props => {
+    if (props.$isResizing) return 'none';
+    return props.$isFloating ? 'box-shadow 0.2s ease' : 'transform 0.3s ease-in-out';
+  }};
+  will-change: ${props => props.$isResizing ? 'width, height, top, left' : 'auto'};
+  
+  /* ================= Interaction ================= */
+  ${props => props.$isFloating && !props.$isResizing && `
     &:hover {
-      box-shadow: 0 6px 25px rgba(0, 0, 0, 0.3);
+      box-shadow: var(--shadow-hard);
     }
   `}
+  
+  /* ================= Responsive ================= */
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: 50%;
+    min-width: 18.75rem;
+  }
+  
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: ${props => props.width};
+  }
 `;
 
 const DrawerHeader = styled.div`
+  /* ================= Layout ================= */
   display: flex;
+  position: relative;
   justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e0e0e0;
-  background: linear-gradient(135deg, #f8f9fa 0%, #f1f3f4 100%);
+  
+  /* ================= Box Model ================= */
+  padding: var(--space-2) var(--space-3);
+  
+  /* ================= Visual ================= */
+  background: var(--color-card);
+  border-bottom: 1px solid var(--color-line);
+  
+  /* ================= Interaction ================= */
   cursor: move;
   user-select: none;
-  position: relative;
   
-  &:hover {
-    background: linear-gradient(135deg, #f1f3f4 0%, #e8eaed 100%);
-  }
   
   &::before {
     content: '';
     position: absolute;
     left: 50%;
-    top: 6px;
+    top: 0.375rem;
     transform: translateX(-50%);
-    width: 40px;
-    height: 4px;
+    width: 2.5rem;
+    height: 0.25rem;
     background: repeating-linear-gradient(
       90deg,
       rgba(0, 0, 0, 0.2) 0px,
@@ -92,118 +119,223 @@ const DrawerHeader = styled.div`
       transparent 3px,
       transparent 6px
     );
-    border-radius: 2px;
+    border-radius: var(--radius-4);
     opacity: 0.5;
     transition: opacity 0.2s ease;
   }
+ 
   
-  &:hover::before {
-    opacity: 0.8;
+  /* ================= Responsive ================= */
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    padding: var(--space-3) var(--space-4);
+  }
+  
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    padding: var(--space-4) var(--space-5);
   }
 `;
 
 const DrawerTitle = styled.h3`
-  margin: 0;
-  font-size: 16px;
-  font-weight: 600;
-  color: #333;
+  /* ================= Layout ================= */
   display: flex;
   align-items: center;
-  gap: 8px;
+  
+  /* ================= Box Model ================= */
+  margin: 0;
+  gap: var(--space-2);
+  
+  /* ================= Typography ================= */
+  font-size: var(--space-3);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text);
+  
+  /* ================= Responsive ================= */
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-4);
+  }
+  
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: var(--space-5);
+  }
 `;
 
 const HeaderButtons = styled.div`
+  /* ================= Layout ================= */
   display: flex;
-  gap: 4px;
+  
+  /* ================= Box Model ================= */
+  gap: var(--space-1);
 `;
 
 const IconButton = styled.button`
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: 1.2rem;
-  padding: 6px;
+  /* ================= Layout ================= */
   display: flex;
-  align-items: center;
   justify-content: center;
-  border-radius: 6px;
+  align-items: center;
+  
+  /* ================= Box Model ================= */
+  padding: var(--space-1);
+  
+  /* ================= Typography ================= */
+  font-size: var(--space-4);
+  color: var(--color-text-secondary);
+  
+  /* ================= Visual ================= */
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-6);
+  
+  /* ================= Animation ================= */
   transition: all 0.2s ease;
-  color: #666;
-
+  
+  /* ================= Interaction ================= */
+  cursor: pointer;
+  
   &:hover {
-    background: rgba(0, 0, 0, 0.08);
-    color: #333;
+    background: rgba(var(--color-primary-rgb), 0.08);
+    color: var(--color-text);
     transform: scale(1.05);
   }
   
   &:active {
     transform: scale(0.95);
   }
+  
+  /* ================= Responsive ================= */
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    padding: var(--space-2);
+    font-size: var(--space-5);
+  }
+  
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    padding: var(--space-2);
+    font-size: var(--space-6);
+  }
 `;
 
 const DrawerContent = styled.div`
+  /* ================= Layout ================= */
   flex: 1;
+  
+  /* ================= Box Model ================= */
   overflow: hidden;
 `;
 
 const DrawerButton = styled.button`
+  /* ================= Layout ================= */
   position: fixed;
-  right: 0;
   top: 50%;
-  transform: translateY(-50%);
-  background: linear-gradient(135deg, #016532 0%, #014a28 100%);
-  color: white;
-  border: none;
-  border-top-left-radius: 12px;
-  border-bottom-left-radius: 12px;
-  width: 60px;
-  height: 120px;
+  right: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  cursor: pointer;
-  box-shadow: -3px 0 15px rgba(0, 0, 0, 0.25);
-  z-index: 1500; /* Ensure button is always visible above other content */
-  transition: all 0.3s ease;
-  padding: 10px 5px;
+  z-index: 1500;
+  
+  /* ================= Box Model ================= */
+  width: 2rem;
+  height: 4rem;
+  padding: var(--space-1);
+  
+  /* ================= Typography ================= */
+  color: var(--white);
+  
+  /* ================= Visual ================= */
+  background: var(--emerald-green);
+  border: none;
+  border-top-left-radius: var(--radius-8);
+  border-bottom-left-radius: var(--radius-8);
+  opacity: 1;
 
-  &:hover {
-    background: linear-gradient(135deg, #015428 0%, #013520 100%);
-    width: 70px;
-    transform: translateY(-50%) translateX(-5px);
-    box-shadow: -5px 0 20px rgba(0, 0, 0, 0.35);
+  /* ================= Interaction ================= */
+  cursor: pointer;
+  &:focus {
+    outline: none;
+    box-shadow: none;
   }
+  &:focus-visible {
+    outline: none;
+    box-shadow: none;
+  }
+  &:active {
+    outline: none;
+    box-shadow: none;
+  }
+  
+  /* ================= Responsive ================= */
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    width: 3rem;
+    height: 6rem;
+    padding: var(--space-2) var(--space-1);
+  }
+  
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    width: 3.5rem;
+    height: 7rem;
+    padding: var(--space-2);
+  }
+
 `;
 
 const ButtonText = styled.span`
+  /* ================= Layout ================= */
   writing-mode: vertical-rl;
   text-orientation: mixed;
-  margin-top: 8px;
-  font-weight: 600;
-  font-size: 13px;
+  
+  /* ================= Box Model ================= */
+  margin-top: var(--space-1);
+  
+  /* ================= Typography ================= */
+  font-size: 0.625rem;
+  font-weight: var(--weight-semibold);
   letter-spacing: 0.5px;
+  color: var(--white);
+  
+  /* ================= Responsive ================= */
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    margin-top: var(--space-2);
+    font-size: 0.75rem;
+  }
+  
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: 0.875rem;
+  }
 `;
 
-const MainContent = styled.div<{ drawerWidth: string; isDrawerOpen: boolean; isFloating: boolean }>`
-  transition: ${props => props.isFloating ? 'none' : 'padding-right 0.3s ease-in-out'};
-  padding-right: ${props => (props.isDrawerOpen && !props.isFloating) ? props.drawerWidth : '0'};
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
-`;
 
 // Resize handle styles
-const ResizeHandle = styled.div<{ direction: string }>`
+const ResizeHandle = styled.div<{ $direction: string }>`
+  /* ================= Layout ================= */
   position: absolute;
-  background-color: transparent;
-  transition: background-color 0.2s ease;
   z-index: 10;
   
+  /* ================= Visual ================= */
+  background-color: transparent;
+  
+  /* ================= Animation ================= */
+  transition: background-color 0.2s ease;
+  
+  /* ================= Interaction ================= */
+  &:hover {
+    background-color: rgba(var(--color-primary-rgb), 0.3);
+  }
+  
+  &:active {
+    background-color: rgba(var(--color-primary-rgb), 0.5);
+  }
+  
   ${props => {
-    switch (props.direction) {
+    switch (props.$direction) {
       case 'left':
         return `
           left: 0;
@@ -273,30 +405,22 @@ const ResizeHandle = styled.div<{ direction: string }>`
     }
   }}
   
-  &:hover {
-    background-color: rgba(1, 101, 50, 0.3);
-  }
-  
-  &:active {
-    background-color: rgba(1, 101, 50, 0.5);
-  }
-  
   /* Add visual indicators for corner resize handles */
-  ${props => ['top-left', 'top-right', 'bottom-left', 'bottom-right'].includes(props.direction) && `
+  ${props => ['top-left', 'top-right', 'bottom-left', 'bottom-right'].includes(props.$direction) && `
     &::after {
       content: '';
       position: absolute;
       width: 8px;
       height: 8px;
-      border: 2px solid rgba(1, 101, 50, 0.6);
+      border: 2px solid rgba(var(--color-primary-rgb), 0.6);
       border-radius: 1px;
       opacity: 0;
       transition: opacity 0.2s ease;
       
-      ${props.direction === 'top-left' ? 'top: 2px; left: 2px; border-right: none; border-bottom: none;' : ''}
-      ${props.direction === 'top-right' ? 'top: 2px; right: 2px; border-left: none; border-bottom: none;' : ''}
-      ${props.direction === 'bottom-left' ? 'bottom: 2px; left: 2px; border-right: none; border-top: none;' : ''}
-      ${props.direction === 'bottom-right' ? 'bottom: 2px; right: 2px; border-left: none; border-top: none;' : ''}
+      ${props.$direction === 'top-left' ? 'top: 2px; left: 2px; border-right: none; border-bottom: none;' : ''}
+      ${props.$direction === 'top-right' ? 'top: 2px; right: 2px; border-left: none; border-bottom: none;' : ''}
+      ${props.$direction === 'bottom-left' ? 'bottom: 2px; left: 2px; border-right: none; border-top: none;' : ''}
+      ${props.$direction === 'bottom-right' ? 'bottom: 2px; right: 2px; border-left: none; border-top: none;' : ''}
     }
     
     &:hover::after {
@@ -410,7 +534,7 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
           }
           if (resizeDirection.includes('left')) {
             const maxDelta = startSize.width - 300;
-            const maxLeftMove = startPosition.x - 20; // Allow resize over sidebar
+            const maxLeftMove = startPosition.x - 20;
             const constrainedDelta = Math.max(-maxDelta, Math.min(maxLeftMove, deltaX));
             newWidth = startSize.width - constrainedDelta;
             newX = startPosition.x + constrainedDelta;
@@ -516,29 +640,29 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
   return ReactDOM.createPortal(
     <DrawerContainer 
       ref={drawerRef} 
-      isOpen={isOpen} 
+      $isOpen={isOpen} 
       width={width}
       height={height}
-      isFloating={isFloating}
-      top={position.y}
-      left={position.x}
-      isResizing={isResizing}
+      $isFloating={isFloating}
+      $top={position.y}
+      $left={position.x}
+      $isResizing={isResizing}
     >
       {/* Resize handles - only show in floating mode */}
       {isFloating && (
         <>
-          <ResizeHandle direction="top" onMouseDown={(e) => handleResizeStart(e, 'top')} />
-          <ResizeHandle direction="bottom" onMouseDown={(e) => handleResizeStart(e, 'bottom')} />
-          <ResizeHandle direction="left" onMouseDown={(e) => handleResizeStart(e, 'left')} />
-          <ResizeHandle direction="right" onMouseDown={(e) => handleResizeStart(e, 'right')} />
-          <ResizeHandle direction="top-left" onMouseDown={(e) => handleResizeStart(e, 'top-left')} />
-          <ResizeHandle direction="top-right" onMouseDown={(e) => handleResizeStart(e, 'top-right')} />
-          <ResizeHandle direction="bottom-left" onMouseDown={(e) => handleResizeStart(e, 'bottom-left')} />
-          <ResizeHandle direction="bottom-right" onMouseDown={(e) => handleResizeStart(e, 'bottom-right')} />
+          <ResizeHandle $direction="top" onMouseDown={(e) => handleResizeStart(e, 'top')} />
+          <ResizeHandle $direction="bottom" onMouseDown={(e) => handleResizeStart(e, 'bottom')} />
+          <ResizeHandle $direction="left" onMouseDown={(e) => handleResizeStart(e, 'left')} />
+          <ResizeHandle $direction="right" onMouseDown={(e) => handleResizeStart(e, 'right')} />
+          <ResizeHandle $direction="top-left" onMouseDown={(e) => handleResizeStart(e, 'top-left')} />
+          <ResizeHandle $direction="top-right" onMouseDown={(e) => handleResizeStart(e, 'top-right')} />
+          <ResizeHandle $direction="bottom-left" onMouseDown={(e) => handleResizeStart(e, 'bottom-left')} />
+          <ResizeHandle $direction="bottom-right" onMouseDown={(e) => handleResizeStart(e, 'bottom-right')} />
         </>
       )}
       {/* Original left resize handle - only show in docked mode */}
-      {!isFloating && <ResizeHandle direction="left" onMouseDown={(e) => handleResizeStart(e, 'left')} />}
+      {!isFloating && <ResizeHandle $direction="left" onMouseDown={(e) => handleResizeStart(e, 'left')} />}
       
       <DrawerHeader ref={headerRef} onMouseDown={handleDragStart}>
         <DrawerTitle>
@@ -567,16 +691,14 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
   );
 };
 
-// Export component with button
+// Export component with button (独立渲染，不包裹内容)
 export const EtherpadDrawerWithButton: React.FC<{ 
   roomId?: number;
   roomName?: string;
-  children?: React.ReactNode;
   currentRoomId?: number;
 }> = ({ 
   roomId,
   roomName,
-  children,
   currentRoomId
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -589,7 +711,7 @@ export const EtherpadDrawerWithButton: React.FC<{
     const centerX = (window.innerWidth - defaultDrawerWidth) / 2;
     
     return {
-      x: Math.max(20, centerX), // Just keep minimum margin from screen edge
+      x: Math.max(20, centerX),
       y: Math.max(navbarHeight + 20, 100)
     };
   });
@@ -637,7 +759,7 @@ export const EtherpadDrawerWithButton: React.FC<{
       const centerX = (window.innerWidth - drawerWidthNum) / 2;
       
       setPosition({
-        x: Math.max(20, centerX), // Allow covering sidebar with high z-index
+        x: Math.max(20, centerX),
         y: Math.max(navbarHeight + 50, 100)
       });
     } else {
@@ -646,19 +768,16 @@ export const EtherpadDrawerWithButton: React.FC<{
     }
   };
 
+  // 如果 Etherpad 功能被禁用，返回 null
+  if (!ENABLE_ETHERPAD) {
+    return null;
+  }
+
   return (
     <>
-      <MainContent 
-        drawerWidth={drawerWidth} 
-        isDrawerOpen={isOpen} 
-        isFloating={isFloating}
-      >
-        {children}
-      </MainContent>
-      
       {!isOpen && (
         <DrawerButton onClick={handleOpen} title="Open Shared Document">
-          <LuFileText size={32} />
+          <LuFileText size={20} color="white" />
           <ButtonText>Document</ButtonText>
         </DrawerButton>
       )}
@@ -680,4 +799,4 @@ export const EtherpadDrawerWithButton: React.FC<{
   );
 };
 
-export default EtherpadDrawer; 
+export default EtherpadDrawer;

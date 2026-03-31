@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import styled from 'styled-components';
 import ETHERPAD_CONFIG from '../../utils/etherpadConfig';
-import { useUser } from './UserContext';
+import { useUserInfo } from '../../hooks/queries/useUser';
 
 interface EtherpadProps {
   roomId?: number;
@@ -13,18 +13,30 @@ interface EtherpadProps {
 }
 
 const EtherpadContainer = styled.div`
+  /* ================= Layout ================= */
+  overflow: hidden;
+  
+  /* ================= Box Model ================= */
   width: 100%;
   height: 100%;
-  overflow: hidden;
-  border-radius: 8px;
-  background: white;
+  
+  /* ================= Visual ================= */
+  background: var(--color-background);
+  border-radius: var(--radius-8);
 `;
 
-const EtherpadIframe = styled.iframe<{ isResizing?: boolean }>`
+const EtherpadIframe = styled.iframe<{ $isResizing?: boolean }>`
+  /* ================= Layout ================= */
+  
+  /* ================= Box Model ================= */
   width: 100%;
   height: 100%;
+  
+  /* ================= Visual ================= */
   border: none;
-  pointer-events: ${props => props.isResizing ? 'none' : 'auto'};
+  
+  /* ================= Interaction ================= */
+  pointer-events: ${props => props.$isResizing ? 'none' : 'auto'};
 `;
 
 const EtherpadComponent: React.FC<EtherpadProps> = ({
@@ -36,7 +48,7 @@ const EtherpadComponent: React.FC<EtherpadProps> = ({
   isResizing = false,
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
-  const { userInfo } = useUser();
+  const { userInfo } = useUserInfo();
 
   // Generate Pad ID
   const padId = roomId ? `${ETHERPAD_CONFIG.PAD_PREFIX}${roomId}` : 'shared-notes';
@@ -83,10 +95,10 @@ const EtherpadComponent: React.FC<EtherpadProps> = ({
         title="Etherpad Collaborative Editor"
         allow="fullscreen"
         onLoad={handleIframeLoad}
-        isResizing={isResizing}
+        $isResizing={isResizing}
       />
     </EtherpadContainer>
   );
 };
 
-export default EtherpadComponent; 
+export default EtherpadComponent;

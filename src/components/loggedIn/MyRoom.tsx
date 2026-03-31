@@ -1224,12 +1224,14 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   // Use React Query hook for group info
   const { data: groupInfoData } = useGroupInfo(groupId);
   
-  // Sync group mode to state
+  // Sync group mode and room name to state
   useEffect(() => {
     if (groupInfoData?.code === 200 && groupInfoData.data) {
       setGroupMode(groupInfoData.data.groupMode || 'free');
+      setRoomName(groupInfoData.data.groupName || '');
     } else {
       setGroupMode('free');
+      setRoomName('');
     }
   }, [groupInfoData]);
 
@@ -2260,7 +2262,6 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         </ConnectionStatus>
       )}
 
-      <EtherpadDrawerWithButton roomId={groupId} roomName={roomName} currentRoomId={groupId}>
       <RenderedChatContainer ref={chatContainerRef} onScroll={handleScroll}>
         {hasNoMoreMessages && (
           <NoMoreMessagesHint>
@@ -2516,7 +2517,8 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         )}
         </MessageInputWrapper>
       </SendMessageContainer>
-      </EtherpadDrawerWithButton>
+      
+      <EtherpadDrawerWithButton roomId={groupId} roomName={roomName} currentRoomId={groupId} />
 
       {/* 复制成功提示 */}
       <CopySuccessToast $show={!!copySuccess}>
