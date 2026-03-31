@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { CiSearch } from "react-icons/ci";
 import { MdLock, MdPublic, MdGroup } from "react-icons/md";
 import { BiLoaderAlt } from "react-icons/bi";
@@ -15,7 +16,7 @@ import { generateGroupAvatar } from "../../utils/avatar";
 
 import {
   ModalBackdrop,
-  ModalContainer,
+  ModalContainer as BaseModalContainer,
   ModalCloseButton,
   HeaderSection,
   HeaderTitle,
@@ -231,7 +232,7 @@ const ErrorContainer = styled.div`
 `;
 
 // 密码弹窗样式
-const PasswordModalContainer = styled(ModalContainer)`
+const PasswordModalContainer = styled(BaseModalContainer)`
   position: relative;
   background: var(--white);
   border: none;
@@ -337,7 +338,7 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
   // Extract rooms from query data
   const rooms = groupListData?.data?.data ?? [];
 
-  return (
+  return createPortal(
     <ModalBackdrop onClick={handleOverlayClick}  className="modal-backdrop-right">
       <Container onClick={(e) => e.stopPropagation()}>
         <ModalCloseButton onClick={onClose} aria-label="Close">
@@ -441,67 +442,71 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
           </RoomListContainer>
         </ContentArea>
 
-        {showPasswordModal && (
-          <ModalBackdrop onClick={(e) => {
-            if (e.target === e.currentTarget) {
-              setShowPasswordModal(false);
-            }
-          }} className="modal-backdrop-right">
-            <PasswordModalContainer onClick={(e) => e.stopPropagation()}>
-                {/* 右上角关闭按钮 */}
-                <ModalCloseButton onClick={() => setShowPasswordModal(false)} aria-label="Close">
-                  <FiX size={24} />
-                </ModalCloseButton>
+        {showPasswordModal &&
+          createPortal(
+            <ModalBackdrop onClick={(e) => {
+              if (e.target === e.currentTarget) {
+                setShowPasswordModal(false);
+              }
+            }} className="modal-backdrop-right">
+              <PasswordModalContainer onClick={(e) => e.stopPropagation()}>
+                  {/* 右上角关闭按钮 */}
+                  <ModalCloseButton onClick={() => setShowPasswordModal(false)} aria-label="Close">
+                    <FiX size={24} />
+                  </ModalCloseButton>
 
-                {/* 顶部标题 */}
-                <HeaderSection>
-                  <HeaderTitle>Enter Room Password</HeaderTitle>
-                  <HeaderSubTitle>This room requires a password to join.</HeaderSubTitle>
-                </HeaderSection>
+                  {/* 顶部标题 */}
+                  <HeaderSection>
+                    <HeaderTitle>Enter Room Password</HeaderTitle>
+                    <HeaderSubTitle>This room requires a password to join.</HeaderSubTitle>
+                  </HeaderSection>
 
-                <PasswordInputWrapper>
-                  <InputLabel>Password</InputLabel>
-                  <PasswordInput
-                    placeholder="Enter password"
-                    value={passwordFormik.values.password}
-                    onChange={(e) => {
-                      passwordFormik.handleChange(e);
-                      setPassword(e.target.value);
-                    }}
-                    onBlur={passwordFormik.handleBlur}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        passwordFormik.handleSubmit();
-                      }
-                    }}
-                    name="password"
-                    $hasError={passwordFormik.touched.password && !!passwordFormik.errors.password}
-                  />
-                  <ErrorText $visible={!!(passwordFormik.touched.password && passwordFormik.errors.password)}>
-                    {(passwordFormik.touched.password && passwordFormik.errors.password) ? passwordFormik.errors.password :  " "}
-                  </ErrorText>
-                </PasswordInputWrapper>
-                
-                <ButtonContainer>
-                  <FixedButtonContainer>
-                    <Button variant="cancel" onClick={() => setShowPasswordModal(false)}>
-                      Cancel
-                    </Button>
-                  </FixedButtonContainer>
-                  <FixedButtonContainer>
-                    <Button 
-                      onClick={() => passwordFormik.handleSubmit()} 
-                      disabled={!passwordFormik.isValid || !passwordFormik.values.password}
-                    >
-                      Join Room
-                    </Button>
-                  </FixedButtonContainer>
-                </ButtonContainer>
-              </PasswordModalContainer>
-          </ModalBackdrop>
-        )}
+                  <PasswordInputWrapper>
+                    <InputLabel>Password</InputLabel>
+                    <PasswordInput
+                      placeholder="Enter password"
+                      value={passwordFormik.values.password}
+                      onChange={(e) => {
+                        passwordFormik.handleChange(e);
+                        setPassword(e.target.value);
+                      }}
+                      onBlur={passwordFormik.handleBlur}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          passwordFormik.handleSubmit();
+                        }
+                      }}
+                      name="password"
+                      $hasError={passwordFormik.touched.password && !!passwordFormik.errors.password}
+                    />
+                    <ErrorText $visible={!!(passwordFormik.touched.password && passwordFormik.errors.password)}>
+                      {(passwordFormik.touched.password && passwordFormik.errors.password) ? passwordFormik.errors.password :  " "}
+                    </ErrorText>
+                  </PasswordInputWrapper>
+                  
+                  <ButtonContainer>
+                    <FixedButtonContainer>
+                      <Button variant="cancel" onClick={() => setShowPasswordModal(false)}>
+                        Cancel
+                      </Button>
+                    </FixedButtonContainer>
+                    <FixedButtonContainer>
+                      <Button 
+                        onClick={() => passwordFormik.handleSubmit()} 
+                        disabled={!passwordFormik.isValid || !passwordFormik.values.password}
+                      >
+                        Join Room
+                      </Button>
+                    </FixedButtonContainer>
+                  </ButtonContainer>
+                </PasswordModalContainer>
+            </ModalBackdrop>,
+            document.body
+          )
+        }
       </Container>
-    </ModalBackdrop>
+    </ModalBackdrop>,
+    document.body
   );
 };
 
