@@ -429,7 +429,7 @@ const ResizeHandle = styled.div<{ $direction: string }>`
   `}
 `;
 
-const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
+const EtherpadDrawer: React.FC<EtherpadDrawerProps & { 'data-testid'?: string }> = ({
   roomId,
   roomName,
   isOpen,
@@ -440,7 +440,8 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
   position,
   onPositionChange,
   isFloating,
-  onFloatingChange
+  onFloatingChange,
+  'data-testid': dataTestId = 'etherpad-drawer'
 }) => {
   const drawerRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -647,33 +648,42 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps> = ({
       $top={position.y}
       $left={position.x}
       $isResizing={isResizing}
+      data-testid={dataTestId}
     >
       {/* Resize handles - only show in floating mode */}
       {isFloating && (
         <>
-          <ResizeHandle $direction="top" onMouseDown={(e) => handleResizeStart(e, 'top')} />
-          <ResizeHandle $direction="bottom" onMouseDown={(e) => handleResizeStart(e, 'bottom')} />
-          <ResizeHandle $direction="left" onMouseDown={(e) => handleResizeStart(e, 'left')} />
-          <ResizeHandle $direction="right" onMouseDown={(e) => handleResizeStart(e, 'right')} />
-          <ResizeHandle $direction="top-left" onMouseDown={(e) => handleResizeStart(e, 'top-left')} />
-          <ResizeHandle $direction="top-right" onMouseDown={(e) => handleResizeStart(e, 'top-right')} />
-          <ResizeHandle $direction="bottom-left" onMouseDown={(e) => handleResizeStart(e, 'bottom-left')} />
-          <ResizeHandle $direction="bottom-right" onMouseDown={(e) => handleResizeStart(e, 'bottom-right')} />
+          <ResizeHandle $direction="top" onMouseDown={(e) => handleResizeStart(e, 'top')} data-testid="etherpad-resize-top" />
+          <ResizeHandle $direction="bottom" onMouseDown={(e) => handleResizeStart(e, 'bottom')} data-testid="etherpad-resize-bottom" />
+          <ResizeHandle $direction="left" onMouseDown={(e) => handleResizeStart(e, 'left')} data-testid="etherpad-resize-left" />
+          <ResizeHandle $direction="right" onMouseDown={(e) => handleResizeStart(e, 'right')} data-testid="etherpad-resize-right" />
+          <ResizeHandle $direction="top-left" onMouseDown={(e) => handleResizeStart(e, 'top-left')} data-testid="etherpad-resize-top-left" />
+          <ResizeHandle $direction="top-right" onMouseDown={(e) => handleResizeStart(e, 'top-right')} data-testid="etherpad-resize-top-right" />
+          <ResizeHandle $direction="bottom-left" onMouseDown={(e) => handleResizeStart(e, 'bottom-left')} data-testid="etherpad-resize-bottom-left" />
+          <ResizeHandle $direction="bottom-right" onMouseDown={(e) => handleResizeStart(e, 'bottom-right')} data-testid="etherpad-resize-bottom-right" />
         </>
       )}
       {/* Original left resize handle - only show in docked mode */}
-      {!isFloating && <ResizeHandle $direction="left" onMouseDown={(e) => handleResizeStart(e, 'left')} />}
+      {!isFloating && <ResizeHandle $direction="left" onMouseDown={(e) => handleResizeStart(e, 'left')} data-testid="etherpad-resize-left-docked" />}
       
-      <DrawerHeader ref={headerRef} onMouseDown={handleDragStart}>
-        <DrawerTitle>
+      <DrawerHeader ref={headerRef} onMouseDown={handleDragStart} data-testid="etherpad-header">
+        <DrawerTitle data-testid="etherpad-title">
           <LuFileText />
           Shared Document
         </DrawerTitle>
         <HeaderButtons>
-          <IconButton onClick={toggleFloatingMode} title={isFloating ? "Dock Window" : "Float Window"}>
+          <IconButton 
+            onClick={toggleFloatingMode} 
+            title={isFloating ? "Dock Window" : "Float Window"}
+            data-testid="etherpad-float-toggle"
+          >
             {isFloating ? <LuMinimize2 /> : <LuMaximize2 />}
           </IconButton>
-          <IconButton onClick={handleClose} title="Close">
+          <IconButton 
+            onClick={handleClose} 
+            title="Close"
+            data-testid="etherpad-close"
+          >
             <LuX />
           </IconButton>
         </HeaderButtons>
@@ -776,7 +786,7 @@ export const EtherpadDrawerWithButton: React.FC<{
   return (
     <>
       {!isOpen && (
-        <DrawerButton onClick={handleOpen} title="Open Shared Document">
+        <DrawerButton onClick={handleOpen} title="Open Shared Document" data-testid="etherpad-toggle-btn">
           <LuFileText size={20} color="white" />
           <ButtonText>Document</ButtonText>
         </DrawerButton>

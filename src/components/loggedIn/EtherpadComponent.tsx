@@ -10,6 +10,7 @@ interface EtherpadProps {
   height?: string;
   showControls?: boolean;
   isResizing?: boolean;
+  'data-testid'?: string;
 }
 
 const EtherpadContainer = styled.div`
@@ -46,6 +47,7 @@ const EtherpadComponent: React.FC<EtherpadProps> = ({
   height = '100%',
   showControls = true,
   isResizing = false,
+  'data-testid': dataTestId = 'etherpad-iframe',
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { userInfo } = useUserInfo();
@@ -96,6 +98,7 @@ const EtherpadComponent: React.FC<EtherpadProps> = ({
         allow="fullscreen"
         onLoad={handleIframeLoad}
         $isResizing={isResizing}
+        data-testid={dataTestId}
       />
     </EtherpadContainer>
   );
