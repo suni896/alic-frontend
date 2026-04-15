@@ -44,3 +44,5 @@ dist.tar.gz
 /.github
 /tests
 playwright.config.ts
+
+docs/*
