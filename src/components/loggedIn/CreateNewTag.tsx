@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { createPortal } from "react-dom";
 import { FiX } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import Button from "../ui/Button";
@@ -92,7 +93,7 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({
     }
   };
 
-  return (
+  const modalContent = (
     <ModalBackdrop onClick={onClose} className="modal-backdrop-right">
       <ModalContainer onClick={(e) => e.stopPropagation()}>
         {/* 右上角关闭按钮 */}
@@ -138,6 +139,8 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({
       </ModalContainer>
     </ModalBackdrop>
   );
+
+  return createPortal(modalContent, document.body);
 };
 
 export default CreateNewTag;

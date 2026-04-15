@@ -1,0 +1,107 @@
+import React, { useRef } from 'react';
+import styled from 'styled-components';
+import ETHERPAD_CONFIG from '../../utils/etherpadConfig';
+import { useUserInfo } from '../../hooks/queries/useUser';
+
+interface EtherpadProps {
+  roomId?: number;
+  roomName?: string;
+  width?: string;
+  height?: string;
+  showControls?: boolean;
+  isResizing?: boolean;
+  'data-testid'?: string;
+}
+
+const EtherpadContainer = styled.div`
+  /* ================= Layout ================= */
+  overflow: hidden;
+  
+  /* ================= Box Model ================= */
+  width: 100%;
+  height: 100%;
+  
+  /* ================= Visual ================= */
+  background: var(--color-background);
+  border-radius: var(--radius-8);
+`;
+
+const EtherpadIframe = styled.iframe<{ $isResizing?: boolean }>`
+  /* ================= Layout ================= */
+  
+  /* ================= Box Model ================= */
+  width: 100%;
+  height: 100%;
+  
+  /* ================= Visual ================= */
+  border: none;
+  
+  /* ================= Interaction ================= */
+  pointer-events: ${props => props.$isResizing ? 'none' : 'auto'};
+`;
+
+const EtherpadComponent: React.FC<EtherpadProps> = ({
+  roomId,
+  roomName,
+  width = '100%',
+  height = '100%',
+  showControls = true,
+  isResizing = false,
+  'data-testid': dataTestId = 'etherpad-iframe',
+}) => {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const { userInfo } = useUserInfo();
+
+  // Generate Pad ID
+  const padId = roomId ? `${ETHERPAD_CONFIG.PAD_PREFIX}${roomId}` : 'shared-notes';
+
+  // Generate Etherpad URL
+  const generateEtherpadUrl = () => {
+    const baseUrl = ETHERPAD_CONFIG.SERVER_URL;
+    const userName = userInfo?.userName || ETHERPAD_CONFIG.DEFAULT_SETTINGS.userName;
+    
+    // Build URL parameters
+    const params = new URLSearchParams({
+      showControls: String(showControls),
+      showChat: String(ETHERPAD_CONFIG.DEFAULT_SETTINGS.showChat),
+      showLineNumbers: String(ETHERPAD_CONFIG.DEFAULT_SETTINGS.showLineNumbers),
+      useMonospaceFont: String(ETHERPAD_CONFIG.DEFAULT_SETTINGS.useMonospaceFont),
+      userName: userName,
+      lang: ETHERPAD_CONFIG.DEFAULT_SETTINGS.lang,
+    });
+
+    // Add room name if available
+    if (roomName) {
+      params.append('roomName', roomName);
+    }
+
+    // Remove userColor reference as it's not in UserInformation type
+    // Use default color instead
+    if (ETHERPAD_CONFIG.DEFAULT_SETTINGS.userColor) {
+      params.append('userColor', ETHERPAD_CONFIG.DEFAULT_SETTINGS.userColor);
+    }
+
+    return `${baseUrl}/p/${padId}?${params.toString()}`;
+  };
+
+  // Handle iframe load completion event
+  const handleIframeLoad = () => {
+    console.log('Etherpad iframe loaded successfully');
+  };
+
+  return (
+    <EtherpadContainer style={{ width, height }}>
+      <EtherpadIframe
+        ref={iframeRef}
+        src={generateEtherpadUrl()}
+        title="Etherpad Collaborative Editor"
+        allow="fullscreen"
+        onLoad={handleIframeLoad}
+        $isResizing={isResizing}
+        data-testid={dataTestId}
+      />
+    </EtherpadContainer>
+  );
+};
+
+export default EtherpadComponent;
