@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { createPortal } from "react-dom";
 import { FaRobot } from "react-icons/fa";
 import { useFormik, FieldArray, FormikProvider, FormikValues } from "formik";
@@ -12,9 +12,23 @@ import { MdLock, MdPublic } from "react-icons/md";
 import { FiX } from "react-icons/fi";
 import { useParams } from "react-router-dom";
 import { useRoomContext } from "./RoomContext";
+import type { MultiAgentConfigVO } from "../../types/multiagent";
 import Button from "../ui/Button";
 import AutoResizeTextarea from "../ui/Textarea";
 import { useUserRole, useEditGroup, useGroupInfo } from "../../hooks/queries/useGroup";
+import { 
+  useProfilePresets, 
+  useActionTypes, 
+  useBatchUpdateConfig,
+  useGlobalScript,
+  useProfiles,
+  useActionConfig,
+} from "../../hooks/queries/useMultiAgent";
+import { 
+  GlobalScriptSection, 
+  ProfilesSection, 
+  ActionConfigSection 
+} from "./MultiAgentConfig";
 import {
   ModalCloseButton,
   HeaderSection,
@@ -132,13 +146,32 @@ const InputGroup = styled.div`
 `;
 
 
+const MultiAgentContainer = styled.div`
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: var(--white);
+  border-radius: var(--radius-12);
+  border: 1px solid var(--gray-200);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  box-sizing: border-box;
+
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    gap: var(--space-4);
+    padding: 1.5rem;
+  }
+`;
+
 const RadioGroup = styled.div`
   display: grid;
   grid-template-columns: 1fr;
   gap: var(--space-2);
   margin-top: var(--space-1);
 
-  /* tablet >= 768px */
+  /* tablet >= 768px - default 2 columns */
   @media (min-width: 48rem) {
     grid-template-columns: 1fr 1fr;
     gap: var(--space-3);
@@ -151,7 +184,28 @@ const RadioGroup = styled.div`
     gap: 1rem;
     margin-top: 0.5rem;
   }
+`;
 
+// 3-column radio group for Group Mode (3 options)
+const RadioGroupThreeCol = styled.div`
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+
+  /* tablet >= 768px - 3 columns for 3 options */
+  @media (min-width: 48rem) {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--space-3);
+    margin-top: 0.5rem;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
 `;
 
 const RadioCard = styled.label<{ checked: boolean; disabled?: boolean }>`
@@ -698,7 +752,7 @@ const validationSchema = (showAssistants: boolean) =>
       .oneOf(["0", "1"], "Invalid group type") // Changed to string values
       .required("Group Type is required"),
     groupMode: Yup.string()
-      .oneOf(["free", "feedback"], "Invalid group mode")
+      .oneOf(["free", "feedback", "multiagent"], "Invalid group mode")
       .required("Group Mode is required"),
 
     roomPassword: Yup.string().when("roomType", {
@@ -814,6 +868,29 @@ const validationSchema = (showAssistants: boolean) =>
             .nullable()
             .notRequired(),
       }),
+
+    // MultiAgent Config validation (only in multiagent mode)
+    multiAgentConfig: Yup.object().when("groupMode", {
+      is: "multiagent",
+      then: (schema) =>
+        schema.shape({
+          profiles: Yup.array()
+            .test(
+              "has-manager",
+              "At least one MANAGER is required",
+              (profiles: any) => profiles?.some((p: any) => p.roleType === 0)
+            )
+            .test(
+              "has-assistant",
+              "At least one ASSISTANT is required",
+              (profiles: any) => profiles?.some((p: any) => p.roleType === 1)
+            ),
+          globalScript: Yup.object().shape({
+            scriptContent: Yup.string().required("Global Script is required"),
+          }),
+        }),
+      otherwise: (schema) => schema.notRequired(),
+    }),
   });
 
 // Define interface for bot data structure
@@ -848,9 +925,36 @@ interface CreateGroupPayload {
   groupDescription: string;
   groupType: number;
   password?: string;
-  groupMode: "free" | "feedback";
+  groupMode: "free" | "feedback" | "multiagent";
   chatBotVOList: ChatBotVO[];
   chatBotFeedbackVO?: ChatBotFeedbackVO;
+  multiAgentConfig?: {
+    globalScript: {
+      scriptContent: string;
+      interactionPolicy?: {
+        turnTaking?: string;
+        maxTurns?: number;
+        maxDuration?: number;
+        terminationCondition?: string;
+      };
+      roleConstraints?: Array<{
+        role: string;
+        canInterrupt?: boolean;
+        maxSpeakingTime?: number;
+      }>;
+    };
+    profiles: Array<{
+      roleType: 0 | 1;
+      roleName: string;
+      description?: string;
+      presetTemplateId: string;
+      accessType: number;
+    }>;
+    actionConfig?: {
+      enabledActionCodes: number[];
+      customTemplates?: Record<number, string>;
+    };
+  };
 }
 
 interface CreateRoomComponentProps {
@@ -871,7 +975,7 @@ export interface RoomInfoResponse {
     groupType: number;
     password?: string;
     clearContextTime?: string;
-    groupMode?: "free" | "feedback";
+    groupMode?: "free" | "feedback" | "multiagent";
     chatBots?: ChatBotVO[];
     chatBotFeedback?: ChatBotFeedbackVO;
   };
@@ -896,12 +1000,52 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   const { groupId: urlGroupId } = useParams<{ groupId: string }>();
   const effectiveIsModify = fromSidebar ? false : isModify;
   const shouldCheckRole = effectiveIsModify && !fromSidebar;
-  const [userRole, setUserRole] = useState<string | null>(
+  const [, setUserRole] = useState<string | null>(
     fromSidebar ? "ADMIN" : null
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isFormInitialized, setIsFormInitialized] = useState(false);
   const [showRemoveBotTooltip, setShowRemoveBotTooltip] = useState(false);
+  
+  // Ref to store original multiagent profiles for comparison
+  const originalMultiAgentProfilesRef = useRef<any[]>([]);
+
+  
+  // Default empty multiAgentConfig for non-multiagent modes
+  const emptyMultiAgentConfig: MultiAgentConfigVO = {
+    globalScript: {
+      scriptContent: "",
+      interactionPolicy: {
+        turnTaking: "round_robin",
+        maxTurns: undefined,
+        maxDuration: undefined,
+        terminationCondition: "",
+      },
+      roleConstraints: [],
+    },
+    profiles: [
+      {
+        botName: "",
+        roleType: 0,
+        roleName: "",
+        description: "",
+        presetTemplateId: "",
+        accessType: 1,
+      },
+      {
+        botName: "",
+        roleType: 1,
+        roleName: "",
+        description: "",
+        presetTemplateId: "",
+        accessType: 1,
+      },
+    ],
+    actionConfig: {
+      enabledActionCodes: [],
+      customTemplates: {},
+    },
+  };
 
   // Determine the groupId to use - from props or URL params
   const currentGroupId =
@@ -911,6 +1055,24 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   const { data: userRoleData } = useUserRole(shouldCheckRole ? currentGroupId : undefined);
   const editGroupMutation = useEditGroup();
   const { data: groupInfoData } = useGroupInfo(currentGroupId);
+  const { data: profilePresets } = useProfilePresets();
+  const { data: actionTypes } = useActionTypes();
+  const batchUpdateConfigMutation = useBatchUpdateConfig(currentGroupId || '');
+  
+  // Load existing multiagent config in edit mode (only when editing existing group)
+  const shouldLoadMultiAgentConfig = effectiveIsModify && !!currentGroupId;
+  const { data: existingGlobalScript, isLoading: isLoadingGlobalScript } = useGlobalScript(
+    currentGroupId || '', 
+    shouldLoadMultiAgentConfig
+  );
+  const { data: existingProfiles, isLoading: isLoadingProfiles } = useProfiles(
+    currentGroupId || '', 
+    shouldLoadMultiAgentConfig
+  );
+  const { data: existingActionConfig, isLoading: isLoadingActionConfig } = useActionConfig(
+    currentGroupId || '', 
+    shouldLoadMultiAgentConfig
+  );
 
   const handleAddGroup = async (
     values: FormikValues,
@@ -953,6 +1115,44 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
               ? values.feedbackBot.timeInterval
               : parseInt(String(values.feedbackBot.timeInterval), 10),
         },
+      };
+    } else if (values.groupMode === "multiagent") {
+      // Validate: at least one MANAGER and one ASSISTANT
+      const profiles = values.multiAgentConfig?.profiles || [];
+      console.log("[Create] Validating profiles:", profiles);
+      
+      const nonStateAnalyzerProfiles = profiles.filter((p: any) => p.roleType !== 2);
+      console.log("[Create] Non-StateAnalyzer profiles:", nonStateAnalyzerProfiles);
+      
+      const hasManager = nonStateAnalyzerProfiles.some((p: any) => p.roleType === 0);
+      const hasAssistant = nonStateAnalyzerProfiles.some((p: any) => p.roleType === 1);
+      
+      console.log("[Create] Validation result:", { hasManager, hasAssistant, total: nonStateAnalyzerProfiles.length });
+      
+      if (!hasManager) {
+        console.warn("[Create] Validation failed: No MANAGER found");
+        alert("At least one MANAGER is required");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      if (!hasAssistant) {
+        console.warn("[Create] Validation failed: No ASSISTANT found");
+        alert("At least one ASSISTANT is required");
+        setIsSubmitting(false);
+        return;
+      }
+      
+      console.log("[Create] Validation passed");
+      
+      requestPayload = {
+        groupName: values.roomName,
+        groupDescription: values.roomDescription,
+        groupType: groupTypeValue,
+        ...(groupTypeValue === 0 ? { password: values.roomPassword } : {}),
+        groupMode: "multiagent",
+        chatBotVOList: [],
+        multiAgentConfig: values.multiAgentConfig || undefined,
       };
     } else {
       requestPayload = {
@@ -1001,6 +1201,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
         timeInterval: 1,
         botId: undefined,
       },
+      multiAgentConfig: emptyMultiAgentConfig,
     },
     validationSchema: validationSchema(showAssistants),
     onSubmit: async (values) => {
@@ -1142,7 +1343,8 @@ const handleEditGroup = async (values: any) => {
             }
           : undefined;
 
-      const requestPayload = {
+      // Step 1: Edit basic group info
+      const requestPayload: any = {
         groupId: Number(currentGroupId),
         groupName: values.roomName,
         groupDescription: values.roomDescription,
@@ -1157,10 +1359,7 @@ const handleEditGroup = async (values: any) => {
               addChatBotVOList: addedBots,
               modifyChatBotVOS: existingBots,
             }
-          : {
-              addChatBotVOList: [],
-              modifyChatBotVOS: [],
-            }),
+          : {}),
       };
 
       console.log("Edit request payload:", requestPayload);
@@ -1169,17 +1368,142 @@ const handleEditGroup = async (values: any) => {
 
       console.log("Edit response:", response);
 
-      if (response.code === 200) {
-        // Verify by checking the group info query data
-        if (groupInfoData) {
-          console.log("Verification response:", groupInfoData);
+      if (response.code !== 200) {
+        alert(response.message || "Failed to update room");
+        return;
+      }
+
+      // Step 2: For multiagent mode, use batchUpdateConfig to update Agent configuration
+      if (values.groupMode === "multiagent" && values.multiAgentConfig) {
+        console.log("Updating multiagent config via batchUpdateConfig...");
+        
+        const { globalScript, profiles, actionConfig } = values.multiAgentConfig;
+        
+        // Ensure interactionPolicy is an object, not a string
+        let interactionPolicy = globalScript?.interactionPolicy;
+        if (typeof interactionPolicy === 'string') {
+          try {
+            interactionPolicy = JSON.parse(interactionPolicy);
+          } catch (e) {
+            console.warn('Failed to parse interactionPolicy string:', e);
+            interactionPolicy = {};
+          }
+        }
+        
+        // 1. Filter out State Analyzer (roleType === 2)
+        console.log("[Edit] Validating profiles:", profiles);
+        const nonStateAnalyzerProfiles = profiles?.filter((p: any) => p.roleType !== 2) || [];
+        console.log("[Edit] Non-StateAnalyzer profiles:", nonStateAnalyzerProfiles);
+        
+        // Validate: at least one MANAGER and one ASSISTANT
+        const hasManager = nonStateAnalyzerProfiles.some((p: any) => p.roleType === 0);
+        const hasAssistant = nonStateAnalyzerProfiles.some((p: any) => p.roleType === 1);
+        
+        console.log("[Edit] Validation result:", { hasManager, hasAssistant, total: nonStateAnalyzerProfiles.length });
+        
+        if (!hasManager || !hasAssistant) {
+          const missingRole = !hasManager ? "MANAGER" : "ASSISTANT";
+          console.warn(`[Edit] Validation failed: No ${missingRole} found, restoring original profiles`);
+          alert(`At least one ${missingRole} is required. Changes have been reverted.`);
+          
+          // Restore original profiles to form
+          await formik.setFieldValue('multiAgentConfig.profiles', originalMultiAgentProfilesRef.current);
+          console.log("[Edit] Restored original profiles:", originalMultiAgentProfilesRef.current);
+          
+          setIsSubmitting(false);
+          return;
+        }
+        
+        console.log("[Edit] Validation passed");
+        
+        // 2. Calculate deleted bot IDs (exist in original but not in current)
+        const currentBotIds = new Set(nonStateAnalyzerProfiles.map((p: any) => p.botId).filter(Boolean));
+        const deletedBotIds = originalMultiAgentProfilesRef.current
+          .filter((p: any) => p.botId && !currentBotIds.has(p.botId))
+          .map((p: any) => p.botId);
+        
+        // 3. Only include changed profiles (new profiles or modified existing profiles)
+        const changedProfiles = nonStateAnalyzerProfiles.filter((profile: any) => {
+          // New profile (no botId) - always include
+          if (!profile.botId) {
+            return true;
+          }
+          
+          // Find original profile by botId
+          const originalProfile = originalMultiAgentProfilesRef.current.find(
+            (p: any) => p.botId === profile.botId
+          );
+          
+          // If not found in original, it's a new profile (should have been caught above, but just in case)
+          if (!originalProfile) {
+            return true;
+          }
+          
+          // Compare fields to detect changes
+          const hasChanges = 
+            profile.botName !== originalProfile.botName ||
+            profile.roleType !== originalProfile.roleType ||
+            profile.roleName !== originalProfile.roleName ||
+            profile.presetTemplateId !== originalProfile.presetTemplateId ||
+            profile.accessType !== originalProfile.accessType ||
+            profile.description !== originalProfile.description;
+          
+          return hasChanges;
+        });
+        
+        console.log(`Profiles: total=${profiles?.length || 0}, non-SA=${nonStateAnalyzerProfiles.length}, changed=${changedProfiles.length}, deleted=${deletedBotIds.length}`);
+        
+        // Build batch request
+        const batchRequest: any = {
+          globalScript: {
+            ...globalScript,
+            interactionPolicy: interactionPolicy || {},
+          },
+          actionConfig,
+        };
+        
+        // Include profiles if there are changes
+        if (changedProfiles.length > 0) {
+          batchRequest.profiles = changedProfiles.map((profile: any) => ({
+            botId: profile.botId,
+            botName: profile.botName,
+            roleType: profile.roleType,
+            roleName: profile.roleName,
+            presetTemplateId: profile.presetTemplateId,
+            accessType: profile.accessType,
+          }));
+        }
+        
+        // Include deleted bot IDs if any
+        if (deletedBotIds.length > 0) {
+          batchRequest.deletedBotIds = deletedBotIds;
         }
 
-        alert("Room successfully updated!");
-        onClose();
-      } else {
-        alert(response.message || "Failed to update room");
+        const batchResult = await batchUpdateConfigMutation.mutateAsync(batchRequest);
+        console.log("Batch update result:", batchResult);
+
+        // Check for partial failures
+        const failedProfiles = batchResult.profiles?.filter((p: any) => !p.success) || [];
+        if (failedProfiles.length > 0) {
+          const errorMessages = failedProfiles.map((p: any) => 
+            `${p.oldBotId || 'New'}: ${p.errorMessage || 'Unknown error'}`
+          ).join('\n');
+          alert(`Some profiles failed to update:\n${errorMessages}`);
+          return;
+        }
+
+        if (!batchResult.globalScriptUpdated) {
+          console.warn("Global script update may have failed");
+        }
       }
+
+      // Verify by checking the group info query data
+      if (groupInfoData) {
+        console.log("Verification response:", groupInfoData);
+      }
+
+      alert("Room successfully updated!");
+      onClose();
     } catch (error: any) {
       console.error("Error updating group:", error);
       alert(`Error: ${error.message || "Failed to update room"}`);
@@ -1215,87 +1539,146 @@ const handleEditGroup = async (values: any) => {
   };
 
   useEffect(() => {
-    if (isModify && !isFormInitialized && currentGroupId && groupInfoData?.code === 200) {
-      setIsFormInitialized(true);
+    // Only initialize form when editing existing group and data is loaded
+    if (!effectiveIsModify || isFormInitialized || !currentGroupId || groupInfoData?.code !== 200) {
+      return;
+    }
+    
+    const roomData = groupInfoData.data;
+    if (!roomData) return;
+    
+    const isMultiAgentMode = roomData.groupMode === "multiagent";
+    
+    // For multiagent mode, wait for config data to load before initializing
+    if (isMultiAgentMode) {
+      const isMultiAgentDataLoaded = 
+        !isLoadingGlobalScript && 
+        !isLoadingProfiles && 
+        !isLoadingActionConfig;
       
-      const roomData = groupInfoData.data;
-      if (!roomData) return;
-      
-      const botList = roomData.chatBots || [];
-      setOriginalBots([...botList]);
-      
-      const hasBots = botList.length > 0;
-      const isAdmin = userRoleData === "ADMIN";
-      
-      const feedbackInfo = (roomData as any).chatBotFeedbackVO || roomData.chatBotFeedback;
-      const isFeedbackMode = roomData.groupMode === "feedback" || !!feedbackInfo;
-      
-      let formattedBots: FormBotWithStatus[] = [];
-      
-      if (!isFeedbackMode) {
-        if (hasBots) {
-          formattedBots = botList.map((bot: any) => ({
-            name: bot.botName,
-            prompt: bot.botPrompt,
-            context: bot.botContext,
-            adminOnly: bot.accessType === 0,
-            botId: bot.botId,
-            status: "unchanged" as const,
-          }));
-          setShowAssistants(isAdmin && hasBots);
-        } else {
-          formattedBots = [
-            {
-              name: "",
-              prompt: "",
-              context: 1,
-              adminOnly: false,
-              status: "new" as const,
-            },
-          ];
-          setShowAssistants(false);
-        }
+      if (!isMultiAgentDataLoaded) {
+        return; // Wait for multiagent config data to load
+      }
+    }
+    
+    setIsFormInitialized(true);
+    
+    const botList = roomData.chatBots || [];
+    setOriginalBots([...botList]);
+    
+    const hasBots = botList.length > 0;
+    const isAdmin = userRoleData === "ADMIN";
+    
+    const feedbackInfo = (roomData as any).chatBotFeedbackVO || roomData.chatBotFeedback;
+    const isFeedbackMode = roomData.groupMode === "feedback" || !!feedbackInfo;
+    
+    let formattedBots: FormBotWithStatus[] = [];
+    
+    if (!isFeedbackMode && !isMultiAgentMode) {
+      if (hasBots) {
+        formattedBots = botList.map((bot: any) => ({
+          name: bot.botName,
+          prompt: bot.botPrompt,
+          context: bot.botContext,
+          adminOnly: bot.accessType === 0,
+          botId: bot.botId,
+          status: "unchanged" as const,
+        }));
+        setShowAssistants(isAdmin && hasBots);
       } else {
+        formattedBots = [
+          {
+            name: "",
+            prompt: "",
+            context: 1,
+            adminOnly: false,
+            status: "new" as const,
+          },
+        ];
         setShowAssistants(false);
       }
-      
-      formik.setValues({
-        roomName: roomData.groupName,
-        roomDescription: roomData.groupDescription || "",
-        roomType: roomData.groupType.toString(),
-        groupMode: isFeedbackMode ? "feedback" : "free",
-        roomPassword: roomData.password || "",
-        bots: isAdmin && !isFeedbackMode ? formattedBots : [],
-        feedbackBot:
-          isFeedbackMode && feedbackInfo
+    } else {
+      setShowAssistants(false);
+    }
+    
+    // Build multiAgentConfig from loaded data
+    // Ensure interactionPolicy is an object, not a string
+    let loadedInteractionPolicy = existingGlobalScript?.interactionPolicy;
+    if (typeof loadedInteractionPolicy === 'string') {
+      try {
+        loadedInteractionPolicy = JSON.parse(loadedInteractionPolicy);
+      } catch (e) {
+        console.warn('Failed to parse loaded interactionPolicy string:', e);
+        loadedInteractionPolicy = {};
+      }
+    }
+    
+    // Filter out State Analyzer (roleType === 2) from profiles
+    const filteredExistingProfiles = Array.isArray(existingProfiles) 
+      ? existingProfiles.filter((p: any) => p.roleType !== 2)
+      : [];
+    
+    const multiAgentConfig = isMultiAgentMode
+      ? {
+          globalScript: {
+            scriptContent: existingGlobalScript?.scriptContent || '',
+            interactionPolicy: loadedInteractionPolicy || {},
+          },
+          profiles: filteredExistingProfiles,
+          actionConfig: existingActionConfig
             ? {
-                name: feedbackInfo.botName || "",
-                prompt: feedbackInfo.botPrompt || "",
-                msgCountInterval:
-                  typeof feedbackInfo.msgCountInterval === "number"
-                    ? feedbackInfo.msgCountInterval
-                    : typeof feedbackInfo.msgCountInterval === "string"
-                    ? parseInt(feedbackInfo.msgCountInterval, 10)
-                    : 2,
-                timeInterval:
-                  typeof feedbackInfo.timeInterval === "number"
-                    ? feedbackInfo.timeInterval
-                    : typeof feedbackInfo.timeInterval === "string"
-                    ? parseInt(feedbackInfo.timeInterval, 10)
-                    : 1,
-                botId: feedbackInfo.botId,
+                enabledActionCodes: existingActionConfig.enabledActionCodes || [],
+                customTemplates: existingActionConfig.customTemplates || {},
               }
             : {
-                name: "",
-                prompt: "",
-                msgCountInterval: 2,
-                timeInterval: 1,
-                botId: undefined,
+                enabledActionCodes: [],
+                customTemplates: {},
               },
-      });
+        }
+      : emptyMultiAgentConfig;
+    
+    formik.setValues({
+      roomName: roomData.groupName,
+      roomDescription: roomData.groupDescription || "",
+      roomType: roomData.groupType.toString(),
+      groupMode: isFeedbackMode ? "feedback" : isMultiAgentMode ? "multiagent" : "free",
+      roomPassword: roomData.password || "",
+      bots: isAdmin && !isFeedbackMode && !isMultiAgentMode ? formattedBots : [],
+      feedbackBot:
+        isFeedbackMode && feedbackInfo
+          ? {
+              name: feedbackInfo.botName || "",
+              prompt: feedbackInfo.botPrompt || "",
+              msgCountInterval:
+                typeof feedbackInfo.msgCountInterval === "number"
+                  ? feedbackInfo.msgCountInterval
+                  : typeof feedbackInfo.msgCountInterval === "string"
+                  ? parseInt(feedbackInfo.msgCountInterval, 10)
+                  : 2,
+              timeInterval:
+                typeof feedbackInfo.timeInterval === "number"
+                  ? feedbackInfo.timeInterval
+                  : typeof feedbackInfo.timeInterval === "string"
+                  ? parseInt(feedbackInfo.timeInterval, 10)
+                  : 1,
+              botId: feedbackInfo.botId,
+            }
+          : {
+              name: "",
+              prompt: "",
+              msgCountInterval: 2,
+              timeInterval: 1,
+              botId: undefined,
+            },
+      multiAgentConfig,
+    });
+    
+    // Store original profiles for later comparison (excluding State Analyzer)
+    if (isMultiAgentMode) {
+      originalMultiAgentProfilesRef.current = JSON.parse(JSON.stringify(filteredExistingProfiles));
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isModify, currentGroupId, isFormInitialized, groupInfoData, userRole]);
+  }, [effectiveIsModify, currentGroupId, isFormInitialized, groupInfoData, userRoleData, existingGlobalScript, existingProfiles, existingActionConfig, isLoadingGlobalScript, isLoadingProfiles, isLoadingActionConfig]);
 
   const handleBotFieldChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
@@ -1461,7 +1844,7 @@ const handleEditGroup = async (values: any) => {
             )}
             <InputGroup>
               <InputLabel>Group Mode</InputLabel>
-              <RadioGroup>
+              <RadioGroupThreeCol>
                 <RadioCard
                   checked={formik.values.groupMode === "free"}
                   disabled={effectiveIsModify}
@@ -1505,7 +1888,29 @@ const handleEditGroup = async (values: any) => {
                     <RadioDescription>Automatic feedback from the assistant</RadioDescription>
                   </RadioContent>
                 </RadioCard>
-              </RadioGroup>
+
+                <RadioCard
+                  checked={formik.values.groupMode === "multiagent"}
+                  disabled={effectiveIsModify}
+                >
+                  <input
+                    type="radio"
+                    name="groupMode"
+                    value="multiagent"
+                    checked={formik.values.groupMode === "multiagent"}
+                    onChange={(e) => {
+                      console.log("[groupMode] changed to:", e.target.value);
+                      formik.handleChange(e);
+                    }}
+                    disabled={effectiveIsModify}
+                  />
+                  <RadioIcon checked={formik.values.groupMode === "multiagent"} />
+                  <RadioContent>
+                    <RadioTitle>MultiAgent Mode</RadioTitle>
+                    <RadioDescription>Multi-party AI discussion</RadioDescription>
+                  </RadioContent>
+                </RadioCard>
+              </RadioGroupThreeCol>
               <ErrorText $visible={!!(formik.touched.groupMode && formik.errors.groupMode)}>
                 {(formik.touched.groupMode && formik.errors.groupMode) ? formik.errors.groupMode : " "}
               </ErrorText>
@@ -1829,6 +2234,23 @@ const handleEditGroup = async (values: any) => {
               </FieldArrayContainer>
             )}
 
+            {/* MultiAgent Configuration */}
+            {formik.values.groupMode === "multiagent" && (
+              <MultiAgentContainer>
+                <GlobalScriptSection disabled={isSubmitting} compact />
+                <ProfilesSection 
+                  disabled={isSubmitting} 
+                  presetTemplates={profilePresets || []} 
+                  compact
+                />
+                <ActionConfigSection 
+                  disabled={isSubmitting} 
+                  actionTypes={actionTypes || []} 
+                  compact
+                />
+              </MultiAgentContainer>
+            )}
+
             {(!effectiveIsModify || userRoleData === "ADMIN") && (
               <ModalButtonContainer>
                 <FixedButtonContainer>
@@ -1841,7 +2263,49 @@ const handleEditGroup = async (values: any) => {
                   </Button>
                 </FixedButtonContainer>
                 <FixedButtonContainer>
-                  <Button disabled={isSubmitting} type="submit">
+                  <Button 
+                    disabled={isSubmitting} 
+                    type="button"
+                    onClick={() => {
+                      // Force validate multiagent config before submit
+                      if (formik.values.groupMode === 'multiagent') {
+                        const profiles = formik.values.multiAgentConfig?.profiles || [];
+                        console.log('[Pre-submit check] profiles:', profiles);
+                        
+                        const nonStateAnalyzerProfiles = profiles.filter((p: any) => p.roleType !== 2);
+                        const hasManager = nonStateAnalyzerProfiles.some((p: any) => p.roleType === 0);
+                        const hasAssistant = nonStateAnalyzerProfiles.some((p: any) => p.roleType === 1);
+                        
+                        console.log('[Pre-submit check] result:', { hasManager, hasAssistant, total: nonStateAnalyzerProfiles.length });
+                        
+                        if (!hasManager || !hasAssistant) {
+                          const missingRole = !hasManager ? 'MANAGER' : 'ASSISTANT';
+                          console.warn(`[Pre-submit] Validation failed: No ${missingRole}, restoring...`);
+                          
+                          // Restore original profiles for edit mode
+                          if (effectiveIsModify && originalMultiAgentProfilesRef.current.length > 0) {
+                            formik.setValues({
+                              ...formik.values,
+                              multiAgentConfig: {
+                                ...formik.values.multiAgentConfig,
+                                profiles: [...originalMultiAgentProfilesRef.current],
+                              },
+                            });
+                            console.log('[Pre-submit] Restored profiles:', originalMultiAgentProfilesRef.current);
+                            alert(`At least one ${missingRole} is required. Changes have been reverted.`);
+                          } else {
+                            alert(`At least one ${missingRole} is required`);
+                          }
+                          
+                          formik.setFieldTouched('multiAgentConfig.profiles', true);
+                          return;
+                        }
+                      }
+                      
+                      // Trigger form submit
+                      formik.submitForm();
+                    }}
+                  >
                     {effectiveIsModify ? "Update Room" : "Create Room"}
                   </Button>
                 </FixedButtonContainer>
@@ -1862,6 +2326,7 @@ const handleEditGroup = async (values: any) => {
     </Tooltip>
   );
 
+  // Handle MultiAgent config submit from panel
   return (
     <>
       {createPortal(modalContent, document.body)}

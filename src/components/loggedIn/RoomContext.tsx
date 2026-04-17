@@ -49,12 +49,39 @@ interface CreateRoomRequest {
   groupType: number;
   password?: string;
   chatBotVOList: ChatBotVO[];
-  groupMode: "free" | "feedback";
+  groupMode: "free" | "feedback" | "multiagent";
   chatBotFeedbackVO?: {
     botName: string;
     botPrompt: string;
     msgCountInterval: number;
     timeInterval: number;
+  };
+  multiAgentConfig?: {
+    globalScript: {
+      scriptContent: string;
+      interactionPolicy?: {
+        turnTaking?: string;
+        maxTurns?: number;
+        maxDuration?: number;
+        terminationCondition?: string;
+      };
+      roleConstraints?: Array<{
+        role: string;
+        canInterrupt?: boolean;
+        maxSpeakingTime?: number;
+      }>;
+    };
+    profiles: Array<{
+      roleType: 0 | 1;
+      roleName: string;
+      description?: string;
+      presetTemplateId: string;
+      accessType: number;
+    }>;
+    actionConfig?: {
+      enabledActionCodes: number[];
+      customTemplates?: Record<number, string>;
+    };
   };
 }
 

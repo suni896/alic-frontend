@@ -1176,7 +1176,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   const [showClearContextToast, setShowClearContextToast] = useState(false);
   const [contextClearedTimes, setContextClearedTimes] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [groupMode, setGroupMode] = useState<'free' | 'feedback'>('free');
+  const [groupMode, setGroupMode] = useState<'free' | 'feedback' | 'multiagent'>('free');
   const [roomName, setRoomName] = useState<string>('');
 
   // Use React Query hook for clear history

@@ -87,7 +87,7 @@ export interface GetGroupInfoResponse {
     groupType: number;
     password?: string;
     clearContextTime?: string;
-    groupMode?: 'free' | 'feedback';
+    groupMode?: 'free' | 'feedback' | 'multiagent';
     chatBots?: Array<{
       accessType: number;
       botContext: number;
