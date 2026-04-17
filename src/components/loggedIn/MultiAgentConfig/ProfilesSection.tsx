@@ -553,10 +553,14 @@ const ProfilesSection: React.FC<ProfilesSectionProps> = ({
                         ))}
                       </Select>
                       
-                      {/* Show full template description when selected */}
+                      {/* Show full prompt template when selected */}
                       {profile.presetTemplateId && (
                         <TemplateDescription>
-                          {presetTemplates.find(t => t.templateId === profile.presetTemplateId)?.description}
+                          <strong>Prompt Template:</strong>
+                          <pre style={{ margin: '0.5rem 0 0 0', whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                            {presetTemplates.find(t => t.templateId === profile.presetTemplateId)?.promptTemplate || 
+                             presetTemplates.find(t => t.templateId === profile.presetTemplateId)?.description}
+                          </pre>
                         </TemplateDescription>
                       )}
                       

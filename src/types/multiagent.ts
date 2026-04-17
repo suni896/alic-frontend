@@ -102,6 +102,7 @@ export interface PresetProfileTemplate {
   templateId: string;         // 如 "critical_thinker_v1"
   templateName: string;       // 如 "批判性思考者"
   description: string;        // 模板描述
+  promptTemplate?: string;    // 完整的 prompt 模板内容
   roleType: 0 | 1;            // 0=MANAGER, 1=ASSISTANT（STATE_ANALYZER 不在列表中）
 }
 
