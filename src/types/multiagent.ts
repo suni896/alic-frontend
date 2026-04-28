@@ -103,7 +103,32 @@ export interface PresetProfileTemplate {
   templateName: string;       // 如 "批判性思考者"
   description: string;        // 模板描述
   promptTemplate?: string;    // 完整的 prompt 模板内容
+  contextTemplate?: string;   // 上下文模板内容
+  contextLength?: number;     // 上下文长度
   roleType: 0 | 1;            // 0=MANAGER, 1=ASSISTANT（STATE_ANALYZER 不在列表中）
+}
+
+/**
+ * 创建 Profile Preset 请求体
+ */
+export interface CreateProfilePresetPayload {
+  templateName: string;
+  roleType: 0 | 1;
+  promptTemplate: string;
+  contextTemplate: string;
+  contextLength: number;
+  temperature: number;
+}
+
+/**
+ * 创建 Profile Preset 响应
+ */
+export interface CreateProfilePresetResponse {
+  code: number;
+  message: string;
+  data?: {
+    templateId: string;
+  };
 }
 
 /**

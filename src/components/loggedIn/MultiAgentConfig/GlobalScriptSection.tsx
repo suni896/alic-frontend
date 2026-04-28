@@ -323,7 +323,7 @@ const GlobalScriptSection: React.FC<GlobalScriptSectionProps> = ({
 
         <InputGroup>
           <InputLabel htmlFor="globalScript.interactionPolicy.maxTurns">
-            Max Turns
+            Max Turns (LLM calls per human input)
           </InputLabel>
           <Select
             id="globalScript.interactionPolicy.maxTurns"
@@ -333,14 +333,11 @@ const GlobalScriptSection: React.FC<GlobalScriptSectionProps> = ({
             onBlur={handleBlur}
             disabled={disabled}
           >
-            <option value="">Select max turns (optional)</option>
-            <option value="5">5 turns</option>
-            <option value="10">10 turns</option>
-            <option value="15">15 turns</option>
-            <option value="20">20 turns</option>
-            <option value="30">30 turns</option>
-            <option value="50">50 turns</option>
-            <option value="100">100 turns</option>
+            <option value="">Select turns (optional)</option>
+            <option value="2">2</option>
+            <option value="3">3</option>
+            <option value="4">4</option>
+            <option value="5">5</option>
           </Select>
         </InputGroup>
 

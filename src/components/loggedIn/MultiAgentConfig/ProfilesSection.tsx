@@ -4,12 +4,15 @@
  * Agent Profiles 配置区域
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import styled from 'styled-components';
 import { useFormikContext, FieldArray } from 'formik';
+import { useQueryClient } from '@tanstack/react-query';
 import { IoIosAddCircleOutline, IoIosRemoveCircleOutline } from 'react-icons/io';
 import { FaRobot, FaUserTie } from 'react-icons/fa';
 import { InputLabel, ErrorText } from '../../ui/SharedComponents';
+import CreateProfilePresetModal from './CreateProfilePresetModal';
+import { multiAgentKeys } from '../../../hooks/queries/useMultiAgent';
 import type { ProfileVO, PresetProfileTemplate } from '../../../types/multiagent';
 
 // ==================== Types ====================
@@ -381,6 +384,48 @@ const AddIcon = styled(IoIosAddCircleOutline)`
   color: var(--emerald-green);
 `;
 
+const CreateTemplateLink = styled.button`
+  /* ================= Layout ================= */
+  display: inline-flex;
+  align-items: center;
+  
+  /* ================= Box Model ================= */
+  gap: var(--space-1);
+  margin-top: var(--space-1);
+  padding: 0;
+  
+  /* ================= Typography ================= */
+  font-family: var(--font-roboto);
+  font-size: var(--space-3);
+  font-weight: var(--weight-medium);
+  
+  /* ================= Visual ================= */
+  background: none;
+  border: none;
+  color: var(--emerald-green);
+  
+  /* ================= Animation ================= */
+  transition: color 0.2s ease;
+  
+  /* ================= Interaction ================= */
+  cursor: pointer;
+  
+  &:hover {
+    color: var(--emerald-green-600);
+    text-decoration: underline;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: var(--space-4);
+  }
+`;
+
 const ErrorContainer = styled.div`
   /* ================= Layout ================= */
   display: flex;
@@ -399,6 +444,9 @@ const ProfilesSection: React.FC<ProfilesSectionProps> = ({
   compact = false,
 }) => {
   const { values, errors, touched, handleChange, handleBlur, setFieldValue } = useFormikContext<FormValues>();
+  const queryClient = useQueryClient();
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [activeAgentIndex, setActiveAgentIndex] = useState<number | null>(null);
 
   // Provide default empty array if profiles is undefined
   const safeProfiles = values.multiAgentConfig?.profiles || [];
@@ -417,13 +465,34 @@ const ProfilesSection: React.FC<ProfilesSectionProps> = ({
     { value: 1, label: 'Assistant (讨论参与者)' },
   ];
 
-  const getTemplateOptions = () => [
+  const getTemplateOptions = (agentRoleType?: number) => [
     { value: '', label: 'Select preset template' },
-    ...presetTemplates.map((t) => ({
-      value: t.templateId,
-      label: `${t.templateName} - ${t.description.substring(0, 40)}...`,
-    })),
+    ...presetTemplates
+      .filter((t) => (agentRoleType !== undefined ? t.roleType === agentRoleType : true))
+      .map((t) => ({
+        value: t.templateId,
+        label: `${t.templateName} - ${(t.description ?? '').substring(0, 40)}...`,
+      })),
   ];
+
+  const handleOpenCreateModal = (index: number) => {
+    setActiveAgentIndex(index);
+    setCreateModalOpen(true);
+  };
+
+  const handleCloseCreateModal = () => {
+    setCreateModalOpen(false);
+    setActiveAgentIndex(null);
+  };
+
+  const handlePresetCreated = (templateId: string) => {
+    if (activeAgentIndex !== null) {
+      // Invalidate presets cache so the new template appears in the list
+      queryClient.invalidateQueries({ queryKey: multiAgentKeys.profilePresets() });
+      // Auto-select the newly created template for this agent
+      setFieldValue(`multiAgentConfig.profiles.${activeAgentIndex}.presetTemplateId`, templateId);
+    }
+  };
 
   // Check for array-level validation errors (has-manager, has-assistant)
   const profilesError = (errors as any)?.multiAgentConfig?.profiles;
@@ -546,12 +615,21 @@ const ProfilesSection: React.FC<ProfilesSectionProps> = ({
                         disabled={disabled}
                         $hasError={!!(profileTouched?.presetTemplateId && profileErrors?.presetTemplateId)}
                       >
-                        {getTemplateOptions().map((option, idx) => (
+                        {getTemplateOptions(profile.roleType).map((option, idx) => (
                           <option key={`template-${idx}`} value={option.value}>
                             {option.label}
                           </option>
                         ))}
                       </Select>
+
+                      {/* Create new template link */}
+                      <CreateTemplateLink
+                        type="button"
+                        onClick={() => handleOpenCreateModal(index)}
+                        disabled={disabled}
+                      >
+                        + Create New Template
+                      </CreateTemplateLink>
                       
                       {/* Show full prompt template when selected */}
                       {profile.presetTemplateId && (
@@ -623,6 +701,14 @@ const ProfilesSection: React.FC<ProfilesSectionProps> = ({
           <ErrorText>{(errors as { multiAgentConfig?: { profiles?: string } }).multiAgentConfig?.profiles}</ErrorText>
         </ErrorContainer>
       )}
+
+      {/* Create Profile Preset Modal */}
+      <CreateProfilePresetModal
+        isOpen={createModalOpen}
+        onClose={handleCloseCreateModal}
+        onSuccess={handlePresetCreated}
+        defaultRoleType={activeAgentIndex !== null ? (safeProfiles[activeAgentIndex]?.roleType as 0 | 1) ?? 1 : 1}
+      />
     </Section>
   );
 };

@@ -20,6 +20,7 @@ import type {
   BatchUpdateResult,
   CreateGroupPayload,
   CreateGroupResponse,
+  CreateProfilePresetPayload,
 } from '../../types/multiagent';
 import * as multiAgentApi from '../../api/multiagent.api';
 
@@ -44,12 +45,33 @@ export const multiAgentKeys = {
 
 /**
  * 获取预设 Profile 模板列表
+ * @param roleType 可选，按角色类型过滤
  */
-export function useProfilePresets(): UseQueryResult<PresetProfileTemplate[], Error> {
+export function useProfilePresets(roleType?: number): UseQueryResult<PresetProfileTemplate[], Error> {
   return useQuery({
-    queryKey: multiAgentKeys.profilePresets(),
-    queryFn: multiAgentApi.getProfilePresets,
+    queryKey: [...multiAgentKeys.profilePresets(), { roleType }],
+    queryFn: () => multiAgentApi.getProfilePresets(roleType),
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+/**
+ * 创建自定义 Profile Preset 模板
+ */
+export function useCreateProfilePreset(): UseMutationResult<
+  string,
+  Error,
+  CreateProfilePresetPayload
+> {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: multiAgentApi.createProfilePreset,
+    onSuccess: () => {
+      queryClient.invalidateQueries({
+        queryKey: multiAgentKeys.profilePresets(),
+      });
+    },
   });
 }
 

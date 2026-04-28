@@ -27,6 +27,8 @@ import type {
   ActionConfigResponse,
   ActionConfigQueryResponse,
   BatchUpdateResponse,
+  CreateProfilePresetPayload,
+  CreateProfilePresetResponse,
 } from '../types/multiagent';
 
 // ==========================================
@@ -265,15 +267,35 @@ export async function updateActionConfig(
 /**
  * 获取预设 Profile 模板列表
  * GET /v1/config/profile-presets
+ * @param roleType 可选，按角色类型过滤
  */
-export async function getProfilePresets(): Promise<PresetProfileTemplate[]> {
-  const { data } = await apiClient.get<ProfilePresetsResponse>(
-    `${API_BASE}/config/profile-presets`
-  );
+export async function getProfilePresets(roleType?: number): Promise<PresetProfileTemplate[]> {
+  const url = roleType !== undefined
+    ? `${API_BASE}/config/profile-presets?roleType=${roleType}`
+    : `${API_BASE}/config/profile-presets`;
+  const { data } = await apiClient.get<ProfilePresetsResponse>(url);
   if (data.code !== 200) {
     throw new Error(data.message || 'Failed to get profile presets');
   }
   return data.data || [];
+}
+
+/**
+ * 创建自定义 Profile Preset 模板
+ * POST /v1/config/profile-presets
+ * @param payload 创建模板请求体
+ */
+export async function createProfilePreset(
+  payload: CreateProfilePresetPayload
+): Promise<string> {
+  const { data } = await apiClient.post<CreateProfilePresetResponse>(
+    `${API_BASE}/config/profile-presets`,
+    payload
+  );
+  if (data.code !== 200) {
+    throw new Error(data.message || 'Failed to create profile preset');
+  }
+  return data.data!.templateId;
 }
 
 /**
