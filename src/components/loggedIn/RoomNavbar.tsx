@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { IoEllipsisHorizontal, IoSettingsOutline } from "react-icons/io5";
 import { MdOutlineIosShare, MdKeyboardArrowLeft, MdGroup } from "react-icons/md";
+import { MdMemory } from "react-icons/md";
 import { FiMenu } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { styled } from "styled-components";
@@ -345,6 +346,38 @@ const Share = styled(MdOutlineIosShare)`
   }
 `;
 
+const MemoryIcon = styled(MdMemory)`
+  /* ================= Layout ================= */
+  display: block;
+
+  /* ================= Typography ================= */
+  font-size: 1.2rem;
+
+  /* ================= Visual ================= */
+  color: var(--color-text);
+
+  /* ================= Animation ================= */
+  transition: color 0.2s ease;
+
+  /* ================= Interaction ================= */
+  cursor: pointer;
+
+  &:hover {
+    color: var(--emerald-green);
+  }
+
+  /* ================= Responsive ================= */
+  /* tablet >= 768px */
+  @media (min-width: 48rem) {
+    font-size: 1.4rem;
+  }
+
+  /* desktop >= 1024px */
+  @media (min-width: 64rem) {
+    font-size: 1.6rem;
+  }
+`;
+
 const Menu = styled(IoEllipsisHorizontal)`
   /* ================= Layout ================= */
   display: block;
@@ -449,6 +482,7 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId, onMenuClick }) => {
           />
         )}
         <Share />
+        <MemoryIcon data-testid="ai-trace-btn" onClick={() => navigate(`/admin/ai-traces/${groupId}`)} />
         <Menu data-testid="room-members-btn" onClick={() => setIsRoomMembersVisible(true)} />
         {isRoomMembersVisible && (
           <RoomMembersComponent

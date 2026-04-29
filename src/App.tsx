@@ -9,6 +9,7 @@ import VerifyOTPRegisterPage from "./pages/VerifyOTPRegisterPage"
 import { useState } from "react";
 import SigninPage from "./pages/SigninPage";
 import MyRoomPage from "./pages/MyRoomPage";
+import AITracePage from "./pages/AITracePage";
 import { RoomProvider } from "./components/loggedIn/RoomContext";
 
 const Debugger: React.FC = () => {
@@ -57,6 +58,7 @@ function App() {
             <Route path="/search-rooms" element={<SearchRoomsPage />} />
             <Route path="/my-class/:tagId" element={<MyClassPage />} />
             <Route path="/my-room/:groupId" element={<MyRoomPage />} />
+            <Route path="/admin/ai-traces/:groupId" element={<AITracePage />} />
           </Routes>
       </RoomProvider>
     </BrowserRouter>
