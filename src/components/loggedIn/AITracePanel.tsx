@@ -8,8 +8,9 @@ import React, { useEffect, useRef, useCallback, useMemo } from 'react';
 import styled from 'styled-components';
 import { MdKeyboardArrowLeft } from 'react-icons/md';
 import { useNavigate } from 'react-router-dom';
+import type { InfiniteData } from '@tanstack/react-query';
 import { useAITraces } from '../../hooks/queries/useAITrace';
-import type { ChatMessageVO, AITraceDetailVO } from '../../types/aiTrace';
+import type { ChatMessageVO, AITraceDetailVO, AITimelineRespVO } from '../../types/aiTrace';
 import AITraceMessageItem from './AITraceMessageItem';
 
 // ==================== Types ====================
@@ -209,7 +210,7 @@ const AITracePanel: React.FC<AITracePanelProps> = ({ groupId }) => {
   const prevScrollHeight = useRef<number>(0);
 
   const {
-    data,
+    data: rawData,
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
@@ -217,6 +218,8 @@ const AITracePanel: React.FC<AITracePanelProps> = ({ groupId }) => {
     isError,
     error,
   } = useAITraces(groupId);
+
+  const data = rawData as InfiniteData<AITimelineRespVO> | undefined;
 
   // 合并所有页的消息和 traces
   // API 每页返回倒序，需要 reverse 后按正序渲染

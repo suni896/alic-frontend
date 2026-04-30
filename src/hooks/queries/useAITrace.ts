@@ -1,6 +1,5 @@
-import { useInfiniteQuery, type UseInfiniteQueryResult } from '@tanstack/react-query';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { fetchAITraces } from '../../api/aiTrace.api';
-import type { AITimelineRespVO } from '../../types/aiTrace';
 
 // ==========================================
 // Query Keys
@@ -11,14 +10,6 @@ export const aiTraceKeys = {
   timeline: (groupId: number) => [...aiTraceKeys.all, 'timeline', groupId] as const,
 };
 
-// ==========================================
-// Infinite Query
-// ==========================================
-
-interface AITracePageParam {
-  lastMsgId: number | undefined;
-}
-
 /**
  * 获取 AI Trace 时间线（无限滚动分页）
  *
@@ -27,24 +18,19 @@ interface AITracePageParam {
  * - 后续页：取当前已加载消息中最旧的 infoId 作为 lastMsgId
  * - 当返回 messages 为空时，表示没有更多数据
  */
-export function useAITraces(
-  groupId: number | undefined
-): UseInfiniteQueryResult<AITimelineRespVO, Error> {
+export function useAITraces(groupId: number | undefined) {
   return useInfiniteQuery({
     queryKey: aiTraceKeys.timeline(groupId ?? 0),
-    queryFn: async ({ pageParam }): Promise<AITimelineRespVO> => {
-      const result = await fetchAITraces(groupId!, pageParam as number | undefined);
-      return result;
+    queryFn: async ({ pageParam }) => {
+      return fetchAITraces(groupId!, pageParam as number | undefined);
     },
-    getNextPageParam: (lastPage): number | undefined => {
-      // 返回最旧消息的 infoId 作为下一页的游标
+    getNextPageParam: (lastPage) => {
       const messages = lastPage.messages;
       if (messages.length === 0) return undefined;
-      const oldestMsg = messages[messages.length - 1];
-      return oldestMsg.infoId;
+      return messages[messages.length - 1].infoId;
     },
     initialPageParam: undefined as number | undefined,
     enabled: !!groupId,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 30 * 1000,
   });
 }
