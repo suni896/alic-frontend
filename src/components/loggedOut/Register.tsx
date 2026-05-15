@@ -30,12 +30,12 @@ const validationSchema = Yup.object({
     .oneOf([Yup.ref("password")], "Passwords must match")
     .required("Confirm Password is required"),
   username: Yup.string()
-    .matches(
-      /^[a-zA-Z0-9]*$/,
-      "Username can only contain English letters and numbers"
-    )
+    .required("Username is required")
     .max(20, "Username must be at most 20 characters")
-    .required("Username is required"),
+    .matches(
+      /^[\u4e00-\u9fa5A-Za-z0-9]+(?: [\u4e00-\u9fa5A-Za-z0-9]+)*$/,
+      "Only Chinese, English, numbers and single spaces are allowed"
+    ),
 });
 
 const Register = ({ setEmail }: RegisterProps): JSX.Element => {
@@ -115,7 +115,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
             {formik.touched.username && formik.errors.username ? (
               <ErrorText $visible>{formik.errors.username}</ErrorText>
             ) : (
-              <HelperText>Username can only contain English letters and numbers</HelperText>
+              <HelperText>Only Chinese, English, numbers and single spaces are allowed</HelperText>
             )}
           </FieldGroup>
 

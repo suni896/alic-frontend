@@ -279,12 +279,20 @@ const CreateProfilePresetModal: React.FC<CreateProfilePresetModalProps> = ({
 
     if (!templateName.trim()) {
       newErrors.templateName = 'Template name is required';
+    } else if (templateName.length > 50) {
+      newErrors.templateName = 'Template name cannot exceed 50 characters';
+    } else if (!/^[\u4e00-\u9fa5A-Za-z0-9]+(?: [\u4e00-\u9fa5A-Za-z0-9]+)*$/.test(templateName)) {
+      newErrors.templateName = 'Only Chinese, English, numbers and single spaces are allowed';
     }
     if (!promptTemplate.trim()) {
       newErrors.promptTemplate = 'Prompt template is required';
+    } else if (promptTemplate.length > 20000) {
+      newErrors.promptTemplate = 'Prompt template cannot exceed 20000 characters';
     }
     if (!contextTemplate.trim()) {
       newErrors.contextTemplate = 'Context template is required';
+    } else if (contextTemplate.length > 20000) {
+      newErrors.contextTemplate = 'Context template cannot exceed 20000 characters';
     }
     if (contextLength < 1 || contextLength > 20) {
       newErrors.contextLength = 'Context length must be between 1 and 20';
@@ -353,6 +361,7 @@ const CreateProfilePresetModal: React.FC<CreateProfilePresetModalProps> = ({
                 placeholder="e.g., Critical Thinker"
                 value={templateName}
                 onChange={(e) => setTemplateName(e.target.value)}
+                maxLength={50}
                 disabled={createPresetMutation.isPending}
                 $hasError={!!errors.templateName}
               />
@@ -410,6 +419,7 @@ const CreateProfilePresetModal: React.FC<CreateProfilePresetModalProps> = ({
                 placeholder="Enter the system prompt for this agent..."
                 value={promptTemplate}
                 onChange={(e) => setPromptTemplate(e.target.value)}
+                maxLength={20000}
                 onBlur={() => {}}
                 hasError={!!errors.promptTemplate}
                 disabled={createPresetMutation.isPending}
@@ -424,6 +434,7 @@ const CreateProfilePresetModal: React.FC<CreateProfilePresetModalProps> = ({
                 placeholder="Enter the context template for this agent..."
                 value={contextTemplate}
                 onChange={(e) => setContextTemplate(e.target.value)}
+                maxLength={20000}
                 onBlur={() => {}}
                 hasError={!!errors.contextTemplate}
                 disabled={createPresetMutation.isPending}

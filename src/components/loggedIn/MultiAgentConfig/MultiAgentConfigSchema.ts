@@ -12,9 +12,10 @@ import * as Yup from 'yup';
 
 const roleNameValidation = Yup.string()
   .required('Role name is required')
+  .max(30, 'Must not exceed 30 characters')
   .matches(
-    /^[\u4e00-\u9fa5A-Za-z0-9]{1,20}$/,
-    'Must be 1-20 characters. Supports letters, numbers, and Chinese characters.'
+    /^[\u4e00-\u9fa5A-Za-z0-9]+(?: [\u4e00-\u9fa5A-Za-z0-9]+)*$/,
+    'Only Chinese, English, numbers and single spaces are allowed'
   );
 
 const descriptionValidation = Yup.string()
@@ -22,7 +23,7 @@ const descriptionValidation = Yup.string()
 
 const scriptContentValidation = Yup.string()
   .required('Script content is required')
-  .max(5000, 'Script content cannot exceed 5000 characters');
+  .max(20000, 'Script content cannot exceed 20000 characters');
 
 // ==========================================
 // Profile 验证 Schema
@@ -32,9 +33,10 @@ export const profileSchema = Yup.object().shape({
   botId: Yup.string().nullable(),
   botName: Yup.string()
     .required('Bot name is required')
+    .max(20, 'Must be 1-20 characters long')
     .matches(
-      /^[\u4e00-\u9fa5A-Za-z0-9]{1,20}$/,
-      'Must be 1-20 characters. Supports letters, numbers, and Chinese characters.'
+      /^[\u4e00-\u9fa5A-Za-z0-9]+(?: [\u4e00-\u9fa5A-Za-z0-9]+)*$/,
+      'Only Chinese, English, numbers and single spaces are allowed'
     ),
   roleType: Yup.number()
     .oneOf([0, 1], 'Invalid role type')
@@ -42,7 +44,8 @@ export const profileSchema = Yup.object().shape({
   roleName: roleNameValidation,
   description: descriptionValidation,
   presetTemplateId: Yup.string()
-    .required('Please select a preset template'),
+    .required('Please select a preset template')
+    .max(50, 'Preset template ID cannot exceed 50 characters'),
   accessType: Yup.number()
     .oneOf([0, 1], 'Invalid access type')
     .required('Access type is required'),
@@ -130,8 +133,8 @@ export const multiAgentConfigSchema = Yup.object().shape({
       schema
         .required('Password is required for private groups')
         .matches(
-          /^[A-Za-z0-9!@#$%^&*()_+\-={}$.]{6,33}$/,
-          'Password must be 6-33 characters long and contain valid characters'
+          /^[A-Za-z0-9!@#$%^&*()_+\-={}$.]{6,20}$/,
+          'Password must be 6-20 characters long and contain valid characters'
         ),
     otherwise: (schema) => schema.notRequired(),
   }),

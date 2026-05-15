@@ -1989,7 +1989,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
   // 发送消息
   const sendMessage = () => {
-    if (inputMessage.trim() && stompClientRef.current && userInfo?.userId) {
+    if (inputMessage.trim() && inputMessage.length <= 20000 && stompClientRef.current && userInfo?.userId) {
       console.log('💬 即将发送消息:', {
         content: inputMessage,
         groupId,
@@ -2420,6 +2420,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             $isReplying={!!replyingTo}
             ref={messageInputRef}
             value={inputMessage}
+            maxLength={20000}
             onFocus={scrollToVisible}
             onChange={(e) => {
               handleInputChange(e);

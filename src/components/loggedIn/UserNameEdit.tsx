@@ -33,11 +33,11 @@ export const UserNameEdit: React.FC<UserNameEditProps> = ({ onClose, onSuccess }
     if (!value.trim()) {
       return 'Username cannot be empty';
     }
-    if (!/^[A-Za-z0-9]+$/.test(value)) {
-      return 'Username can only contain letters and numbers';
-    }
     if (value.length > 20) {
       return 'Username cannot exceed 20 characters';
+    }
+    if (!/^[\u4e00-\u9fa5A-Za-z0-9]+(?: [\u4e00-\u9fa5A-Za-z0-9]+)*$/.test(value)) {
+      return 'Only Chinese, English, numbers and single spaces are allowed';
     }
     return '';
   };
@@ -102,6 +102,7 @@ export const UserNameEdit: React.FC<UserNameEditProps> = ({ onClose, onSuccess }
             value={username}
             onChange={handleUsernameChange}
             placeholder="Enter username"
+            maxLength={20}
             disabled={updateUserInfoMutation.isPending}
             $hasError={!!error}
           />

@@ -495,6 +495,7 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
               disabled={isProcessing}
               placeholder="Search in MY ROOMS"
               type="text"
+              maxLength={100}
               showCount={false}
             />
           </SearchWrapper>

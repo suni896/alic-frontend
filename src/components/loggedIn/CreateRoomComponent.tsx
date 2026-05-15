@@ -741,9 +741,10 @@ const validationSchema = (showAssistants: boolean) =>
   Yup.object().shape({
     roomName: Yup.string()
       .required("Group Name is required")
+      .max(20, "Must be 1-20 characters long")
       .matches(
-        /^[A-Za-z0-9]{1,20}$/,
-        "Must be 1-20 characters long, supports uppercase and lowercase English letters and numbers"
+        /^[\u4e00-\u9fa5A-Za-z0-9]+(?: [\u4e00-\u9fa5A-Za-z0-9]+)*$/,
+        "Only Chinese, English, numbers and single spaces are allowed"
       ),
     roomDescription: Yup.string()
       .required("Group Description is required")
@@ -761,8 +762,8 @@ const validationSchema = (showAssistants: boolean) =>
         schema
           .required("Password is required for private groups")
           .matches(
-            /^[A-Za-z0-9!@#$%^&*()_+\-={}$.]{6,33}$/,
-            "Password must be 6-33 characters long and contain valid characters"
+            /^[A-Za-z0-9!@#$%^&*()_+\-={}$.]{6,20}$/,
+            "Password must be 6-20 characters long and contain valid characters"
           ),
       otherwise: (schema) => schema.notRequired(),
     }),
@@ -772,9 +773,10 @@ const validationSchema = (showAssistants: boolean) =>
             Yup.object().shape({
               name: Yup.string()
                 .required("Assistant name is required")
+                .max(20, "Must be 1-20 characters long")
                 .matches(
-                  /^[\u4e00-\u9fa5A-Za-z0-9]{1,20}$/,
-                  "Must be 1-20 characters long. Supports letters, numbers, and Chinese characters."
+                  /^[\u4e00-\u9fa5A-Za-z0-9]+(?: [\u4e00-\u9fa5A-Za-z0-9]+)*$/,
+                  "Only Chinese, English, numbers and single spaces are allowed"
                 )
                 .test(
                   "unique-name",
@@ -829,9 +831,10 @@ const validationSchema = (showAssistants: boolean) =>
               name: Yup.string()
                 .transform((v) => (typeof v === "string" ? v.trim() : v))
                 .required("Assistant name is required")
+                .max(20, "Must be 1-20 characters long")
                 .matches(
-                  /^[\u4e00-\u9fa5A-Za-z0-9]{1,20}$/,
-                  "Must be 1-20 characters long. Supports letters, numbers, and Chinese characters."
+                  /^[\u4e00-\u9fa5A-Za-z0-9]+(?: [\u4e00-\u9fa5A-Za-z0-9]+)*$/,
+                  "Only Chinese, English, numbers and single spaces are allowed"
                 ),
               prompt: Yup.string()
                 .transform((v) => (typeof v === "string" ? v.trim() : v))

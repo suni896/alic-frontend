@@ -539,11 +539,22 @@ const EditMultiAgentConfigPanel: React.FC<EditMultiAgentConfigPanelProps> = ({
     if (formState.profiles.length < 2) return false;
     // 至少要有 1 个 MANAGER
     if (!formState.profiles.some((p) => p.roleType === 0)) return false;
-    // 所有 profile 必须填写必填字段
-    if (formState.profiles.some((p) => !p.botName || !p.roleName || !p.presetTemplateId))
+    // 所有 profile 必须填写必填字段并符合长度限制
+    if (
+      formState.profiles.some((p) => {
+        const namePattern = /^[\u4e00-\u9fa5A-Za-z0-9]+(?: [\u4e00-\u9fa5A-Za-z0-9]+)*$/;
+        if (!p.botName || !p.botName.trim() || p.botName.length > 20 || !namePattern.test(p.botName)) return true;
+        if (!p.roleName || !p.roleName.trim() || p.roleName.length > 30 || !namePattern.test(p.roleName)) return true;
+        if (p.description && p.description.length > 500) return true;
+        if (!p.presetTemplateId || p.presetTemplateId.length > 50) return true;
+        return false;
+      })
+    )
       return false;
-    // Global Script 必须填写
-    if (!formState.globalScript.scriptContent.trim()) return false;
+    // Global Script 必须填写且不超过 20000 字符
+    if (!formState.globalScript.scriptContent.trim() || formState.globalScript.scriptContent.length > 20000) return false;
+    // enabledActionCodes 必须非空
+    if (formState.actionConfig.enabledActionCodes.length === 0) return false;
     return true;
   }, [formState]);
 

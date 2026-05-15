@@ -360,6 +360,7 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
               onChange={handleSearch}
               placeholder="Search rooms by name or description..."
               type="text"
+              maxLength={100}
               showCount={false}
             />
           </SearchWrapper>

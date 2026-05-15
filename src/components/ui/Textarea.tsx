@@ -55,7 +55,8 @@ const AutoResizeTextarea: React.FC<{
   onBlur: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
   hasError: boolean;
   disabled?: boolean;
-}> = ({ name, placeholder, value, onChange, onBlur, hasError, disabled }) => {
+  maxLength?: number;
+}> = ({ name, placeholder, value, onChange, onBlur, hasError, disabled, maxLength }) => {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const adjustHeight = () => {
@@ -103,6 +104,7 @@ const AutoResizeTextarea: React.FC<{
       onBlur={onBlur}
       $hasError={hasError}
       disabled={disabled}
+      maxLength={maxLength}
     />
   );
 };
