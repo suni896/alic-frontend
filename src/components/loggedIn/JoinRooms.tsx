@@ -13,6 +13,7 @@ import * as Yup from "yup";
 import { FiX } from "react-icons/fi";
 import { useGroupList } from "../../hooks/queries/useGroup";
 import { generateGroupAvatar } from "../../utils/avatar";
+import { useTranslation } from "react-i18next";
 
 import {
   ModalBackdrop,
@@ -259,22 +260,10 @@ interface PasswordFormValues {
   password: string;
 }
 
-const passwordValidationSchema = Yup.object({
-  password: Yup.string()
-    .min(6, "Password must be between 6 and 20 characters")
-    .max(20, "Password must be between 6 and 20 characters")
-    .matches(
-      /^[a-zA-Z0-9!@#$%^&*()_+=\[\]{}|;:'",.<>?/`~\\-]*$/,
-      "Password can only include letters, numbers, and special characters"
-    )
-    .required("Password is required"),
-});
-
-
-
 const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
   const [roomSearch, setRoomSearch] = useState<string>("");
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Only fetch when user has entered a search keyword
   const hasSearched = roomSearch.trim() !== "";
@@ -311,7 +300,16 @@ const JoinRooms: React.FC<CreateRoomComponentProps> = ({ onClose }) => {
     initialValues: {
       password: "",
     },
-    validationSchema: passwordValidationSchema,
+    validationSchema: Yup.object({
+      password: Yup.string()
+        .min(6, t('auth.passwordLength'))
+        .max(20, t('auth.passwordLength'))
+        .matches(
+          /^[a-zA-Z0-9!@#$%^&*()_+=\[\]{}|;:'",.<>?/`~\\-]*$/,
+          t('auth.passwordChars')
+        )
+        .required(t('auth.passwordRequired')),
+    }),
     onSubmit: (values) => {
       setPassword(values.password);
       handlePasswordSubmit();
@@ -341,13 +339,13 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
   return createPortal(
     <ModalBackdrop onClick={handleOverlayClick}  className="modal-backdrop-right">
       <Container onClick={(e) => e.stopPropagation()}>
-        <ModalCloseButton onClick={onClose} aria-label="Close">
+        <ModalCloseButton onClick={onClose} aria-label={t('common.close')}>
           <FiX size={24} />
         </ModalCloseButton>
         {/* 顶部标题 */}
         <HeaderSection>
-          <HeaderTitle>Join Rooms</HeaderTitle>
-          <HeaderSubTitle>Search and join rooms to start chatting.</HeaderSubTitle>
+          <HeaderTitle>{t('joinRooms.joinRoomsTitle')}</HeaderTitle>
+          <HeaderSubTitle>{t('joinRooms.joinRoomsSubtitle')}</HeaderSubTitle>
         </HeaderSection>
 
         <ContentArea>
@@ -358,7 +356,7 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
               variant="unstyled"
               value={roomSearch}
               onChange={handleSearch}
-              placeholder="Search rooms by name or description..."
+              placeholder={t('joinRooms.searchPlaceholder')}
               type="text"
               showCount={false}
             />
@@ -366,12 +364,12 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
         </SearchContainer>
 
           <RoomListContainer>
-            {error && <ErrorContainer>{error.message || "Failed to fetch rooms"}</ErrorContainer>}
+            {error && <ErrorContainer>{error.message || t('joinRooms.failedToFetchRooms')}</ErrorContainer>}
 
             {isLoading ? (
               <LoadingContainer>
                 <LoadingSpinner />
-                <LoadingText>Searching for rooms...</LoadingText>
+                <LoadingText>{t('joinRooms.searching')}</LoadingText>
               </LoadingContainer>
             ) : (
               <RoomList $blur={showPasswordModal}>
@@ -388,16 +386,16 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
                               <NameText>{room.groupName}</NameText>
                               <StatusRow>
                                 <StatusDot $joined={room.isJoined} />
-                                <StatusText>{room.isJoined ? "Joined" : "Not Joined"}</StatusText>
+                                <StatusText>{room.isJoined ? t('searchRooms.joined') : t('searchRooms.notJoin')}</StatusText>
                               </StatusRow>
                             </NameBlock>
                           </HeaderLeft>
                           {/* Public/Private 状态展示在右上角 */}
                           <StatusRow style={{ marginLeft: 'auto' }}>
                             {room.groupType === 0 ? (
-                              <><MdLock size={14} color="var(--emerald-green)" /> <StatusText style={{ color: 'var(--emerald-green)' }}>Private</StatusText></>
+                              <><MdLock size={14} color="var(--emerald-green)" /> <StatusText style={{ color: 'var(--emerald-green)' }}>{t('joinRooms.private')}</StatusText></>
                             ) : (
-                              <><MdPublic size={14} color="var(--slate-500)" /> <StatusText>Public</StatusText></>
+                              <><MdPublic size={14} color="var(--slate-500)" /> <StatusText>{t('joinRooms.public')}</StatusText></>
                             )}
                           </StatusRow>
                         </CardHeader>
@@ -405,15 +403,15 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
                         <RoomInfo>
                           <InfoItem>
                             <MdGroup />
-                            <InfoItemText>{room.memberCount} members</InfoItemText>
+                            <InfoItemText>{room.memberCount} {t('searchRooms.members')}</InfoItemText>
                           </InfoItem>
                           <InfoItem>
-                            <InfoItemText>Admin: {room.adminName}</InfoItemText>
+                            <InfoItemText>{t('searchRooms.admin', { name: room.adminName })}</InfoItemText>
                           </InfoItem>
                         </RoomInfo>
 
                         <CardDescription>
-                          {room.groupDescription || "Join this room to start chatting."}
+                          {room.groupDescription || t('searchRooms.defaultDescription')}
                         </CardDescription>
                       </CardTop>
 
@@ -422,19 +420,19 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
                           handleJoinClick(room.groupId, room.groupType, room.isJoined)
                         }
                       >
-                        {room.isJoined ? "Enter" : "Join"}
+                        {room.isJoined ? t('searchRooms.enter') : t('searchRooms.join')}
                       </ActionButton>
                     </IntegrationCard>
                   ))
                 ) : roomSearch.trim() !== "" ? (
                   <EmptyState
-                    title="No rooms found"
-                    description="Try adjusting your search terms or browse all available rooms."
+                    title={t('searchRooms.noRoomsFound')}
+                    description={t('common.noResults')}
                   />
                 ) : (
                   <EmptyState
-                    title="Start searching"
-                    description="Enter a room name or description to find groups to join."
+                    title={t('common.search')}
+                    description={t('joinRooms.searchPlaceholder')}
                   />
                 )}
               </RoomList>
@@ -451,20 +449,20 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
             }} className="modal-backdrop-right">
               <PasswordModalContainer onClick={(e) => e.stopPropagation()}>
                   {/* 右上角关闭按钮 */}
-                  <ModalCloseButton onClick={() => setShowPasswordModal(false)} aria-label="Close">
+                  <ModalCloseButton onClick={() => setShowPasswordModal(false)} aria-label={t('common.close')}>
                     <FiX size={24} />
                   </ModalCloseButton>
 
                   {/* 顶部标题 */}
                   <HeaderSection>
-                    <HeaderTitle>Enter Room Password</HeaderTitle>
-                    <HeaderSubTitle>This room requires a password to join.</HeaderSubTitle>
+                    <HeaderTitle>{t('joinRooms.enterRoomPassword')}</HeaderTitle>
+                    <HeaderSubTitle>{t('joinRooms.passwordRequired')}</HeaderSubTitle>
                   </HeaderSection>
 
                   <PasswordInputWrapper>
-                    <InputLabel>Password</InputLabel>
+                    <InputLabel>{t('joinRooms.passwordLabel')}</InputLabel>
                     <PasswordInput
-                      placeholder="Enter password"
+                      placeholder={t('joinRooms.passwordPlaceholder')}
                       value={passwordFormik.values.password}
                       onChange={(e) => {
                         passwordFormik.handleChange(e);
@@ -487,7 +485,7 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
                   <ButtonContainer>
                     <FixedButtonContainer>
                       <Button variant="cancel" onClick={() => setShowPasswordModal(false)}>
-                        Cancel
+                        {t('common.cancel')}
                       </Button>
                     </FixedButtonContainer>
                     <FixedButtonContainer>
@@ -495,7 +493,7 @@ const handleSearch = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElemen
                         onClick={() => passwordFormik.handleSubmit()} 
                         disabled={!passwordFormik.isValid || !passwordFormik.values.password}
                       >
-                        Join Room
+                        {t('joinRooms.joinRoom')}
                       </Button>
                     </FixedButtonContainer>
                   </ButtonContainer>

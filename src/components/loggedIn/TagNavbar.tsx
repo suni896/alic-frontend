@@ -5,6 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { styled } from "styled-components";
 import { UserProfile } from "../loggedIn/UserProfile";
 import { useTagGroups } from "../../hooks/queries/useTag";
+import { useTranslation } from "react-i18next";
 
 
 
@@ -214,7 +215,7 @@ interface TagNavbarProps {
 }
 
 const TagNavbar: React.FC<TagNavbarProps> = ({ tagId, onMenuClick }) => {
-
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // Use React Query to fetch tag data
@@ -226,7 +227,7 @@ const TagNavbar: React.FC<TagNavbarProps> = ({ tagId, onMenuClick }) => {
   return (
     <Container>
       <TitleContainer>
-        <MenuButton onClick={onMenuClick} aria-label="Open sidebar">
+        <MenuButton onClick={onMenuClick} aria-label={t('navbar.openSidebar')}>
           <FiMenu size={24} />
         </MenuButton>
         <BackArrow onClick={() => navigate("/search-rooms")} />

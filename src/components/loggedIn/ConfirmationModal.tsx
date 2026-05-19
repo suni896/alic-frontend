@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { MdWarning } from "react-icons/md";
 import { FiX } from "react-icons/fi";
 import Button from "../ui/Button";
+import { useTranslation } from "react-i18next";
 import {
   ModalBackdrop,
   ModalContainer,
@@ -30,16 +31,17 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
   onConfirm,
   title,
   message,
-  confirmText = "Confirm",
-  cancelText = "Cancel",
+  confirmText,
+  cancelText,
 }) => {
+  const { t } = useTranslation();
   if (!isOpen) return null;
 
   return (
     <ModalBackdrop onClick={onClose} style={{ zIndex: 3000 }}>
       <ModalContainer onClick={(e) => e.stopPropagation()}>
         {/* 右上角关闭按钮 */}
-        <ModalCloseButton onClick={onClose} aria-label="Close">
+        <ModalCloseButton onClick={onClose} aria-label={t('common.close')}>
           <FiX size={24} />
         </ModalCloseButton>
 
@@ -54,12 +56,12 @@ const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
         <ButtonContainer>
           <FixedButtonContainer>
             <Button variant="cancel" onClick={onClose}>
-              {cancelText}
+              {cancelText || t('common.cancel')}
             </Button>
           </FixedButtonContainer>
           <FixedButtonContainer>
             <Button variant="primary" onClick={onConfirm}>
-              {confirmText}
+              {confirmText || t('common.confirm')}
             </Button>
           </FixedButtonContainer>
         </ButtonContainer>

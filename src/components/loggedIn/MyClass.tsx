@@ -5,6 +5,7 @@ import { CiSearch } from "react-icons/ci";
 import { useLocation, useParams } from "react-router-dom";
 import { useNavigate } from "react-router-dom";
 import { useJoinRoom } from "./useJoinRoom";
+import { useTranslation } from "react-i18next";
 import Button from "../ui/Button";
 import LabeledInputWithCount from "../ui/Input";
 import { generateGroupAvatar } from "../../utils/avatar";
@@ -446,6 +447,7 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
   isProcessing,
   tagId,
 }) => {
+  const { t } = useTranslation();
   const [roomSearch, setRoomSearch] = useState("");
   const [selectedRooms, setSelectedRooms] = useState<{
     [key: number]: boolean;
@@ -475,14 +477,14 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
     <ModalBackdrop onClick={onClose}  className="modal-backdrop-right">
       <StyledModalContainer onClick={(e) => e.stopPropagation()}>
         {/* 右上角关闭按钮 */}
-        <ModalCloseButton onClick={onClose} aria-label="Close">
+        <ModalCloseButton onClick={onClose} aria-label={t('myClass.close')}>
           <FiX size={24} />
         </ModalCloseButton>
 
         {/* 顶部标题 */}
         <HeaderSection>
-          <HeaderTitle>Add Room to Tag</HeaderTitle>
-          <HeaderSubTitle>Select rooms to add to this tag.</HeaderSubTitle>
+          <HeaderTitle>{t('myClass.addRoomToTag')}</HeaderTitle>
+          <HeaderSubTitle>{t('myClass.selectRoomsToAdd')}</HeaderSubTitle>
         </HeaderSection>
 
         <SearchContainer>
@@ -493,7 +495,7 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
               value={roomSearch}
               onChange={(e) => setRoomSearch(e.target.value)}
               disabled={isProcessing}
-              placeholder="Search in MY ROOMS"
+              placeholder={t('myClass.searchInMyRooms')}
               type="text"
               showCount={false}
             />
@@ -501,11 +503,11 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
         </SearchContainer>
         <RoomList>
           {isLoading ? (
-            <NoRoomsMessage>Loading...</NoRoomsMessage>
+            <NoRoomsMessage>{t('common.loading')}</NoRoomsMessage>
           ) : error ? (
             <ErrorMessage>{error.message}</ErrorMessage>
           ) : tagGroups.length === 0 ? (
-            <NoRoomsMessage>No rooms found</NoRoomsMessage>
+            <NoRoomsMessage>{t('myClass.noRoomsFound')}</NoRoomsMessage>
           ) : (
             tagGroups.map((room: AvailableGroup) => (
               <AddRoomContainer key={room.groupId}>
@@ -522,7 +524,7 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
                 />
                 {room.isBinded ? (
                   <BindedRoomTitle>
-                    {room.groupName} (Already bound)
+                    {room.groupName} ({t('myClass.alreadyBound')})
                   </BindedRoomTitle>
                 ) : (
                   <AddRoomTitle>{room.groupName}</AddRoomTitle>
@@ -531,13 +533,13 @@ const AddRoomOverlay: React.FC<AddRoomProps> = ({
             ))
           )}
           {isProcessing && (
-            <ErrorMessage>Processing your request...</ErrorMessage>
+            <ErrorMessage>{t('myClass.adding')}</ErrorMessage>
           )}
         </RoomList>
         <ButtonContainer>
           <FixedButtonContainer>
             <Button onClick={handleAddRooms} disabled={isProcessing}>
-              {isProcessing ? "Adding..." : "Add"}
+              {isProcessing ? t('myClass.adding') : t('myClass.add')}
             </Button>
           </FixedButtonContainer>
         </ButtonContainer>
@@ -552,11 +554,12 @@ interface ErrorPopupProps {
 }
 
 const ErrorPopup: React.FC<ErrorPopupProps> = ({ message, onClose }) => {
+  const { t } = useTranslation();
   return (
     <ModalBackdrop onClick={onClose} className="modal-backdrop-right">
       <ErrorModalContainer onClick={(e) => e.stopPropagation()}>
         <ErrorMessage>{message}</ErrorMessage>
-        <ErrorCloseButton onClick={onClose}>Close</ErrorCloseButton>
+        <ErrorCloseButton onClick={onClose}>{t('myClass.close')}</ErrorCloseButton>
       </ErrorModalContainer>
     </ModalBackdrop>
   );
@@ -567,6 +570,7 @@ const MyClass: React.FC<MyClassProps> = ({
   title: propTitle,
   tagId: propTagId,
 }) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const { tagId: urlTagId } = useParams<{ tagId: string }>();
   const state = location.state as LocationState | undefined;
@@ -697,7 +701,7 @@ const MyClass: React.FC<MyClassProps> = ({
           tagId: tagId.toString(), 
           roomIds: roomIdsToRemove 
         });
-        alert("Rooms removed successfully!");
+        alert(t('myClass.roomsRemovedSuccess'));
       }
     }
 
@@ -722,13 +726,13 @@ const MyClass: React.FC<MyClassProps> = ({
       {
         onSuccess: () => {
           // Show success message and close the modal
-          alert("Rooms added successfully!");
+          alert(t('myClass.roomsAddedSuccess'));
           setIsAddRoomVisible(false);
         },
         onError: (error) => {
           if (error.message.includes('Parameters are invalid')) {
             setErrorPopup(
-              "Parameters are invalid for tag binding group. Please check your inputs and try again."
+              t('myClass.invalidParameters')
             );
           } else {
             console.error("Failed to add rooms:", error.message);
@@ -758,7 +762,7 @@ const MyClass: React.FC<MyClassProps> = ({
                   setIsEditMode(false);
                 }}
               >
-                Cancel
+                {t('myClass.cancel')}
               </Button>
             </FixedButtonContainer>
 
@@ -768,7 +772,7 @@ const MyClass: React.FC<MyClassProps> = ({
                 $isEditMode={isEditMode}
                 $isLoading={isLoading}
               >
-                Submit
+                {t('myClass.submit')}
               </Button>
             </FixedButtonContainer>
           </>
@@ -779,7 +783,7 @@ const MyClass: React.FC<MyClassProps> = ({
                 variant="cancel"
                 onClick={() => setIsAddRoomVisible(true)}
               >
-                + Add Room
+                {t('myClass.addRoom')}
               </Button>
             </FixedButtonContainer>
             <FixedButtonContainer>
@@ -787,7 +791,7 @@ const MyClass: React.FC<MyClassProps> = ({
                 onClick={toggleEditMode}
                 $isEditMode={isEditMode}
               >
-                Edit
+                {t('myClass.edit')}
               </Button>
             </FixedButtonContainer>
           </>
@@ -813,11 +817,11 @@ const MyClass: React.FC<MyClassProps> = ({
 
       <MyClassRoomsContainer>
         {isLoading ? (
-          <LoadingContainer>Loading...</LoadingContainer>
+          <LoadingContainer>{t('common.loading')}</LoadingContainer>
         ) : error ? (
-          <EmptyState title="Error" description={error.message} />
+          <EmptyState title={t('myClass.error')} description={error.message} />
         ) : tagGroups.length === 0 ? (
-          <EmptyState title="No rooms found" description="You haven't joined any rooms yet. Create a new room or join existing ones." />
+          <EmptyState title={t('myClass.noRoomsFound')} description={t('myClass.noRoomsDescription')} />
         ) : (
           tagGroups.map((room: TagInfoGroup) => {
             const isSelected = !!selectedRoomsToRemove[room.groupId];
@@ -843,7 +847,7 @@ const MyClass: React.FC<MyClassProps> = ({
                         <NameText>{room.groupName}</NameText>
                         <StatusRow>
                           <StatusDot $joined={true} />
-                          <StatusText>Joined</StatusText>
+                          <StatusText>{t('searchRooms.joined')}</StatusText>
                         </StatusRow>
                       </NameBlock>
                     </HeaderLeft>
@@ -852,12 +856,12 @@ const MyClass: React.FC<MyClassProps> = ({
                   <RoomInfo>
                     <InfoItem>
                       <MdGroup />
-                      <InfoItemText>Admin: {room.groupAdmin}</InfoItemText>
+                      <InfoItemText>{t('searchRooms.admin', { name: room.groupAdmin })}</InfoItemText>
                     </InfoItem>
                   </RoomInfo>
 
                   <CardDescription>
-                    {room.groupDescription || "Join this room to start chatting."}
+                    {room.groupDescription || t('searchRooms.defaultDescription')}
                   </CardDescription>
                 </CardTop>
 
@@ -865,7 +869,7 @@ const MyClass: React.FC<MyClassProps> = ({
                   onClick={() => handleRoomClick(room.groupId)}
                   disabled={isEditMode}
                 >
-                  Enter
+                  {t('searchRooms.enter')}
                 </ActionButton>
               </SelectableCard>
             );

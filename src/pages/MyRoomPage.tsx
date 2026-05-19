@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import styled from "styled-components";
 import { useLocation, useParams } from "react-router-dom";
 import Sidebar from "../components/loggedIn/Sidebar";
@@ -33,7 +34,8 @@ const MyRoomPage = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Extract the state from the location or fallback to default values
-  const { title = groupId, desc = "No description available." } =
+  const { t } = useTranslation();
+  const { title = groupId, desc = t('common.noDescription') } =
     location.state || {};
 
   const groupIdNumber = groupId ? parseInt(groupId, 10) : undefined;

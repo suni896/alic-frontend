@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { styled } from "styled-components";
 import { useLocation, useParams } from "react-router-dom";
 import Layout from "../components/ui/Layout";
@@ -33,7 +34,8 @@ const MyClassPage: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Extract the state from the location or fallback to default values
-  const { title = tagId, desc = "No description available." } =
+  const { t } = useTranslation();
+  const { title = tagId, desc = t('common.noDescription') } =
     location.state || {};
   const tagIdNumber = tagId ? parseInt(tagId, 10) : undefined;
   return (

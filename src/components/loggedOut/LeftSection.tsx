@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 import alicLogo from "../../assets/alic.png";
+import { useTranslation } from "react-i18next";
 
 interface LeftSectionProps {
   currentImage: string;
@@ -89,10 +90,11 @@ const OverlayTitle = styled.div`
 const LeftSection: React.FC<LeftSectionProps> = ({
   currentImage,
 }) => {
+  const { t } = useTranslation();
   return (
     <LeftSectionContainer $currentImage={currentImage}>
-      <CornerLogo src={alicLogo} alt="ALIC Logo" />
-      <OverlayTitle>Welcome to ALIC</OverlayTitle>
+      <CornerLogo src={alicLogo} alt={t('common.alicLogoAlt') || 'ALIC Logo'} />
+      <OverlayTitle>{t('common.welcomeToAlic')}</OverlayTitle>
     </LeftSectionContainer>
   );
 };

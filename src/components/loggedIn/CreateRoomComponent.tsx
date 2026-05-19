@@ -11,6 +11,7 @@ import {
 import { MdLock, MdPublic } from "react-icons/md";
 import { FiX } from "react-icons/fi";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { useRoomContext } from "./RoomContext";
 import Button from "../ui/Button";
 import AutoResizeTextarea from "../ui/Textarea";
@@ -683,32 +684,32 @@ const ModalButtonContainer = styled(ButtonContainer)`
   margin-top: 2rem;
 `;
 
-const validationSchema = (showAssistants: boolean) =>
+const validationSchema = (showAssistants: boolean, t: (key: string) => string) =>
   Yup.object().shape({
     roomName: Yup.string()
-      .required("Group Name is required")
+      .required(t('createRoom.groupNameRequired'))
       .matches(
         /^[A-Za-z0-9]{1,20}$/,
-        "Must be 1-20 characters long, supports uppercase and lowercase English letters and numbers"
+        t('createRoom.groupNameInvalid')
       ),
     roomDescription: Yup.string()
-      .required("Group Description is required")
-      .max(800, "Group Description cannot exceed 800 characters"),
+      .required(t('createRoom.groupDescriptionRequired'))
+      .max(800, t('createRoom.groupDescriptionMax')),
     roomType: Yup.string() // Changed to string to match form values
-      .oneOf(["0", "1"], "Invalid group type") // Changed to string values
-      .required("Group Type is required"),
+      .oneOf(["0", "1"], t('createRoom.groupTypeInvalid')) // Changed to string values
+      .required(t('createRoom.groupTypeRequired')),
     groupMode: Yup.string()
-      .oneOf(["free", "feedback"], "Invalid group mode")
-      .required("Group Mode is required"),
+      .oneOf(["free", "feedback"], t('createRoom.groupModeInvalid'))
+      .required(t('createRoom.groupModeRequired')),
 
     roomPassword: Yup.string().when("roomType", {
       is: (value: string) => value === "0",
       then: (schema) =>
         schema
-          .required("Password is required for private groups")
+          .required(t('createRoom.privatePasswordRequired'))
           .matches(
             /^[A-Za-z0-9!@#$%^&*()_+\-={}$.]{6,33}$/,
-            "Password must be 6-33 characters long and contain valid characters"
+            t('createRoom.passwordInvalid')
           ),
       otherwise: (schema) => schema.notRequired(),
     }),
@@ -717,14 +718,14 @@ const validationSchema = (showAssistants: boolean) =>
           .of(
             Yup.object().shape({
               name: Yup.string()
-                .required("Assistant name is required")
+                .required(t('createRoom.assistantNameRequired'))
                 .matches(
                   /^[\u4e00-\u9fa5A-Za-z0-9]{1,20}$/,
-                  "Must be 1-20 characters long. Supports letters, numbers, and Chinese characters."
+                  t('createRoom.assistantNameInvalid')
                 )
                 .test(
                   "unique-name",
-                  "Assistant name must be unique",
+                  t('createRoom.assistantNameUnique'),
                   function (value) {
                     if (!value) return true; // Let required validation handle empty values
 
@@ -745,17 +746,17 @@ const validationSchema = (showAssistants: boolean) =>
                   }
                 ),
               prompt: Yup.string()
-                .required("Prompt is required")
-                .max(2000, "Prompt cannot exceed 2000 characters"),
+                .required(t('createRoom.promptRequired'))
+                .max(2000, t('createRoom.promptMax')),
               context: Yup.number()
-                .required("Context is required")
-                .min(1, "Minimum value is 1")
-                .max(20, "Maximum value is 20"),
+                .required(t('createRoom.contextRequired'))
+                .min(1, t('createRoom.contextMin'))
+                .max(20, t('createRoom.contextMax')),
               adminOnly: Yup.boolean(),
             })
           )
-          .min(1, "Add at least one assistant")
-          .required("Bot info is required")
+          .min(1, t('createRoom.addAtLeastOneAssistant'))
+          .required(t('createRoom.botInfoRequired'))
       : Yup.array().notRequired(),
 
     // Make feedback assistant required only in feedback mode
@@ -774,29 +775,29 @@ const validationSchema = (showAssistants: boolean) =>
             .shape({
               name: Yup.string()
                 .transform((v) => (typeof v === "string" ? v.trim() : v))
-                .required("Assistant name is required")
+                .required(t('createRoom.assistantNameRequired'))
                 .matches(
                   /^[\u4e00-\u9fa5A-Za-z0-9]{1,20}$/,
-                  "Must be 1-20 characters long. Supports letters, numbers, and Chinese characters."
+                  t('createRoom.assistantNameInvalid')
                 ),
               prompt: Yup.string()
                 .transform((v) => (typeof v === "string" ? v.trim() : v))
-                .required("Prompt is required")
-                .max(2000, "Prompt cannot exceed 2000 characters"),
+                .required(t('createRoom.promptRequired'))
+                .max(2000, t('createRoom.promptMax')),
               msgCountInterval: Yup.number()
-                .typeError("Message Count Interval must be a number")
-                .integer("Message Count Interval must be an integer")
-                .min(2, "Minimum value is 2")
-                .max(20, "Maximum value is 20")
-                .required("Message Count Interval is required"),
+                .typeError(t('createRoom.msgCountIntervalType'))
+                .integer(t('createRoom.msgCountIntervalInteger'))
+                .min(2, t('createRoom.msgCountIntervalMin'))
+                .max(20, t('createRoom.msgCountIntervalMax'))
+                .required(t('createRoom.msgCountIntervalRequired')),
               timeInterval: Yup.number()
-                .typeError("Time Interval must be a number")
-                .integer("Time Interval must be an integer")
-                .min(1, "Minimum value is 1")
-                .max(30, "Maximum value is 30")
-                .required("Time Interval is required"),
+                .typeError(t('createRoom.timeIntervalType'))
+                .integer(t('createRoom.timeIntervalInteger'))
+                .min(1, t('createRoom.timeIntervalMin'))
+                .max(30, t('createRoom.timeIntervalMax'))
+                .required(t('createRoom.timeIntervalRequired')),
             })
-            .required("AI Feedback Assistant Configuration is required"),
+            .required(t('createRoom.feedbackConfigRequired')),
         otherwise: (schema) =>
           schema
             .shape({
@@ -889,6 +890,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
   groupId: propGroupId,
   fromSidebar = false,
 }) => {
+  const { t } = useTranslation();
   const { addRoom } = useRoomContext();
   const [showAssistants, setShowAssistants] = useState(false);
   const [apiRequestMade, setApiRequestMade] = useState(false);
@@ -971,7 +973,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       onClose();
     } catch (error: any) {
       console.error("Error creating group:", error);
-      alert(`Error: ${error.response?.data?.message || error.message}`);
+      alert(`${t('common.error')}: ${error.response?.data?.message || error.message}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -1002,7 +1004,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
         botId: undefined,
       },
     },
-    validationSchema: validationSchema(showAssistants),
+    validationSchema: validationSchema(showAssistants, t),
     onSubmit: async (values) => {
       console.log("Form Submitted", values);
       console.log("roomType value:", values.roomType);
@@ -1024,7 +1026,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
         };
         await handleAddGroup(submittedValues, onClose, showAssistants);
       } else {
-        alert("You don't have permission to modify this room");
+        alert(t('createRoom.noPermission'));
       }
     },
   });
@@ -1042,7 +1044,7 @@ const CreateRoomComponent: React.FC<CreateRoomComponentProps> = ({
       if (userRoleData) {
        setUserRole(userRoleData);
       } else {
-        alert("Failed to fetch user role.");
+        alert(t('createRoom.fetchRoleFailed'));
         setUserRole(null);
       }
     }
@@ -1175,14 +1177,14 @@ const handleEditGroup = async (values: any) => {
           console.log("Verification response:", groupInfoData);
         }
 
-        alert("Room successfully updated!");
+        alert(t('createRoom.roomUpdated'));
         onClose();
       } else {
-        alert(response.message || "Failed to update room");
+        alert(response.message || t('createRoom.updateFailed'));
       }
     } catch (error: any) {
       console.error("Error updating group:", error);
-      alert(`Error: ${error.message || "Failed to update room"}`);
+      alert(`${t('common.error')}: ${error.message || t('createRoom.updateFailed')}`);
     }
   };
 
@@ -1329,14 +1331,14 @@ const handleEditGroup = async (values: any) => {
     <ModalBackdrop onClick={onClose}  className="modal-backdrop-right">
       <Modal onClick={(e) => e.stopPropagation()}>
         {/* 右上角关闭按钮 */}
-        <ModalCloseButton onClick={onClose} aria-label="Close">
+        <ModalCloseButton onClick={onClose} aria-label={t('common.close')}>
           <FiX size={24} />
         </ModalCloseButton>
 
         {/* 顶部标题 - 固定在顶部不滚动 */}
         <HeaderSection>
-          <HeaderTitle>{effectiveIsModify ? "Edit Room" : "Create New Room"}</HeaderTitle>
-          <HeaderSubTitle>{effectiveIsModify ? "Update your room details." : "Create a new room for your group."}</HeaderSubTitle>
+          <HeaderTitle>{effectiveIsModify ? t('createRoom.editRoom') : t('createRoom.createNewRoom')}</HeaderTitle>
+          <HeaderSubTitle>{effectiveIsModify ? t('createRoom.editRoomSubtitle') : t('createRoom.createRoomSubtitle')}</HeaderSubTitle>
         </HeaderSection>
 
         {/* 可滚动的内容区域 */}
@@ -1344,11 +1346,11 @@ const handleEditGroup = async (values: any) => {
         <FormikProvider value={formik}>
           <Form onSubmit={formik.handleSubmit}>
             <InputGroup>
-              <InputLabel htmlFor="roomName">Group Name</InputLabel>
+              <InputLabel htmlFor="roomName">{t('createRoom.groupName')}</InputLabel>
               <SharedInput
                 id="roomName"
                 name="roomName"
-                placeholder="Explore Generative AI"
+                placeholder={t('createRoom.groupNamePlaceholder')}
                 autoComplete="off"
                 value={formik.values.roomName}
                 onChange={formik.handleChange}
@@ -1362,11 +1364,11 @@ const handleEditGroup = async (values: any) => {
             </InputGroup>
 
             <InputGroup>
-              <InputLabel htmlFor="roomDescription">Description</InputLabel>
+              <InputLabel htmlFor="roomDescription">{t('createRoom.description')}</InputLabel>
               <SmallTextareaContainer>
                 <AutoResizeTextarea
                   name="roomDescription"
-                  placeholder="Let's discuss AGI"
+                  placeholder={t('createRoom.descriptionPlaceholder')}
                   value={formik.values.roomDescription}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
@@ -1385,7 +1387,7 @@ const handleEditGroup = async (values: any) => {
             </InputGroup>
 
             <InputGroup>
-              <InputLabel>Group Type</InputLabel>
+              <InputLabel>{t('createRoom.groupType')}</InputLabel>
               <RadioGroup>
                 <RadioCard
                   checked={formik.values.roomType === "1"}
@@ -1405,9 +1407,9 @@ const handleEditGroup = async (values: any) => {
                   <RadioContent>
                     <RadioTitle>
                       <MdPublic />
-                      Public
+                      {t('createRoom.public')}
                     </RadioTitle>
-                    <RadioDescription>Display on Public Pages</RadioDescription>
+                    <RadioDescription>{t('createRoom.publicDescription')}</RadioDescription>
                   </RadioContent>
                 </RadioCard>
 
@@ -1430,9 +1432,9 @@ const handleEditGroup = async (values: any) => {
                   <RadioContent>
                     <RadioTitle>
                       <MdLock />
-                      Private
+                      {t('createRoom.private')}
                     </RadioTitle>
-                    <RadioDescription>Password Required to Join</RadioDescription>
+                    <RadioDescription>{t('createRoom.passwordRequired')}</RadioDescription>
                   </RadioContent>
                 </RadioCard>
               </RadioGroup>
@@ -1440,13 +1442,13 @@ const handleEditGroup = async (values: any) => {
 
             {formik.values.roomType === "0" && (
               <InputGroup>
-                <InputLabel htmlFor="roomPassword">Password</InputLabel>
+                <InputLabel htmlFor="roomPassword">{t('createRoom.passwordLabel')}</InputLabel>
                 <SharedInput
                   id="roomPassword"
                   name="roomPassword"
                   type="password"
                   autoComplete="new-password"
-                  placeholder="Enter password"
+                  placeholder={t('createRoom.passwordPlaceholder')}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                   value={formik.values.roomPassword}
@@ -1460,7 +1462,7 @@ const handleEditGroup = async (values: any) => {
               </InputGroup>
             )}
             <InputGroup>
-              <InputLabel>Group Mode</InputLabel>
+              <InputLabel>{t('createRoom.groupMode')}</InputLabel>
               <RadioGroup>
                 <RadioCard
                   checked={formik.values.groupMode === "free"}
@@ -1479,8 +1481,8 @@ const handleEditGroup = async (values: any) => {
                   />
                   <RadioIcon checked={formik.values.groupMode === "free"} />
                   <RadioContent>
-                    <RadioTitle>Free Chat Mode</RadioTitle>
-                    <RadioDescription>Unmoderated, Open Dialogue</RadioDescription>
+                    <RadioTitle>{t('createRoom.freeChatMode')}</RadioTitle>
+                    <RadioDescription>{t('createRoom.freeChatDescription')}</RadioDescription>
                   </RadioContent>
                 </RadioCard>
 
@@ -1501,8 +1503,8 @@ const handleEditGroup = async (values: any) => {
                   />
                   <RadioIcon checked={formik.values.groupMode === "feedback"} />
                   <RadioContent>
-                    <RadioTitle>Auto Feedback Mode</RadioTitle>
-                    <RadioDescription>Automatic feedback from the assistant</RadioDescription>
+                    <RadioTitle>{t('createRoom.autoFeedbackMode')}</RadioTitle>
+                    <RadioDescription>{t('createRoom.autoFeedbackDescription')}</RadioDescription>
                   </RadioContent>
                 </RadioCard>
               </RadioGroup>
@@ -1521,7 +1523,7 @@ const handleEditGroup = async (values: any) => {
                 />
                 <CheckboxLabel htmlFor="ai-assistant-toggle">
                   <AssistantIcon />
-                  Add AI Assistant(s)
+                  {t('createRoom.addAiAssistants')}
                 </CheckboxLabel>
               </CheckboxContainer>
             )}
@@ -1530,7 +1532,7 @@ const handleEditGroup = async (values: any) => {
               <FieldArrayContainer>
                 <AssistantHeader>
                   <AssistantIcon />
-                  <AssistantTitle>AI Assistants Configuration</AssistantTitle>
+                  <AssistantTitle>{t('createRoom.aiAssistantsConfiguration')}</AssistantTitle>
                 </AssistantHeader>
 
                 <FieldArray
@@ -1539,17 +1541,17 @@ const handleEditGroup = async (values: any) => {
                     <>
                       <HeaderRow>
                         <CenteredColumnHeader></CenteredColumnHeader>
-                        <ColumnHeader>Assistant Name</ColumnHeader>
-                        <ColumnHeader>Prompt</ColumnHeader>
-                        <ColumnHeader>Admin Only</ColumnHeader>
-                        <ColumnHeader>Context</ColumnHeader>
+                        <ColumnHeader>{t('createRoom.assistantName')}</ColumnHeader>
+                        <ColumnHeader>{t('createRoom.prompt')}</ColumnHeader>
+                        <ColumnHeader>{t('createRoom.adminOnly')}</ColumnHeader>
+                        <ColumnHeader>{t('createRoom.context')}</ColumnHeader>
                       </HeaderRow>
 
                       {formik.values.bots.map((bot, index) => (
                         <AddAssistantRow key={index}>
                           <RemoveIcon
                             data-testid="remove-bot-btn"
-                            title={formik.values.bots.length <= 1 ? "Uncheck 'Add AI Assistant(s)' to remove all bots" : "Remove this bot"}
+                            title={formik.values.bots.length <= 1 ? t('createRoom.removeBotTooltip') : t('createRoom.removeBot')}
                             onClick={() => {
                               if (formik.values.bots.length > 1) {
                                 arrayHelpers.remove(index);
@@ -1565,7 +1567,7 @@ const handleEditGroup = async (values: any) => {
                           <SmallInputContainer>
                             <SharedInput
                               name={`bots[${index}].name`}
-                              placeholder="Assistant Name"
+                              placeholder={t('createRoom.assistantNamePlaceholder')}
                               value={bot.name}
                               onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
@@ -1592,7 +1594,7 @@ const handleEditGroup = async (values: any) => {
                           <SmallTextareaContainer>
                             <AutoResizeTextarea
                               name={`bots[${index}].prompt`}
-                              placeholder="Prompt"
+                              placeholder={t('createRoom.promptPlaceholder')}
                               value={bot.prompt}
                               onChange={(e) => handleBotFieldChange(e, index)}
                               onBlur={formik.handleBlur}
@@ -1645,7 +1647,7 @@ const handleEditGroup = async (values: any) => {
                             <SharedInput
                               type="number"
                               name={`bots[${index}].context`}
-                              placeholder="Context"
+                              placeholder={t('createRoom.contextPlaceholder')}
                               min={1}
                               max={20}
                               value={String(bot.context)}
@@ -1692,7 +1694,7 @@ const handleEditGroup = async (values: any) => {
                 />
 
                 {hasBotErrors() && (
-                  <ErrorText>All assistant fields are required</ErrorText>
+                  <ErrorText>{t('createRoom.allFieldsRequired')}</ErrorText>
                 )}
 
                 <ErrorText $visible={typeof formik.errors.bots === "string"}>
@@ -1707,20 +1709,20 @@ const handleEditGroup = async (values: any) => {
               <FieldArrayContainer>
                 <AssistantHeader>
                   <AssistantIcon />
-                  <AssistantTitle>AI Feedback Assistant Configuration</AssistantTitle>
+                  <AssistantTitle>{t('createRoom.aiFeedbackConfiguration')}</AssistantTitle>
                 </AssistantHeader>
 
                 <HeaderRow>
                   <CenteredColumnHeader></CenteredColumnHeader>
-                  <ColumnHeader>Assistant Name</ColumnHeader>
-                  <ColumnHeader>Prompt</ColumnHeader>
+                  <ColumnHeader>{t('createRoom.assistantName')}</ColumnHeader>
+                  <ColumnHeader>{t('createRoom.prompt')}</ColumnHeader>
                   <ColumnHeaderWithHelp>
-                    <span>Message Count Interval</span>
-                    <HelpIcon title="The number of messages required to trigger an automatic reply" aria-label="trigger feedback message count">?</HelpIcon>
+                    <span>{t('createRoom.messageCountInterval')}</span>
+                    <HelpIcon title={t('createRoom.messageCountHelp')} aria-label={t('createRoom.messageCountHelp')}>?</HelpIcon>
                   </ColumnHeaderWithHelp>
                   <ColumnHeaderWithHelp>
-                    <span>Time Interval</span>
-                    <HelpIcon title="The minimum time gap between two automatic replies (in minutes)" aria-label="trigger feedback message count">?</HelpIcon>
+                    <span>{t('createRoom.timeInterval')}</span>
+                    <HelpIcon title={t('createRoom.timeIntervalHelp')} aria-label={t('createRoom.timeIntervalHelp')}>?</HelpIcon>
                   </ColumnHeaderWithHelp>
                 </HeaderRow>
 
@@ -1731,7 +1733,7 @@ const handleEditGroup = async (values: any) => {
                     <SharedInput
                       name="feedbackBot.name"
                       disabled={effectiveIsModify}
-                      placeholder="Assistant Name"
+                      placeholder={t('createRoom.assistantNamePlaceholder')}
                       value={formik.values.feedbackBot?.name ?? ""}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
@@ -1753,7 +1755,7 @@ const handleEditGroup = async (values: any) => {
                   <SmallTextareaContainer>
                     <AutoResizeTextarea
                       name="feedbackBot.prompt"
-                      placeholder="Prompt"
+                      placeholder={t('createRoom.promptPlaceholder')}
                       value={formik.values.feedbackBot?.prompt}
                       onChange={formik.handleChange}
                       onBlur={formik.handleBlur}
@@ -1776,7 +1778,7 @@ const handleEditGroup = async (values: any) => {
                     <SharedInput
                       type="number"
                       name="feedbackBot.msgCountInterval"
-                      placeholder="Message Count Interval"
+                      placeholder={t('createRoom.messageCountPlaceholder')}
                       min={2}
                       max={20}
                       value={
@@ -1803,7 +1805,7 @@ const handleEditGroup = async (values: any) => {
                     <SharedInput
                       type="number"
                       name="feedbackBot.timeInterval"
-                      placeholder="Time Interval"
+                      placeholder={t('createRoom.timeIntervalPlaceholder')}
                       min={1}
                       max={30}
                       value={
@@ -1837,12 +1839,12 @@ const handleEditGroup = async (values: any) => {
                     onClick={onClose}
                     disabled={isSubmitting}
                   >
-                    Cancel
+                    {t('common.cancel')}
                   </Button>
                 </FixedButtonContainer>
                 <FixedButtonContainer>
                   <Button disabled={isSubmitting} type="submit">
-                    {effectiveIsModify ? "Update Room" : "Create Room"}
+                    {effectiveIsModify ? t('createRoom.updateRoom') : t('createRoom.createRoom')}
                   </Button>
                 </FixedButtonContainer>
               </ModalButtonContainer>
@@ -1858,7 +1860,7 @@ const handleEditGroup = async (values: any) => {
 
   const tooltipContent = (
     <Tooltip $show={showRemoveBotTooltip}>
-      Uncheck &quot;Add AI Assistant(s)&quot; to remove all bots
+      Uncheck &quot;{t('createRoom.addAiAssistants')}&quot; to remove all bots
     </Tooltip>
   );
 

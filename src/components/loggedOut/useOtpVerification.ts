@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
 import { useVerifyCode, useResendCode } from "../../hooks/queries/useAuth";
+import { useTranslation } from "react-i18next";
 
 export interface OtpFormValues {
   email: string;
@@ -10,12 +11,13 @@ export interface OtpFormValues {
 
 export type OtpVariant = "register" | "reset";
 
-export const otpValidationSchema = Yup.object().shape({
-  otp: Yup.string()
-    .length(6, "Code must be exactly 6 digits")
-    .matches(/^\d{6}$/, "Code must be a valid number")
-    .required("Verification code is required"),
-});
+export const otpValidationSchema = (t: (key: string) => string) =>
+  Yup.object().shape({
+    otp: Yup.string()
+      .length(6, t('auth.otpLength'))
+      .matches(/^\d{6}$/, t('auth.otpNumber'))
+      .required(t('auth.otpRequired')),
+  });
 
 interface UseOtpVerificationOptions {
   email: string;
@@ -28,6 +30,7 @@ export const useOtpVerification = ({
   variant,
   onVerifySuccess,
 }: UseOtpVerificationOptions) => {
+  const { t } = useTranslation();
   const [showError, setShowError] = useState(false);
   const verifyCodeMutation = useVerifyCode();
   const resendCodeMutation = useResendCode();
@@ -37,7 +40,7 @@ export const useOtpVerification = ({
       email,
       otp: "",
     },
-    validationSchema: otpValidationSchema,
+    validationSchema: otpValidationSchema(t),
     onSubmit: async (values) => {
       try {
         const response = await verifyCodeMutation.mutateAsync({
@@ -60,10 +63,10 @@ export const useOtpVerification = ({
       } catch (error) {
         if (error instanceof Error) {
           alert(
-            error.message || "Failed to verify OTP. Please try again."
+            error.message || t('auth.failedToVerifyOtp')
           );
         } else {
-          alert("An unexpected error occurred. Please try again.");
+          alert(t('auth.unexpectedError'));
         }
       }
     },
@@ -82,14 +85,14 @@ export const useOtpVerification = ({
       });
 
       if (response.code === 200) {
-        alert("A new verification code has been sent to your email.");
+        alert(t('auth.newCodeSent'));
         formik.setFieldValue("otp", "");
         document.getElementById("code-input-0")?.focus();
       } else {
-        alert(response.message || "Failed to send verification email.");
+        alert(response.message || t('auth.sendVerificationFailed'));
       }
     } catch {
-      alert("Failed to send new verification code. Please try again.");
+      alert(t('auth.failedToSendNewCode'));
     }
   };
 

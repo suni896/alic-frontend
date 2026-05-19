@@ -7,6 +7,7 @@ import { useUserInfo } from "../../hooks/queries/useUser";
 import { AiOutlineMinusCircle } from "react-icons/ai";
 import { useUserRole, useGroupMemberList, useRemoveGroupMember } from "../../hooks/queries/useGroup";
 import type { GroupMember } from "../../api/group.api";
+import { useTranslation } from "react-i18next";
 
 // Keep for backwards compatibility with MyRoom.tsx
 export const membersCache = new Map<number, GroupMember[]>();
@@ -433,6 +434,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
   const [isRemoveMode, setIsRemoveMode] = useState(false);
   const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   // Use React Query hook (13.6)
   const { data: roleData } = useUserRole(groupId ? Number(groupId) : undefined);
@@ -455,10 +457,10 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
       setMembers(membersData.data);
     }
     if (queryError) {
-      setError(queryError instanceof Error ? queryError.message : "An unknown error occurred");
+      setError(queryError instanceof Error ? queryError.message : t('roomMembers.errorPrefix') + t('common.error'));
     }
     setLoading(isLoading);
-  }, [membersData, queryError, isLoading]);
+  }, [membersData, queryError, isLoading, t]);
 
   const removeGroupMemberMutation = useRemoveGroupMember();
 
@@ -493,7 +495,7 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
         navigate("/search-rooms");
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Operation failed");
+      setError(err instanceof Error ? err.message : t('roomMembers.errorPrefix') + t('common.error'));
       console.error("Error:", err);
     } finally {
       setIsExiting(false);
@@ -526,11 +528,11 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
   };
 
   const getButtonText = () => {
-    if (isExiting) return "Processing...";
+    if (isExiting) return t('roomMembers.processing');
     if (userRole === "ADMIN") {
-      return isRemoveMode ? "Finish" : "Edit";
+      return isRemoveMode ? t('roomMembers.finish') : t('common.edit');
     }
-    return "Exit Group";
+    return t('roomMembers.exitGroup');
   };
 
   const modalContent = (
@@ -546,14 +548,14 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
           <TitleContainer>
             <HeaderSection>
               {/* <MembersLogo /> */}
-              <HeaderTitle >Members</HeaderTitle>
+              <HeaderTitle >{t('roomMembers.membersTitle')}</HeaderTitle>
             </HeaderSection>
           </TitleContainer>
           <ListContainer>
               {loading ? (
-                <LoadingIndicator>Loading members...</LoadingIndicator>
+                <LoadingIndicator>{t('roomMembers.loadingMembers')}</LoadingIndicator>
               ) : error ? (
-                <div>Error: {error}</div>
+                <div>{t('roomMembers.errorPrefix')}{error}</div>
               ) : (
                 members.map((member) => (
                   <MemberContainer key={member.userId} data-testid="member-item">
@@ -565,9 +567,9 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
                       <Username>
                         <UserNameText>{member.userName}</UserNameText>
                         {member.groupMemberType === "ADMIN" ? (
-                          <AdminLabel data-testid="admin-badge">admin</AdminLabel>
+                          <AdminLabel data-testid="admin-badge">{t('roomMembers.adminBadge')}</AdminLabel>
                         ) : (
-                          <MemberLabel data-testid="member-badge">member</MemberLabel>
+                          <MemberLabel data-testid="member-badge">{t('roomMembers.memberBadge')}</MemberLabel>
                         )}
                       </Username>
                     </MemberInfo>
@@ -604,10 +606,10 @@ const RoomMembersComponent: React.FC<RoomMembersComponentProps> = ({
           onConfirm={handleExitGroup}
           title={
             userRole === "ADMIN" && isRemoveMode
-              ? "Confirm to Remove Selected Members"
-              : "Confirm to Exit Chat Group"
+              ? t('roomMembers.confirmRemoveMembers')
+              : t('roomMembers.confirmExitGroup')
           }
-          message="Caution: This action cannot be undone."
+          message={t('roomMembers.cautionUndone')}
         />
       )}
     </>

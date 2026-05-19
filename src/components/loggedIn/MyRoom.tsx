@@ -17,6 +17,7 @@ import { useKeyboardInsets } from "../../hooks/useKeyboardInsets";
 import sensors, { eventQueue, flushEvents } from "../../utils/tracker";
 import { EtherpadDrawerWithButton } from "./EtherpadDrawer";
 import { API_BASE_URL } from "../../../config";
+import { useTranslation } from "react-i18next";
 import {
   useGroupChatBotList,
   useClearHistory,
@@ -1066,6 +1067,7 @@ const BotListPopUp: React.FC<MyRoomProps> = ({
   onBotSelect,
   groupId,
 }) => {
+  const { t } = useTranslation();
   const { userInfo } = useUserInfo();
   const [isAdmin, setIsAdmin] = useState(false);
   
@@ -1103,7 +1105,7 @@ const BotListPopUp: React.FC<MyRoomProps> = ({
     <PopupContainer>
       <PopupHeader>
         <HeaderContent>
-          <span>Available Bots</span>
+          <span>{t('myRoom.availableBots')}</span>
           {isLoading && <LoadingSpinner />}
         </HeaderContent>
         <CloseButton onClick={onClose}>
@@ -1116,7 +1118,7 @@ const BotListPopUp: React.FC<MyRoomProps> = ({
             key={bot.botId}
             onClick={() => {
               if (bot.accessType === 0 && !isAdmin) {
-                alert("Only admins can mention this bot");
+                alert(t('myRoom.adminOnlyMention'));
                 return;
               }
               onClose?.();
@@ -1125,7 +1127,7 @@ const BotListPopUp: React.FC<MyRoomProps> = ({
           >
             <BotName>{bot.botName}</BotName>
             <AccessType>
-              ({bot.accessType === 0 ? "Admin Only" : "Public Access"})
+              ({bot.accessType === 0 ? t('myRoom.adminOnly') : t('myRoom.publicAccess')})
             </AccessType>
           </BotItem>
         ))}
@@ -1139,6 +1141,7 @@ const clientCache = new Map<number, Stomp.Client | null>();
 
 // 主组件
 const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   
   // 键盘高度（移动端适配）
@@ -1246,12 +1249,12 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         const response = await fetchUserRole(groupId);
         // 如果 code 不是 200 或 data 为空/undefined，说明用户未加入群组
         if (response.code !== 200 || !response.data) {
-          alert('You have not joined this group. Please join the group first.');
+          alert(t('myRoom.notJoinedGroup'));
           navigate('/search-rooms');
         }
       } catch (error) {
         // API 调用失败（如 401/403）也说明用户未加入或无权限
-        alert('You have not joined this group. Please join the group first.');
+        alert(t('myRoom.notJoinedGroup'));
         navigate('/search-rooms');
       }
     };
@@ -1295,14 +1298,14 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
   const handleCopyMessage = (content: string) => {
     navigator.clipboard.writeText(content).then(() => {
-      setCopySuccess('复制成功');
+      setCopySuccess(t('myRoom.copied'));
       // 2秒后自动隐藏提示
       setTimeout(() => {
         setCopySuccess('');
       }, 2000);
     }).catch(err => {
       console.error('复制失败:', err);
-      setCopySuccess('复制失败');
+      setCopySuccess(t('myRoom.copyFailed'));
       setTimeout(() => {
         setCopySuccess('');
       }, 2000);
@@ -1333,10 +1336,10 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         setShowClearContextToast(false);
       }, 3000);
       
-      console.log('AI context cleared successfully');
+      console.log(t('myRoom.aiContextClearedSuccess'));
     } catch (error) {
       console.error('Error clearing AI context:', error);
-      alert('Failed to clear AI context. Please try again.');
+      alert(t('myRoom.clearContextFailed'));
     }
   };
 
@@ -2170,7 +2173,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
   // 处理选择提及的 Bot
   const handleMentionSelect = (botName: string, botId: number, accessType: number) => {
     if (accessType === 0 && !isAdmin) {
-      alert("Only admins can mention this bot");
+      alert(t('myRoom.adminOnlyMention'));
       return;
     }
     
@@ -2249,23 +2252,23 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
       {/* 清除上下文成功提示 */}
       <ClearContextToast $show={showClearContextToast}>
-        AI context cleared successfully
+        {t('myRoom.aiContextClearedSuccess')}
       </ClearContextToast>
 
       {/* 连接状态提示 */}
       {connectionStatus !== 'connected' && (
         <ConnectionStatus $status={connectionStatus}>
           <StatusDot $status={connectionStatus} />
-          {connectionStatus === 'connecting' && 'connecting...'}
-          {connectionStatus === 'disconnected' && 'disconnected'}
-          {connectionStatus === 'reconnecting' && `reconnecting (${reconnectAttemptsRef.current}/${maxReconnectAttempts})`}
+          {connectionStatus === 'connecting' && t('myRoom.connecting')}
+          {connectionStatus === 'disconnected' && t('myRoom.disconnected')}
+          {connectionStatus === 'reconnecting' && t('myRoom.reconnectAttempt', { current: reconnectAttemptsRef.current, max: maxReconnectAttempts })}
         </ConnectionStatus>
       )}
 
       <RenderedChatContainer ref={chatContainerRef} onScroll={handleScroll}>
         {hasNoMoreMessages && (
           <NoMoreMessagesHint>
-            No more messages
+            {t('myRoom.noMoreMessages')}
           </NoMoreMessagesHint>
         )}
         {messages.map((msg, index) => (
@@ -2280,11 +2283,11 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                   ? botIcon
                   : `data:image/png;base64, ${msg.portrait}`
               }
-              alt="User portrait"
+              alt={t('myRoom.userPortrait')}
             />
             <MessageContent>
               <UserName>
-                {msg.senderId === userInfo?.userId ? "You" : `${msg.name}`}
+                {msg.senderId === userInfo?.userId ? t('myRoom.you') : `${msg.name}`}
               </UserName>
 
               {/* 显示被回复消息的引用 */}
@@ -2298,22 +2301,22 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                   $clickable={!!msg.replyToMessage && !msg.replyLoading}
                 >
                   <ReplyHeader>
-                    回复 {msg.replyToMessage
-                      ? (msg.replyToMessage.senderId === userInfo?.userId ? "你" : msg.replyToMessage.name)
-                      : "未知用户"
+                    {t('myRoom.replyingTo')} {msg.replyToMessage
+                      ? (msg.replyToMessage.senderId === userInfo?.userId ? t('myRoom.you') : msg.replyToMessage.name)
+                      : t('myRoom.unknownUser')
                     }
                   </ReplyHeader>
                   <ReplyContent>
                     {msg.replyLoading
-                      ? "正在加载被回复消息..."
+                      ? t('myRoom.loadingReply')
                       : msg.replyToMessage
                         ? msg.replyToMessage.content
-                        : "被回复消息不可用"
+                        : t('myRoom.replyUnavailable')
                     }
                   </ReplyContent>
                   {!msg.replyToMessage && !msg.replyLoading && (
                     <ReplyStatusHint>
-                      该消息未加载，无法跳转
+                      {t('myRoom.replyNotLoaded')}
                     </ReplyStatusHint>
                   )}
                 </ReplyPreview>
@@ -2351,13 +2354,13 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             <MessageActions className="message-actions">
               <ActionButton
                 onClick={() => handleReplyToMessage(msg)}
-                title="回复"
+                title={t('myRoom.reply')}
               >
                 <LuReply />
               </ActionButton>
               <ActionButton
                 onClick={() => handleCopyMessage(msg.content)}
-                title="复制"
+                title={t('myRoom.copy')}
               >
                 <LuCopy />
               </ActionButton>
@@ -2367,7 +2370,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             {/* 显示上下文清除提示 */}
             {shouldShowContextClearedMessage(msg, index) && (
               <ContextClearedMessage>
-                AI agent context has been cleared
+                {t('myRoom.aiContextCleared')}
               </ContextClearedMessage>
             )}
           </React.Fragment>
@@ -2376,7 +2379,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
 
       {hasNewMessage && (
         <NewMessageNotification onClick={scrollToBottom}>
-          新消息 ▼
+          {t('myRoom.newMessages')} ▼
         </NewMessageNotification>
       )}
 
@@ -2388,7 +2391,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
               <IconWrapper onClick={() => setIsBotClicked(!isBotClicked)}>
         <BotIcon
           src={botIcon}
-          alt="Bot Icon"
+          alt={t('myRoom.botIcon')}
         />
               </IconWrapper>
         {isBotClicked && (
@@ -2407,7 +2410,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
             <IconWrapper>
               <ClearContextIcon
                 onClick={handleClearContext}
-                title="clear ai agent context"
+                title={t('myRoom.clearContext')}
               />
             </IconWrapper>
           )}
@@ -2465,10 +2468,10 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           }}
             placeholder={
               connectionStatus !== 'connected'
-                ? "连接断开,无法发送消息..."
+                ? t('myRoom.connectionLost')
                 : isLoading
-                  ? "Sending..."
-                  : "Type your message..."
+                  ? t('myRoom.sending')
+                  : t('myRoom.typeMessage')
             }
             rows={4}
           />
@@ -2477,8 +2480,8 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
           {showMentionPopup && groupMode === 'free' && (
             <MentionPopup $top={mentionPosition.top} $left={mentionPosition.left} data-mention-popup>
               <MentionHeader>
-                Available Bots
-                {isLoadingBots && <span style={{ marginLeft: '8px' }}>加载中...</span>}
+                {t('myRoom.availableBots')}
+                {isLoadingBots && <span style={{ marginLeft: '8px' }}>{t('common.loading')}</span>}
               </MentionHeader>
               {bots
                 .filter(bot => bot.botName.toLowerCase().includes(mentionQuery))
@@ -2490,14 +2493,14 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
                   >
                     <MentionBotName>@{bot.botName}</MentionBotName>
                     <MentionAccessType>
-                      ({bot.accessType === 0 ? 'Admin Only' : 'Public'})
+                      ({bot.accessType === 0 ? t('myRoom.adminOnly') : t('myRoom.publicAccess')})
                     </MentionAccessType>
                   </MentionItem>
                 ))}
               {bots.filter(bot => bot.botName.toLowerCase().includes(mentionQuery)).length === 0 && (
                 <MentionItem $disabled>
                   <MentionBotName style={{ color: 'var(--muted-6b7280)' }}>
-                    没有匹配的 Bot
+                    {t('myRoom.noMatchingBots')}
                   </MentionBotName>
                 </MentionItem>
               )}
@@ -2508,7 +2511,7 @@ const MyRoom: React.FC<MyRoomProps> = ({ groupId }) => {
         {replyingTo && (
           <ReplyInputContainer>
             <ReplyInputText>
-              Reply {replyingTo.senderId === userInfo?.userId ? "You" : replyingTo.name}: {replyingTo.content.slice(0, 50)}{replyingTo.content.length > 50 ? '...' : ''}
+              {t('myRoom.replyingTo')} {replyingTo.senderId === userInfo?.userId ? t('myRoom.you') : replyingTo.name}: {replyingTo.content.slice(0, 50)}{replyingTo.content.length > 50 ? '...' : ''}
             </ReplyInputText>
             <CancelReplyButton onClick={handleCancelReply}>
               <LuX />

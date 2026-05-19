@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import styled from "styled-components";
 import { MdVisibility, MdVisibilityOff } from "react-icons/md";
 
@@ -552,7 +553,7 @@ export const Input: React.FC<InputProps> = ({
         id={id}
         name={name}
         type={type}
-        placeholder={placeholder}
+        placeholder={placeholder || t('auth.passwordPlaceholder')}
         value={value}
         onChange={onChange}
         onBlur={onBlur}
@@ -688,7 +689,7 @@ const ToggleButton = styled.button`
 export const PasswordInput: React.FC<PasswordInputProps> = ({
   id,
   name,
-  placeholder = "Enter password",
+  placeholder,
   value,
   onChange,
   onBlur,
@@ -698,6 +699,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
   $hasError = false,
   className,
 }) => {
+  const { t } = useTranslation();
   const [showPassword, setShowPassword] = useState(false);
 
   const togglePasswordVisibility = () => {
@@ -710,7 +712,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
         id={id}
         name={name}
         type={showPassword ? "text" : "password"}
-        placeholder={placeholder}
+        placeholder={placeholder || t('auth.passwordPlaceholder')}
         value={value}
         onChange={onChange}
         onBlur={onBlur}
@@ -723,7 +725,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
         type="button"
         onClick={togglePasswordVisibility}
         disabled={disabled}
-        aria-label={showPassword ? "Hide password" : "Show password"}
+        aria-label={showPassword ? t('common.hidePassword') || 'Hide password' : t('common.showPassword') || 'Show password'}
       >
         {showPassword ? <MdVisibilityOff size={20} /> : <MdVisibility size={20} />}
       </ToggleButton>

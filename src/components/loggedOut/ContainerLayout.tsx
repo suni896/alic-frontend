@@ -2,6 +2,7 @@ import React from "react";
 import styled from "styled-components";
 import LeftSection from "./LeftSection";
 import coverImage from "../../assets/banner.webp";
+import { useLanguage, type Language } from "../../contexts/LanguageContext";
 
 import { useEffect } from "react";
 import { useState } from "react";
@@ -99,8 +100,63 @@ const RightContent = styled.div`
   }
 `;
 
+const LanguageSwitcherContainer = styled.div`
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: flex;
+  gap: var(--space-2);
+  z-index: 100;
+
+  @media (min-width: 48rem) {
+    top: var(--space-4);
+    right: var(--space-4);
+  }
+
+  @media (min-width: 64rem) {
+    top: var(--space-5);
+    right: var(--space-5);
+  }
+`;
+
+const LangButton = styled.button<{ $active?: boolean }>`
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid ${({ $active }) => ($active ? 'var(--emerald-green)' : 'var(--color-line)')};
+  border-radius: var(--radius-5);
+  background: ${({ $active }) => ($active ? 'var(--white)' : 'transparent')};
+  color: ${({ $active }) => ($active ? 'var(--emerald-green)' : 'var(--slate-grey)')};
+  font-family: var(--font-sans);
+  font-size: var(--space-3);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+  transition: all 0.2s ease;
+
+  &:hover {
+    border-color: var(--emerald-green);
+    color: var(--emerald-green);
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: none;
+  }
+
+  &:active {
+    outline: none;
+  }
+
+  @media (min-width: 48rem) {
+    font-size: var(--space-4);
+    padding: var(--space-2) var(--space-4);
+  }
+`;
+
 const ContainerLayout = ({ children }: { children: React.ReactNode }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const { language, setLanguage, languages } = useLanguage();
 
   useEffect(() => {
     const intervalId = setInterval(() => {
@@ -113,6 +169,17 @@ const ContainerLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <Container>
       <Wrapper>
+        <LanguageSwitcherContainer>
+          {languages.map((lang) => (
+            <LangButton
+              key={lang.code}
+              $active={language === lang.code}
+              onClick={() => setLanguage(lang.code as Language)}
+            >
+              {lang.label}
+            </LangButton>
+          ))}
+        </LanguageSwitcherContainer>
         <LeftSection
           currentImage={images[currentIndex]}
           currentIndex={currentIndex}

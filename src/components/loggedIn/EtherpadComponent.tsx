@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import styled from 'styled-components';
 import ETHERPAD_CONFIG from '../../utils/etherpadConfig';
 import { useUserInfo } from '../../hooks/queries/useUser';
+import { useTranslation } from 'react-i18next';
 
 interface EtherpadProps {
   roomId?: number;
@@ -51,6 +52,7 @@ const EtherpadComponent: React.FC<EtherpadProps> = ({
 }) => {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { userInfo } = useUserInfo();
+  const { t } = useTranslation();
 
   // Generate Pad ID
   const padId = roomId ? `${ETHERPAD_CONFIG.PAD_PREFIX}${roomId}` : 'shared-notes';
@@ -94,7 +96,7 @@ const EtherpadComponent: React.FC<EtherpadProps> = ({
       <EtherpadIframe
         ref={iframeRef}
         src={generateEtherpadUrl()}
-        title="Etherpad Collaborative Editor"
+        title={t('etherpad.etherpadTitle')}
         allow="fullscreen"
         onLoad={handleIframeLoad}
         $isResizing={isResizing}

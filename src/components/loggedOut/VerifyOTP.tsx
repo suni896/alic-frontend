@@ -4,6 +4,7 @@ import ContainerLayout from "./ContainerLayout";
 import { useNavigate } from "react-router-dom";
 import { SigninForm, AuthForm, SubmitButton, ForgotPassword, Title, ConfirmationText, EmailHighlight, CodeInputContainer, CodeInput, ErrorMessage } from "../ui/SharedComponents";
 import { useOtpVerification } from "./useOtpVerification";
+import { useTranslation } from "react-i18next";
 
 interface VerifyOTPProps {
   onVerifySuccess: (token: string) => void;
@@ -12,6 +13,7 @@ interface VerifyOTPProps {
 }
 
 function VerifyOTP({ onVerifySuccess, type, email }: VerifyOTPProps): JSX.Element {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // 使用共享 Hook，移除本地 formik/showError/handlers 重复实现
@@ -29,11 +31,11 @@ function VerifyOTP({ onVerifySuccess, type, email }: VerifyOTPProps): JSX.Elemen
       <ContainerLayout>
         {/* SigninForm 仅用于布局容器 */}
         <SigninForm>
-          <Title>Enter verification code</Title>
+          <Title>{t('auth.enterVerificationCode')}</Title>
           <ConfirmationText>
-            We've sent a verification code to <EmailHighlight>{email}</EmailHighlight>
+            {t('auth.verificationCodeSent')} <EmailHighlight>{email}</EmailHighlight>
             <br />
-            Check your inbox and enter the code here.
+            {t('auth.checkInbox')}
           </ConfirmationText>
 
           {/* 实际表单提交在这里 */}
@@ -78,10 +80,10 @@ function VerifyOTP({ onVerifySuccess, type, email }: VerifyOTPProps): JSX.Elemen
               <ErrorMessage>{formik.errors.otp as string}<br /><br /></ErrorMessage>
             ) : showError ? (
               <ErrorMessage>
-                The code is incorrect or expired.{" "}
+                {t('auth.codeIncorrect')}{" "}
                 <br />
                 <ForgotPassword onClick={handleRequestNewCode}>
-                  Request a new code
+                  {t('auth.requestNewCode')}
                 </ForgotPassword>
               </ErrorMessage>
             ) : (
@@ -91,11 +93,11 @@ function VerifyOTP({ onVerifySuccess, type, email }: VerifyOTPProps): JSX.Elemen
               </ErrorMessage>
             )}
 
-            <SubmitButton type="submit">Verify Code</SubmitButton>
+            <SubmitButton type="submit">{t('auth.verifyCode')}</SubmitButton>
           </AuthForm>
 
           <ForgotPassword onClick={() => navigate("/")}>
-            Back to Sign In
+            {t('auth.backToSignIn')}
           </ForgotPassword>
         </SigninForm>
       </ContainerLayout>

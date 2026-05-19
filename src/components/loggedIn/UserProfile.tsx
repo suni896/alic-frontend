@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import styled, { keyframes } from "styled-components";
 import { PiSignOutBold, PiPersonBold } from "react-icons/pi";
 import { RxCross2 } from "react-icons/rx";
+import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { useUserInfo } from "../../hooks/queries/useUser";
 import { useLogout } from "../../hooks/queries/useUser";
@@ -253,6 +254,7 @@ export const ProfilePopUp: React.FC<ProfilePopUpProps> = ({ onClose }) => {
   const [isEditingUsername, setIsEditingUsername] = useState(false);
   const popupRef = useRef<HTMLDivElement>(null);
   const logoutMutation = useLogout();
+  const { t } = useTranslation();
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -273,14 +275,14 @@ export const ProfilePopUp: React.FC<ProfilePopUpProps> = ({ onClose }) => {
         localStorage.clear();
         document.cookie =
           "jwtToken=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=None";
-        alert("Successfully logged out!");
+        alert(t('userProfile.logoutSuccess'));
         navigate("/");
       } else {
-        alert(response.message || "Failed to log out");
+        alert(response.message || t('userProfile.logoutFailed'));
       }
     } catch (error) {
       console.error("Error logging out", error);
-      alert("Failed to log out.");
+        alert(t('userProfile.logoutFailed'));
     }
   };
 
@@ -315,12 +317,13 @@ export const ProfilePopUp: React.FC<ProfilePopUpProps> = ({ onClose }) => {
       </ModalCloseButton>
       <StyledSignOutContainer onClick={handleEditUsername}>
         <StyledPersonIcon />
-        <StyledSignOutText>Me</StyledSignOutText>
+        <StyledSignOutText>{t('userProfile.me')}</StyledSignOutText>
       </StyledSignOutContainer>
+      <HorizontalLine />
       <HorizontalLine />
       <StyledSignOutContainer onClick={handleLogout}>
         <StyledSignOutIcon />
-        <StyledSignOutText>Sign Out</StyledSignOutText>
+        <StyledSignOutText>{t('userProfile.signOut')}</StyledSignOutText>
       </StyledSignOutContainer>
     </ProfilePopUpContainer>
   );
@@ -333,6 +336,7 @@ interface UserInfoDisplayProps {
 }
 
 export const UserInfoDisplay: React.FC<UserInfoDisplayProps> = ({ onClick }) => {
+  const { t } = useTranslation();
   const { userInfo } = useUserInfo();
 
   if (!userInfo) return null;
@@ -341,7 +345,7 @@ export const UserInfoDisplay: React.FC<UserInfoDisplayProps> = ({ onClick }) => 
     <ProfileContainer onClick={onClick}>
       <Avatar
         src={userInfo.userPortrait ? `data:image/png;base64,${userInfo.userPortrait}` : undefined}
-        alt="User Avatar"
+        alt={t('userProfile.userAvatar')}
       />
       <ProfileContent>
         <UserTextStack>
@@ -360,12 +364,13 @@ interface UserProfileProps {
 }
 
 export const UserProfile: React.FC<UserProfileProps> = ({ showBackdrop = true }) => {
+  const { t } = useTranslation();
   const { userInfo, isUserInfoLoading, userInfoError } = useUserInfo();
   const [profileOpen, setProfileOpen] = useState(false);
 
   const renderEmptyState = () => (
     <EmptyStateContainer>
-      <EmptyStateMessage>No user information available</EmptyStateMessage>
+      <EmptyStateMessage>{t('userProfile.noUserInfo')}</EmptyStateMessage>
     </EmptyStateContainer>
   );
 
@@ -387,7 +392,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ showBackdrop = true })
       <ProfileContainer onClick={() => setProfileOpen(!profileOpen)}>
         <Avatar
           src={userInfo.userPortrait ? `data:image/png;base64,${userInfo.userPortrait}` : undefined}
-          alt="User Avatar"
+          alt={t('userProfile.userAvatar')}
         />
         <ProfileContent>
           <UserTextStack>

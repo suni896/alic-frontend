@@ -5,6 +5,7 @@ import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
 import VerifyOTP from "./VerifyOTP";
 import { useSendResetEmail, useResetPassword } from "../../hooks/queries/useAuth";
+import { useTranslation } from "react-i18next";
 import { Input, HelperText, ErrorText, SubmitButton, SigninForm, Title, FieldGroup, ForgotPassword, AuthForm, PasswordInput } from "../ui/SharedComponents";
 
 interface ResetPasswordFormValues {
@@ -13,29 +14,29 @@ interface ResetPasswordFormValues {
   confirmPassword?: string;
 }
 
-const validationSchema = Yup.object({
-  email: Yup.string()
-    .email("Invalid email address")
-    .required("Email is required"),
-});
-
-const resetPasswordValidationSchema = Yup.object({
-  password: Yup.string()
-    .min(6, "Password must be between 6 and 20 characters")
-    .max(20, "Password must be between 6 and 20 characters")
-    .matches(
-      /^[a-zA-Z0-9!@#$%^&*()_+=[\]{}|;:'",.<>?/`~\\-]*$/,
-      "Password can only include letters, numbers, and special characters"
-    )
-    .required("Password is required"),
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref("password")], "Passwords must match")
-    .required("Confirm Password is required"),
-});
-
 type ResetValues = { password: string; confirmPassword: string };
 
 const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEmail }) => {
+  const { t } = useTranslation();
+  const validationSchema = Yup.object({
+    email: Yup.string()
+      .email(t('auth.invalidEmail'))
+      .required(t('auth.emailRequired')),
+  });
+
+  const resetPasswordValidationSchema = Yup.object({
+    password: Yup.string()
+      .min(6, t('auth.passwordLength'))
+      .max(20, t('auth.passwordLength'))
+      .matches(
+        /^[a-zA-Z0-9!@#$%^&*()_+=[\]{}|;:'",.<>?/`~\\-]*$/,
+        t('auth.passwordChars')
+      )
+      .required(t('auth.passwordRequired')),
+    confirmPassword: Yup.string()
+      .oneOf([Yup.ref("password")], t('auth.passwordsMustMatch'))
+      .required(t('auth.confirmPasswordRequired')),
+  });
   const [step, setStep] = useState(1);
   const [token, setToken] = useState<string | null>(null);
   const navigate = useNavigate();
@@ -56,15 +57,15 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
           });
 
           if (response.code === 200) {
-            alert("Reset email sent successfully! Check your inbox.");
+            alert(t('auth.resetEmailSent'));
             setEmail(values.email);
             setStep(2); // Move to OTP verification
           } else {
-            alert(response.message || "Failed to send reset email.");
+            alert(response.message || t('auth.sendResetFailed'));
           }
         } catch (error) {
           console.error("Error sending reset email:", error);
-          alert("Failed to send reset email. Please try again.");
+          alert(t('auth.sendResetFailed'));
         }
       }
     },
@@ -87,14 +88,14 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
           });
 
           if (response.code === 200) {
-            alert("Password reset successfully!");
+            alert(t('auth.passwordResetSuccess'));
             navigate("/"); // Redirect to home
           } else {
-            alert(response.message || "Failed to reset password.");
+            alert(response.message || t('auth.resetPasswordFailed'));
           }
         } catch (error) {
           console.error("Error resetting password:", error);
-          alert("Failed to reset password. Please try again.");
+          alert(t('auth.resetPasswordFailed'));
         }
       }
     },
@@ -110,7 +111,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
       {step === 1 && (
         <ContainerLayout>
           <SigninForm>
-            <Title>Reset Password</Title>
+            <Title>{t('auth.resetPasswordTitle')}</Title>
 
             <AuthForm onSubmit={sendmailFormik.handleSubmit}>
               <FieldGroup>
@@ -118,7 +119,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
                   type="email"
                   id="email"
                   name="email"
-                  placeholder="Email"
+                  placeholder={t('auth.emailPlaceholder')}
                   value={sendmailFormik.values.email}
                   onChange={sendmailFormik.handleChange}
                   onBlur={sendmailFormik.handleBlur}
@@ -128,15 +129,15 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
                 {sendmailFormik.touched.email && sendmailFormik.errors.email ? (
                   <ErrorText $visible>{sendmailFormik.errors.email}</ErrorText>
                 ) : (
-                  <HelperText>We'll never share your email.</HelperText>
+                  <HelperText>{t('auth.emailHelper')}</HelperText>
                 )}
               </FieldGroup>
 
-              <SubmitButton type="submit">Send Reset Email</SubmitButton>
+              <SubmitButton type="submit">{t('auth.sendResetEmail')}</SubmitButton>
             </AuthForm>
 
             <ForgotPassword onClick={() => navigate("/")}>
-              Back to Sign In
+              {t('auth.backToSignIn')}
             </ForgotPassword>
           </SigninForm>
         </ContainerLayout>
@@ -151,13 +152,13 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
       {step === 3 && (
         <ContainerLayout>
           <SigninForm>
-            <Title>Set New Password</Title>
+            <Title>{t('auth.setNewPasswordTitle')}</Title>
             <AuthForm onSubmit={resetPasswordFormik.handleSubmit}>
             <FieldGroup>
               <PasswordInput
                 id="password"
                 name="password"
-                placeholder="New password"
+                placeholder={t('auth.newPasswordPlaceholder')}
                 value={resetPasswordFormik.values.password}
                 onChange={resetPasswordFormik.handleChange}
                 onBlur={resetPasswordFormik.handleBlur}
@@ -171,7 +172,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
               {resetPasswordFormik.touched.password && resetPasswordFormik.errors.password ? (
                 <ErrorText $visible>{resetPasswordFormik.errors.password}</ErrorText>
               ) : (
-                <HelperText>Password must be between 6 and 20 characters.</HelperText>
+                <HelperText>{t('auth.passwordHelper')}</HelperText>
               )}
             </FieldGroup>
 
@@ -179,7 +180,7 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
               <PasswordInput
                 id="confirmPassword"
                 name="confirmPassword"
-                placeholder="Confirm new password"
+                placeholder={t('auth.confirmNewPasswordPlaceholder')}
                 value={resetPasswordFormik.values.confirmPassword}
                 onChange={resetPasswordFormik.handleChange}
                 onBlur={resetPasswordFormik.handleBlur}
@@ -191,14 +192,14 @@ const ResetPassword: React.FC<{ setEmail: (email: string) => void }> = ({ setEma
               {resetPasswordFormik.touched.confirmPassword && resetPasswordFormik.errors.confirmPassword ? (
                 <ErrorText $visible>{resetPasswordFormik.errors.confirmPassword}</ErrorText>
               ) : (
-                <HelperText>Password must be between 6 and 20 characters.</HelperText>
+                <HelperText>{t('auth.passwordHelper')}</HelperText>
               )}
             </FieldGroup>
 
-            <SubmitButton type="submit">Submit</SubmitButton>
+            <SubmitButton type="submit">{t('common.submit')}</SubmitButton>
             </AuthForm>
             <ForgotPassword onClick={() => navigate("/")}>
-              Back to Sign In
+              {t('auth.backToSignIn')}
             </ForgotPassword>
           </SigninForm>
         </ContainerLayout>

@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useJoinGroup } from "../../hooks/queries/useGroup";
 import { useUserInfo } from "../../hooks/queries/useUser";
+import { useTranslation } from "react-i18next";
 
 export interface RoomGroup {
   groupId: number;
@@ -14,6 +15,7 @@ export interface RoomGroup {
 }
 
 export function useJoinRoom() {
+  const { t } = useTranslation();
   const { userInfo } = useUserInfo();
   const joinGroupMutation = useJoinGroup();
 
@@ -37,15 +39,15 @@ export function useJoinRoom() {
           setRedirectPath(`/my-room/${groupId}`);
           return true;
         } else {
-          alert(response.message || "Failed to join group.");
+          alert(response.message || t('joinRooms.failedToJoinGroup'));
           return false;
         }
       } catch (error: any) {
-        alert(error.message || "Failed to join group");
+        alert(error.message || t('joinRooms.failedToJoinGroup'));
         return false;
       }
     },
-    [userInfo?.userId, joinGroupMutation]
+    [userInfo?.userId, joinGroupMutation, t]
   );
 
   const handleJoinClick = useCallback(
@@ -74,7 +76,7 @@ export function useJoinRoom() {
 
   const handlePasswordSubmit = useCallback(() => {
     if (!password.trim()) {
-      alert("Password is required");
+      alert(t('joinRooms.passwordRequiredJoin'));
       return;
     }
 
@@ -83,7 +85,7 @@ export function useJoinRoom() {
       setShowPasswordModal(false);
       setPassword("");
     }
-  }, [selectedRoomId, password, joinGroup]);
+  }, [selectedRoomId, password, joinGroup, t]);
 
   return {
     handleJoinClick,

@@ -9,6 +9,7 @@ import RoomMembersComponent from "./RoomMembersComponent";
 import { FiTag} from "react-icons/fi";
 import { useUserRole, useGroupInfo } from "../../hooks/queries/useGroup";
 import { useTagBindedToGroup } from "../../hooks/queries/useTag";
+import { useTranslation } from "react-i18next";
 
 interface TagData {
   tagId: number;
@@ -383,6 +384,7 @@ interface RoomNavbarProps {
 }
 
 const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId, onMenuClick }) => {
+  const { t } = useTranslation();
   const [isModifyRoomInfoVisible, setIsModifyRoomInfoVisible] = useState(false);
   const [isRoomMembersVisible, setIsRoomMembersVisible] = useState(false);
   const [tagData, setTagData] = useState<TagData[]>([]);
@@ -424,7 +426,7 @@ const RoomNavbar: React.FC<RoomNavbarProps> = ({ groupId, onMenuClick }) => {
   return (
     <Container>
       <TitleContainer>
-        <MenuButton onClick={onMenuClick} aria-label="Open sidebar">
+        <MenuButton onClick={onMenuClick} aria-label={t('navbar.openSidebar')}>
           <FiMenu size={24} />
         </MenuButton>
         <BackArrow onClick={() => navigate("/search-rooms")} />

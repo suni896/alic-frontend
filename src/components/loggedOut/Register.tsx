@@ -3,6 +3,7 @@ import * as Yup from "yup";
 import { useNavigate } from "react-router-dom";
 import ContainerLayout from "./ContainerLayout";
 import { useSendRegisterEmail } from "../../hooks/queries/useAuth";
+import { useTranslation } from "react-i18next";
 import { Input, ErrorText, SubmitButton, HelperText, Title, FieldGroup, ForgotPassword, SigninForm, AuthForm, PasswordInput } from "../ui/SharedComponents";
 
 interface RegisterFormValues {
@@ -14,31 +15,31 @@ interface RegisterFormValues {
 
 type RegisterProps = { setEmail: (email: string) => void };
 
-const validationSchema = Yup.object({
-  email: Yup.string()
-    .email("Invalid email address")
-    .required("Email is required"),
-  password: Yup.string()
-    .min(6, "Password must be between 6 and 20 characters")
-    .max(20, "Password must be between 6 and 20 characters")
-    .matches(
-      /^[a-zA-Z0-9!@#$%^&*()_+=[\]{}|;:'",.<>?/`~\\-]*$/,
-      "Password can only include letters, numbers, and special characters"
-    )
-    .required("Password is required"),
-  confirmPassword: Yup.string()
-    .oneOf([Yup.ref("password")], "Passwords must match")
-    .required("Confirm Password is required"),
-  username: Yup.string()
-    .matches(
-      /^[a-zA-Z0-9]*$/,
-      "Username can only contain English letters and numbers"
-    )
-    .max(20, "Username must be at most 20 characters")
-    .required("Username is required"),
-});
-
 const Register = ({ setEmail }: RegisterProps): JSX.Element => {
+  const { t } = useTranslation();
+  const validationSchema = Yup.object({
+    email: Yup.string()
+      .email(t('auth.invalidEmail'))
+      .required(t('auth.emailRequired')),
+    password: Yup.string()
+      .min(6, t('auth.passwordLength'))
+      .max(20, t('auth.passwordLength'))
+      .matches(
+        /^[a-zA-Z0-9!@#$%^&*()_+=[\]{}|;:'",.<>?/`~\\-]*$/,
+        t('auth.passwordChars')
+      )
+      .required(t('auth.passwordRequired')),
+    confirmPassword: Yup.string()
+      .oneOf([Yup.ref("password")], t('auth.passwordsMustMatch'))
+      .required(t('auth.confirmPasswordRequired')),
+    username: Yup.string()
+      .matches(
+        /^[a-zA-Z0-9]*$/,
+        t('auth.usernameChars')
+      )
+      .max(20, t('auth.usernameMaxLength'))
+      .required(t('auth.usernameRequired')),
+  });
   const navigate = useNavigate();
   const sendRegisterEmailMutation = useSendRegisterEmail();
 
@@ -59,19 +60,19 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
         });
 
         if (response.code === 200) {
-          alert("Verification email sent successfully!");
+          alert(t('auth.verificationEmailSent'));
           setEmail(values.email);
           navigate("/verify-register");
         } else {
-          alert(response.message || "Failed to send verification email.");
+          alert(response.message || t('auth.sendVerificationFailed'));
         }
       } catch (error: unknown) {
         if (error instanceof Error) {
           console.error("Send email error:", error.message);
-          alert(error.message || "Failed to send verification email. Please try again.");
+          alert(error.message || t('auth.sendVerificationFailed'));
         } else {
           console.error("Unexpected error:", error);
-          alert("An unexpected error occurred. Please try again.");
+          alert(t('auth.unexpectedError'));
         }
       }
     },
@@ -80,13 +81,13 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
   return (
     <ContainerLayout>
       <SigninForm>
-        <Title>Register</Title>
+        <Title>{t('auth.registerTitle')}</Title>
         <AuthForm onSubmit={formik.handleSubmit}>
           <FieldGroup>
             <Input
               type="email"
               name="email"
-              placeholder="Email"
+              placeholder={t('auth.emailPlaceholder')}
               value={formik.values.email}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
@@ -96,7 +97,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
             {formik.touched.email && formik.errors.email ? (
               <ErrorText $visible>{formik.errors.email}</ErrorText>
             ) : (
-              <HelperText>We'll never share your email.</HelperText>
+              <HelperText>{t('auth.emailHelper')}</HelperText>
             )}
           </FieldGroup>
 
@@ -105,7 +106,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
               type="text"
               id="username"
               name="username"
-              placeholder="Username"
+              placeholder={t('auth.usernamePlaceholder')}
               value={formik.values.username}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
@@ -115,7 +116,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
             {formik.touched.username && formik.errors.username ? (
               <ErrorText $visible>{formik.errors.username}</ErrorText>
             ) : (
-              <HelperText>Username can only contain English letters and numbers</HelperText>
+              <HelperText>{t('auth.usernameHelper')}</HelperText>
             )}
           </FieldGroup>
 
@@ -123,7 +124,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
             <PasswordInput
               id="password"
               name="password"
-              placeholder="Password"
+              placeholder={t('auth.passwordPlaceholder')}
               value={formik.values.password}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
@@ -133,7 +134,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
             {formik.touched.password && formik.errors.password ? (
               <ErrorText $visible>{formik.errors.password}</ErrorText>
             ) : (
-              <HelperText>Password must be between 6 and 20 characters.</HelperText>
+              <HelperText>{t('auth.passwordHelper')}</HelperText>
             )}
           </FieldGroup>
 
@@ -141,7 +142,7 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
             <PasswordInput
               id="confirmPassword"
               name="confirmPassword"
-              placeholder="Comfirm password"
+              placeholder={t('auth.confirmPasswordPlaceholder')}
               value={formik.values.confirmPassword}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
@@ -151,15 +152,15 @@ const Register = ({ setEmail }: RegisterProps): JSX.Element => {
             {formik.touched.confirmPassword && formik.errors.confirmPassword ? (
               <ErrorText $visible>{formik.errors.confirmPassword}</ErrorText>
             ) : (
-              <HelperText>Password must be between 6 and 20 characters.</HelperText>
+              <HelperText>{t('auth.passwordHelper')}</HelperText>
             )}
           </FieldGroup>
 
-          <SubmitButton type="submit">Register</SubmitButton>
+          <SubmitButton type="submit">{t('auth.register')}</SubmitButton>
         </AuthForm>
 
         <ForgotPassword onClick={() => navigate("/")}>
-          Already have an account? Sign In
+          {t('auth.hasAccount')}
         </ForgotPassword>
       </SigninForm>
     </ContainerLayout>

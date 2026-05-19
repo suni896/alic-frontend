@@ -5,22 +5,9 @@ import { useEffect, useState } from "react";
 import ContainerLayout from "./ContainerLayout";
 import { useUserInfo } from "../../hooks/queries/useUser";
 import { useLogin } from "../../hooks/queries/useAuth";
+import { useTranslation } from "react-i18next";
 import { getUserInfo } from "../../api/user.api";
 import { Input, ErrorText, SubmitButton, Title, FieldGroup, ForgotPassword, HelperText, SigninForm, AuthForm, PasswordInput } from "../ui/SharedComponents";
-
-const validationSchema = Yup.object({
-  email: Yup.string()
-    .email("Invalid email address")
-    .required("Email is required"),
-  password: Yup.string()
-    .min(6, "Password must be between 6 and 20 characters")
-    .max(20, "Password must be between 6 and 20 characters")
-    .matches(
-      /^[a-zA-Z0-9!@#$%^&*()_+=[\]{}|;:'",.<>?/`~\\-]*$/,
-      "Password can only include letters, numbers, and special characters"
-    )
-    .required("Password is required"),
-});
 
 interface FormValues {
   email: string;
@@ -28,6 +15,20 @@ interface FormValues {
 }
 
 const Signin = (): JSX.Element => {
+  const { t } = useTranslation();
+  const validationSchema = Yup.object({
+    email: Yup.string()
+      .email(t('auth.invalidEmail'))
+      .required(t('auth.emailRequired')),
+    password: Yup.string()
+      .min(6, t('auth.passwordLength'))
+      .max(20, t('auth.passwordLength'))
+      .matches(
+        /^[a-zA-Z0-9!@#$%^&*()_+=[\]{}|;:'",.<>?/`~\\-]*$/,
+        t('auth.passwordChars')
+      )
+      .required(t('auth.passwordRequired')),
+  });
   const navigate = useNavigate();
   const { refreshUserInfo } = useUserInfo();
   const loginMutation = useLogin();
@@ -80,15 +81,15 @@ const Signin = (): JSX.Element => {
           await refreshUserInfo();
           navigate("/search-rooms");
         } else {
-          alert(response.message || "Failed to log in. Please try again.");
+          alert(response.message || t('auth.loginFailed'));
         }
       } catch (error: unknown) {
         if (error instanceof Error) {
           console.error("Login error:", error.message);
-          alert(error.message || "Failed to log in. Please try again.");
+          alert(error.message || t('auth.loginFailed'));
         } else {
           console.error("Unexpected error:", error);
-          alert("An unexpected error occurred. Please try again.");
+          alert(t('auth.unexpectedError'));
         }
       }
     },
@@ -108,7 +109,7 @@ const Signin = (): JSX.Element => {
       <ContainerLayout>
         <SigninForm>
           <div style={{ textAlign: "center", padding: "2rem" }}>
-            <div>Loading...</div>
+            <div>{t('common.loading')}</div>
           </div>
         </SigninForm>
       </ContainerLayout>
@@ -119,14 +120,14 @@ const Signin = (): JSX.Element => {
     <>
       <ContainerLayout>
         <SigninForm>
-          <Title>Login to your account</Title>
+          <Title>{t('auth.loginTitle')}</Title>
           <AuthForm onSubmit={formik.handleSubmit}>
             <FieldGroup>
               <Input
                 type="email"
                 id="email"
                 name="email"
-                placeholder="Enter your email"
+                placeholder={t('auth.emailPlaceholder')}
                 value={formik.values.email}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
@@ -136,7 +137,7 @@ const Signin = (): JSX.Element => {
               {formik.touched.email && formik.errors.email ? (
                 <ErrorText $visible>{formik.errors.email}</ErrorText>
               ) : (
-                <HelperText>We'll never share your email.</HelperText>
+                <HelperText>{t('auth.emailHelper')}</HelperText>
               )}
             </FieldGroup>
 
@@ -144,7 +145,7 @@ const Signin = (): JSX.Element => {
               <PasswordInput
                 id="password"
                 name="password"
-                placeholder="Enter your password"
+                placeholder={t('auth.passwordPlaceholder')}
                 value={formik.values.password}
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
@@ -155,17 +156,17 @@ const Signin = (): JSX.Element => {
                 <ErrorText $visible>{formik.errors.password}</ErrorText>
               ) : (
                 <HelperText>
-                  Password must be between 6 and 20 characters.
+                  {t('auth.passwordHelper')}
                 </HelperText>
               )}
             </FieldGroup>
           <ForgotPassword onClick={handleResetPassword}>
-            Forgot password?
+            {t('auth.forgotPassword')}
           </ForgotPassword>
-          <SubmitButton type="submit">Sign In</SubmitButton>
+          <SubmitButton type="submit">{t('auth.signIn')}</SubmitButton>
           </AuthForm>
           <ForgotPassword onClick={handleRegister}>
-            Don’t have an account? Get Started
+            {t('auth.noAccount')}
           </ForgotPassword>
         </SigninForm>
       </ContainerLayout>

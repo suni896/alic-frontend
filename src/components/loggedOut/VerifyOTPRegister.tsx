@@ -4,6 +4,7 @@ import ContainerLayout from "./ContainerLayout";
 import { useNavigate } from "react-router-dom";
 import { SubmitButton, Title, ConfirmationText, EmailHighlight, CodeInputContainer, CodeInput, SigninForm, AuthForm, ForgotPassword, ErrorMessage } from "../ui/SharedComponents";
 import { useOtpVerification } from "./useOtpVerification";
+import { useTranslation } from "react-i18next";
 
 interface VerifyOTPRegisterProps {
   onVerifySuccess: (token: string) => void;
@@ -11,6 +12,7 @@ interface VerifyOTPRegisterProps {
 }
 
 const VerifyOTPRegister = ({ onVerifySuccess, email }: VerifyOTPRegisterProps): JSX.Element => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
 
   // 使用共享 Hook 抽取表单与交互逻辑（注册场景）
@@ -29,12 +31,12 @@ const VerifyOTPRegister = ({ onVerifySuccess, email }: VerifyOTPRegisterProps): 
   return (
     <ContainerLayout>
       <SigninForm>
-        <Title>Enter verification code</Title>
+        <Title>{t('auth.enterVerificationCode')}</Title>
         <ConfirmationText>
-          We've sent a verification code to <EmailHighlight>{email}</EmailHighlight>
+          {t('auth.verificationCodeSent')} <EmailHighlight>{email}</EmailHighlight>
         </ConfirmationText>
         <ConfirmationText>
-          Check your inbox and enter the code here.
+          {t('auth.checkInbox')}
         </ConfirmationText>
 
         <AuthForm autoComplete="off" onSubmit={formik.handleSubmit}>
@@ -78,10 +80,10 @@ const VerifyOTPRegister = ({ onVerifySuccess, email }: VerifyOTPRegisterProps): 
             <ErrorMessage>{formik.errors.otp as string}<br /><br /></ErrorMessage>
           ) : showError ? (
             <ErrorMessage>
-              The code is incorrect or expired.{" "}
+              {t('auth.codeIncorrect')}{" "}
               <br />
               <ForgotPassword onClick={handleRequestNewCode}>
-                Request a new code
+                {t('auth.requestNewCode')}
               </ForgotPassword>
             </ErrorMessage>
           ) : (
@@ -91,11 +93,11 @@ const VerifyOTPRegister = ({ onVerifySuccess, email }: VerifyOTPRegisterProps): 
             </ErrorMessage>
           )}
 
-          <SubmitButton type="submit">Verify Code</SubmitButton>
+          <SubmitButton type="submit">{t('auth.verifyCode')}</SubmitButton>
         </AuthForm>
 
         <ForgotPassword onClick={() => navigate("/")}>
-          Back to Sign In
+          {t('auth.backToSignIn')}
         </ForgotPassword>
       </SigninForm>
     </ContainerLayout>

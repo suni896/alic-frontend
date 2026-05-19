@@ -4,6 +4,7 @@ import { FiX } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import Button from "../ui/Button";
 import { useCreateTag } from "../../hooks/queries/useTagMutations";
+import { useTranslation } from "react-i18next";
 import {
   ModalBackdrop,
   ModalContainer,
@@ -32,17 +33,18 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const createTagMutation = useCreateTag();
+  const { t } = useTranslation();
 
   const handleCreateTag = async () => {
     const trimmedTagName = tagName.trim();
     
     if (!trimmedTagName) {
-      setError("Tag name is required");
+      setError(t('myClass.tagNameRequired'));
       return;
     }
 
     if (!trimmedTagName.match(/^[A-Za-z0-9]{1,20}$/)) {
-      setError("Tag name must contain only letters and numbers (1-20 characters)");
+      setError(t('myClass.tagNameInvalid'));
       return;
     }
 
@@ -60,7 +62,7 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({
           "Tag created successfully with ID:",
           response.data.tagId
         );
-        alert('Tag created successfully!');
+        alert(t('myClass.tagCreatedSuccess'));
         navigate(`/my-class/${response.data.tagId.toString()}`);
         onClose();
         if (onTagCreated) {
@@ -68,15 +70,15 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({
         }
       } else {
         console.error("API returned error:", response);
-        setError(`Failed to create tag: ${response.message}`);
+        setError(`${t('myClass.createTagFailed')}: ${response.message}`);
       }
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error creating tag:", error.message);
-        setError(error.message || "Failed to create tag.");
+        setError(error.message || t('myClass.createTagFailed'));
       } else {
         console.error("Unexpected error:", error);
-        setError("An unexpected error occurred. Please try again.");
+        setError(t('myClass.createTagError'));
       }
     }
   };
@@ -97,25 +99,25 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({
     <ModalBackdrop onClick={onClose} className="modal-backdrop-right">
       <ModalContainer onClick={(e) => e.stopPropagation()}>
         {/* 右上角关闭按钮 */}
-        <ModalCloseButton onClick={onClose} aria-label="Close">
+        <ModalCloseButton onClick={onClose} aria-label={t('common.close')}>
           <FiX size={24} />
         </ModalCloseButton>
 
         {/* 顶部标题 */}
         <HeaderSection>
-          <HeaderTitle>Create New Tag</HeaderTitle>
-          <HeaderSubTitle>Create a new tag for your class.</HeaderSubTitle>
+          <HeaderTitle>{t('myClass.createNewTag')}</HeaderTitle>
+          <HeaderSubTitle>{t('myClass.createTagSubtitle')}</HeaderSubTitle>
         </HeaderSection>
 
 
         {/* Tag Name 字段 */}
-        <InputLabel>Tag Name</InputLabel>
+        <InputLabel>{t('myClass.tagName')}</InputLabel>
         <InputWrapper>
           <SharedInput
             value={tagName}
             onChange={handleInputChange}
             onKeyPress={handleKeyPress}
-            placeholder="Enter tag name"
+            placeholder={t('myClass.tagNamePlaceholder')}
             disabled={createTagMutation.isPending}
             $hasError={!!error}
           />
@@ -127,12 +129,12 @@ const CreateNewTag: React.FC<CreateNewTagProps> = ({
         <ButtonContainer>
           <FixedButtonContainer>
             <Button variant="cancel" onClick={onClose} disabled={createTagMutation.isPending}>
-              Cancel
+              {t('common.cancel')}
             </Button>
           </FixedButtonContainer>
           <FixedButtonContainer>
             <Button onClick={handleCreateTag} disabled={createTagMutation.isPending || !tagName.trim()}>
-              {createTagMutation.isPending ? "Creating..." : "Create Tag"}
+              {createTagMutation.isPending ? t('myClass.creatingTag') : t('myClass.createTagButton')}
             </Button>
           </FixedButtonContainer>
         </ButtonContainer>

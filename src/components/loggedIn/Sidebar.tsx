@@ -18,6 +18,7 @@ import { RoomGroup } from "./useJoinRoom";
 import { MdGroup } from "react-icons/md";
 import LabeledInputWithCount from "../ui/Input";
 import logo from "../../assets/alicloggreen.png";
+import { useTranslation } from "react-i18next";
 import {
   HorizontalLine,
   PaginationContainer,
@@ -523,10 +524,11 @@ const PlusButtonOverlay: React.FC<PlusButtonOverlayProps> = ({
   isCreateTagOverlayVisible,
   setIsCreateTagOverlayVisible,
 }) => {
+  const { t } = useTranslation();
   return (
     <PlusButtonOverlayContainer>
       <PlusButtonTitleContainer>
-        <StyledPlusButtonTitleText>Create New</StyledPlusButtonTitleText>
+        <StyledPlusButtonTitleText>{t('sidebar.createNew')}</StyledPlusButtonTitleText>
       </PlusButtonTitleContainer>
       <PlusButtonOptionContainer
         onClick={() => {
@@ -534,7 +536,7 @@ const PlusButtonOverlay: React.FC<PlusButtonOverlayProps> = ({
         }}
       >
         <StyledIoMdPersonAdd />
-        <StyledPlusButtonOptionText>Create New Room</StyledPlusButtonOptionText>
+        <StyledPlusButtonOptionText>{t('sidebar.createNewRoom')}</StyledPlusButtonOptionText>
       </PlusButtonOptionContainer>
       <PlusButtonOptionContainer
         onClick={() => {
@@ -542,7 +544,7 @@ const PlusButtonOverlay: React.FC<PlusButtonOverlayProps> = ({
         }}
       >
         <StyledMdPeopleAlt />
-        <StyledPlusButtonOptionText>Join A Room</StyledPlusButtonOptionText>
+        <StyledPlusButtonOptionText>{t('sidebar.joinARoom')}</StyledPlusButtonOptionText>
       </PlusButtonOptionContainer>
       <PlusButtonOptionContainer
         onClick={() => {
@@ -550,7 +552,7 @@ const PlusButtonOverlay: React.FC<PlusButtonOverlayProps> = ({
         }}
       >
         <StyledFiTag />
-        <StyledPlusButtonOptionText>Create New Tag</StyledPlusButtonOptionText>
+        <StyledPlusButtonOptionText>{t('sidebar.createNewTag')}</StyledPlusButtonOptionText>
       </PlusButtonOptionContainer>
 
       {isCreateRoomOverlayVisible && (
@@ -578,6 +580,7 @@ interface SidebarProps {
 }
 
 function Sidebar({ isOpen = false, onClose }: SidebarProps) {
+  const { t } = useTranslation();
   const { userInfo } = useUserInfo();
   const {
     sidebarRooms,
@@ -741,8 +744,8 @@ function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   return (
     <SidebarContainer className={isOpen ? 'open' : ''}>
       <LogoContainer>
-        <Logo src={logo} alt="EduHK Logo" />
-        <CloseButton onClick={onClose} aria-label="Close sidebar">
+        <Logo src={logo} alt={t('sidebar.eduHKLogo')} />
+        <CloseButton onClick={onClose} aria-label={t('sidebar.closeSidebar')}>
           <FiX size={24} />
         </CloseButton>
       </LogoContainer>
@@ -764,13 +767,13 @@ function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           $isActive={activeTab === "myRooms"}
           onClick={() => setActiveTab("myRooms")}
         >
-          MY ROOMS
+          {t('sidebar.myRooms')}
         </ToggleButton>
         <ToggleButton
           $isActive={activeTab === "myTags"}
           onClick={() => setActiveTab("myTags")}
         >
-          MY TAGS
+          {t('sidebar.myTags')}
         </ToggleButton>
       </ToggleContainer>
 
@@ -781,7 +784,7 @@ function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           <LabeledInputWithCount
             variant="unstyled"
             placeholder={
-              activeTab === "myRooms" ? "Search in MY ROOMS" : "Search in MY TAGS"
+              activeTab === "myRooms" ? t('sidebar.searchInMyRooms') : t('sidebar.searchInMyTags')
             }
             value={activeTab === "myRooms" ? roomSearch : tagSearch}
             onChange={
@@ -814,7 +817,7 @@ function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                         </RoomInfoContainer>
                       </RoomContainer>
                     ))
-                  : <ErrorMessage>No rooms found.</ErrorMessage>}
+                  : <ErrorMessage>{t('sidebar.noRoomsFound')}</ErrorMessage>}
               </RoomList>
               <PaginationContainer>
                 
@@ -878,7 +881,7 @@ function Sidebar({ isOpen = false, onClose }: SidebarProps) {
                         </RoomInfoContainer>
                       </RoomContainer>
                     ))
-                  : <ErrorMessage>No tags found.</ErrorMessage>}
+                  : <ErrorMessage>{t('sidebar.noTagsFound')}</ErrorMessage>}
               </RoomList>
               <PaginationContainer>
                 <PageButton

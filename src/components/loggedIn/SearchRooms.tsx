@@ -6,6 +6,7 @@ import { useNavigate } from "react-router-dom";
 import { useJoinRoom } from "./useJoinRoom";
 import { MdGroup, MdKeyboardArrowLeft, MdKeyboardArrowRight, MdKeyboardDoubleArrowLeft, MdKeyboardDoubleArrowRight} from "react-icons/md";
 import { generateGroupAvatar } from "../../utils/avatar";
+import { useTranslation } from "react-i18next";
 import {
   SearchRoomsContainer,
   LoadingContainer,
@@ -105,6 +106,7 @@ const PaginationCenterFixed = styled(PaginationCenter)`
 `;
 
 function SearchRooms() {
+  const { t } = useTranslation();
   const { mainAreaRooms, mainAreaRoomsPagination, setMainAreaRoomListRequest } =
     useRoomContext();
   const [currentPage] = useState(1);
@@ -194,9 +196,9 @@ function SearchRooms() {
       <Container style={{ filter: isCreateRoomOpen ? "blur(5px)" : "none" }}>
         <SearchRoomsContainer>
           {loading ? (
-            <LoadingContainer>Loading...</LoadingContainer>
+            <LoadingContainer>{t('searchRooms.loading')}</LoadingContainer>
           ) : mainAreaRooms.length === 0 ? (
-            <EmptyState title="No rooms found"></EmptyState>
+            <EmptyState title={t('searchRooms.noRoomsFound')}></EmptyState>
           ) : (
             mainAreaRooms.map((room, index) => (
               // 卡片：参考 feed 页签样式
@@ -211,7 +213,7 @@ function SearchRooms() {
                         <NameText>{room.groupName}</NameText>
                         <StatusRow>
                           <StatusDot $joined={room.isJoined} />
-                          <StatusText>{room.isJoined ? "Joined" : "Not Join"}</StatusText>
+                          <StatusText>{room.isJoined ? t('searchRooms.joined') : t('searchRooms.notJoin')}</StatusText>
                         </StatusRow>
                       </NameBlock>
                     </HeaderLeft>
@@ -221,15 +223,15 @@ function SearchRooms() {
                   <RoomInfo>
                     <InfoItem>
                       <MdGroup />
-                      <InfoItemText>{room.memberCount} members</InfoItemText>
+                      <InfoItemText>{room.memberCount} {t('searchRooms.members')}</InfoItemText>
                     </InfoItem>
                     <InfoItem>
-                      <InfoItemText>Admin: {room.adminName}</InfoItemText>
+                      <InfoItemText>{t('searchRooms.admin', { name: room.adminName })}</InfoItemText>
                     </InfoItem>
                   </RoomInfo>
 
                   <CardDescription>
-                    {room.groupDescription || "Join this room to start chatting."}
+                    {room.groupDescription || t('searchRooms.defaultDescription')}
                   </CardDescription>
                 </CardTop>
 
@@ -238,7 +240,7 @@ function SearchRooms() {
                     handleJoinClick(room.groupId, room.groupType, room.isJoined)
                   }
                 >
-                  {room.isJoined ? "Enter" : "Join"}
+                  {room.isJoined ? t('searchRooms.enter') : t('searchRooms.join')}
                 </ActionButton>
               </IntegrationCard>
             ))

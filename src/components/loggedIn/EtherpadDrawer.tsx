@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 import { LuX, LuFileText, LuMaximize2, LuMinimize2 } from 'react-icons/lu';
 import EtherpadComponent from './EtherpadComponent';
+import { useTranslation } from 'react-i18next';
 
 // Etherpad 功能开关 - 通过环境变量控制
 const ENABLE_ETHERPAD = import.meta.env.VITE_ENABLE_ETHERPAD !== 'false';
@@ -452,6 +453,7 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps & { 'data-testid'?: string }>
   const [startSize, setStartSize] = useState({ width: 0, height: 0 });
   const [startMousePos, setStartMousePos] = useState({ x: 0, y: 0 });
   const [dragStartPos, setDragStartPos] = useState({ x: 0, y: 0 });
+  const { t } = useTranslation();
 
   // Prevent scrolling when drawer is open in floating mode
   useEffect(() => {
@@ -669,19 +671,19 @@ const EtherpadDrawer: React.FC<EtherpadDrawerProps & { 'data-testid'?: string }>
       <DrawerHeader ref={headerRef} onMouseDown={handleDragStart} data-testid="etherpad-header">
         <DrawerTitle data-testid="etherpad-title">
           <LuFileText />
-          Shared Document
+          {t('etherpad.sharedDocument')}
         </DrawerTitle>
         <HeaderButtons>
           <IconButton 
             onClick={toggleFloatingMode} 
-            title={isFloating ? "Dock Window" : "Float Window"}
+            title={isFloating ? t('etherpad.dockWindow') : t('etherpad.floatWindow')}
             data-testid="etherpad-float-toggle"
           >
             {isFloating ? <LuMinimize2 /> : <LuMaximize2 />}
           </IconButton>
           <IconButton 
             onClick={handleClose} 
-            title="Close"
+            title={t('common.close')}
             data-testid="etherpad-close"
           >
             <LuX />
@@ -727,6 +729,7 @@ export const EtherpadDrawerWithButton: React.FC<{
   });
   const [isFloating, setIsFloating] = useState(false);
   const prevRoomIdRef = useRef<number | undefined>(currentRoomId);
+  const { t } = useTranslation();
 
   // Close drawer when room changes
   useEffect(() => {
@@ -786,9 +789,9 @@ export const EtherpadDrawerWithButton: React.FC<{
   return (
     <>
       {!isOpen && (
-        <DrawerButton onClick={handleOpen} title="Open Shared Document" data-testid="etherpad-toggle-btn">
+        <DrawerButton onClick={handleOpen} title={t('etherpad.openSharedDocument')} data-testid="etherpad-toggle-btn">
           <LuFileText size={20} color="white" />
-          <ButtonText>Document</ButtonText>
+          <ButtonText>{t('etherpad.document')}</ButtonText>
         </DrawerButton>
       )}
       
